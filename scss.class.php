@@ -50,7 +50,10 @@ class SCssCompiler
                 $namesOfCompiledFiles .= $this->doCompile($this->fromFiles, $file, $compiledFilename);
             }
             file_put_contents($compiledFilename, $this->aggregatedCss);
-            $this->minify($compiledFilename);
+
+            //TODO: minifyer not properly working yet, therefore disabled for the time being:
+            // create minified version:
+            //            $this->minify($compiledFilename);
         }
 
         // system styles:
@@ -77,8 +80,9 @@ class SCssCompiler
             // for compatibility, create copy under old name:
             copy($compiledFilename, $this->sysCssFiles.'_lizzy.css');
 
+            //TODO: minifyer not properly working yet, therefore disabled for the time being:
             // create minified version:
-            $this->minify($compiledFilename);
+            //            $this->minify($compiledFilename);
         }
 
         if ($namesOfCompiledFiles) {

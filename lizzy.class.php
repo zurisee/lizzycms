@@ -863,14 +863,16 @@ EOT;
             $this->definePageSwitchLinks();
         }
 
+		//TODO: minifyer not properly working yet, therefore disabled for the time being:
 		// set variable that controls loading of optionally minified resources:
-		if (getUrlArgStatic('minify') === true) {
-            $this->trans->addVariable('.min', '.min');
-        } elseif ($this->localCall || getUrlArgStatic('debug')) {
-            $this->trans->addVariable('.min', '');
-        } else {
-            $this->trans->addVariable('.min', '.min');
-        }
+        //		if (getUrlArgStatic('minify') === true) {
+        //            $this->trans->addVariable('.min', '.min');
+        //        } elseif ($this->localCall || getUrlArgStatic('debug')) {
+        //            $this->trans->addVariable('.min', '');
+        //        } else {
+        //            $this->trans->addVariable('.min', '.min');
+        //        }
+        $this->trans->addVariable('.min', '');
 
     } // setTransvars1
 
