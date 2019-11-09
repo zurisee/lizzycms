@@ -26,6 +26,7 @@ class SCssCompiler
         $this->compiledStylesFilename = $lzy->config->site_compiledStylesFilename;
         $this->compiledSysStylesFilename = '__lizzy.css';
         $this->scss = false;
+        $this->aggregatedCss = '';
 
         if (isset($_GET['reset'])) {
             $this->deleteCache();
@@ -45,10 +46,11 @@ class SCssCompiler
         $files = getDir($this->fromFiles.'scss/*.scss');
         $mustCompile = $this->checkUpToDate($this->fromFiles, $files, $compiledFilename);
         if ($mustCompile) {
-            file_put_contents($compiledFilename, '');
             foreach ($files as $file) {
                 $namesOfCompiledFiles .= $this->doCompile($this->fromFiles, $file, $compiledFilename);
             }
+            file_put_contents($compiledFilename, $this->aggregatedCss);
+            $this->minify($compiledFilename);
         }
 
         // system styles:
@@ -67,10 +69,16 @@ class SCssCompiler
                 return $namesOfCompiledFiles;
             }
 
-            file_put_contents($compiledFilename, '');
+            $this->aggregatedCss = '';
             foreach ($files as $file) {
                 $namesOfCompiledFiles .= $this->doCompile($this->sysCssFiles, $file, $compiledFilename);
             }
+            file_put_contents($compiledFilename, $this->aggregatedCss);
+            // for compatibility, create copy under old name:
+            copy($compiledFilename, $this->sysCssFiles.'_lizzy.css');
+
+            // create minified version:
+            $this->minify($compiledFilename);
         }
 
         if ($namesOfCompiledFiles) {
@@ -172,7 +180,7 @@ class SCssCompiler
         touchFile($targetFile, $t0);
 
         if ($includeFile) {                 // assemble all generated CSS, unless its filename started with non-alpha char
-            file_put_contents($compiledFilename, $cssStr . "\n\n\n", FILE_APPEND);
+            $this->aggregatedCss .= $cssStr . "\n\n\n";
         }
 
         return basename($file).", ";
@@ -193,5 +201,16 @@ class SCssCompiler
         }
         return $cssStr;
     } // compileStr
+
+
+
+
+    private function minify( $compiledFilename )
+    {
+        require_once(SYSTEM_PATH . 'third-party/minifier/php-html-css-js-minifier.php');
+        $__scss = minify_css( $this->aggregatedCss );
+        $minifiedFileName = str_replace('.css', '.min.css', $compiledFilename);
+        file_put_contents($minifiedFileName, $__scss);
+    }
 
 } // SCssCompiler

@@ -863,6 +863,15 @@ EOT;
             $this->definePageSwitchLinks();
         }
 
+		// set variable that controls loading of optionally minified resources:
+		if (getUrlArgStatic('minify') === true) {
+            $this->trans->addVariable('.min', '.min');
+        } elseif ($this->localCall || getUrlArgStatic('debug')) {
+            $this->trans->addVariable('.min', '');
+        } else {
+            $this->trans->addVariable('.min', '.min');
+        }
+
     } // setTransvars1
 
 
