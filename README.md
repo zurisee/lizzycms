@@ -18,7 +18,7 @@ That means, Lizzy is fully self-contained, its entire production tool-chain is o
 
 - Start from a folder under your web-server's doc-root (let's call it 'project folder')
 - Clone Lizzy into a subfolder of your project folder, name the subfolder '_lizzy/'
-- Copy `_lizzy/index.php` to your project folder (i.e. one up)
+- Copy `_lizzy/_parent-folder/index.php` to your project folder (i.e. two up)
 - Open the project folder in your browser -> installation will be completed automatically
 - Reload and you are ready to role
 
