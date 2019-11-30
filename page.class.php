@@ -116,7 +116,7 @@ class Page
                         }
 
                     } else {
-                        $this->$key .= $value;
+                        $this->$key = $this->$key ? "{$this->$key} $value" : $value;
                     }
                 }
             } else {
@@ -144,11 +144,11 @@ class Page
                 continue;
             }
 
-            if ($key == 'modules') {
+            if ($key === 'modules') {
                 $value = ','.$value;
             }
 
-            if (($key == 'wrapperTag') || (strpos($propertiesToReplace, $key) !== false)) {
+            if (($key === 'wrapperTag') || (strpos($propertiesToReplace, $key) !== false)) {
                 $this->appendValue($key, $value, true);
             } else {
                 $this->appendValue($key, $value);
@@ -557,7 +557,15 @@ class Page
             }
         }
 
-        if (!isset($overlay['closable']) || $overlay['closable']) {
+        if (!isset($overlay['closable'])) {
+            $overlay['closable'] = true;
+        }
+        if ($overlay['closable'] === 'reload') {
+            $text = "<button id='lzy-close-overlay' class='lzy-close-overlay'>✕</button>\n".$text;
+            // set ESC to close overlay:
+            $jq .="\n$('body').keydown( function (e) { if (e.which == 27) { $('.lzy-overlay').hide(); } });\n".
+                "$('#lzy-close-overlay').click(function(e) { lzyReload(); });\n";
+        } else {
             $text = "<button id='lzy-close-overlay' class='lzy-close-overlay'>✕</button>\n".$text;
             // set ESC to close overlay:
             $jq .="\n$('body').keydown( function (e) { if (e.which == 27) { $('.lzy-overlay').hide(); } });\n".
@@ -586,7 +594,7 @@ class Page
             $file = resolvePath(trim($m[1]), true);
             if (file_exists($file)) {
                 $str = getFile($file, true);
-                if (fileExt($file) == 'md') {
+                if (fileExt($file) === 'md') {
                     $str = compileMarkdownStr($str);
                     $str = <<<EOT
 <!DOCTYPE html>
@@ -643,7 +651,8 @@ EOT;
     public function applyRedirect()
     {
         if ($this->redirect) {
-            $url = resolvePath($this->redirect, false, true);
+            $url = resolvePath($this->redirect, true, true);
+//            $url = resolvePath($this->redirect, false, true);
             header('Location: ' . $url);
             exit;
         }
@@ -657,28 +666,28 @@ EOT;
         $class1 = '';
         foreach ($this->config->classBasedModules as $class => $modules) {
             $varname = 'class_'.$class;
-            if (isset($this->config->$varname) && ($class != $this->config->$varname)) {
+            if (isset($this->config->$varname) && ($class !== $this->config->$varname)) {
                 $class1 = $this->config->$varname;
             }
             if (preg_match("/class\=.*['\"\s] $class1 ['\"\s]/x", $content, $m)) {
                 foreach ($modules as $module => $rsc) {
                     $modified = true;
-                    if ($module == 'cssFiles') {
+                    if ($module === 'cssFiles') {
                         $this->addCssFiles($rsc);
 
-                    } elseif ($module == 'css') {
+                    } elseif ($module === 'css') {
                         $this->addCss($rsc);
 
-                    } elseif ($module == 'jqFiles') {
+                    } elseif ($module === 'jqFiles') {
                         $this->addJQFiles($rsc);
 
-                    } elseif ($module == 'jq') {
+                    } elseif ($module === 'jq') {
                         $this->addJq($rsc);
 
-                    } elseif ($module == 'jsFiles') {
+                    } elseif ($module === 'jsFiles') {
                         $this->addJsFiles($rsc);
 
-                    } elseif ($module == 'jq') {
+                    } elseif ($module === 'jq') {
                         $this->addJq($rsc);
                     }
                 }
@@ -710,10 +719,6 @@ EOT;
             $description = "\t<meta name='description' content='$description' />\n";
         }
         $headInjections .= $keywords.$description;
-
-        if ($this->config->feature_loadFontAwesome) {   // Font-Awesome support needs to go into head:
-            $this->addJQFiles('FONTAWESOME');
-        }
 
         $headInjections .= $this->getModules('css', $this->cssFiles);
 
@@ -833,15 +838,20 @@ EOT;
             $this->prepareModuleLists();
         }
 
-        if ($type == 'css') {
+        if ($type === 'css') {
             foreach ($this->cssModules as $item) {
-                $item = resolvePath($item, false, true);
-                $out .= "\t<link href='$item' rel='stylesheet' />\n";
+                $mediaType = '';
+                if (preg_match('/^(.*?)\@(\w+)/', $item, $m)) {
+                    $item = $m[1];
+                    $mediaType = " media=\"{$m[2]}\"";
+                }
+                $item = resolvePath($item, true, true);
+                $out .= "\t<link href='$item' rel='stylesheet'$mediaType />\n";
             }
 
         } else {
             foreach ($this->jsModules as $item) {
-                $item = resolvePath($item, false, true);
+                $item = resolvePath($item, true, true);
                 $out .= "\t<script src='$item'></script>\n";
             }
 
@@ -859,7 +869,7 @@ EOT;
         $str = ','.$this->modules.','.$this->cssFiles.','.$this->jsFiles.','.$this->jqFiles;
 
         if (preg_match_all('/,(JQUERY\s?),/', $str, $m)) {
-            if (sizeof($m) == 1) {
+            if (sizeof($m) === 1) {
                 $str = str_replace('JQUERY,', '', $str);
             }
 
@@ -887,13 +897,13 @@ EOT;
                 if (strpos($str, ',') !== false) {
                     $mods = preg_split('/\s*,+\s*/', $str);
                     foreach ($mods as $j => $mod) {
-                        if (($mod{0} != '~') && (strpos($mod, '//') === false)) {
+                        if (($mod{0} !== '~') && (strpos($mod, '//') === false)) {
                             $mod = '~sys/'.$mod;
                         }
                         $primaryModules[] = [$mod, $rank];
                     }
                 } else {
-                    if (($str{0} != '~') && (strpos($str, '//') === false)) {
+                    if (($str{0} !== '~') && (strpos($str, '//') === false)) {
                         $str = '~sys/'.$str;
                     }
                     $primaryModules[] = [$str, $rank];
@@ -909,7 +919,7 @@ EOT;
         $cssModules = [];
         $jsModules = [];
         foreach ($modules as $mod) {
-            if (preg_match('/\.css$/i', $mod)) {    // split between css and js files
+            if (preg_match('/\.css(\@\w+)?$/i', $mod)) {    // split between css and js files
                 if (!in_array($mod, $cssModules)) {         // avoid doublets
                     $cssModules[] = $mod;
                 }
@@ -1048,22 +1058,22 @@ EOT;
             }
         }
 
-        if (($allowOrigin == '*') || ($allowOrigin == 'true') || ($allowOrigin == 'all') || ($allowOrigin == 'any')) {
+        if (($allowOrigin === '*') || ($allowOrigin === 'true') || ($allowOrigin === 'all') || ($allowOrigin === 'any')) {
             header('Access-Control-Allow-Origin: *');
             return;
         }
         if (!$allowOrigin) {
             return;
         }
-        if (!isset($_SERVER['HTTP_ORIGIN'])) {
-            mylog("allowOrigin : no \$_SERVER['HTTP_ORIGIN' available, allowing any");
+        if ($this->lzy->localCall && !isset($_SERVER['HTTP_ORIGIN'])) {
+//            mylog("allowOrigin : no \$_SERVER['HTTP_ORIGIN'] available, allowing any");
             header('Access-Control-Allow-Origin: *');
             return;
         }
 
         $allowedOrigins = str_replace(' ', '', ",$allowOrigin,");
-        $currRequestOrigin = $_SERVER['HTTP_ORIGIN'];
-        $currRequestOrigin1 = ',' . $currRequestOrigin . ',';
+        $currRequestOrigin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] . ',': '';
+        $currRequestOrigin1 = ',' . $currRequestOrigin;
         if (strpos($allowedOrigins, $currRequestOrigin1) !== false) {
             header('Access-Control-Allow-Origin: ' . $currRequestOrigin);
         }

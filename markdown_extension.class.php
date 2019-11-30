@@ -1,6 +1,7 @@
 <?php
+define('EMOJINAMES_FILE', '_lizzy/rsc/emojis.json');
 
-class MyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
+class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
 {
     private $cssAttrNames =
         ['align', 'all', 'animation', 'backface', 'background', 'border', 'bottom', 'box',
@@ -93,17 +94,11 @@ class MyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
             'asciiTable',
             'content' => [],
             'caption' => false,
-            'header' => false
+            'args' => false
         ];
         $firstLine = $lines[$current];
         if (preg_match('/^\|===*\s+(.+)$/', $firstLine, $m)) {
-            $a = preg_split('/(?<!\\\)\|/', $m[1]);
-            if (sizeof($a) > 1) {
-                $block['caption'] = str_replace('\|','|', array_shift($a));
-                $block['header'] = $a;
-            } else {
-                $block['caption'] = str_replace('\|','|', $m[1]);
-            }
+            $block['args'] = $m[1];
         }
         for($i = $current + 1, $count = count($lines); $i < $count; $i++) {
             $line = $lines[$i];
@@ -125,6 +120,13 @@ class MyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
         $nCols = 0;
         $row = 0;
         $col = -1;
+
+        if (isset($this->mymd->trans->lzy->page->asciitable)) {
+            $this->mymd->trans->lzy->page->asciitable++;
+        } else {
+            $this->mymd->trans->lzy->page->asciitable = 1;
+        }
+        $inx = $this->mymd->trans->lzy->page->asciitable;
 
         for ($i = 0; $i < sizeof($block['content']); $i++) {
             $line = $block['content'][$i];
@@ -152,20 +154,28 @@ class MyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
         $nRows = $row+1;
 
 
-        // now render the table:
-        $out = "\t<table><!-- asciiTable -->\n";
-        if ($block['caption']) {
-            $out .= "\t  <caption>{$block['caption']}</caption>\n";
+        $id = $class = $style = $attr = $text = $tag = '';
+        if ($block['args']) {
+            $args = parseInlineBlockArguments($block['args'], true);
+            list($tag, $id, $class, $style, $attr, $text) = $args;
+        }
+        if (!$id) {
+            $id = "lzy-table$inx";
+        }
+        if (!$class) {
+            $class = "lzy-table$inx";
+        }
+        if ($style) {
+            $style = " style='$style'";
+        }
+        if ($tag) {
+            $text = $text ? "$tag $text": $tag;
         }
 
-        // render header as defined in opening line, e.g. |=== |H1|H2
-        if ($block['header']) {     // table header
-            $out .= "\t  <thead>\n";
-            for ($col = 0; $col < $nCols; $col++) {
-                $th = isset($block['header'][$col]) ? str_replace('\|','|', $block['header'][$col]) : '';
-                $out .= "\t\t\t<th class='th$col'>$th</th>\n";
-            }
-            $out .= "\t  </thead>\n";
+            // now render the table:
+        $out = "\t<table id='$id' class='lzy-table $class'$style$attr><!-- asciiTable -->\n";
+        if ($text) {
+            $out .= "\t  <caption>$text</caption>\n";
         }
 
         // render header as defined in first row, e.g. |# H1|H2
@@ -403,7 +413,7 @@ class MyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
     // ---------------------------------------------------------------
     protected function identifyCheckList($line, $lines, $current)
     {
-        if (preg_match('/^\s*-\s?\[\s?x?\s?\]/', $line)) {
+        if (preg_match('/^ \s* - \s? \[ \s? x? \s? ] /x', $line)) {
             return 'checkList';
         }
         return false;
@@ -426,7 +436,7 @@ class MyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
                     break;
                 }
                 continue;
-            } elseif ($line && !preg_match('/^\s* -\s? \[ \s?x?\s? \] /x', $line)) {  // no pattern [] or [x]
+            } elseif ($line && !preg_match('/^\s* -\s? \[ \s? x? \s? ] /x', $line)) {  // no pattern [] or [x]
                 $i--;
                 break;
             }
@@ -579,7 +589,6 @@ class MyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
             $html = "\t\t\t".str_replace("\n", "\n\t\t\t", $html);
             $out .= substr($html, 0, -3);
         }
-//        $out .= "\t\t</dd>\n";
         $out = "\t<dl>\n$out\t</dl>\n";
         return $out;
     } // renderDefinitionList
@@ -800,20 +809,20 @@ class MyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
     /**
      * @marker ![
      */
-    // ![alt text](img.jpg "Logo Title Text 1")
+    // ![alt text](img.jpg "Caption...")
     protected function parseImage($markdown)
     {
         // check whether the marker really represents a strikethrough (i.e. there is a closing `)
-        if (preg_match('/^\[ ( .+? ) \]\( ( .+? ) \)/x', $markdown, $matches)) {
+        if (preg_match('/^!\[ ( .+? ) ]\( ( .+? ) \)/x', $markdown, $matches)) {
             return [
                 // return the parsed tag as an element of the abstract syntax tree and call `parseInline()` to allow
                 // other inline markdown elements inside this tag
-                ['link', $matches[1].']('.$matches[1]],
+                ['image', $matches[1].']('.$matches[2]],
                 // return the offset of the parsed text
                 strlen($matches[0])
             ];
         }
-        // in case we did not find a closing ~~ we just return the marker and skip 2 characters
+        // in case we did not find a closing ) we just return the marker and skip 2 characters
         return [['text', '!['], 2];
     }
 
@@ -821,11 +830,24 @@ class MyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
     protected function renderImage($element)
     {
         list($alt, $src) = explode('](', $element[1]);
-        $alt = str_replace('"', '&quot;', $alt);
+        if (preg_match('/^ (["\']) ( .+ ) \1 \s* /x', $alt, $m)) {
+            $alt = $m[2];
+        }
+        if (preg_match('/^ (["\']) ( .+ ) \1 \s* /x', $src, $m)) {
+            $src = $m[2];
+        }
+        $alt = str_replace(['"', "'"], '&quot;', $alt);
         $caption = '';
-        if (preg_match('/^ (.*?) ["\'] (.+?) ["\'] (.*) /x', $src, $m)) {
+        if (preg_match('/^ (.*?) \s+ (.*) /x', $src, $m)) {
             $src = $m[1];
-            $caption = str_replace('"', '&quot;', $m[2]);
+            $caption = $m[2];
+            if (preg_match('/^ (["\']) ( .+ ) \1 \s* /x', $src, $mm)) {
+                $src = $mm[2];
+            }
+            if (preg_match('/^ (["\']) ( .+ ) \1 \s* /x', $caption, $mm)) {
+                $caption = $mm[2];
+            }
+            $caption = str_replace(['"', "'"], '&quot;', $caption);
         }
         $src = trim($src);
         if ($caption) {
@@ -845,11 +867,19 @@ class MyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
     protected function parseLink($markdown)
     {
         // check whether the marker really represents a strikethrough (i.e. there is a closing `)
-        if (preg_match('/^\[ ( .+? ) \]\( ( .+? ) \)/x', $markdown, $matches)) {
+        if (preg_match('/^\[ (["\']) ( .+? ) \1 ]\( ( .+? ) \)/x', $markdown, $matches)) {
             return [
                 // return the parsed tag as an element of the abstract syntax tree and call `parseInline()` to allow
                 // other inline markdown elements inside this tag
-                ['link', $matches[1].']('.$matches[1]],
+                ['link', $matches[2].']('.$matches[3]],
+                // return the offset of the parsed text
+                strlen($matches[0])
+            ];
+        } elseif (preg_match('/^\[ ( .+? ) ]\( ( .+? ) \)/x', $markdown, $matches)) {
+            return [
+                // return the parsed tag as an element of the abstract syntax tree and call `parseInline()` to allow
+                // other inline markdown elements inside this tag
+                ['link', $matches[1].']('.$matches[2]],
                 // return the offset of the parsed text
                 strlen($matches[0])
             ];
@@ -870,6 +900,40 @@ class MyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
         return "{{ link(\"$url\", \"$text\"$attr) }}";
     }
 
+
+
+
+    // ---------------------------------------------------------------
+    /**
+     * @marker :
+     */
+    protected function parseEmoji($markdown)
+    {
+        // check whether the marker really represents a emoji/icon (i.e. there is a closing :)
+        if (preg_match('/^ : ([a-z0-9_-]{2,35}) : /x', $markdown, $matches)) {
+            return [
+                ['emoji', $matches[1]],
+                strlen($matches[0])
+            ];
+        }
+        // in case we did not find a closing ~~ we just return the marker and skip 1 character
+        return [['text', ':'], 1];
+    }
+
+    // rendering is the same as for block elements, we turn the abstract syntax array into a string.
+    protected function renderEmoji($element)
+    {
+        if (!isset($this->emojiNames)) {
+            $this->emojiNames = json_decode( file_get_contents(EMOJINAMES_FILE), true);
+        }
+        if (isset($this->emojiNames[$element[1]])) {
+            $out = $this->emojiNames[$element[1]];
+            $out = "<span class='lzy-emoji' data-icon='$out'>&#8203;</span>";
+        } else {
+            $out = "<span class='lzy-icon lzy-icon-{$element[1]}'></span>";
+        }
+        return $out;
+    }
 
 
 

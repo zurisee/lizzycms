@@ -27,8 +27,8 @@ $this->addMacro($macroName, function () {
 		return '';
 	}
 
-	$src = resolvePath($src, true, true);
-	
+	$src = resolvePath($src, true, true, false, true);
+
 	$out = <<<EOT
 
 	<audio id="audio_player$inx" class="ump-media audio_player" preload="auto" data-able-player data-translation-path="~sys/third-party/ableplayer/translations/">

@@ -52,12 +52,13 @@ class Authentication
             }
             $res = true;
 
-            if ($user && isset($_GET['reload-arg'])) {
-                $res = [$user, "<p>{{ lzy-{$_GET['reload-arg']} }}</p>", 'Message'];   //
+            if ($user && ($msg = getNotificationMsg())) {
+                $msg = $this->lzy->trans->translateVariable($msg);
+                $res = [$user, "<p>{{ $msg }}</p>", 'Message' ];   //
             }
         }
 
-        if (!$res || (isset($res[0]) && ($res[0] == false)) ) { // logout
+        if (!$res || (isset($res[0]) && ($res[0] === false)) ) { // logout
             $this->logout();
 
         } elseif (is_string($res)) {    // string contains username of user to be logged in
@@ -122,7 +123,7 @@ class Authentication
 
             $this->validateAccessCode($codeCandidate);   // check access code in user records and log in&reload if found
 
-            $pagePath = trunkPath($pagePath,1, false); // remove hash-code from
+            $pagePath = preg_replace('|/[A-Z][A-Z0-9]{4,}/?$|', '', $pagePath);
         }
         return $pagePath;   // access granted
     } // handleAccessCodeInUrl
@@ -144,18 +145,13 @@ class Authentication
         if ($userRec) {
             $user = $userRec['username'];
             $this->setUserAsLoggedIn( $user, null, $oneTimeRec["email"] );
-            $displayName = $this->getDisplayName();
-            if ($displayName) {
-                $user .= " ({$displayName})";
-            }
+            $user .= " ({$oneTimeRec['email']})";
             writeLog("one time link accepted: $user [".getClientIP().']', LOGIN_LOG_FILENAME);
 
             // access granted, remove hash-code from url, if there is one:
             $requestedUrl = $GLOBALS['globalParams']['requestedUrl'];
-            if ($requestedUrl && preg_match('|/[A-Z][A-Z0-9]{4,}/?$|', $requestedUrl)) {
-                $requestedUrl = trunkPath($requestedUrl, 1, false); // remove hash-code from
-            }
-            reloadAgent($requestedUrl, 'login-successful'); // access granted, remove hash-code from url
+            $requestedUrl = preg_replace('|/[A-Z][A-Z0-9]{4,}/?$|', '', $requestedUrl);
+            reloadAgent($requestedUrl, 'lzy-login-successful'); // access granted, remove hash-code from url
 
         } else {
             $rep = '';
@@ -163,7 +159,9 @@ class Authentication
                 $rep = ' REPEATED';
             }
             $this->monitorFailedLoginAttempts();
-            writeLog("*** one time link rejected$rep: $code [".getClientIP().']', LOGIN_LOG_FILENAME);
+            if ($rep) {
+                writeLog("*** one time link rejected$rep: $code [" . getClientIP() . ']', LOGIN_LOG_FILENAME);
+            }
             $getArg = 'login-failed';
         }
         return $getArg;
@@ -174,14 +172,14 @@ class Authentication
     private function readOneTimeAccessCode($code)
     {
         // checks whether there is a pending oneTimeAccessCode, purges old entries
-        require_once SYSTEM_PATH.'ticketing.class.php';
-
         $tick = new Ticketing();
         $code = strtoupper($code);
         $ticket = $tick->consumeTicket($code);
         if (!$ticket) {
             $this->monitorFailedLoginAttempts();
-            writeLog("*** one-time link rejected: $code [".getClientIP().']', LOGIN_LOG_FILENAME);
+            $errMsg = $tick->getLastError();
+
+            writeLog("*** one-time link rejected: $code ($errMsg) [".getClientIP().']', LOGIN_LOG_FILENAME);
             return false;
         }
         $username = $ticket['username'];
@@ -233,7 +231,9 @@ class Authentication
                         }
                     }
                     $this->setUserAsLoggedIn($user, $rec);
-                    $requestedUrl = trunkPath($GLOBALS['globalParams']['requestedUrl'],1, false); // remove hash-code from
+                    $requestedUrl = $GLOBALS['globalParams']['requestedUrl'];
+                    $requestedUrl = preg_replace('|/[A-Z][A-Z0-9]{4,}/?$|', '', $requestedUrl);
+                    writeLog("*** user '$user' successfully logged in via access link ($codeCandidate).");
                     reloadAgent($requestedUrl, 'login-successful');
                 }
             }
@@ -285,7 +285,7 @@ class Authentication
 	    if (isset($rec['inactive']) && $rec['inactive']) {  // account is inactive, no login allowed
 	        return false;
         }
-	    if (($rec == null) && ($key = $this->findUserRecKey($user))) {
+	    if (($rec === null) && ($key = $this->findUserRecKey($user))) {
 	        if (!$rec = $this->knownUsers[$key]) {
 	            return false;
             }
@@ -347,7 +347,11 @@ class Authentication
                     }
                 }
             }
-		}
+		} elseif ($this->config->admin_autoAdminOnLocalhost && $this->config->isLocalhost) {
+		    $res = 'admin';
+            $GLOBALS['globalParams']['isAdmin'] = true;
+            $rec = false;
+        }
 
 		if ($res && $returnRec) {
             $this->userRec = $rec;
@@ -425,7 +429,7 @@ class Authentication
 
     public function checkAdmission($lockProfile)
 	{
-		if (($lockProfile == false) || ($this->localCall && $this->config->admin_autoAdminOnLocalhost)) {	// no restriction
+		if ((!$lockProfile) || ($this->localCall && $this->config->admin_autoAdminOnLocalhost)) {	// no restriction
 			return true;
 		}
 		
@@ -436,18 +440,16 @@ class Authentication
             $rec['username'] = '';
         }
 
-        if ($this->isGroupMember($rec['groups'], 'admins')) { // admins have access by default
+		$usersGroups = $rec['groups'];
+        if ($this->isGroupMember($usersGroups, 'admins')) { // admins have access by default
 		    return true;
         }
 
 		$lockProfiles = explode(',', $lockProfile);
 		foreach ($lockProfiles as $lp) {
-			$lp = trim($lp);
-			if ($lp == $rec['username']) {
-				return true;
-			} elseif ($lp == $rec['groups']) {
-				return true;
-			}
+            if ($this->isGroupMember($usersGroups, trim($lp))) { // admins have access by default
+                return true;
+            }
 		}
 		if ($rec && !$this->message) {
 			$this->message = '{{ Insufficient privileges }}';
@@ -464,8 +466,7 @@ class Authentication
             return false;
         }
         $usersGroups = str_replace(' ', '', ",$usersGroups,");
-        $groupToCheckAgainst = ",$groupToCheckAgainst,";
-        $res = (strpos($usersGroups, $groupToCheckAgainst) !== false);
+        $res = (strpos($usersGroups, ",$groupToCheckAgainst,") !== false);
         return $res;
     } // isGroupMember
 
@@ -513,7 +514,7 @@ class Authentication
         foreach ($failedLogins as $t => $ip1) {
             if ($t < ($tnow - 60)) {
                 unset($failedLogins[$t]);
-            } elseif ($ip == $ip1) {
+            } elseif ($ip === $ip1) {
                 sleep(3);
                 $repeated = true;
                 unset($failedLogins[$t]);
@@ -530,7 +531,7 @@ class Authentication
     //-------------------------------------------------------------
     public function isValidPassword($password, $password2 = false)
     {
-        if ($password2 && ($password != $password2)) {
+        if ($password2 && ($password !== $password2)) {
             return '{{ lzy-change-password-not-equal-response }}';
         }
         if (strlen($password) < 8) {
@@ -578,6 +579,8 @@ class Authentication
                 }
                 $this->knownUsers[$key]['username'] = $key;
             }
+        } else {
+            $this->knownUsers = [];
         }
     } // loadKnownUsers
 
@@ -599,13 +602,13 @@ class Authentication
             $res = false;
             $tolerant = $this->config->admin_allowDisplaynameForLogin;
             foreach ($this->knownUsers as $name => $rec) {
-                if ($searchField == '*') {
-                    if ($name == $username) {
+                if ($searchField === '*') {
+                    if ($name === $username) {
                         $res = $name;
                         break;
                     }
                     foreach ($rec as $key => $value) {
-                        if (strtolower($value) == $username) {
+                        if (strtolower($value) === $username) {
                             $res = $name;
                             break 2;
                         }
@@ -613,19 +616,19 @@ class Authentication
                     continue;
                 }
                 if ($searchField) {
-                    if (isset($rec[$searchField]) && (strtolower($rec[$searchField]) == $username)) {
+                    if (isset($rec[$searchField]) && (strtolower($rec[$searchField]) === $username)) {
                         $res = $name;
                         break;
                     }
-                } elseif ($name == $username) {
+                } elseif ($name === $username) {
                     $res = $name;
                     break;
 
-                } elseif (isset($rec['username']) && ($rec['username'] == $username)) {
+                } elseif (isset($rec['username']) && ($rec['username'] === $username)) {
                     $res = $name;
                     break;
 
-                } elseif ($tolerant && isset($rec['displayName']) && (strtolower($rec['displayName']) == $username)) {
+                } elseif ($tolerant && isset($rec['displayName']) && (strtolower($rec['displayName']) === $username)) {
                     $res = $name;
                     break;
                 }
@@ -694,12 +697,12 @@ class Authentication
 
 
 
-    public function findEmailInEmailList(string $submittedEmail)
+    public function findEmailInEmailList($submittedEmail)
     {
         $found = false;
         $submittedEmail = strtolower($submittedEmail);
         foreach ($this->knownUsers as $name => $rec) {
-            if (isset($rec['accessCodeEnabled']) && ($rec['accessCodeEnabled'] == false)) {
+            if (isset($rec['accessCodeEnabled']) && (!$rec['accessCodeEnabled'])) {
                 continue;
             }
 
@@ -742,8 +745,7 @@ class Authentication
                 $uname = $rec['username'];
                 $displayName = $this->getDisplayName();
                 $uname = $displayName ? "$uname ($displayName)" : $uname;
-                $message = $this->sendOneTimeCode($emailRequest, $rec);
-                writeLog("one time link sent to: $uname", LOGIN_LOG_FILENAME);
+                list($message, $displayName) = $this->sendOneTimeCode($emailRequest, $rec);
 
                 $res = [false, $message, 'Overlay'];   // if successful, a mail with a link has been sent and user will be authenticated on using that link
             }
@@ -756,19 +758,16 @@ class Authentication
 
 
 
-    /**
-     * @param $res
-     */
-    private function handleLoginUserNotification($res): void
+    private function handleLoginUserNotification($res)
     {
         if (is_array($res) && isset($res[2])) { // [login/false, message, communication-channel]
-            if ($res[2] == 'Overlay') {
+            if ($res[2] === 'Overlay') {
                 $this->lzy->page->addOverlay($res[1], false, false);
 
-            } elseif ($res[2] == 'Override') {
+            } elseif ($res[2] === 'Override') {
                 $this->lzy->page->addOverlay($res[1], false, false);
 
-            } elseif ($res[2] == 'LoginForm') {
+            } elseif ($res[2] === 'LoginForm') {
                 $accForm = new UserAccountForm($this);
                 $form = $accForm->renderLoginForm($this->message, $res[1], true);
                 $this->lzy->page->addOverlay($form, true, false);

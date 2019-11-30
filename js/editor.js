@@ -21,8 +21,9 @@ $( document ).ready(function() {
 
 function prepareEditing()
 {
-    $('.lzy-edit-sitemap').prepend('<button class="lzy-editor-btn">Edit</button>');
+    $('.lzy-edit-sitemap').prepend('<button class="lzy-editor-btn"><span class=\'lzy-icon-edit\'></span></button>');
     $('body').addClass('lzy-editor-mode');
+    $('.lzy-logged-in-user > a.lzy-toggle-edit-mode > span').addClass('lzy-negate');
 } // prepareEditing
 
 
@@ -30,14 +31,8 @@ function prepareEditing()
 
 function setupEventHandlers()
 {
-    // $('#lzy-show-files-btn').click(function() {	// button to open file list and upload functions
-    // $('.lzy-files-btn').click(function() {	// button to open file list and upload functions
-    //     showFiles( this );
-    // });
-
 
     // content edit button:
-    // $('.lzy-editor-btn').click(function() {
     $('.lzy-src-wrapper:not(.lzy-edit-sitemap) .lzy-editor-btn').click(function() {
         $editBtn = $(this);
         startEditor( $editBtn );
@@ -123,7 +118,6 @@ function setupKeyHandlers()
         }
 
     };
-
 } // setupKeyHandlers
 
 
@@ -132,12 +126,11 @@ function setupKeyHandlers()
 
 function startEditor( $editBtn ) {
     $editBtn.hide();
-    // hideElements(true);
     $('body').addClass('lzy-editing');
     var $section = $editBtn.parent();
     var $edWrapper0 = $('#lzy-editor-dock-wrapper');
     $edWrapper0.show();
-    $edWrapper0.draggable({ handle: ".editor-toolbar" }).resizable();    // using jQueryIU
+    $edWrapper0.draggable({ handle: '.editor-toolbar' }).resizable();    // using jQueryIU
 
     $section.addClass('lzy-editing');
     filename = $section.attr('data-lzy-filename');
@@ -188,104 +181,18 @@ function startEditor( $editBtn ) {
             $('.lzy-done-btn').click(function() {
                 saveData(this, true );
             });
-            // $edWrapper.append($('.lzy-file-uploader-wrapper').html());
-            $('.lzy-file-uploader').appendTo($edWrapper);
-            $('.lzy-files-btn').click(function() {	// button to open file list and upload functions
-                showFiles( this );
-            });
-            $('.lzy-fileupload-buttonbar .btn.new').click(function() {
-                newFile();
-            });
-            // $('.lzy-fileupload-buttonbar .btn.rename').click(function() {
-            //     renameFile();
-            // });
-            //
         },
     });
 } // startEditor
 
 
 
-function renameFile(e) {
-    console.log(e);
-    var $elem = $( e.target ).parent().parent();
-    var filename = $('a', $elem).text();
-    $('#lzy-edit-rename-file-container').popup({autoopen: true, closebutton:true});
-    $('#lzy-edit-rename-file').val( filename );
-    $('#lzy-edit-rename-file-confirm').click(function(e) {
-        sendRenameFile(e);
-    });
-    setTimeout(function() { $('#lzy-edit-rename-file').focus(); }, 100);
-    $('#lzy-edit-rename-file').keydown( function (e) {
-        if (e.which == 13) {
-            sendRenameFile(e);
-        }
-    });
-} // renameFile
-
-
-
-function sendRenameFile(e) {
-    e.stopPropagation();
-    // var $popup = $(e.target).closest('.popup_content');
-    var newFilename = $('#lzy-edit-rename-file').val();
-    console.log(filename);
-    $.ajax({
-        type: "POST",
-        url: systemPath + '_ajax_server.php?renamefile',
-        data: { lzy_filename: filename, lzy_newName: newFilename},
-        // data: { lzy_filename: pagePath + filename, lzy_newName: newFilename},
-        success: function( data ) {
-            // console.log('renameFile returned');
-            console.log(data);
-            lzyReload();
-        }
-    });
-} // sendRenameFile
-
-
-
-function newFile() {
-    $('#lzy-edit-new-filename-container').popup({autoopen: true, closebutton:true});
-    $('#lzy-edit-new-filename-confirm').click(function(e) {
-        sendNewFile(e.target);
-    });
-    setTimeout(function() { $('#lzy-edit-new-filename').focus(); }, 100);
-    $('#lzy-edit-new-filename').keydown( function (e) {
-        if (e.which == 13) {
-            sendNewFile(e.target);
-        }
-    });
-} // newFile
-
-
-
-
-function sendNewFile(target) {
-    var $popup = $(target).closest('.popup_content');
-    $popup.attr('aria-hidden', false);
-    var filename = $('#lzy-edit-new-filename').val();
-    console.log(filename);
-    $.ajax({
-        type: "POST",
-        url: systemPath + '_ajax_server.php?newfile',
-        data: { lzy_filename: pagePath + filename },
-        success: function( data ) {
-            lzyReload();
-        }
-    });
-} // sendNewFile
-
-
-
 
 function startSitemapEditor() {
     $('body').addClass('lzy-editing');
-    // $edWrapper = $('.lzy-src-wrapper.lzy-nav-wrapper');
-    // origText = $edWrapper.html();
     var $edWrapper0 = $('#lzy-editor-dock-wrapper');
     $edWrapper0.show();
-    $edWrapper0.draggable({ handle: ".editor-toolbar" }).resizable();    // using jQueryIU
+    $edWrapper0.draggable({ handle: '.editor-toolbar' }).resizable();    // using jQueryIU
 
     $edWrapper = $('#lzy-editor-dock');
     $edWrapper.html('').addClass('lzy-edit-sitemap');
@@ -341,35 +248,6 @@ function abortEditor()
 
 
 
-function showFiles(  )
-{
-    $('#lzy-fileupload').toggle();
-
-    if ( $('#lzy-fileupload').css('display') != 'none') {
-        $.ajax({	// load uploader (from main.js)
-            // Uncomment the following to send cross-domain cookies:
-            //xhrFields: {withCredentials: true},
-            url: $('#lzy-fileupload').fileupload('option', 'url'),
-            dataType: 'json',
-            context: $('#lzy-fileupload')[0]
-        }).always(function () {
-            $(this).removeClass('fileupload-processing');
-        }).done(function (result) {
-            $(this).fileupload('option', 'done')
-                .call(this, $.Event('done'), {result: result});
-            $('#lzy-fileupload')[0].scrollIntoView();
-            $('.lzy-btn-rename-file').click(function(e) {
-                e.stopPropagation();
-                // e.stopImmediatePropagation();
-                renameFile( e );
-            });
-        });
-    }
-} // showFiles
-
-
-
-
 function saveSitemapData( leaveEditor )
 {
 	var sitemap = simplemde.value();
@@ -400,10 +278,6 @@ function saveData( obj, leaveEditor )
         return saveSitemapData( leaveEditor );
     }
 
-	// if (leaveEditor) {
-	// 	hideElements(false);
-	// 	$editBtn.show();
-	// }
 	var mdStr = simplemde.value();
     mdStr = encodeURI(mdStr);   // -> php urldecode() to decode
 	$.ajax({

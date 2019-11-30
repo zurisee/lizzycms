@@ -2,7 +2,7 @@
 
 // creates image files used by srcset
 
-define('IMAGE_TYPES' , '(jpg|jpeg|png|gif|tif|tiff)');
+define('IMAGE_TYPES' , 'jpg|jpeg|png|gif');
 
 class ImageResizer
 {
@@ -23,6 +23,9 @@ class ImageResizer
     {
         // find all img-tags in html:
         $p = strpos($html, '<img');
+        $appRoot = $GLOBALS['globalParams']['appRoot'];
+        $l = strlen($appRoot);
+        $imgTypes = '|'.IMAGE_TYPES.'|';
         while ($p !== false) {
 
             // find src-attribute within img-tag:
@@ -30,13 +33,24 @@ class ImageResizer
             $s = trim(substr($html, $p1+4));
             $quote = $s[0];
             if (($p1 !== false) && preg_match("/$quote([^$quote]*)$quote/", $s, $m)) {
-                $src = resolvePath($m[1]);
+                $src = $m[1];
+                $ext = fileExt($src);
+                if (stripos($imgTypes, "|$ext|") === false) {   // ignore img of other type, e.g. svg
+                    $p = strpos($html, '<img', $p+1);
+                    continue;
+                }
+                if (strpos("$src", $appRoot) === 0) {
+                    $src = substr($src, $l);
+                } elseif ($src[0] === '~') {
+                    $src = resolvePath($src);
+                }
 
                 if (!file_exists($src)) {
                     list($orig, $width, $height, $crop) = $this->deriveImageSize($src);
                     $this->resizeImage($orig, $src, $width, $height, $crop);
                 }
             }
+            $origSrc = $src;
 
             // find srcset-attribute within img-tag:
             $p1 = strpos($html, 'srcset=', $p);
@@ -45,11 +59,15 @@ class ImageResizer
             if (($p1 !== false) && preg_match("/$quote([^$quote]*)$quote/", $s, $m)) {
                 $srcset = explode(',', $m[1]);
                 foreach ($srcset as $src) {
-                    $src = trim(preg_replace('/(\.'.IMAGE_TYPES.').*$/i', "$1", $src));
-                    $src = resolvePath($src);
+                    $src = trim(preg_replace('/(\.('.IMAGE_TYPES.')).*$/i', "$1", $src));
+                    if (strpos("$src", $appRoot) === 0) {
+                        $src = substr($src, $l);
+                    } elseif ($src[0] === '~') {
+                        $src = resolvePath($src);
+                    }
                     if (!file_exists($src)) {
                         list($orig, $width, $height, $crop) = $this->deriveImageSize($src);
-                        $this->resizeImage($orig, $src, $width, $height, $crop);
+                        $this->resizeImage($origSrc, $src, $width, $height, $crop);
                     }
                 }
             }
@@ -132,6 +150,7 @@ class ImageResizer
     //----------------------------------------------------------------
     public function resizeImage($src, $dst, $width = false, $height = false, $crop = false)
     {
+        // remove appRoot if included in the path:
         if(!$src || !file_exists($src)) {   // nothing to do:
             return false;
         }

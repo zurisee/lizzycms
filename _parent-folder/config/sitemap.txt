@@ -2,7 +2,11 @@
 
 Home: { folder: '~/', showThis: 'home/'}
 
+Test { hide: non-privileged }
+	Sub Page
+
 Contact
+
 
 Sitemap { hide:true }
 

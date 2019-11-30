@@ -48,6 +48,8 @@ class DataStorage2
         $this->parseArguments($args);
         $this->initLizzyDB();
         $this->initDbTable();
+        $this->appPath = getcwd();
+
     } // __construct
 
 
@@ -584,7 +586,7 @@ EOT;
         $this->lzyDb = new SQLite3(LIZZY_DB, SQLITE3_OPEN_READWRITE);
         $this->lzyDb->busyTimeout(5000);
         $this->lzyDb->exec('PRAGMA journal_mode = wal;'); // https://www.php.net/manual/de/sqlite3.exec.php
-        mylog("LzyDB opened for readwrite");
+//        mylog("LzyDB opened for readwrite");
     } // openDbReadWrite
 
 
@@ -677,7 +679,7 @@ EOT;
                 $this->getData();
             }
         }
-        mylog("LzyDB: table '$tableName' opened");
+//        mylog("LzyDB: table '$tableName' opened");
 
         return;
     } // initDbTable
@@ -729,13 +731,13 @@ EOT;
             }
 
             $data = $this->getData( true );
-            if ($this->format == 'yaml') {
+            if ($this->format === 'yaml') {
                 $this->writeToYamlFile($filename, $data);
 
-            } elseif ($this->format == 'json') {
+            } elseif ($this->format === 'json') {
                 file_put_contents($filename, json_encode($data));
 
-            } elseif ($this->format == 'csv') {
+            } elseif ($this->format === 'csv') {
                 $this->writeToCsvFile($filename, $data);
             }
         }
@@ -940,7 +942,7 @@ EOT;
                 $data = [$this->jsonEncode($data), $structure];
             }
 
-        } elseif (($format == 'csv') || ($this->format == 'txt')) {
+        } elseif (($format === 'csv') || ($this->format === 'txt')) {
             $data = $this->parseCsv($rawData);
             if ($outputAsJson) {
                 $this->data = $data;
@@ -1026,7 +1028,7 @@ EOT;
             $sessionId = session_id();
             session_abort();
         }
-        return ($sid == $sessionId);
+        return ($sid === $sessionId);
     } // isMySessionID
 
 
@@ -1044,6 +1046,8 @@ EOT;
     //---------------------------------------------------------------------------
     public function __destruct()
     {
+        chdir($this->appPath); // workaround for include bug
+
         $this->exportToFile(); // saves data if modified
         if ($this->lzyDb) {
             $this->lzyDb->close();

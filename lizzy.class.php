@@ -17,7 +17,11 @@ define('CACHE_PATH',            '.#cache/');
 define('LOGS_PATH',             '.#logs/');
 define('MACROS_PATH',           SYSTEM_PATH.'macros/');
 define('EXTENSIONS_PATH',       SYSTEM_PATH.'extensions/');
-define('USER_INIT_CODE_FILE',   USER_CODE_PATH.'user-init-code.php');
+define('USER_INIT_CODE_FILE',   USER_CODE_PATH.'init-code.php');
+define('USER_VAR_DEF_FILE',     USER_CODE_PATH.'var-definitions.php');
+define('ICS_PATH',              'ics/'); // where .ics files are located
+
+define('USER_DAILY_CODE_FILE',   USER_CODE_PATH.'_daily-task.php');
 define('CACHE_DEPENDENCY_FILE', '.#page-cache.dependency.txt');
 define('CACHE_FILENAME',        '.#page-cache.dat');
 
@@ -55,13 +59,14 @@ require_once SYSTEM_PATH.'vendor/autoload.php';
 require_once SYSTEM_PATH.'page.class.php';
 require_once SYSTEM_PATH.'popup.class.php';
 require_once SYSTEM_PATH.'transvar.class.php';
-require_once SYSTEM_PATH.'mymarkdown.class.php';
+require_once SYSTEM_PATH.'lizzy-markdown.class.php';
 require_once SYSTEM_PATH.'scss.class.php';
 require_once SYSTEM_PATH.'defaults.class.php';
 require_once SYSTEM_PATH.'sitestructure.class.php';
 require_once SYSTEM_PATH.'authentication.class.php';
 require_once SYSTEM_PATH.'image-resizer.class.php';
 require_once SYSTEM_PATH.'datastorage2.class.php';
+require_once SYSTEM_PATH.'datastorage.class.php';
 require_once SYSTEM_PATH.'sandbox.class.php';
 require_once SYSTEM_PATH.'uadetector.class.php';
 require_once SYSTEM_PATH.'user-account-form.class.php';
@@ -70,8 +75,11 @@ require_once SYSTEM_PATH.'ticketing.class.php';
 
 $globalParams = array(
 	'pathToRoot' => null,			// ../../
-	'pagePath' => null,				// pages/xy/
+	'pageHttpPath' => null,				// pages/xy/
+	'pagePath' => null,				// pages/xy/    -> may differ from pageHttpPath in case 'showThis' is used
     'path_logPath' => null,
+    'activityLoggingEnabled' => false,
+    'errorLoggingEnabled' => false,
 );
 
 
@@ -83,6 +91,7 @@ class Lizzy
 	private $systemPath = SYSTEM_PATH;
 	private $autoAttrDef = [];
 	public  $pathToRoot;
+	public  $pageHttpPath;
 	public  $pagePath;
 	private $reqPagePath;
 	public  $siteStructure;
@@ -94,51 +103,59 @@ class Lizzy
 
 
 	//....................................................
-    public function __construct()
+    public function __construct( $daemonRun = false)
     {
-		global $globalParams;
+        if ($daemonRun || (isset($_GET['service']))) {
+            return;
+        }
 
         $this->checkInstallation0();
         $this->dailyHousekeeping();
 		$this->init();
 		$this->setupErrorHandling();
 
-//        $globalParams['debug_autoForceBrowserCache'] = $this->config->debug_autoForceBrowserCache;
-
         if ($this->config->site_sitemapFile || $this->config->feature_sitemapFromFolders) {
-			$this->siteStructure = new SiteStructure($this, $this->reqPagePath);
-            $this->currPage = $this->reqPagePath = $this->siteStructure->currPage;
+            $this->initializeSiteInfrastructure();
 
-			if (isset($this->siteStructure->currPageRec['showthis'])) {
-				$this->pagePath = $this->siteStructure->currPageRec['showthis'];
-			} else {
-				$this->pagePath = $this->siteStructure->currPageRec['folder'];
-			}
-			$globalParams['pagePath'] = $this->pagePath;                    // excludes pages/
-			$this->pathToPage = $this->config->path_pagesPath.$this->pagePath;   //  includes pages/
-			$globalParams['pathToPage'] = $this->pathToPage;
-            $_SESSION['lizzy']['pagePath'] = $this->pagePath;               // for _ajax_server.php and _upload_server.php
-            $_SESSION['lizzy']['pathToPage'] = $this->config->path_pagesPath.$this->pagePath;
-
-
-            $this->pageRelativePath = $this->pathToRoot.$this->pagePath;
-
-            $this->trans->loadStandardVariables($this->siteStructure);
-            $this->trans->addVariable('next_page', "<a href='~/{$this->siteStructure->nextPage}'>{{ nextPageLabel }}</a>");
-			$this->trans->addVariable('prev_page', "<a href='~/{$this->siteStructure->prevPage}'>{{ prevPageLabel }}</a>");
-
-		} else {
-			$this->siteStructure = new SiteStructure($this, ''); //->list = false;
-			$this->currPage = '';
-            $globalParams['pagePath'] = '';
-            $this->pathToPage = $this->config->path_pagesPath;
-            $globalParams['pathToPage'] = $this->pathToPage;
-            $this->pageRelativePath = '';
-            $this->pagePath = '';
+        } else {
+            $this->initializeAsOnePager();
         }
+
+        $this->handleEditSaveRequests();
+        $this->restoreEdition();  // if user chose to activate a previous edition of a page
+
         $this->trans->addVariable('debug_class', '');   // just for compatibility
         $this->dailyHousekeeping(2);
     } // __construct
+
+
+
+
+    //....................................................
+    public function serviceRun($codeFile, $useSiteInfrastructure = false)
+    {
+        if (!$this->config->custom_permitServiceCode) {
+            $msg ="Warning: attempt to run service-routine '$codeFile' failed -> not enabled";
+            setNotificationMsg($msg );
+            return $msg;
+        }
+
+        if ($useSiteInfrastructure && ($this->config->site_sitemapFile || $this->config->feature_sitemapFromFolders)) {
+            $this->initializeSiteInfrastructure();
+
+        } else {
+            $this->initializeAsOnePager();
+        }
+
+        $codeFile = USER_CODE_PATH.'@'.base_name($codeFile, false).'.php';
+        if (file_exists($codeFile)) {
+            $msg = require($codeFile);
+        } else {
+            $msg = "Warning: attempt to run service-routine '$codeFile' failed -> file not found";
+            setNotificationMsg($msg );
+        }
+        return $msg;
+    } // serviceRun
 
 
 
@@ -167,8 +184,8 @@ class Lizzy
         $this->config->appBaseName = base_name(rtrim(trunkPath(__FILE__, 1), '/'));
 
         $GLOBALS['globalParams']['isAdmin'] = false;
-        $GLOBALS['globalParams']['activityLoggin'] = $this->config->admin_activityLogging;
-        $GLOBALS['globalParams']['errorLogging'] = $this->config->debug_errorLogging;
+        $GLOBALS['globalParams']['activityLoggingEnabled'] = $this->config->admin_activityLogging;
+        $GLOBALS['globalParams']['errorLoggingEnabled'] = $this->config->debug_errorLogging;
 
         $this->trans = new Transvar($this);
         $this->page = new Page($this);
@@ -194,20 +211,6 @@ class Lizzy
         }
 
         $this->handleUrlArgs();
-
-        $this->saveEdition();  // if user chose to activate a previous edition of a page
-
-        $cliarg = getCliArg('lzy-compile');
-        if ($cliarg) {
-            $this->savePageFile();
-            $this->renderMD();  // exits
-
-        }
-
-        $cliarg = getCliArg('lzy-save');
-        if ($cliarg) {
-            $this->saveSitemapFile($this->config->site_sitemapFile); // exits
-        }
 
         $this->scss = new SCssCompiler($this);
         $this->scss->compile( $this->config->debug_forceBrowserCacheUpdate );
@@ -240,6 +243,7 @@ class Lizzy
 
 		$accessGranted = $this->checkAdmissionToCurrentPage();   // override page with login-form if required
 
+        $this->injectAdminCss();
         $this->setTransvars1();
 
         if ($accessGranted) {
@@ -247,7 +251,7 @@ class Lizzy
             // enable caching of compiled MD pages:
             if ($this->config->cachingActive && $this->page->readFromCache()) {
                 $html = $this->page->render(true);
-                $this->resolveAllPaths($html);
+                $html = $this->resolveAllPaths($html);
                 if ($this->timer) {
                     $timerMsg = 'Page rendering time: '.readTimer();
                     $html = $this->page->lateApplyMessag($html, $timerMsg);
@@ -291,7 +295,7 @@ class Lizzy
 
         $this->applyForcedBrowserCacheUpdate($html);
 
-        $this->resolveAllPaths($html);
+        $html = $this->resolveAllPaths($html);
 
         if ($this->timer) {
             $timerMsg = 'Page rendering time: '.readTimer();
@@ -335,9 +339,41 @@ class Lizzy
 
 
 
-    private function resolveAllPaths( &$html )
+    private function resolveAllPaths( $html )
     {
-        resolveAllPaths($html, $this->config->admin_useRequestRewrite);	// replace ~/, ~sys/, ~ext/, ~page/ with actual values
+        global $globalParams;
+        $pathToRoot = $globalParams['appRoot'];
+
+        if (!$this->config->admin_useRequestRewrite) {
+            resolveHrefs($html);
+        }
+
+        // Handle resource accesses first: src='~page/...' -> local to page but need full path:
+        $p = $globalParams["appRoot"].$globalParams["pathToPage"];
+        $html = preg_replace(['|(src=[\'"])(?<!\\\\)~page/|', '|(srcset=[\'"])(?<!\\\\)~page/|'], "$1$p", $html);
+
+        // Handle all other special links:
+        $from = [
+            '|(?<!\\\\)~/|',
+            '|(?<!\\\\)~data/|',
+            '|(?<!\\\\)~sys/|',
+            '|(?<!\\\\)~ext/|',
+            '|(?<!\\\\)~page/|',
+        ];
+        $to = [
+            $pathToRoot,
+            $pathToRoot.$globalParams['dataPath'],
+            $pathToRoot.SYSTEM_PATH,
+            $pathToRoot.EXTENSIONS_PATH,
+            '',   // for page accesses
+        ];
+
+        $html = preg_replace($from, $to, $html);
+
+        // remove shields: e.g. \~page
+        $html = preg_replace('|(?<!\\\\)\\\\~|', "~", $html);
+
+        return $html;
     } // resolveAllPaths
 
 
@@ -450,7 +486,7 @@ class Lizzy
             return;
         }
 
-        if ($this->auth->getLoggedInUser()) {   // signal in body tag class whether user is logged in
+        if ($this->auth->getLoggedInUser(true)) {   // signal in body tag class whether user is logged in
             $this->page->addBodyClasses('lzy-user-logged-in');  // if user is logged in, there's no need for login form
             return;
         }
@@ -497,12 +533,13 @@ class Lizzy
     private function analyzeHttpRequest()
     {
     // appRoot:         path from docRoot to base folder of app, mostly = ''; appRoot == '~/'
+    // pageHttpPath:        forward-path from appRoot to requested folder, e.g. 'contact/ (-> excludes pages/)
     // pagePath:        forward-path from appRoot to requested folder, e.g. 'contact/ (-> excludes pages/)
     // pathToPage:      filesystem forward-path from appRoot to requested folder, e.g. 'pages/contact/ (-> includes pages/)
     // pathToRoot:      upward-path from requested folder to appRoot, e.g. ../
     // redirectedPath:  if requests get redirected by .htaccess, this is the skipped folder(s), e.g. 'now_active/'
 
-    // $globalParams:   -> pagePath, pathToRoot, redirectedPath
+    // $globalParams:   -> pageHttpPath, pagePath, pathToRoot, redirectedPath
     // $_SESSION:       -> userAgent, pageName, currPagePath, lang
 
         global $globalParams, $pathToRoot;
@@ -518,9 +555,9 @@ class Lizzy
         $redirectedPath = ($h = substr($scriptPath, strlen($appRoot))) ? $h : '';
         $requestedPath  = dir_name($requestUri);
         $ru = preg_replace('/\?.*/', '', $requestUri); // remove opt. '?arg'
-        $requestedPagePath = dir_name(substr($ru, strlen($appRoot)));
-        if ($requestedPagePath == '.') {
-            $requestedPagePath = '';
+        $requestedpageHttpPath = dir_name(substr($ru, strlen($appRoot)));
+        if ($requestedpageHttpPath == '.') {
+            $requestedpageHttpPath = '';
         }
 
         // if operating without request-rewrite, we rely on page request being transmitted in url-arg 'lzy':
@@ -528,38 +565,48 @@ class Lizzy
             $requestedPath = $_GET['lzy'];
         }
         if (strpos($requestedPath, $appRoot) === 0) {
-            $pagePath = substr($requestedPath, strlen($appRoot));
+            $pageHttpPath = substr($requestedPath, strlen($appRoot));
         } else {
-            $pagePath = $requestedPath;
+            $pageHttpPath = $requestedPath;
         }
+        $requestScheme = ((isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'])) ? $_SERVER['REQUEST_SCHEME'].'://' : 'HTTP://';
+        $requestedUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestUri;
+        $globalParams['requestedUrl'] = $requestedUrl;
+        $globalParams['pagePath'] = null;
+        $globalParams['pathToPage'] = null; // needs to be set after determining actually requested page
 
-        $pagePath0      = $pagePath;
-        $pagePath       = strtolower($pagePath);
+        $pageHttpPath = $this->auth->handleAccessCodeInUrl( $pageHttpPath );
+//        $pageHttpPath0      = $pageHttpPath;
+        $pageHttpPath       = strtolower($pageHttpPath);
         if ($this->config->feature_filterRequestString) {
             // Example: abc[2]/
-            $pagePath = preg_replace('/[^a-z_-]+ \w* [^a-z_-]+/ix', '', rtrim($pagePath, '/')).'/';
+            $pageHttpPath = preg_replace('/[^a-z_-]+ \w* [^a-z_-]+/ix', '', rtrim($pageHttpPath, '/')).'/';
         }
-        $pathToRoot = str_repeat('../', sizeof(explode('/', $requestedPagePath)) - 1);
-        $globalParams['pagePath'] = $pagePath;
+        $pathToRoot = str_repeat('../', sizeof(explode('/', $requestedpageHttpPath)) - 1);
+//        $globalParams['pagePath'] = null;
+        $globalParams['pageHttpPath'] = $pageHttpPath;
         $globalParams['pagesFolder'] = $this->config->path_pagesPath;
-        $globalParams['pathToPage'] = $this->config->path_pagesPath.$pagePath;
+//        $globalParams['pathToPage'] = $this->config->path_pagesPath.$pagePath;//???
+//        $globalParams['pathToPage'] = null; // needs to be set after determining actually requested page
         $globalParams['dataPath'] = $this->config->site_dataPath;
 
         $globalParams['pathToRoot'] = $pathToRoot;  // path from requested folder to root (= ~/), e.g. ../
+        $this->pageHttpPath = $pageHttpPath;
         $this->pathToRoot = $pathToRoot;
         $this->config->pathToRoot = $pathToRoot;
-        $requestScheme = ((isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'])) ? $_SERVER['REQUEST_SCHEME'].'://' : 'HTTP://';
+//        $requestScheme = ((isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'])) ? $_SERVER['REQUEST_SCHEME'].'://' : 'HTTP://';
         $globalParams['host'] = $requestScheme.$_SERVER['HTTP_HOST'].'/';
         $this->pageUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestedPath;
         $globalParams['pageUrl'] = $this->pageUrl;
-        $requestedUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestUri;
-        $globalParams['requestedUrl'] = $requestedUrl;
+//        $requestedUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestUri;
+//        $globalParams['requestedUrl'] = $requestedUrl;
         $globalParams['absAppRoot'] = $absAppRoot;  // path from FS root to base folder of app, e.g. /Volumes/...
+        $globalParams['absAppRootUrl'] = $globalParams["host"] . substr($appRoot, 1);  // path from FS root to base folder of app, e.g. /Volumes/...
 
-        $pagePath = $this->auth->handleAccessCodeInUrl( $pagePath0 );
+//        $pageHttpPath = $this->auth->handleAccessCodeInUrl( $pageHttpPath0 );
 
-        if (!$pagePath) {
-            $pagePath = './';
+        if (!$pageHttpPath) {
+            $pageHttpPath = './';
         }
 
 
@@ -599,13 +646,16 @@ class Lizzy
         $globalParams['legacyBrowser'] = $this->config->isLegacyBrowser;
 
 
-        $this->reqPagePath = $pagePath;
+        $this->reqPagePath = $pageHttpPath; //???ok
         $globalParams['appRoot'] = $appRoot;  // path from docRoot to base folder of app, e.g. 'on/'
         $globalParams['redirectedPath'] = $redirectedPath;  // the part that is optionally skippped by htaccess
         $globalParams['localCall'] = $this->localCall;
 
-        $_SESSION['lizzy']['pagePath'] = $pagePath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
-        $_SESSION['lizzy']['pathToPage'] = $this->config->path_pagesPath.$pagePath;
+//        $_SESSION['lizzy']['pagePath'] = $pagePath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
+        $_SESSION['lizzy']['pagePath'] = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
+        $_SESSION['lizzy']['pageHttpPath'] = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
+//        $_SESSION['lizzy']['pathToPage'] = $this->config->path_pagesPath.$pagePath;
+        $_SESSION['lizzy']['pathToPage'] = null; //???
         $_SESSION['lizzy']['pagesFolder'] = $this->config->path_pagesPath;
         $baseUrl = $requestScheme.$_SERVER['SERVER_NAME'];
         $_SESSION['lizzy']['appRootUrl'] = $baseUrl.$appRoot; // https://domain.net/...
@@ -664,7 +714,7 @@ class Lizzy
 
 
 	//....................................................
-	private function saveEdition()
+	private function restoreEdition()
 	{
         $admission = $this->auth->checkGroupMembership('editors');
         if (!$admission) {
@@ -675,8 +725,12 @@ class Lizzy
         if ($edSave !== null) {
             require_once SYSTEM_PATH . 'page-source.class.php';
             PageSource::saveEdition();  // if user chose to activate a previous edition of a page
+
+            // need to compile the restored page:
+            $this->scss = new SCssCompiler($this);
+            $this->scss->compile( $this->config->debug_forceBrowserCacheUpdate );
         }
-    } // saveEdition
+    } // restoreEdition
 
 
 
@@ -720,6 +774,21 @@ class Lizzy
 
 
 
+
+    //....................................................
+    private function injectAdminCss()
+    {
+        if ($this->auth->checkGroupMembership('admins') ||
+            $this->auth->checkGroupMembership('editors') ||
+            $this->auth->checkGroupMembership('fileadmins')) {
+                $this->page->addCssFiles('~sys/css/_admin.css');
+        }
+
+    } // injectAdminCss
+
+
+
+
     //....................................................
 	private function setTransvars1()
 	{
@@ -732,15 +801,27 @@ class Lizzy
             $userName = '';
             $login = <<<EOT
     <span class="lzy-tooltip-arrow" data-lzy-tooltip-from='login-warning' style="border-bottom:none;">
-        <img src="~sys/rsc/error.svg" alt="" />
+        <span class='lzy-icon-error'></span>
     </span>
     <div id="login-warning" style="display:none;">Warning:<br>no users defined - login mechanism is disabled.<br>&rarr; see config/users.yaml</div>
 EOT;
             $this->page->addModules('TOOLTIPS');
         }
-        $this->trans->addVariable('Log-in', $login);
+        $this->trans->addVariable('lzy-login-button', $login);
         $this->trans->addVariable('user', $userName, false);
 
+        if ($this->auth->isAdmin()) {
+            $url = $GLOBALS["globalParams"]["pageUrl"];
+            $this->trans->addVariable('lzy-config--open-button', "<a class='lzy-config-button' href='$url?config'>{{ lzy-config-button }}</a>", false);
+        }
+
+        if ($this->config->admin_enableFileManager && $this->auth->checkGroupMembership('fileadmins')) {
+            $this->trans->addVariable('lzy-fileadmin-button', "<button class='lzy-fileadmin-button' title='{{ lzy-fileadmin-button-tooltip }}'><span class='lzy-icon-docs'></span>{{^ lzy-fileadmin-button-text }}</button>", false);
+            $uploader = $this->injectUploader($this->pagePath);
+            $this->page->addBodyEndInjections($uploader);
+        } else {
+            $this->trans->addVariable('lzy-fileadmin-button', "", false);
+        }
 
         $this->trans->addVariable('pageUrl', $this->pageUrl);
         $this->trans->addVariable('appRoot', $this->pathToRoot);			// e.g. '../'
@@ -748,12 +829,13 @@ EOT;
         $this->trans->addVariable('lang', $this->config->lang);
 
 
-		if  ($this->localCall || getUrlArgStatic('debug')) {
+		if  (getUrlArgStatic('debug')) {
             if  (!$this->localCall) {   // log only on non-local host
                 writeLog('starting debug mode');
             }
         	$this->page->addBodyClasses('debug');
 		}
+
 
 		if ($this->config->isLegacyBrowser) {
             $this->trans->addVariable('debug_class', ' legacy');
@@ -761,19 +843,19 @@ EOT;
         }
 
 		if ($this->config->site_multiLanguageSupport) {
-            $supportedLanguages = $this->config->site_supportedLanguages;
+            $supportedLanguages = explode(',', str_replace(' ', '', $this->config->site_supportedLanguages ));
             $out = '';
             foreach ($supportedLanguages as $lang) {
-                if ($lang == $this->config->lang) {
-                    $out .= "<span class='active-lang $lang'>{{ select $lang }}</span>";
+                if ($lang === $this->config->lang) {
+                    $out .= "<span class='lzy-lang-elem lzy-active-lang $lang'>{{ lzy-lang-select $lang }}</span>";
                 } else {
-                    $out .= "<span class='$lang'><a href='?lang=$lang'>{{ select $lang }}</a></span>";
+                    $out .= "<span class='lzy-lang-elem $lang'><a href='?lang=$lang'>{{ lzy-lang-select $lang }}</a></span>";
                 }
             }
-            $out = "<div class='lang-selection'>$out</div>";
-            $this->trans->addVariable('lang-selection', $out);
+            $out = "<div class='lzy-lang-selection'>$out</div>";
+            $this->trans->addVariable('lzy-lang-selection', $out);
         } else {
-            $this->trans->addVariable('lang-selection', '');
+            $this->trans->addVariable('lzy-lang-selection', '');
         }
         $this->trans->addVariable('lzy-version', getGitTag());
 
@@ -795,7 +877,11 @@ EOT;
 		} else {
 			$title = $this->trans->getVariable('page_title');
 			$pageName = $this->siteStructure->currPageRec['name'];
-			$title = preg_replace('/\$page_name/', $pageName, $title);
+			if ($this->siteStructure->currPageRec["folder"] === '') {   // Homepage: just show site title
+                $title = $this->trans->getVariable('site_title');
+            } else {
+                $title = preg_replace('/\$page_name/', $pageName, $title);
+            }
 			$this->trans->addVariable('page_title', $title, false);
 			$this->trans->addVariable('page_name', $pageName, false);
 		}
@@ -807,10 +893,16 @@ EOT;
             $this->trans->addVariable('page_path_class', 'path_'.$pagePathClass);   // just for compatibility
             $this->page->addBodyClasses("page_$pageName path_$pagePathClass");
             if ($this->config->isPrivileged) {
-                $this->page->addBodyClasses("privileged");
+                $this->page->addBodyClasses("lzy-privileged");
             }
             if ($this->auth->isAdmin()) {
-                $this->page->addBodyClasses("admin");
+                $this->page->addBodyClasses("lzy-admin");
+            }
+            if ($this->auth->checkGroupMembership('editors')) {
+                $this->page->addBodyClasses("lzy-editor");
+            }
+            if ($this->auth->checkGroupMembership('fileadmins')) {
+                $this->page->addBodyClasses("lzy-fileadmin");
             }
 		}
         setStaticVariable('pageName', $pageName);
@@ -819,8 +911,28 @@ EOT;
 
 
 
+    private function injectUploader($filePath)
+    {
+        require_once SYSTEM_PATH.'file_upload.class.php';
 
-	//....................................................
+        $rec = [
+            'uploadPath' => $this->page->config->path_pagesPath.$filePath,
+            'pagePath' => $GLOBALS['globalParams']['pagePath'],
+            'pathToPage' => $GLOBALS['globalParams']['pathToPage'],
+            'appRootUrl' => $GLOBALS['globalParams']['absAppRootUrl'],
+            'user'      => $_SESSION["lizzy"]["user"],
+        ];
+        $tick = new Ticketing();
+        $ticket = $tick->createTicket($rec, 25);
+
+        $uploader = new FileUpload($this, $ticket);
+        $uploaderStr = $uploader->render($filePath);
+        return $uploaderStr;
+    }
+
+
+
+    //....................................................
 	private function warnOnErrors()
     {
         global $globalParams;
@@ -848,7 +960,7 @@ EOT;
         }
 
 		if (file_exists($this->config->userInitCodeFile)) {
-			require_once($this->config->userInitCodeFile);
+            require_once $this->config->userInitCodeFile;
 		}
 	} // runUserInitCode
 	
@@ -938,7 +1050,7 @@ EOT;
             $handleEditions = true;
         }
 
-        $md = new MyMarkdown($this->trans);
+        $md = new LizzyMarkdown($this->trans);
 		$md->html5 = true;
 		$langPatt = '.'.$this->config->lang.'.';
 
@@ -1072,7 +1184,7 @@ EOT;
                 $mdFile = $folder . basename(substr($folder, 0, -1)) . '.md';
                 mkdir($folder, MKDIR_MASK, true);
                 $name = $this->siteStructure->currPageRec['name'];
-                file_put_contents($mdFile, "# $name\n");
+                file_put_contents($mdFile, "---\n// Frontmatter:\ncss: |\n---\n\n# $name\n");
             }
         }
     } // handleMissingFolder
@@ -1114,6 +1226,9 @@ EOT;
 			} catch(Exception $e) {
                 fatalError("Error in Yaml-Code: <pre>\n$yaml\n</pre>\n".$e->getMessage(), 'File: '.__FILE__.' Line: '.__LINE__);
 			}
+            if (isset($hdr['screenSizeBreakpoint'])) {  // special case: screenSizeBreakpoint -> propagate immediately
+                $this->config->feature_screenSizeBreakpoint = $hdr['screenSizeBreakpoint'];
+            }
             if (isset($hdr['dataPath'])) {  // special case: dataPath -> propagate immediately
                 $_SESSION['lizzy']['dataPath'] = $hdr['dataPath'];
                 $GLOBALS['globalParams']['dataPath'] = $hdr['dataPath'];
@@ -1221,6 +1336,11 @@ EOT;
     //....................................................
 	private function handleUrlArgs()
 	{
+        if ($arg = getNotificationMsg()) {
+            $arg = $this->trans->translateVariable($arg);
+            $this->page->addMessage( $arg );
+        }
+
         if (getUrlArg('reset')) {			            // reset (cache)
             $this->disableCaching();
             $this->clearCaches();
@@ -1230,10 +1350,7 @@ EOT;
 		if (getUrlArg('logout')) {	// logout
             $this->userRec = false;
             $this->auth->logout();
-            reloadAgent(false, 'logout-successful'); // reload to get rid of url-arg ?logout
-
-		} elseif (($arg = getUrlArg('reload-arg')) && ($arg === 'logout-successful')) {
-		    $this->page->addMessage('{{ lzy-logout-successful }}');
+            reloadAgent(false, 'lzy-logout-successful'); // reload to get rid of url-arg ?logout
         }
 
 
@@ -1352,7 +1469,7 @@ EOT;
         $this->page->addCss( $css );
         $this->page->addJq( $jq );
         $this->page->addModules( '~sys/third-party/bcrypt/bcrypt.min.js' );
-        $this->page->addOverlay( $html );
+        $this->page->addOverlay( ['text' => $html, 'closable' => 'reload'] );
         $this->page->setOverlayMdCompile( false );
 
     } // renderPasswordConverter
@@ -1402,14 +1519,27 @@ EOT;
 
         //=== beyond this point only localhost or logged in as editor/admin group
         if (!$this->auth->checkGroupMembership('editors')) {
-            $this->trans->addVariable('toggle-edit-mode', "");
-            if (getUrlArg('help')) {                              // help
-                $this->page->addMessage("You need to be logged in as admin to see help");
+            $this->trans->addVariable('lzy-toggle-edit-mode', "");
+            $cmds = ['help','unused','reset-unused','remove-unused','log','info','list','mobile','touch','notouch','auto','config'];
+            foreach ($cmds as $cmd) {
+                if (isset($_GET[$cmd])) {
+                    $this->page->addMessage("Insufficient privilege for option '?$cmd'");
+                    break;
+                }
             }
             return;
         }
 
 
+
+        if (getUrlArg('access-link')) {                                    // reorg-css
+            $user = getUrlArg('access-link', true);
+            $this->createAccessLink($user);
+        }
+
+        if ($filename = getUrlArg('reorg-css', true)) {                                    // reorg-css
+            $this->reorganizeCss($filename);
+        }
 
         if (getUrlArg('unused')) {							        // unused
             $str = $this->trans->renderUnusedVariables();
@@ -1443,7 +1573,7 @@ EOT;
                 $str = "Currently no error log available.";
             }
             $str = "<h1>Error Logs:</h1>\n<pre>$str</pre>";
-            $this->page->addOverlay($str);
+            $this->page->addOverlay(['text' => $str, 'closable' => 'reload']);
         }
 
 
@@ -1451,76 +1581,28 @@ EOT;
         if (getUrlArg('info')) {    // info
             $str = $this->page->renderDebugInfo();
             $str = "<h1>Lizzy System Info</h1>\n".$str;
-            $this->page->addOverlay($str);
+            $this->page->addOverlay(['text' => $str, 'closable' => 'reload']);
 		}
 
 
 
         if (getUrlArg('list')) {    // list
             $str = $this->trans->renderAllTranslationObjects();
-            $this->page->addOverlay($str, false, false);
-            $this->page->addCssFiles('~sys/css/admin.css');
+            $this->page->addOverlay(['text' => $str, 'closable' => 'reload']);
 		}
 
 
 
-        if (getUrlArg('config')) {                              // config
-            $str = $this->renderConfigHelp();
-            $this->page->addOverlay($str);
-        }
-
-
-
         if (getUrlArg('help')) {                              // help
-            $overlay = <<<EOT
-<h1>Lizzy Help</h1>
-<pre>
-Available URL-commands:
-
-<a href='?help'>?help</a>		    this message
-
-<a href='?auto'>?auto</a>		    automatic reload of page when files change 
-                    (&rarr; on Mac localhost only, requires external tool <a href="https://livereload.com" target="_blank">livereload.com</a>)  *)
-<a href='?config'>?config</a>		    list configuration-items in the config-file
-<a href='?convert'>?convert</a>	    convert password to hash
-<a href='?debug'>?debug</a>		    adds 'debug' class to page on non-local host *)
-<a href='?edit'>?edit</a>		    start editing mode *)
-<a href='?iframe'>?iframe</a>		    show code for embedding as iframe
-<a href='?info'>?info</a>		    list debug-info
-<a href='?lang=xy'>?lang=</a>	            switch to given language (e.g. '?lang=en')  *)
-<a href='?list'>?list</a>		    list <samp>transvars</samp> and <samp>macros()</samp>
-<a href='?log'>?log</a>		    displays log files in overlay
-<a href='?login'>?login</a>		    login
-<a href='?logout'>?logout</a>		    logout
-<a href='?mobile'>?mobile</a>,<a href='?touch'>?touch</a>,<a href='?notouch'>?notouch</a>	emulate modes  *)
-<a href='?nc'>?nc</a>		    supress caching (?nc=false to enable caching again)  *)
-<a href='?purge'>?purge</a>		    empty and delete all recycle bins (i.e. copies of modified pages)
-<a href='?reset'>?reset</a>		    clear cache, session-variables and error-log
-<a href='?timer'>?timer</a>		    switch timer on or off  *)
-
-*) these options are persistent, they keep their value for further page requests. 
-Unset individually as ?xy=false or globally as ?reset
-
-</pre>
-EOT;
-        // TODO: printall -> add above
-        //<a href='?printall'>?printall</a>	    show all pages in on
-        //<a href='?admin'>?admin</a>		    perform admin tasks
-        //<a href='?localcall'>?localcall=false</a>    to test behavior as if on non-local host
-//            <a href='?unused'>?unused</a>		    show unused variables
-//            <a href='?reset-unused'>?reset-unused</a>       restart monitoring of unused variables
-//            <a href='?remove-unused'>?remove-unused</a>	    remove unused variables
-//            <a href='?touch'>?touch</a>		    emulate touch mode  *)
-//<a href='?notouch'>?notouch</a>	    emulate none-touch mode  *)
-		$this->page->addOverlay($overlay);
+            $this->renderUrlArgHelp();
         }
 
 
 
         if (getStaticVariable('editingMode')) {
-            $this->trans->addVariable('toggle-edit-mode', "<a class='toggle-edit-mode' href='?edit=false'>{{ turn edit mode off }}</a>");
+            $this->trans->addVariable('lzy-toggle-edit-mode', "<a class='lzy-toggle-edit-mode' href='?edit=false'>{{ lzy-turn-edit-mode-off }}</a>");
         } else {
-            $this->trans->addVariable('toggle-edit-mode', "<a class='toggle-edit-mode' href='?edit'>{{ turn edit mode on }}</a>");
+            $this->trans->addVariable('lzy-toggle-edit-mode', "<a class='lzy-toggle-edit-mode' href='?edit'>{{ lzy-turn-edit-mode-on }}</a>");
         }
 
 
@@ -1541,7 +1623,51 @@ EOT;
         if ($this->config->isLocalhost && getUrlArgStatic('auto', false)) {   // auto (liveReload)                        // auto reload
             $this->page->addJqFiles("http://localhost:35729/livereload.js?snipver=1");
         }
+
+        if (getUrlArg('config')) {                              // config
+            if (!$this->auth->checkGroupMembership('admins')) {
+                $this->page->addMessage("Insufficient privilege for option '?config'");
+                return;
+            }
+
+            $str = $this->renderConfigOverlay();
+            $this->page->addOverlay(['text' => $str, 'closable' => 'reload']); // close shall reload page to remove url-arg
+        }
+
+
     } // handleUrlArgs2
+
+
+
+
+    //....................................................
+    private function createAccessLink($user)
+    {
+        if (!$user) {
+            $msg = "# Access Link\n\nPlease supply a user-name.\n\nE.g. ?access-code=user1";
+        } else {
+            $userRec = $this->auth->getUserRec($user);
+            if (!$this->auth->getUserRec($user)) {
+                die("Create Access Link: user unknown: '$user");
+            }
+            $tick = new Ticketing();
+            $code = $tick->createTicket($userRec, 100);
+            $msg = "# Access Link\n\n{$GLOBALS["globalParams"]["pageUrl"]}$code";
+        }
+        $this->page->addOverlay(['text' => $msg, 'closable' => 'reload', 'mdCompile' => true]);
+    } // createAccessLink
+
+
+
+
+    //....................................................
+    private function reorganizeCss($filename)
+    {
+        require_once SYSTEM_PATH.'reorg_css.class.php';
+        $reo = new ReorgCss($filename);
+        $reo->execute();
+    }
+
 
 
 
@@ -1551,7 +1677,7 @@ EOT;
         $mdStr = get_post_data('lzy_md', true);
         $mdStr = urldecode($mdStr);
 
-		$md = new MyMarkdown();
+		$md = new LizzyMarkdown();
 		$pg = new Page;
 		$mdStr = $this->extractFrontmatter($mdStr, $pg);
 		$md->parse($mdStr, $pg);
@@ -1635,7 +1761,8 @@ EOT;
 
         } elseif ($this->config->site_multiLanguageSupport) {    // no preference in sitemap, use default if not overriden by url-arg
             $lang = getUrlArgStatic('lang', true);
-            if (!in_array($lang, $this->config->site_supportedLanguages)) {
+            $supportedLanguages = explode(',', str_replace(' ', '', $this->config->site_supportedLanguages ));
+            if (!in_array($lang, $supportedLanguages)) {
                 $lang = $this->config->site_defaultLanguage;
 
             } elseif (!$lang) {   // no url-arg found
@@ -1657,60 +1784,83 @@ EOT;
 
 
 	//....................................................
-	private function renderConfigHelp()
+	private function renderConfigOverlay()
 	{
+        $level1Class = $level2Class = $level3Class = '';
+        $level = max(1, min(3, intval(getUrlArg('config', true))));
+        switch ($level) {
+            case 1: $level1Class = ' class="lzy-config-viewer-hl"'; break;
+            case 2: $level2Class = ' class="lzy-config-viewer-hl"'; break;
+            case 3: $level3Class = ' class="lzy-config-viewer-hl"'; break;
+        }
+        $url = $GLOBALS["globalParams"]["pageUrl"];
+
+        if (isset($_POST) && $_POST) {
+            $this->config->updateConfigValues( $_POST, $this->configFile );
+        }
+
+
         $configItems = $this->config->getConfigInfo();
         ksort($configItems);
         $out = "<h1>Lizzy Config-Items and their Purpose:</h1>\n";
         $out .= "<p>Settings stored in file <code>{$this->configFile}</code>.<br/>\n";
         $out .= "&rarr; Default values in (), values deviating from defaults are marked <span class='lzy-config-viewer-hl'>red</span>)</p>\n";
-        $out .= "<dl class='lzy-config-viewer'>\n";
-        $out2 = '';
-        $ch = '';
-        foreach ($configItems as $name => $rec) {
-            $value = $this->config->$name;
-            if ($name === 'site_sitemapFile') {
-                $value = base_name($value);
+        $out .= "<p class='lzy-config-select'>Select: <a href='$url?config=1'$level1Class>Essential</a> | <a href='$url?config=2'$level2Class>Common</a> | <a href='$url?config=3'$level3Class>All</a></p>\n";
+        $out .= "  <form class='lzy-config-form' action='$url?config=$level' method='post'>\n";
+        $out .= "    <input class='lzy-button' type='submit' value='{{ lzy-config-save }}'>";
+
+        $i = 1;
+        foreach ($configItems as $key => $rec) {
+            if ($rec[2] > $level) {     // skip elements with lower priority than requested
+                continue;
             }
-            if (is_bool($value)) {
-                $value = ($value) ? 'true' : 'false';
-            } elseif (is_array($value)) {
-                $value = var_r($value, false, true);
-            } else {
-                $value = (string)$value;
-            }
-            $val = $rec[0];
-            if (is_bool($val)) {
-                $default = ($val) ? 'true' : 'false';
-                if ($val) {
-                    $setVal = str_pad("#$name: false", 50)."# default=$default";
-                } else {
-                    $setVal = str_pad("#$name: true", 50)."# default=$default";
-                }
-            } else {
-                $default = (string)$val;
-                $setVal = str_pad("#$name: ''", 50)."# default=$default";
-            }
-            $text = (string)$rec[1];
+            $currValue = $this->config->$key;
+            $displayValue = $currValue;
+            $defaultValue = $this->config->getDefaultValue($key);
+            $displayDefault = $defaultValue;
+            $inputValue = $defaultValue;
+
             $diff = '';
-            if ($default != $value) {
+            if ($currValue !== $defaultValue) {
                 $diff = ' class="lzy-config-viewer-hl"';
             }
-            $out .= "<dt><strong>$name</strong>: ($default) <code$diff>$value</code></dt><dd>$text</dd>\n";
+            $checked = '';
 
-            if ($ch != substr($name, 0,2)) {
-                $out2 .= "\n";
-                $ch = substr($name, 0,2);
+            if (is_bool($defaultValue)) {
+                $displayValue = $currValue ? 'true' : 'false';
+                $inputValue = 'true';
+                $displayDefault = $defaultValue ? 'true' : 'false';
+                $inputType = 'checkbox';
+                $checked = ($currValue) ? " checked" : '';
+
+            } elseif (is_int($defaultValue)) {
+                $inputValue = $displayValue;
+                $inputType = 'integer';
+
+            } elseif (is_string($defaultValue)) {
+                $inputValue = $displayValue;
+                $inputType = 'text';
+
+            } elseif (is_array($defaultValue)) {
+                $displayValue = implode(',', $currValue);
+                $inputValue = $displayValue;
+                $displayDefault = implode(',', $defaultValue);
+                $inputType = 'text';
             }
-            $out2 .= "$setVal\n";
-        }
-        $out .= "</dl>\n";
 
-        if ($this->localCall) {
-            $out .= "\n<hr />\n<h2>Template for config.yaml:</h2>\n<pre>$out2</pre>\n";
+            $comment = $rec[1];
+
+            $id = translateToIdentifier($key).$i++;
+
+            $inputField = "<input id='$id' name='$key' type='$inputType' value='$inputValue'$checked />";
+            $out .= "<div class='lzy-config-elem'> $inputField <label for='$id'$diff>$key</label>  &nbsp;&nbsp;&nbsp;($displayDefault)<div class='lzy-config-comment'>$comment</div></div>\n";
         }
+
+        $out .= "    <input class='lzy-button' type='submit' value='{{ lzy-config-save }}'>";
+        $out .= "  </form>\n";
+
         return $out;
-    } // renderConfigHelp
+    } // renderConfigOverlay
 
 
 
@@ -1792,11 +1942,11 @@ EOT;
     //....................................................
     private function dailyHousekeeping($run = 1)
     {
-        if ($run == 1) {
+        if ($run === 1) {
             if (file_exists(HOUSEKEEPING_FILE)) {
                 $fileTime = intval(filemtime(HOUSEKEEPING_FILE) / 86400);
                 $today = intval(time() / 86400);
-                if (($fileTime) == $today) {    // update once per day
+                if (($fileTime) === $today) {    // update once per day
                     $this->housekeeping = false;
                     return;
                 }
@@ -1807,19 +1957,18 @@ EOT;
             touch(HOUSEKEEPING_FILE);
             chmod(HOUSEKEEPING_FILE, 0770);
 
-            writeLog("Daily housekeeping run.", 'log.txt');
-
             $this->checkInstallation();
 
             $this->housekeeping = true;
             $this->clearCaches();
 
         } elseif ($this->housekeeping) {
+            writeLog("Daily housekeeping run.");
             $this->checkInstallation2();
             $this->clearCaches(true);
             if ($this->config->admin_enableDailyUserTask) {
-                if (file_exists($this->config->path_userCodePath.'user-daily-task.php')) {
-                    require( $this->config->path_userCodePath.'user-daily-task.php' );
+                if (file_exists(USER_DAILY_CODE_FILE)) {
+                    require( USER_DAILY_CODE_FILE );
                 }
             }
             touch(HOUSEKEEPING_FILE);
@@ -1832,8 +1981,8 @@ EOT;
     //....................................................
     private function checkInstallation0()
     {
-        if (version_compare(PHP_VERSION, '7.0.0') < 0) {
-            die("Lizzy requires at PHP version 7 or higher to run.");
+        if (version_compare(PHP_VERSION, '7.1.0') < 0) {
+            die("Lizzy requires PHP version 7.1 or higher to run.");
         }
 
         if (!file_exists(DEFAULT_CONFIG_FILE)) {
@@ -1940,7 +2089,7 @@ EOT;
 
 
     //....................................................
-    private function setLocale(): void
+    private function setLocale()
     {
         $locale = $this->config->site_defaultLocale;
         if (preg_match('/^[a-z]{2}_[A-Z]{2}$/', $locale)) {
@@ -1948,8 +2097,10 @@ EOT;
         } else {
             setlocale(LC_ALL, "en_UK.utf-8");
         }
-        if ($this->config->site_timeZone) {
-            $systemTimeZone = $this->config->site_timeZone;
+
+        $timeZone = ($this->config->site_timeZone === 'auto') ? '' : $this->config->site_timeZone;
+        if ($timeZone) {
+            $systemTimeZone = $timeZone;
         } else {
             exec('date +%Z',$systemTimeZone, $res);
             if ($res || !isset($systemTimeZone[0])) {
@@ -1968,13 +2119,13 @@ EOT;
 
 
 
-    private function renderLoginForm($asPopup = true): string
+    private function renderLoginForm($asPopup = true)
     {
         $accForm = new UserAccountForm($this);
         $html = $accForm->renderLoginForm($this->auth->message, false, true);
         $this->page->addModules('PANELS');
         if ($asPopup) {
-            $this->page->addBodyEndInjections("\t<div class='invisible'><div id='lzy-login-form'>$html\t  </div>\n\t</div><!-- /login form wrapper -->\n");
+            $this->page->addBodyEndInjections("\t<div class='invisible'><div id='lzy-login-form'>\n$html\t  </div>\n\t</div><!-- /login form wrapper -->\n");
             return '';
         } else {
             return $html;
@@ -1983,7 +2134,7 @@ EOT;
 
 
 
-    private function handleConfigFeatures(): void
+    private function handleConfigFeatures()
     {
         if ($this->config->feature_touchDeviceSupport) {
             $this->page->addJqFiles("TOUCH_DETECTOR,AUXILIARY,MAC_KEYS");
@@ -2071,6 +2222,118 @@ EOT;
     {
         return $this->lzyDb;
     }
+
+
+
+
+    private function renderUrlArgHelp()
+    {
+        $overlay = <<<EOT
+<h1>Lizzy Help</h1>
+<pre>
+Available URL-commands:
+
+<a href='?help'>?help</a>		    this message
+
+<a href='?auto'>?auto</a>		    automatic reload of page when files change 
+                    (&rarr; on Mac localhost only, requires external tool <a href="https://livereload.com" target="_blank">livereload.com</a>)  *)
+<a href='?config'>?config</a>		    list configuration-items in the config-file
+<a href='?convert'>?convert</a>	    convert password to hash
+<a href='?debug'>?debug</a>		    adds 'debug' class to page on non-local host *)
+<a href='?edit'>?edit</a>		    start editing mode *)
+<a href='?iframe'>?iframe</a>		    show code for embedding as iframe
+<a href='?info'>?info</a>		    list debug-info
+<a href='?lang=xy'>?lang=</a>	            switch to given language (e.g. '?lang=en')  *)
+<a href='?list'>?list</a>		    list <samp>transvars</samp> and <samp>macros()</samp>
+<a href='?log'>?log</a>		    displays log files in overlay
+<a href='?login'>?login</a>		    login
+<a href='?logout'>?logout</a>		    logout
+<a href='?mobile'>?mobile</a>,<a href='?touch'>?touch</a>,<a href='?notouch'>?notouch</a>	emulate modes  *)
+<a href='?nc'>?nc</a>		    supress caching (?nc=false to enable caching again)  *)
+<a href='?print'>?print</a>		    starts printing mode and launches the printing dialog
+<a href='?print-preview'>?print-preview</a>      presents the page in print-view mode    
+<a href='?purge'>?purge</a>		    empty and delete all recycle bins (i.e. copies of modified pages)
+<a href='?reorg-css='>?reorg-css={file(s)}</a>take CSS file(s) and convert to SCSS (e.g. "?reorg-css=tmp/*.css")
+<a href='?reset'>?reset</a>		    clear cache, session-variables and error-log
+<a href='?timer'>?timer</a>		    switch timer on or off  *)
+
+*) these options are persistent, they keep their value for further page requests. 
+Unset individually as ?xy=false or globally as ?reset
+
+</pre>
+EOT;
+        // TODO: printall -> add above
+        $this->page->addOverlay(['text' => $overlay, 'closable' => 'reload']);
+    }
+
+
+
+
+    private function handleEditSaveRequests()
+    {
+        $cliarg = getCliArg('lzy-compile');
+        if ($cliarg) {
+            $this->savePageFile();
+            $this->renderMD();  // exits
+
+        }
+
+        $cliarg = getCliArg('lzy-save');
+        if ($cliarg) {
+            $this->saveSitemapFile($this->config->site_sitemapFile); // exits
+        }
+    }
+
+
+
+
+    private function initializeSiteInfrastructure()
+    {
+        global $globalParams;
+        $this->siteStructure = new SiteStructure($this, $this->reqPagePath);
+        $this->currPage = $this->reqPagePath = $this->siteStructure->currPage;
+
+        if (isset($this->siteStructure->currPageRec['showthis'])) {
+            $this->pagePath = $this->siteStructure->currPageRec['showthis'];
+        } else {
+            $this->pagePath = $this->siteStructure->currPageRec['folder'];
+        }
+        $this->pathToPage = $this->config->path_pagesPath . $this->pagePath;   //  includes pages/
+        $globalParams['pageHttpPath'] = $this->pageHttpPath;            // excludes pages/, takes showThis into account
+        $globalParams['pagePath'] = $this->pagePath;                    // excludes pages/, takes not showThis into account
+        $globalParams['pathToPage'] = $this->pathToPage;
+        $globalParams['filepathToRoot'] = str_repeat('../', substr_count($this->pathToPage, '/'));
+        $_SESSION['lizzy']['pageHttpPath'] = $this->pageHttpPath;               // for _ajax_server.php and _upload_server.php
+        $_SESSION['lizzy']['pagePath'] = $this->pagePath;               // for _ajax_server.php and _upload_server.php
+        $_SESSION['lizzy']['pathToPage'] = $this->config->path_pagesPath . $this->pagePath;
+
+
+        $this->pageRelativePath = $this->pathToRoot . $this->pagePath;
+
+        $this->trans->loadStandardVariables($this->siteStructure);
+        $this->trans->addVariable('next_page', "<a href='~/{$this->siteStructure->nextPage}'>{{ nextPageLabel }}</a>");
+        $this->trans->addVariable('prev_page', "<a href='~/{$this->siteStructure->prevPage}'>{{ prevPageLabel }}</a>");
+    } // initializeSiteInfrastructure
+
+
+
+
+    private function initializeAsOnePager()
+    {
+        global $globalParams;
+        $this->siteStructure = new SiteStructure($this, ''); //->list = false;
+        $this->currPage = '';
+        $globalParams['pagePath'] = '';
+        $globalParams['pageHttpPath'] = '';            // excludes pages/, takes showThis into account
+        $globalParams['filepathToRoot'] = '';
+
+        $this->pathToPage = $this->config->path_pagesPath;
+        $globalParams['pathToPage'] = $this->pathToPage;
+        $this->pageRelativePath = '';
+        $this->pagePath = '';
+        $this->trans->addVariable('next_page', "");
+        $this->trans->addVariable('prev_page', "");
+    } // initializeAsOnePager
 } // class WebPage
 
 

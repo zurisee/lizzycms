@@ -9,7 +9,7 @@ class PageSource
 
     public static function renderEditionSelector($filename)
     {
-        if (sizeof(PageSource::getRecycledFilenames($filename)) == 0) {
+        if (sizeof(PageSource::getRecycledFilenames($filename)) === 0) {
             return '';
         }
         $currEd = abs(getUrlArg('ed', true));
@@ -21,7 +21,7 @@ class PageSource
             if (!preg_match('/\[(.*)\]/', $f, $m)) {
                 continue;
             }
-            if (($currEd == $i+1) && ($filename == $targetFilename)) {
+            if (($currEd === $i+1) && ($filename === $targetFilename)) {
                 $selected = ' selected';
             } else {
                 $selected = '';
@@ -59,12 +59,12 @@ class PageSource
         } else {
             $edSelector .= "<span class='lzy-ed-selector lzy-ed-selector-inactive'>▶︎</span>";
         }
-        if ($currEd != 0) {
+        if ($currEd !== 0) {
             $edSelectorButtons = "<span class='lzy-ed-selector-cancel'><a href='./' title='{{ PageSource cancel }}'>✗</a></span><span class='lzy-ed-selector-save'><a href='?ed-save=$currEd&file=$filename' title='{{ PageSource activate edition }}'>✓</a></span>";
         } else {
             $edSelectorButtons = "<span class='lzy-ed-selector-cancel lzy-ed-selector-inactive'>✗</span><span class='lzy-ed-selector-save lzy-ed-selector-inactive'>✓</span>";
         }
-        return "<div class='lzy-ed-selector' data-lzy-filename='$filename'><p class='lzy-ed-selector-prompt'>{{ Page-History: }}</p>$edSelector$select$edSelectorButtons</div>";
+        return "<div class='lzy-ed-selector lzy-encapsulated' data-lzy-filename='$filename'><p class='lzy-ed-selector-prompt'>{{ Page-History: }}</p>$edSelector$select$edSelectorButtons</div>";
     } // renderEditionSelector
 
 
@@ -74,10 +74,10 @@ class PageSource
     {
         $ed = abs(getUrlArg('ed', true));
         $targetFilename = getUrlArg('file', true);
-        if (($targetFilename == $filename) && $ed) {
+        if (($targetFilename === $filename) && $ed) {
             $previousVersions = PageSource::getRecycledFilenames($filename);
             $nVersions = sizeof($previousVersions);
-            if ($nVersions == 0) {  // none available, return original file
+            if ($nVersions === 0) {  // none available, return original file
 
             } elseif ($ed > $nVersions) {
                 $filename = $previousVersions[$nVersions-1]; // return oldest
@@ -101,7 +101,8 @@ class PageSource
     public static function getRecycledFilename($filename, $edition = 0)
     {
         $pat = PageSource::composeRecycleFilename($filename, false).'*';
-        $dir = array_reverse(getDir($pat));
+//        $dir = array_reverse(getDir($pat));
+        $dir = array_reverse( glob($pat) );
         if (isset($dir[$edition])) {
             return $dir[$edition];
         }
@@ -114,8 +115,10 @@ class PageSource
     //....................................................
     public static function getRecycledFilenames($filename, $recycleBin = false)
     {
+        //        $pat = PageSource::composeRecycleFilename($filename, false, $recycleBin).'*';
+        //        return array_reverse( getDir($pat) );
         $pat = PageSource::composeRecycleFilename($filename, false, $recycleBin).'*';
-        return array_reverse( getDir($pat) );
+        return array_reverse( glob($pat) );
     } // getRecycledFilenames
 
 
@@ -183,7 +186,7 @@ class PageSource
             PageSource::copyFileFromRecycleBin($origFilename, $edSave + $offs);
             reloadAgent();
         }
-    } // saveEdition
+    } // restoreEdition
 
 
 
@@ -197,7 +200,7 @@ class PageSource
 
             $currContent = file_get_contents($filename);
             foreach (PageSource::getRecycledFilenames($filename, $recycleBin) as $f) {
-                if ($currContent == file_get_contents($f)) {
+                if ($currContent === file_get_contents($f)) {
                     return 0; // file already present in recycleBin
                 }
             }
@@ -214,7 +217,8 @@ class PageSource
     public static function copyFileFromRecycleBin($filename, $edition, $recycleBin = false)
     {
         $pat = PageSource::composeRecycleFilename($filename, false, $recycleBin).'*';
-        $dir = array_reverse(getDir($pat));
+//        $dir = array_reverse(getDir($pat));
+        $dir = array_reverse( glob($pat) );
         $edition--;
         if (isset($dir[$edition])) {
             copy($dir[$edition], $filename);
@@ -229,6 +233,8 @@ class PageSource
     {
         if (!$recycleBin) {
             $recycleBin = RECYCLE_BIN_PATH;
+        } else {
+            $recycleBin = fixPath($recycleBin);
         }
         if (strpos($recycleBin, '~page/') === false) {
             $filename = trunkPath($filename, -1, false);

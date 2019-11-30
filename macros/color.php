@@ -10,9 +10,9 @@ $this->addMacro($macroName, function () {
 	$this->invocationCounter[$macroName] = (!isset($this->invocationCounter[$macroName])) ? 0 : ($this->invocationCounter[$macroName]+1);
 
     $text = $this->getArg($macroName, 'text', '', '');
-    $color = $this->getArg($macroName, 'color', '', '');
+    $color = $this->getArg($macroName, 'color', '', 'black');
 
-    $str = "<span style='color:$color'>$text</span>";
+    $str = "<span style='color:var(--lzy-color, $color);'>$text</span>";
     $this->optionAddNoComment = true;
 	return $str;
 });

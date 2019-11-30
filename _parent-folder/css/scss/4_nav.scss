@@ -1,2 +1,46 @@
 // Nav
 
+
+
+__END__
+
+body {
+    // colors general:
+    --lzy-nav-txt-color: navy;
+    --lzy-nav-bg-color: gray;	// bg of nav-block
+    --lzy-nav-elem-bg-color: cyan;
+
+    // sub-elements / dropdown:
+    --lzy-nav-sub-txt-color: maroon;
+    --lzy-nav-sub-bg-color: orange;
+
+    // current:
+    --lzy-nav-curr-txt-color: yellow;
+    --lzy-nav-curr-bg-color: magenta;
+
+    // active: (ie parents of current)
+    --lzy-nav-active-txt-color: white;
+    --lzy-nav-active-bg-color: red;
+
+    // hover:
+    --lzy-nav-hover-txt-color: yellow;
+    --lzy-nav-hover-bg-color: navy;
+    // focus:
+    --lzy-nav-focus-txt-color: yellow;
+    --lzy-nav-focus-bg-color: blue;
+
+    // mobile nav:
+    --lzy-mobile-nav-title-color: #ddd;
+    --lzy-mobile-nav-title-bg-color: #333;
+    --lzy-mobile-nav-txt-color: #ddd;
+    --lzy-mobile-nav-bg-color: #333;
+
+    // mobile header:
+    --lzy-mobile-header-txt-color: #ddd;
+    --lzy-mobile-header-bg-color: #444;
+
+    // mobile footer:
+    --lzy-mobile-footer-txt-color: white;
+    --lzy-mobile-footer-bg-color: #444;
+
+}

@@ -77,18 +77,18 @@ EOT;
 		}
 
 		$src0 = $src;
-		$src = resolvePath($src, true);
-		$srcUrl = resolvePath($src0, true, true);
-		if (!file_exists($src)) {
-			if (!file_exists($src)) {
+		$srcFile = resolvePath($src, true);
+//		$srcUrl = resolvePath($src0, true, true);
+		if (!file_exists($srcFile)) {
+//			if (!file_exists($src)) {
 				echo "<p>".getcwd()."</p>\n";
                 fatalError("Error in video(): file <strong>'".basename($src)."'</strong> <br />\nnot found in <strong>".dirname($src)."</strong>", 'File: '.__FILE__.' Line: '.__LINE__);
-			}
+//			}
 		}
 		$source = '';
-		$vpath = dirname($src).'/';
-		$fname = $vpath.pathinfo($src, PATHINFO_FILENAME);
-		$fext = fileExt($src);
+		$vpath = dirname($srcFile).'/';
+		$fname = $vpath.pathinfo($srcFile, PATHINFO_FILENAME);
+//		$fext = fileExt($srcFile);
 		$vtypes = array('mp4' => 'video/mp4', 'ogv' => 'video/ogg', 'ogg' => 'video/ogg', 'm4v' => 'video/webm', 'webm' => 'video/webm');
 		
 		foreach (array('mp4','ogv','ogg','m4v','webm') as $ext) {
@@ -137,7 +137,7 @@ EOT;
 			}
 		}
 
-		$preview = $vpath.pathinfo($src, PATHINFO_FILENAME).'.jpg';
+		$preview = $vpath.pathinfo($src, PATHINFO_FILENAME).'.jpg';//???
 		$_preview = $preview;
 		$preview = $preview;
 		if (!file_exists($_preview)) {

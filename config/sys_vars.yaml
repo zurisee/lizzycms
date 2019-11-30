@@ -10,12 +10,7 @@ clear: '<div style="clear:both;"></div>'
 
 section: "\n</section>\n<section>\n"
 
-#user_icon: '<img src="~sys/rsc/user.svg" />'
-#user_icon: "&#128100;"
-user_icon: |
-    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 1000 1000" enable-background="new 0 0 1000 1000" xml:space="preserve">
-    <g><path d="M500,990C229.4,990,10,770.6,10,500S229.4,10,500,10s490,219.4,490,490S770.6,990,500,990z M769,848.9c-45.2-104.1-148.2-177.4-269-177.4s-223.9,73.1-269.1,177.3C305.3,906.4,398.6,941,500,941C601.4,941,694.5,906.5,769,848.9L769,848.9z M647,451c0-81.2-65.8-147-147-147c-81.2,0-147,65.8-147,147c0,81.2,65.8,147,147,147C581.2,598,647,532.2,647,451z M500,59C256.5,59,59,256.5,59,500c0,123.8,51.1,235.5,133.3,315.6c44.8-91.8,129-160.8,231-184.2C353.2,601.6,304,532,304,451c0-108.2,87.8-196,196-196c108.2,0,196,87.8,196,196c0,81-49.2,150.6-119.3,180.4c102,23.3,186.1,92.4,231,184.2C889.8,735.6,941,623.8,941,500C941,256.5,743.5,59,500,59L500,59z"></path></g>
-    </svg>
+lzy-login-icon: '<span class="lzy-icon lzy-icon-user"></span>'
 
 
 #--- Forms -----------------------------------------------
@@ -65,11 +60,25 @@ Continue_:
     de: Weiter...
     en: Continue...
 
-File to upload:
+
+#--- File Upload --------------------------
+lzy-fileadmin-button-tooltip:
+    de: 'Dateinverwaltung anzeigen'
+    _:  'Show file manager'
+
+lzy-fileadmin-button-text:  // just in case the button should carry icon and text:
+    de: ''  
+    _:  ''
+
+lzy-file-upload-label:
+    de: Eine Datei hochladen
+    en: Upload a file
+
+lzy-files-upload-label:
     de: Datei(en) hochladen
     en: Upload file(s)
 
-Uploaded file list:
+lzy-uploaded-files-title:
     de: "Hochgeladene Dateien:"
     en: "Uploaded files:"
 
@@ -83,6 +92,8 @@ lzy-error-in-email-addr:
 lzy-please-correct:
     de: "Bitte korrigieren."
     _:  "Please correct."
+
+
 
 #--- Links -------------------------------
 opens mail app: 
@@ -156,12 +167,60 @@ lzy-prev-page-link-title:
 
 
 #--- Language Selection ------------------
-select langauge:
+lzy-select-langauge:
     de: Sprache auswählen 
     en: Select language
+    fr: Sélectionnez la langue
+    it: Seleziona la lingua
+    es: Seleccionar idioma
 
-select de: "<img src='~sys/rsc/de.png' class='lang-icon' alt='' /><span class='invisible'>Deutsch</span>"
-select en: "<img src='~sys/rsc/en.png' class='lang-icon' alt='' /><span class='invisible'>English</span>"
+lzy-lang-select de: "<img src='~sys/rsc/de.png' class='lzy-lang-icon' alt='{{ lzy-select-langauge }}: {{lzy-lang-de}}' title='{{ lzy-select-langauge }}: {{lzy-lang-de}}' /><span class='invisible'>Deutsch</span>"
+lzy-lang-select en: "<img src='~sys/rsc/en.png' class='lzy-lang-icon' alt='{{ lzy-select-langauge }}: {{lzy-lang-en}}' title='{{ lzy-select-langauge }}: {{lzy-lang-en}}' /><span class='invisible'>English</span>"
+lzy-lang-select fr: "<img src='~sys/rsc/fr.png' class='lzy-lang-icon' alt='{{ lzy-select-langauge }}: {{lzy-lang-fr}}' title='{{ lzy-select-langauge }}: {{lzy-lang-fr}}' /><span class='invisible'>Français</span>"
+lzy-lang-select it: "<img src='~sys/rsc/it.png' class='lzy-lang-icon' alt='{{ lzy-select-langauge }}: {{lzy-lang-it}}' title='{{ lzy-select-langauge }}: {{lzy-lang-it}}' /><span class='invisible'>Italiano</span>"
+lzy-lang-select es: "<img src='~sys/rsc/es.png' class='lzy-lang-icon' alt='{{ lzy-select-langauge }}: {{lzy-lang-es}}' title='{{ lzy-select-langauge }}: {{lzy-lang-es}}' /><span class='invisible'>Español</span>"
+
+lzy-lang-de:
+    _:  German
+    de: Deutsch
+    fr: Allmende
+    it: Tedesco
+    es: Alemán
+
+lzy-lang-en:
+    _:  English
+    de: Englisch
+    fr: Anglais
+    it: Inglese
+    es: Inglés
+
+lzy-lang-fr:
+    _:  French
+    fr: Français
+    de: Französisch
+    it: Francese
+    es: Francés
+
+lzy-lang-it:
+    _:  Italian
+    fr: Italien
+    de: Italienisch
+    it: Italiano
+    es: Italiano
+
+lzy-lang-es:
+    _:  Spanish
+    fr: Espagnol
+    de: Spanisch
+    it: Spagnolo
+    es: Español
+
+
+
+
+#--- Config Popup ------------------------
+lzy-config-save:
+    _: Save changes
 
 
 #--- Printing ---------------------------
@@ -441,6 +500,49 @@ lzy-data-delete-record:
 
 
 
+#--- Lizzy File Manager
+
+lzy-editor-new-file:
+    de: 'Neue Datei'
+    _:  'Create file'
+
+lzy-editor-new-file-input-button:
+    de: 'Erzeugen'
+    _:  'Create'
+
+lzy-editor-add-files:
+    de: 'Dateien hochladen...'
+    _:  'Select files for upload...'
+
+lzy-editor-start-upload:
+    de: 'Jetzt hochladen'
+    _:  'Start upload'
+
+lzy-editor-cancel-upload:
+    de: 'Übertragung abbrechen'
+    _:  'Cancel upload'
+
+lzy-editor-delete-file:
+    de: 'Datei löschen'
+    _:  'Delete file'
+
+lzy-editor-rename-file:
+    de: 'Datei umbenennen'
+    _:  'Rename File'
+
+lzy-editor-new-filename-label:  // usually only for AT visible
+    de: 'Neuer Name:'
+    _:  'New filename:'
+
+lzy-editor-name-of-new-file-label:
+    de: 'Name der neuen Datei'
+    _:  'Name of new file:'
+
+lzy-editor-ok:
+    de: 'Ok'
+    _:  'Ok'
+
+
 #--- Misc ------------------------------------------
 Page:
     de: Seite
@@ -474,8 +576,6 @@ Edit:
     _:  Edit
 
 lzy-popup-close-button: '✕'
-#lzy-lightbox-close-button: '☒'
-#lzy-popup-close-button: '☒'
 
 lzy-close:
     de: Schliessen
@@ -483,24 +583,30 @@ lzy-close:
 
 
 #--- Editing -------------------------------------
-turn edit mode on:
-    de: Seite bearbeiten
-    en: Edit page
+lzy-turn-edit-mode-on:
+    de: "<span class='lzy-icon lzy-icon-edit' title='Seite bearbeiten'></span>"
+    _: "<span class='lzy-icon lzy-icon-edit' title='Edit page'></span>"
 
-turn edit mode off:
-    de: Seitebearbeitung beenden
-    en: End page editing
+lzy-turn-edit-mode-off:
+    de: "<span class='lzy-icon lzy-icon-edit' title='Seitebearbeitung beenden'></span>"
+    _: "<span class='lzy-icon lzy-icon-edit' title='End page editing'></span>"
+
+
+
+lzy-config-button:
+    de: "<span class='lzy-icon lzy-icon-settings' title='Einstellungen bearbeiten'></span>"
+    _: "<span class='lzy-icon lzy-icon-settings' title='Modify settings'></span>"
 
 
 # Macro Editable()
 'lzy-editable-temporarily-locked': 
     de: 'Dieses Feld ist momentan gesperrt, weil es gerade von jemand anderem bearbeitet wird.\n\nBitte versuchen Sie es in ein paar Minuten nochmals. (Seite muss dann neu geladen werden!)'
-    en: 'This field is currently locked because somebody else is editing it.\n\nPlease try again in a few minutes. (Remember to reload the page when trying again.)'
+    _: 'This field is currently locked because somebody else is editing it.\n\nPlease try again in a few minutes. (Remember to reload the page when trying again.)'
 
 #--- Forms ----------------------------------------
 lzy-form-data-received-ok:
     de: "Ihre Eingaben wurden abgespeichert. Besten Dank."
-    en: "Your entries have been saved successfully. Thank you."
+    _: "Your entries have been saved successfully. Thank you."
 
 lzy-form-feedback-local: "<strong>Feedback on localhost only:</strong>"
 

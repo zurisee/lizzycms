@@ -12,6 +12,10 @@ $this->addMacro($macroName, function () {
     $exclude = $this->getArg($macroName, 'exclude', 'Regex-pattern of elements to be excluded.', false);
     $file = $this->getArg($macroName, 'file', 'Synonym for "files"', '');
 
+    if ($files === 'help') {
+        return;
+    }
+
     if ($file) {
         $files = $file;
     }
@@ -22,9 +26,10 @@ $this->addMacro($macroName, function () {
 
     $newest = 0;
     foreach ($filePaths as $path) {
-        $newest = max( _fileDate($path, $recursive, $exclude), $newest);
+        $path = makePathRelativeToPage($path);
+        $newest = max( lastModified($path, $recursive, $exclude), $newest);
     }
-    if ($newest == 0) {
+    if ($newest === 0) {
         $filedate = '{{ unknown }}';
     } else {
         $filedate = date($format, $newest);
@@ -34,28 +39,3 @@ $this->addMacro($macroName, function () {
 });
 
 
-
-function _fileDate($path, $recursive, $exclude)
-{
-    $newest = 0;
-    $path = resolvePath($path);
-    if (($path == '') || is_dir($path)) {
-        $path = fixPath($path).'*';
-    }
-    $dir = glob($path);
-    foreach ($dir as $file) {
-        if ($exclude && preg_match("/$exclude/", $file)) {
-            continue;
-        }
-        if (is_file($file)) {
-            $fileDate = filemtime($file);
-        } elseif ($recursive) {
-            $fileDate = _fileDate($file, $recursive, $exclude);
-        } else {
-            $fileDate = 0;
-        }
-
-        $newest = max( $fileDate, $newest);
-    }
-    return $newest;
-} // _fileDate

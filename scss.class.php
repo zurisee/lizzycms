@@ -18,13 +18,15 @@ class SCssCompiler
     public function __construct( $lzy )
     {
         $this->config = $lzy->config;
+        $this->page = $lzy->page;
         $this->fromFiles = $lzy->config->path_stylesPath;
         $this->sysCssFiles = $lzy->config->systemPath.'css/';
         $this->isPrivileged = $lzy->config->isPrivileged;
         $this->localCall = $lzy->localCall;
         $this->compiledStylesFilename = $lzy->config->site_compiledStylesFilename;
-        $this->compiledSysStylesFilename = '_lizzy.css';
+        $this->compiledSysStylesFilename = '__lizzy.css';
         $this->scss = false;
+        $this->aggregatedCss = '';
 
         if (isset($_GET['reset'])) {
             $this->deleteCache();
@@ -44,21 +46,41 @@ class SCssCompiler
         $files = getDir($this->fromFiles.'scss/*.scss');
         $mustCompile = $this->checkUpToDate($this->fromFiles, $files, $compiledFilename);
         if ($mustCompile) {
-            file_put_contents($compiledFilename, '');
             foreach ($files as $file) {
                 $namesOfCompiledFiles .= $this->doCompile($this->fromFiles, $file, $compiledFilename);
             }
+            file_put_contents($compiledFilename, $this->aggregatedCss);
+
+            // create minified version:
+            //            $this->minify($compiledFilename);
         }
 
         // system styles:
         $compiledFilename = $this->sysCssFiles.$this->compiledSysStylesFilename;
+
         $files = getDir($this->sysCssFiles.'scss/*.scss');
         $mustCompile = $this->checkUpToDate($this->sysCssFiles, $files, $compiledFilename);
         if ($mustCompile) {
-            file_put_contents($compiledFilename, '');
+            // check whether css/ folder is writable:
+            if (!is_writable($this->sysCssFiles)) {
+                $this->page->addMessage("Warning: unable to update system style files");
+                if ($namesOfCompiledFiles) {
+                    writeLog("SCSS files compiled: " . rtrim($namesOfCompiledFiles, ', '));
+                }
+                writeLog("Warning: failed to update css files in ".$this->sysCssFiles);
+                return $namesOfCompiledFiles;
+            }
+
+            $this->aggregatedCss = '';
             foreach ($files as $file) {
                 $namesOfCompiledFiles .= $this->doCompile($this->sysCssFiles, $file, $compiledFilename);
             }
+            file_put_contents($compiledFilename, $this->aggregatedCss);
+            // for compatibility, create copy under old name:
+            copy($compiledFilename, $this->sysCssFiles.'_lizzy.css');
+
+            // create minified version:
+            //            $this->minify($compiledFilename);
         }
 
         if ($namesOfCompiledFiles) {
@@ -143,21 +165,24 @@ class SCssCompiler
         $targetFile = $toPath . "_$fname.css";
         $t0 = filemtime($file);
         $scssStr = $this->getFile($file);
-        $cssStr = "/**** auto-created from '$file' - do not modify! ****/\n\n";
+        $cssStr = '';
         try {
             $cssStr .= $this->scss->compile($scssStr);
         } catch (Exception $e) {
             fatalError("Error in SCSS-File '$file': " . $e->getMessage(), 'File: ' . __FILE__ . ' Line: ' . __LINE__);
         }
+
+        if (!$this->compiledStylesFilename) {
+            $cssStr = removeCStyleComments($cssStr);
+            $cssStr = removeEmptyLines($cssStr);
+        }
+        $cssStr = "/**** auto-created from '$file' - do not modify! ****/\n\n$cssStr";
+
         file_put_contents($targetFile, $cssStr);
         touchFile($targetFile, $t0);
 
-        if (!$this->config->localCall) {    // remove comments, if not on local host:
-            $cssStr = preg_replace("|\s+/\* .* \*/|m", '', $cssStr);
-        }
-
         if ($includeFile) {                 // assemble all generated CSS, unless its filename started with non-alpha char
-            file_put_contents($compiledFilename, $cssStr . "\n\n\n", FILE_APPEND);
+            $this->aggregatedCss .= $cssStr . "\n\n\n";
         }
 
         return basename($file).", ";
@@ -178,5 +203,16 @@ class SCssCompiler
         }
         return $cssStr;
     } // compileStr
+
+
+
+
+    private function minify( $compiledFilename )
+    {
+        require_once(SYSTEM_PATH . 'third-party/minifier/php-html-css-js-minifier.php');
+        $__scss = minify_css( $this->aggregatedCss );
+        $minifiedFileName = str_replace('.css', '.min.css', $compiledFilename);
+        file_put_contents($minifiedFileName, $__scss);
+    }
 
 } // SCssCompiler

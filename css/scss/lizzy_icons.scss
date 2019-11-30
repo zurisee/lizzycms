@@ -1,0 +1,206 @@
+// Lizzy Icons:
+
+// loading dedicated fonts:
+@font-face {
+    font-family: 'Lzy Icons';
+    src: url('../fonts/Lzy-Icons.eot');
+    src: url('../fonts/Lzy-Icons.eot?#iefix') format('embedded-opentype'),
+         url('../fonts/Lzy-Icons.woff') format('woff'),
+         url('../fonts/Lzy-Icons.ttf') format('truetype'),
+         url('../fonts/Lzy-Icons.svg#Lzy-Icons') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'Lzy Triangle';
+    src: url('../fonts/Lzy-Triangle.eot');
+    src: url('../fonts/Lzy-Triangle.eot?#iefix') format('embedded-opentype'),
+         url('../fonts/Lzy-Triangle.woff') format('woff'),
+         url('../fonts/Lzy-Triangle.ttf') format('truetype'),
+         url('../fonts/Lzy-Triangle.svg#Lzy-Triangle') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+
+
+// generic styles:
+[data-icon],
+[class*='lzy-icon-'] {
+  display: inline-block;
+  position: relative;
+  vertical-align: baseline;
+  padding-left: calc(1.1em * var(--lzy-icon-factor, 1));
+}
+[data-icon]:before,
+[class*='lzy-icon-']:before {
+    position: absolute;
+    display: inline-block;
+    font-family: 'Lzy Icons';
+    font-style: normal;
+    font-weight: normal;
+    font-size: calc(var(--lzy-icon-factor, 1) * 90%);
+    left: calc(var(--lzy-icon-factor, 1) * 4% + 26%);
+    top: 50%;
+    transform: translate(-50%, -50%);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale
+}
+
+[data-icon]:empty,
+[class*='lzy-icon-']:empty {
+//    height: 1em;
+    height: calc(var(--lzy-icon-factor, 1) * 1em);
+    margin-right: 0.07em;
+}
+[data-icon]:empty:before,
+[class*='lzy-icon-']:empty:before {
+    position: absolute;
+    left: 50%;
+    top: 65%;
+    transform: translate(-50%, -50%);
+}
+
+[data-icon]:before {
+  content: attr(data-icon);
+}
+[data-icon],
+[class*='lzy-icon-'] {
+    line-height: calc(var(--lzy-icon-factor, 1) * 1em);
+}
+[data-icon]:before,
+.lzy-emoji.lzy-emoji:before {
+    top: 44%;
+    left: 0.66em;
+}
+
+.lzy-negate:after { 
+    content: '\005c';
+    font-size: 1.8em;
+    color: inherit;
+    position: absolute;
+    display: inline-block;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -40%);
+}
+
+
+
+// assignment of characters to classes:
+.lzy-icon-triangle:before{content:'A';}
+
+.lzy-icon-calendar:before{content:'\0041';}
+.lzy-icon-error:before{content:'\0042';}
+.lzy-icon-user:before{content:'\0043';}
+.lzy-icon-settings:before{content:'\0044';}
+.lzy-icon-cloud:before{content:'\0045';}
+.lzy-icon-desktop:before{content:'\0046';}
+.lzy-icon-mobile:before{content:'\0047';}
+.lzy-icon-config:before{content:'\0048';}
+.lzy-icon-tel:before{content:'\0049';}
+.lzy-icon-geo:before{content:'\004a';}
+.lzy-icon-map:before{content:'\004b';}
+.lzy-icon-sms:before{content:'\004c';}
+.lzy-icon-info:before{content:'\004d';}
+.lzy-icon-doc:before{content:'\004e';}
+.lzy-icon-docs:before{content:'\004f';}
+.lzy-icon-trash:before{content:'\0050';}
+.lzy-icon-enlarge:before{content:'\0051';}
+.lzy-icon-reduce:before{content:'\0052';}
+.lzy-icon-smile:before{content:'\0053';}
+.lzy-icon-nosmile:before{content:'\0054';}
+.lzy-icon-paste2:before{content:'\0055';}
+.lzy-icon-link:before{content:'\0056';}
+.lzy-icon-menu:before{content:'\0057';}
+.lzy-icon-newwin:before{content:'\0058';}
+.lzy-icon-edit:before{content:'\0059';}
+.lzy-icon-mail:before{content:'\005a';}
+.lzy-icon-show2:before{content:'\0061';}
+.lzy-icon-enlarge2:before{content:'\0062';}
+.lzy-icon-reduce2:before{content:'\0063';}
+.lzy-icon-ok:before{content:'\0064';}
+.lzy-icon-cancel:before{content:'\0065';}
+.lzy-icon-locked:before{content:'\0066';}
+.lzy-icon-unlocked:before{content:'\0067';}
+.lzy-icon-exit:before{content:'\0068';}
+.lzy-icon-favorite:before{content:'\0069';}
+.lzy-icon-send:before{content:'\006a';}
+.lzy-icon-show:before{content:'\006b';}
+.lzy-icon-hide:before{content:'\006c';}
+.lzy-icon-source:before{content:'\006d';}
+.lzy-icon-search:before{content:'\006e';}
+.lzy-icon-up:before{content:'\006f';}
+.lzy-icon-down:before{content:'\0070';}
+.lzy-icon-slack:before{content:'\0071';}
+.lzy-icon-pdf:before{content:'\0072';}
+//.lzy-icon-pdf2:before{content:'\0072';}
+//.lzy-icon-pdf:before{content:'\0073';}
+.lzy-icon-select:before{content:'\0073';}
+.lzy-icon-gsm:before{content:'\0074';}
+.lzy-icon-upload:before{content:'\0075';}
+.lzy-icon-download:before{content:'\0076';}
+.lzy-icon-globe:before{content:'\0077';}
+.lzy-icon-key:before{content:'\0078';}
+.lzy-icon-bubble:before{content:'\0079';}
+.lzy-icon-stack:before{content:'\007a';}
+.lzy-icon-attachment:before{content:'\0030';}
+.lzy-icon-heart:before{content:'\0031';}
+.lzy-icon-fullscreen:before{content:'\0032';}
+.lzy-icon-cut:before{content:'\0033';}
+.lzy-icon-copy:before{content:'\0034';}
+.lzy-icon-paste:before{content:'\0035';}
+.lzy-icon-cancel2:before{content:'\0036';}
+.lzy-icon-clock:before{content:'\0037';}
+.lzy-icon-danger:before{content:'\0038';}
+.lzy-icon-wait:before{content:'\0039';}
+.lzy-icon-speed:before{content:'\0021';}
+.lzy-icon-crosshairs:before{content:'\0022';}
+.lzy-icon-picture:before{content:'\0023';}
+.lzy-icon-pictures:before{content:'\0024';}
+.lzy-icon-movie:before{content:'\0025';}
+.lzy-icon-sync:before{content:'\0026';}
+.lzy-icon-reload:before{content:'\0027';}
+.lzy-icon-power:before{content:'\0028';}
+.lzy-icon-insert:before{content:'\0029';}
+.lzy-icon-wifi:before{content:'\002a';}
+.lzy-icon-vol-up:before{content:'\002b';}
+.lzy-icon-volume:before{content:'\002c';}
+.lzy-icon-vol-down:before{content:'\002d';}
+.lzy-icon-flag:before{content:'\002e';}
+.lzy-icon-play:before{content:'\002f';}
+.lzy-icon-stop:before{content:'\005b';}
+.lzy-icon-mute:before{content:'\005c';}
+.lzy-icon-rec:before{content:'\005d';}
+.lzy-icon-forward:before{content:'\005e';}
+.lzy-icon-backward:before{content:'\005f';}
+.lzy-icon-start:before{content:'\007b';}
+.lzy-icon-print:before{content:'\007c';}
+.lzy-icon-save:before{content:'\007d';}
+.lzy-icon-pause:before{content:'\007e';}
+.lzy-icon-end:before{content:'\003f';}
+.lzy-icon-rename:before{content:'\0060';}
+
+
+// special cases:
+.lzy-icon-error:before{
+    font-size: calc(100% * var(--lzy-icon-factor, 1.1));
+    color: red;
+}
+
+// === Triangle icon used in nav:
+.lzy-icon-triangle.lzy-icon-triangle {
+    --lzy-icon-factor: 0.66;
+    transform: rotate(var(--lzy-triangle-angle, 0));
+    width: calc(1em * var(--lzy-icon-factor, 1));
+    height: calc(1em * var(--lzy-icon-factor, 1));
+    &:before {
+        font-family: 'Lzy Triangle';
+        content: 'A';
+        width: calc(1em * var(--lzy-icon-factor, 1));
+        height: calc(1em * var(--lzy-icon-factor, 1));
+        top: 30%;
+        left: 45%;
+    }
+}
+

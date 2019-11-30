@@ -1,5 +1,14 @@
 /* Lizzy Basic CSS */
 
+$dl-as-table-dt-width: 6em;
+$box-width: 300px;
+$grid-gap: 10px;
+
+// adaptive columns:
+$columns-number: 3;
+$column-min-width: 10rem;
+$columns-gap: 1rem;
+
 
 /* === General =============================== */
 body, main {
@@ -13,7 +22,6 @@ html body, section {
 	position: relative;
 	padding: 0;
 }
-//div {
 * {
 	box-sizing: border-box;
 }
@@ -31,7 +39,6 @@ li {
 li > p {
 	margin: 0;
 }
-
 
 a {
 	//text-decoration: underline dotted green;
@@ -125,15 +132,29 @@ figure a {
 .lzy-next-page-link a {
 	right: 0;
 }
+
+// Footer depeding on small/large screen:
+.lzy-large-screen {
+	.lzy-small-screen-footer {
+		display: none;
+	}
+}
+
 .lzy-small-screen {
 	.lzy-page-switcher-links a {
-		font-size: var(--lzy-mobile-header-font-size);
+		font-size: var(--lzy-mobile-header-font-size, 8vw);
 		color: #ddd;
 		top: 0.5em;
 	}
 	.lzy-prev-page-link a {
 		right: 1.2em;
 		left: initial;
+	}
+	.lzy-large-screen-footer {
+		display: none;
+	}
+	footer {
+		margin-top: 0;
 	}
 }
 
@@ -169,31 +190,89 @@ figure a {
 	height: auto;
 }
 
+/* === Icons ============================== */
+//.lzy-user-logged-in .lzy-footer {
+.lzy-footer {
+	.lzy-icon-edit,
+	.lzy-icon-settings,
+	.lzy-fileadmin-button,
+	.lzy-icon-user {
+		color: var(--lzy-system-buttons, gray);
+	}
+	.lzy-fileadmin-button {
+		border: none;
+		background: none;
+		padding-left: 0;
+		margin-left: -0.1em;
+		margin-right: 0.5em;
+	}
+}
+
+
+/* === Admin Config Overlay ==================== */
+.lzy-config-form .lzy-button {
+	padding: 0.3em 1.5em;
+}
+
+.lzy-config-elem {
+	padding: 0.5em 0;
+	input {
+		display: inline-block;
+		width: 5em;
+		&[type=text]:focus {
+			width: 10em;
+		}
+	}
+	label {
+		font-weight: bold;
+	}
+	.lzy-config-comment {
+		margin-left: 8em;
+		font-style: italic;
+	}
+}
+.lzy-config-select {
+	text-align: right;
+}
+
+
+
+/* === lzy-tables ============================== */
+.lzy-table {
+	border-collapse:collapse;
+}
+
 
 /* === Definition Lists in table layout ======== */
-.dl-floating,
-.dl-flex,
-.dl-as-table {
-	--dl-as-table-dt-width: 6em;
+.lzy-dl-floating, .dl-floating,
+.lzy-dl-flex, .dl-flex,
+.lzy-dl-as-table, .dl-as-table {
+	//--lzy-dl-as-table-dt-width: 6em;
 	--inline-block: inline-block;
 	--flex: flex;
 }
-.lzy-large-screen .dl-as-table  {
-	dl {
-		margin: 0;
-	}
-	dt, dd {
-		display: var(--inline-block); // hack to get round IE
-		vertical-align: top;
-		margin: 0 0 0.5em 0;
-	}
-	dt {
-		width: 16em;
-		width: var(--dl-as-table-dt-width);
-	}
-	dd {
-		width: 70%;
-		width: calc(100% - var(--dl-as-table-dt-width));
+.lzy-large-screen {
+	.lzy-dl-as-table,
+	.dl-as-table {
+		dl {
+			margin: 0;
+		}
+
+		dt, dd {
+			display: var(--inline-block); // hack to get round IE
+			vertical-align: top;
+			margin: 0 0 0.5em 0;
+		}
+
+		dt {
+			width: 16em;
+			width: var(--lzy-dl-as-table-dt-width, $dl-as-table-dt-width);
+		}
+
+		dd {
+			width: 70%;
+			width: calc(100% - var(--lzy-dl-as-table-dt-width, #{$dl-as-table-dt-width}));
+		}
 	}
 }
 
@@ -243,12 +322,12 @@ figure a {
 	flex-wrap: wrap;
 	overflow: visible;
 	dt {
-		flex: 0 0 var(--dl-as-table-dt-width);
+		flex: 0 0 var(--lzy-dl-as-table-dt-width, $dl-as-table-dt-width);
 		text-overflow: ellipsis;
 		overflow: hidden;
 	}
 	dd {
-		flex: 0 0 calc(100% - var(--dl-as-table-dt-width));
+		flex: 0 0 calc(100% - var(--lzy-dl-as-table-dt-width, #{$dl-as-table-dt-width}));
 		margin-left: auto;
 		text-align: left;
 		text-overflow: ellipsis;
@@ -264,8 +343,8 @@ figure a {
 	display: inline-block;
 	width: 2em;
 }
-.h-v-centered,
-.v-h-centered {
+.lzy-h-v-centered, .h-v-centered,
+.lzy-v-h-centered, .v-h-centered {
 	height: 100%;
 	display: flex;
 	align-items: center;
@@ -281,52 +360,21 @@ div.lzy-editable-hdr {
 	width: 16em;
 }
 
-/* === Module Encapsulation: */
-#lzy .lzy-encapsulated {
-    p,
-    ul,
-    ol,
-    li,
-    div,
-    a,
-    img,
-    input,
-    textarea,
-    select,
-    label {
-        margin: 0;
-        padding: 0;
-        width: initial;
-        min-width: initial;
-        max-width: initial;
-        height: initial;
-        min-height: initial;
-        max-height: initial;
-        line-height: initial;
-        border: none;
-//        background: transparent;
-        display: block;
-        position: relative;
-        overflow: initial;
-        z-index: initial;
-        list-style: initial;
-        box-sizing: border-box;
-        transform-origin: 50% 50%;
-    }
-}
+// === Module Encapsulation:
+//  "#lzy .lzy-encapsulated" -> definition in file _lizzy/css/scss/@normalize.scss
 
 
 
 /* stretch-wrapping boxes: */
 .lzy-stretch-wrapping-box-container {
-    --box-width: 300px;
-    --grid-gap: 10px;
+    //--lzy-box-width: 300px;
+    //--lzy-grid-gap: 10px;
     display: grid;
-    grid-gap: var(--grid-gap);
-    grid-template-columns: repeat(auto-fill, minmax(var(--box-width), 1fr));
+    grid-gap: var(--lzy-grid-gap, $grid-gap);
+    grid-template-columns: repeat(auto-fill, minmax(var(--lzy-box-width, $box-width), 1fr));
     grid-auto-flow: dense;
     padding: 5px;
-    padding: var(--grid-gap);
+    padding: var(--lzy-grid-gap, $grid-gap);
 }
 
 .lzy-stretch-wrapping-box-container > div {
@@ -343,25 +391,25 @@ div.lzy-editable-hdr {
 /* === adaptive columns ========== */
 /* inspiration: http://www.heydonworks.com/article/the-flexbox-holy-albatross */
 
-body {		// parameters:
-	--lzy-columns-number: 3;
-	--lzy-column-min-width: 10rem;
-	--lzy-columns-gap: 1rem;
-}
+//body {		// parameters:
+	//--lzy-columns-number: 3;
+	//--lzy-column-min-width: 10rem;
+	//--lzy-columns-gap: 1rem;
+//}
 .lzy-columns-container {
-	--lzy-columns-min-width: calc(var(--lzy-columns-number) * var(--lzy-column-min-width) - ((var(--lzy-columns-number) - 1) * var(--lzy-columns-gap)));
+	--lzy-columns-min-width: calc(var(--lzy-columns-number, #{$columns-number}) * var(--lzy-column-min-width, #{$column-min-width}) - ((var(--lzy-columns-number, #{$columns-number}) - 1) * var(--lzy-columns-gap, #{$columns-gap})));
 }
 .lzy-2-columns-container {
 	--lzy-columns-number: 2;
-	--lzy-columns-min-width: calc(2 * var(--lzy-column-min-width) - var(--lzy-columns-gap));
+	--lzy-columns-min-width: calc(2 * var(--lzy-column-min-width, #{$column-min-width}) - var(--lzy-columns-gap, #{$columns-gap}));
 }
 .lzy-3-columns-container {
 	--lzy-columns-number: 3;
-	--lzy-columns-min-width: calc(3 * var(--lzy-column-min-width) - (2 * var(--lzy-columns-gap)));
+	--lzy-columns-min-width: calc(3 * var(--lzy-column-min-width, #{$column-min-width}) - (2 * var(--lzy-columns-gap, #{$columns-gap})));
 }
 .lzy-4-columns-container {
 	--lzy-columns-number: 4;
-	--lzy-columns-min-width: calc(4 * var(--lzy-column-min-width) - (3 * var(--lzy-columns-gap)));
+	--lzy-columns-min-width: calc(4 * var(--lzy-column-min-width, #{$column-min-width}) - (3 * var(--lzy-columns-gap, #{$columns-gap})));
 }
 .lzy-columns-container,
 .lzy-2-columns-container,
@@ -371,7 +419,7 @@ body {		// parameters:
 	flex-wrap: wrap;
 	--lzy-columns-flipper: calc((var(--lzy-columns-min-width) - 100%) * 1000);
 	margin: 5px;
-	margin: calc(var(--lzy-columns-gap) * -0.5);
+	margin: calc(var(--lzy-columns-gap, #{$columns-gap}) * -0.5);
 }
 .lzy-columns-container > div,
 .lzy-2-columns-container > div,
@@ -379,17 +427,17 @@ body {		// parameters:
 .lzy-4-columns-container > div {
 	box-sizing: border-box;
 	max-width: 100%;
-	min-width: calc((100% / var(--lzy-columns-number)) - var(--lzy-columns-gap));
+	min-width: calc((100% / var(--lzy-columns-number, #{$columns-number})) - var(--lzy-columns-gap, #{$columns-gap}));
 	flex-grow: 1;
 	flex-basis: var(--lzy-columns-flipper);
 	margin: 5px;
-	margin: calc(var(--lzy-columns-gap) * 0.5);
+	margin: calc(var(--lzy-columns-gap, #{$columns-gap}) * 0.5);
 }
 
 
 
 
-.logo a, .logo a:hover {
+.lzy-logo a, .lzy-logo a:hover {
 	border-bottom: none;
 }
 kbd {
@@ -439,27 +487,38 @@ pre {
 }
 
 
-.lang-selection > span {
+.lzy-lang-selection {
     display: inline-block;
-    padding:  0 3px;
+    margin-right: 0.33em;
 }
-.lang-selection > span a {
-    border-bottom: none;
-}
-.lang-icon {
+.lzy-lang-elem {
     width: 1.5em;
     height: 1.5em;
-    margin-top: 3px;
+	transform: translateY(0.25em);
+    display: inline-block;
+    margin:  0 3px;
 }
-.layout .menu-link {
-    font-size: 16px;
+.lzy-lang-selection > span a {
+    border-bottom: none;
+}
+.lzy-lang-icon {
+    width: 1.5em;
+    height: 1.5em;
+    border-radius: 50%;
+    opacity: 0.5;
+}
+.lzy-lang-selection:hover .lzy-lang-icon {
+    opacity: 1;
+}
+.lzy-active-lang .lzy-lang-icon {
+	border: 1px solid red;
 }
 
 
-.login-form-icon {
-    height: 14pt;
-    /* width: 24px; */
-}
+//.login-form-icon {
+//    height: 14pt;
+//    /* width: 24px; */
+//}
 .lzy-login-form .lzy-form-show-password input {
     display: none;
 }
@@ -467,27 +526,29 @@ pre {
 .lzy-edit-icon {
     margin-top: 2px;
 }
-footer {
+
+.lzy-footer {
+    display: flex; 
+    justify-content: space-between;
+    padding: 0.5em 0;
+    border-top: 1px solid #bbb;
+    margin-top: 2em;
 	a {
 		border-bottom: none;
 	}
-	svg {
-        fill: black;
-        fill: var(--lzy-footer-txt-color);
-		width: 1.2em;
-		height: 1.2em;
+	.lzy-icon {
+		--lzy-icon-factor: 1.25;
+		opacity: 0.6;
+		&:hover {
+			opacity: 1;
+		}
 	}
-	#loggedInUser, 
-    .loggedInUser,
-    .loggedInUser div.lzy-login-link,
-    .loggedInUser div.lzy-login-link-menu {
-		float: right;
+	.lzy-config-button,
+	.lzy-toggle-edit-mode {
+		padding-right: 10px;
 	}
 }
-.toggle-edit-mode {
-    border-right: 1px solid gray;
-    padding-right: 5px;
-}
+
 
 .debug-mail {
     border: 1px dashed yellow;
@@ -519,7 +580,6 @@ footer {
 	position: fixed!important;
 	top: 5px;
 	right: 0;
-//	right: -80%;
 	max-width: 80%;
 	padding:0.5em 1em;
 	background: #fbfb77;
@@ -534,8 +594,7 @@ footer {
 }
 .MsgBox:hover,
 .WarningBox:hover {
-//	animation: none!important;
-//    transform: translateX(-0%);
+	animation: unset;
 }
 @keyframes slide {
 //  0% { transform: translateX(100%); }
@@ -576,7 +635,6 @@ footer {
 	height: 11vh;
 	margin: 30px 0 0 0;
 }
-
 
 .lzy-overlay {
 	position: fixed;
@@ -732,16 +790,20 @@ nav li {
 
 
 
+/* === Lzy-Buttons ========================= */
+#lzy .lzy-encapsulated .lzy-button,
 .lzy-button {
-  color: #666;
-  font-family: helvetica, arial, sans-serif;
-  border-radius: 4px;
-  border: 1px solid #bcbcbc;
-  -webkit-box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-  background: -webkit-linear-gradient(#FFF 0%,#EFEFEF 60%,#E1DFE2 100%);
-  background: -ms-linear-gradient(#FFF 0%,#EFEFEF 60%,#E1DFE2 100%);
-  background: linear-gradient(#FFF 0%,#EFEFEF 60%,#E1DFE2 100%);
+	color: #666;
+	font-family: helvetica, arial, sans-serif;
+	border-radius: 4px;
+	border: 1px solid #bcbcbc;
+	-webkit-box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+	box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+	background: -webkit-linear-gradient(#FFF 0%,#EFEFEF 60%,#E1DFE2 100%);
+	background: -ms-linear-gradient(#FFF 0%,#EFEFEF 60%,#E1DFE2 100%);
+	background: linear-gradient(#FFF 0%,#EFEFEF 60%,#E1DFE2 100%);
+	padding: 0.3em 1.5em;
+	cursor: pointer;
 }
 .lzy-button a:visited,
 a.lzy-button:visited,
@@ -750,8 +812,70 @@ a.lzy-button {
 	border-bottom: none;
 	color: black;
 }
+#lzy .lzy-encapsulated {
+	.lzy-button a:visited,
+	a.lzy-button:visited,
+	.lzy-button a,
+	a.lzy-button {
+		border-bottom: none;
+		color: black;
+	}
+}
+
 .lzy-mobile-page-header {
 	display: none;
+}
+
+
+/* === Links =========================================== */
+.lzy-link {
+	position: relative;
+	padding-left: 1.4em;
+}
+.lzy-link:before {
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: inline-block;
+	font-family: 'Lzy Icons';
+	font-style: normal;
+	font-weight: normal;
+	font-size: 110%;
+	line-height: 1;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+.lzy-mail_link:before {
+	content:'Z';
+}
+.lzy-sms_link:before {
+	content:'L';
+}
+.lzy-tel_link:before {
+	content:'I';
+}
+.lzy-gsm_link:before {
+	content:'t';
+}
+.lzy-pdf_link:before {
+	content:'r';
+}
+.lzy-geo_link:before {
+	content:'J';
+}
+.lzy-slack_link:before {
+	content:'q';
+	font-size: 90%;
+}
+.lzy-newwin_link,
+.lzy-external_link {
+	padding-left: 1.2em;
+}
+.lzy-newwin_link:before,
+.lzy-external_link:before {
+	content:'X';
+	font-size: 90%;
+	top: 0.18em;
 }
 
 
@@ -762,46 +886,8 @@ a.lzy-button {
 	.print-only {
 		display: none;
 	}
-	.mail_link {
-		background: url("../rsc/mail.svg") no-repeat;
-		background-size: 0.8em 1em;
-		padding-left: 1.2em;
-	}
-	.mail_link2 {
-		background: url("../rsc/mail2.svg") no-repeat;
-		background-size: 0.9em 1.2em;
-		padding-left: 1.2em;
-	}
-	.sms_link {
-		background: url("../rsc/sms.svg") no-repeat;
-		padding-left: 1.5em;
-	}
-	.tel_link {
-		background: url("../rsc/tel.svg") no-repeat;
-		background-size: 0.9em 1.2em;
-		padding-left: 1.1em;
-	}
-	.pdf_link {
-		background: url("../rsc/pdf.svg") no-repeat;
-		background-size: 0.9em 1.2em;
-		padding-left: 1.4em;
-		padding-top: 0.15em;
-	}
-	.geo_link {
-		background: url("../rsc/geo.svg") no-repeat;
-		background-size: 0.9em 1.2em;
-		padding-left: 1.1em;
-	}
-	.slack_link {
-		background: url("../rsc/slack.svg") no-repeat;
-		background-size: 0.9em 1.2em;
-		padding-left: 1.2em;
-	}
-	.external_link {
-		background: url("../rsc/newwin.svg") no-repeat;
-		background-size: 0.8em 1.3em;
-		padding-left: 1.1em;
-	}
+
+
 	.lzy-img-link {
 		background: none;
 		padding-left: 0;
@@ -860,7 +946,8 @@ dd {
 	.Warning,
 	.MsgBox,
     #debugInfo,
-    .debugInfo {
+    .debugInfo,
+	.lzy-file-uploader-wrapper {
 		display: none!important;
 	}
 	.lzy-print-page-break,
@@ -868,7 +955,11 @@ dd {
 		page-break-after: always;
 	}
 }
-
+@media screen {
+	.print-only {
+		display: none!important;
+	}
+}
 
 
 
@@ -876,6 +967,7 @@ dd {
 .lzy-login-link-menu {
     position: relative;
     clear: both;
+	display: inline-block;
 }
 .lzy-login-link-menu div {
     display: block;
@@ -897,4 +989,13 @@ dd {
 .lzy-loading-spinner {
     width: 24px;
     height: 24px;
+}
+
+/* === Unite Gallery ==================*/
+/* bug workaround */
+.lzy-gallery.ug-gallery-wrapper {
+	height: unset !important;
+}
+.ug-tiles-preloader {
+	display: none !important;
 }

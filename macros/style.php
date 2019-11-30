@@ -12,6 +12,9 @@ $this->addMacro($macroName, function () {
     $text = $this->getArg($macroName, 'text', 'Text to be wrapped in a span', '');
     $style = $this->getArg($macroName, 'style', 'CSS code to be applied to the given text.', '');
 
+    if ($text === 'help') {
+        return '';
+    }
     $str = "<span style='$style'>$text</span>";
     $this->optionAddNoComment = true;
 	return $str;

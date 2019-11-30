@@ -1,11 +1,2 @@
 // Colors
 
-header {
-	--lzy-nav-bg-color: #ddd;
-}
-
-// note:
-//   nav widget is enapsulated, that's why it takes '#lzy' to override:
-#lzy .lzy-nav-wrapper.lzy-primary-nav a {
-	background: #eee;
-}

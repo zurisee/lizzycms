@@ -26,6 +26,8 @@ define ('DEFAULT_TICKET_VALIDITY_TIME', 900);
 
 class Ticketing
 {
+    private $lastError = '';
+
     public function __construct($options = [])
     {
         $dataSrc = isset($options['dataSrc']) ? $options['dataSrc'] : DEFAULT_TICKET_STORAGE_FILE;
@@ -100,12 +102,19 @@ class Ticketing
     {
         $ticketRec = $this->ds->readElement($ticketHash);
 
+        if (!$ticketRec) {
+            $this->lastError = 'code not recognized';
+            return false;
+        }
+
         if ($type && ($type !== $ticketRec['lzy_ticketType'])) {
             $ticketRec = false;
+            $this->lastError = 'ticket was of wrong type';
 
         } elseif (isset($ticketRec['lzy_ticketValidTill']) && ($ticketRec['lzy_ticketValidTill'] < time())) {      // ticket expired
             $this->ds->delete($ticketHash);
             $ticketRec = false;
+            $this->lastError = 'code timed out';
 
         } elseif (isset($ticketRec['lzy_maxConsumptionCount'])) {
             $n = $ticketRec['lzy_maxConsumptionCount'];
@@ -129,6 +138,12 @@ class Ticketing
         return $ticketRec;
     } // consumeTicket
 
+
+
+    public function getLastError()
+    {
+        return $this->lastError;
+    }
 
 
     private function createHash()

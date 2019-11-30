@@ -47,15 +47,25 @@
 .lzy-popup * {
     color: black;
 }
+.lzy-large-screen
 .lzy-popup {
     background: #eee;
     padding: 1em 1em 0.6em 1em;
-    /*padding: 1em 1em 0 1em;*/
     border: none;
     border-radius: 4px;
     box-shadow: 0 0 15px black;
     min-width: 12em;
     transform: scale(0.5);
+}
+.lzy-small-screen
+.lzy-popup {
+    background: #eee;
+    padding: 1em 1em 0.6em 1em;
+    border: none;
+    transform: scale(0.5);
+    font-size: 4vw;
+    display: block;
+        width: 100%;
 }
 .lzy-popup-confirm .popup_content {
     padding: 2em 2em 1em 2em;

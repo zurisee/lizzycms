@@ -68,6 +68,7 @@ $this->addMacro($macroName, function () {
     // $this->addVariable('myvar', 'value');
 
     // $this->optionAddNoComment = true;
+	// $this->compileMd = true;
 
     $str = "<!-- macro $macroName() loaded -->\n";
 	return $str;

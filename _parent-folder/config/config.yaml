@@ -1,84 +1,63 @@
-# Settings:
-# see https://getlizzy.net/ for documentation
-#   in particular https://getlizzy.net/?config
-
-# activate options by removing the leading '#'
+# Lizzy Settings:
+#   see https://getlizzy.net/site/site_configuration/ for documentation
 #--------------------------------------------------------------------------
 
 admin_autoAdminOnLocalhost: true
 debug_compileScssWithLineNumbers: true
-feature_selflinkAvoid: false
-#site_defaultLanguage: 'en'
 
 
-#admin_activityLogging: false                     # default=true
-#admin_allowDisplaynameForLogin: true             # default=false
-#admin_autoAdminOnLocalhost: true                 # default=false
-#admin_defaultAccessLinkValidyTime: ''            # default=900
-#admin_defaultGuestGroup: ''                      # default=guest
-#admin_defaultLoginValidityPeriod: ''             # default=86400
-#admin_enableAccessLink: false                    # default=true
-#admin_enableDailyUserTask: true                  # default=false
-#admin_enableEditing: false                       # default=true
-#admin_enableSelfSignUp: true                     # default=false
-#admin_useRequestRewrite: false                   # default=true
-#admin_userAllowSelfAdmin: true                   # default=false
+__END__
+#=== List of available configuration items ===========================
 
-#custom_permitUserCode: true                      # default=false
-#custom_permitUserInitCode: true                  # default=false
-#custom_permitUserVarDefs: true                   # default=false
-#custom_wrapperTag: true                          # default=false
-
-#debug_allowDebugInfo: true                       # default=false
-#debug_collectBrowserSignatures: true             # default=false
-#debug_compileScssWithLineNumbers: true           # default=false
-#debug_errorLogging: true                         # default=false
-#debug_forceBrowserCacheUpdate: true              # default=false
-#debug_logClientAccesses: true                    # default=false
-#debug_monitorUnusedVariables: true               # default=false
-#debug_showDebugInfo: true                        # default=false
-#debug_showUndefinedVariables: true               # default=false
-#debug_showVariablesUnreplaced: true              # default=false
-#debug_suppressInsecureConnectWarning: true       # default=false
-
-#feature_ImgDefaultMaxDim: ''                     # default=1600x1200
-#feature_SrcsetDefaultStepSize: ''                # default=300
-#feature_autoConvertLinks: true                   # default=false
-#feature_autoLoadClassBasedModules: false         # default=true
-#feature_autoLoadJQuery: false                    # default=true
-#feature_enableAllowOrigin: true                  # default=false
-#feature_enableIFrameResizing: true               # default=false
-#feature_filterRequestString: true                # default=false
-#feature_frontmatterCssLocalToSection: true       # default=false
-#feature_jQueryModule: ''                         # default=JQUERY
-#feature_lateImgLoading: true                     # default=false
-#feature_loadFontAwesome: true                    # default=false
-#feature_pageSwitcher: true                       # default=false
-#feature_preloadLoginForm: true                   # default=false
-#feature_quickview: false                         # default=true
-#feature_renderTxtFiles: true                     # default=false
-#feature_screenSizeBreakpoint: ''                 # default=480
-#feature_selflinkAvoid: false                     # default=true
-#feature_sitemapFromFolders: true                 # default=false
-#feature_supportLegacyBrowsers: true              # default=false
-#feature_touchDeviceSupport: false                # default=true
-
-#path_logPath: ''                                 # default=.#logs/
-#path_pagesPath: ''                               # default=pages/
-#path_stylesPath: ''                              # default=css/
-#path_userCodePath: ''                            # default=code/
-
-#site_compiledStylesFilename: ''                  # default=__styles.css
-#site_dataPath: ''                                # default=data/
-#site_defaultLanguage: ''                         # default=en
-#site_defaultLocale: ''                           # default=en_US
-#site_enableCaching: true                         # default=false
-#site_enableRelLinks: false                       # default=true
-#site_extractSelector: ''                         # default=body main
-#site_multiLanguageSupport: true                  # default=false
-#site_pageTemplateFile: ''                        # default=page_template.html
-#site_robots: true                                # default=false
-#site_sitemapFile: ''                             # default=sitemap.txt
-#site_supportedLanguages: ''                      # default=
-#site_timeZone: true                              # default=false
-
+admin_allowDisplaynameForLogin: ''                # default=false
+admin_autoAdminOnLocalhost: ''                    # default=false
+admin_defaultAccessLinkValidyTime: ''             # default=900
+admin_defaultGuestGroup: ''                       # default=guest
+admin_defaultLoginValidityPeriod: ''              # default=86400
+admin_enableDailyUserTask: ''                     # default=false
+admin_enableSelfSignUp: ''                        # default=false
+admin_userAllowSelfAdmin: ''                      # default=false
+custom_permitUserCode: ''                         # default=false
+custom_permitUserInitCode: ''                     # default=false
+custom_permitUserVarDefs: ''                      # default=false
+custom_wrapperTag: ''                             # default=section
+debug_allowDebugInfo: ''                          # default=false
+debug_collectBrowserSignatures: ''                # default=false
+debug_compileScssWithLineNumbers: ''              # default=false
+debug_errorLogging: ''                            # default=false
+debug_forceBrowserCacheUpdate: ''                 # default=false
+debug_logClientAccesses: ''                       # default=false
+debug_showDebugInfo: ''                           # default=false
+debug_showUndefinedVariables: ''                  # default=false
+debug_showVariablesUnreplaced: ''                 # default=false
+debug_monitorUnusedVariables: ''                  # default=false
+feature_autoConvertLinks: ''                      # default=false
+feature_enableAllowOrigin: ''                     # default=false
+feature_enableIFrameResizing: ''                  # default=false
+feature_filterRequestString: ''                   # default=false
+feature_frontmatterCssLocalToSection: ''          # default=false
+feature_jQueryModule: ''                          # default=JQUERY
+feature_pageSwitcher: ''                          # default=false
+feature_lateImgLoading: ''                        # default=false
+feature_ImgDefaultMaxDim: ''                      # default=1600x1200
+feature_SrcsetDefaultStepSize: ''                 # default=300
+feature_preloadLoginForm: ''                      # default=false
+feature_renderTxtFiles: ''                        # default=false
+feature_screenSizeBreakpoint: ''                  # default=480
+feature_sitemapFromFolders: ''                    # default=false
+feature_supportLegacyBrowsers: ''                 # default=false
+path_logPath: ''                                  # default=.#logs/
+path_pagesPath: ''                                # default=pages/
+path_stylesPath: ''                               # default=css/
+path_userCodePath: ''                             # default=code/
+site_compiledStylesFilename: ''                   # default=__styles.css
+site_dataPath: ''                                 # default=data/
+site_defaultLocale: ''                            # default=en_US
+site_enableCaching: ''                            # default=false
+site_extractSelector: ''                          # default=body main
+site_allowInsecureConnectionsTo: ''               # default=192.*
+site_pageTemplateFile: ''                         # default=page_template.html
+site_robots: ''                                   # default=false
+site_sitemapFile: ''                              # default=sitemap.txt
+site_supportedLanguages: ''                       # default=en
+site_timeZone: ''                                 # default=auto

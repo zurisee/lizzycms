@@ -3,7 +3,9 @@
 define('MSG', 'lzy-account-form-message');
 define('NOTI', 'lzy-account-form-notification');
 
-define('SHOW_PW_ICON', '<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"	 width="456.793px" height="456.793px" viewBox="0 0 456.793 456.793" style="enable-background:new 0 0 456.793 456.793;"	 xml:space="preserve"><g><path d="M448.947,218.474c-0.922-1.168-23.055-28.933-61-56.81c-50.707-37.253-105.879-56.944-159.551-56.944c-53.673,0-108.845,19.691-159.551,56.944c-37.944,27.876-60.077,55.642-61,56.81L0,228.396l7.845,9.923c0.923,1.168,23.056,28.934,61,56.811c50.707,37.254,105.878,56.943,159.551,56.943c53.672,0,108.844-19.689,159.551-56.943c37.945-27.877,60.078-55.643,61-56.811l7.846-9.923L448.947,218.474z M228.396,312.096c-46.152,0-83.699-37.548-83.699-83.699c0-46.152,37.547-83.699,83.699-83.699s83.7,37.547,83.7,83.699C312.096,274.548,274.548,312.096,228.396,312.096z M41.685,228.396c9.197-9.872,25.32-25.764,46.833-41.478c13.911-10.16,31.442-21.181,51.772-30.305c-15.989,19.589-25.593,44.584-25.593,71.782s9.604,52.193,25.593,71.782c-20.329-9.124-37.861-20.146-51.771-30.306C67.002,254.159,50.878,238.265,41.685,228.396z M368.273,269.874c-13.912,10.16-31.443,21.182-51.771,30.306c15.988-19.589,25.594-44.584,25.594-71.782s-9.605-52.193-25.594-71.782c20.33,9.124,37.861,20.146,51.771,30.305c21.516,15.715,37.639,31.609,46.832,41.477C405.91,238.268,389.785,254.161,368.273,269.874z"/><path d="M223.646,168.834c-27.513,4-50.791,31.432-41.752,59.562c8.23-20.318,25.457-33.991,45.795-32.917c16.336,0.863,33.983,18.237,33.59,32.228c1.488,22.407-12.725,39.047-32.884,47.191c46.671,15.21,73.197-44.368,51.818-79.352C268.232,175.942,245.969,166.23,223.646,168.834z"/></g></svg>');
+define('SHOW_PW_INFO_ICON', '<span class="lzy-icon-info"></span>');
+define('SHOW_PW_ICON', '<span class="lzy-icon-show"></span>');
+//define('SHOW_PW_ICON', '<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"	 width="456.793px" height="456.793px" viewBox="0 0 456.793 456.793" style="enable-background:new 0 0 456.793 456.793;"	 xml:space="preserve"><g><path d="M448.947,218.474c-0.922-1.168-23.055-28.933-61-56.81c-50.707-37.253-105.879-56.944-159.551-56.944c-53.673,0-108.845,19.691-159.551,56.944c-37.944,27.876-60.077,55.642-61,56.81L0,228.396l7.845,9.923c0.923,1.168,23.056,28.934,61,56.811c50.707,37.254,105.878,56.943,159.551,56.943c53.672,0,108.844-19.689,159.551-56.943c37.945-27.877,60.078-55.643,61-56.811l7.846-9.923L448.947,218.474z M228.396,312.096c-46.152,0-83.699-37.548-83.699-83.699c0-46.152,37.547-83.699,83.699-83.699s83.7,37.547,83.7,83.699C312.096,274.548,274.548,312.096,228.396,312.096z M41.685,228.396c9.197-9.872,25.32-25.764,46.833-41.478c13.911-10.16,31.442-21.181,51.772-30.305c-15.989,19.589-25.593,44.584-25.593,71.782s9.604,52.193,25.593,71.782c-20.329-9.124-37.861-20.146-51.771-30.306C67.002,254.159,50.878,238.265,41.685,228.396z M368.273,269.874c-13.912,10.16-31.443,21.182-51.771,30.306c15.988-19.589,25.594-44.584,25.594-71.782s-9.605-52.193-25.594-71.782c20.33,9.124,37.861,20.146,51.771,30.305c21.516,15.715,37.639,31.609,46.832,41.477C405.91,238.268,389.785,254.161,368.273,269.874z"/><path d="M223.646,168.834c-27.513,4-50.791,31.432-41.752,59.562c8.23-20.318,25.457-33.991,45.795-32.917c16.336,0.863,33.983,18.237,33.59,32.228c1.488,22.407-12.725,39.047-32.884,47.191c46.671,15.21,73.197-44.368,51.818-79.352C268.232,175.942,245.969,166.23,223.646,168.834z"/></g></svg>');
 
 $lizzyAccountCounter = 0;
 
@@ -13,20 +15,22 @@ class UserAccountForm
 {
     private $un_preset = '';
 
-    public function __construct($lzy, $infoIcon = '&#9432;')
+    public function __construct($lzy, $infoIcon = SHOW_PW_INFO_ICON)
+//    public function __construct($lzy, $infoIcon = '&#9432;')
     {
         global $lizzyAccountCounter;
-        $this->showPwIcon = <<<'EOT'
-<svg width="100%" height="100%" viewBox="0 0 512 512" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:1.41421;">
-    <g>
-        <path d="M499.4,250.8C448.4,164.5 355.8,110.4 256,110.4C156.2,110.4 63.5,164.5 12.6,250.8C10.5,253.9 10.5,258.1 12.6,261.2C63.6,347.5 156.2,401.6 256,401.6C355.8,401.6 448.5,347.5 499.4,261.2C501.5,258.1 501.5,253.9 499.4,250.8ZM256,380.8C165.5,380.8 81.2,333 34.4,256C81.2,179 165.5,131.2 256,131.2C346.5,131.2 430.8,179 477.6,256C430.8,333 346.5,380.8 256,380.8Z" style="fill-rule:nonzero;"/>
-        <path d="M256,162.4C204,162.4 162.4,204 162.4,256C162.4,308 204,349.6 256,349.6C308,349.6 349.6,308 349.6,256C349.6,204 308,162.4 256,162.4ZM256,328.8C215.4,328.8 183.2,296.5 183.2,256C183.2,215.5 215.5,183.2 256,183.2C296.5,183.2 328.8,215.5 328.8,256C328.8,296.5 296.6,328.8 256,328.8Z" style="fill-rule:nonzero;"/>
-        <path d="M256,214.4L256,235.2C267.4,235.2 276.8,244.6 276.8,256C276.8,267.4 267.4,276.8 256,276.8C244.6,276.8 235.2,267.4 235.2,256L214.4,256C214.4,278.9 233.1,297.6 256,297.6C278.9,297.6 297.6,278.9 297.6,256C297.6,233.1 278.9,214.4 256,214.4Z" style="fill-rule:nonzero;"/>
-        <path class="crossed" d="M466.554,127.017L468.71,128.769L470.137,131.153L470.662,133.881L470.223,136.625L468.871,139.053L466.771,140.872L57.991,385.529L55.396,386.521L52.618,386.564L49.992,385.655L47.836,383.903L46.409,381.519L45.884,378.791L46.323,376.047L47.674,373.62L49.774,371.8L458.555,127.143L461.15,126.152L463.928,126.108L466.554,127.017Z"/>
-    </g>
-</svg>
-
-EOT;
+        $this->showPwIcon = SHOW_PW_ICON;
+//        $this->showPwIcon = <<<'EOT'
+//<svg width="100%" height="100%" viewBox="0 0 512 512" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:1.41421;">
+//    <g>
+//        <path d="M499.4,250.8C448.4,164.5 355.8,110.4 256,110.4C156.2,110.4 63.5,164.5 12.6,250.8C10.5,253.9 10.5,258.1 12.6,261.2C63.6,347.5 156.2,401.6 256,401.6C355.8,401.6 448.5,347.5 499.4,261.2C501.5,258.1 501.5,253.9 499.4,250.8ZM256,380.8C165.5,380.8 81.2,333 34.4,256C81.2,179 165.5,131.2 256,131.2C346.5,131.2 430.8,179 477.6,256C430.8,333 346.5,380.8 256,380.8Z" style="fill-rule:nonzero;"/>
+//        <path d="M256,162.4C204,162.4 162.4,204 162.4,256C162.4,308 204,349.6 256,349.6C308,349.6 349.6,308 349.6,256C349.6,204 308,162.4 256,162.4ZM256,328.8C215.4,328.8 183.2,296.5 183.2,256C183.2,215.5 215.5,183.2 256,183.2C296.5,183.2 328.8,215.5 328.8,256C328.8,296.5 296.6,328.8 256,328.8Z" style="fill-rule:nonzero;"/>
+//        <path d="M256,214.4L256,235.2C267.4,235.2 276.8,244.6 276.8,256C276.8,267.4 267.4,276.8 256,276.8C244.6,276.8 235.2,267.4 235.2,256L214.4,256C214.4,278.9 233.1,297.6 256,297.6C278.9,297.6 297.6,278.9 297.6,256C297.6,233.1 278.9,214.4 256,214.4Z" style="fill-rule:nonzero;"/>
+//        <path class="crossed" d="M466.554,127.017L468.71,128.769L470.137,131.153L470.662,133.881L470.223,136.625L468.871,139.053L466.771,140.872L57.991,385.529L55.396,386.521L52.618,386.564L49.992,385.655L47.836,383.903L46.409,381.519L45.884,378.791L46.323,376.047L47.674,373.62L49.774,371.8L458.555,127.143L461.15,126.152L463.928,126.108L466.554,127.017Z"/>
+//    </g>
+//</svg>
+//
+//EOT;
 
         $this->infoIcon = $infoIcon;
         if (!isset($GLOBALS['globalParams']['legacyBrowser']) || $GLOBALS['globalParams']['legacyBrowser']) {
@@ -761,7 +765,7 @@ EOT;
                 $loggedInUser = '{{ LoginLink }}';
             }
             $logInVar = <<<EOT
-<div class='lzy-login-link'><a href='$linkToThisPage?login' class='lzy-login-link' title="$loggedInUser">{{ user_icon }}</a></div>
+<div class='lzy-login-link'><a href='$linkToThisPage?login' class='lzy-login-link' title="$loggedInUser">{{ lzy-login-icon }}</a></div>
 
 EOT;
         }
@@ -789,7 +793,7 @@ EOT;
         }
 
         $logInVar = <<<EOT
-<div class="lzy-login-link-menu"> <a href="#" title="{{ Logged in as }} $displayName">{{ user_icon }}</a>
+<div class="lzy-login-link-menu"> <a href="#" title="{{ Logged in as }} $displayName">{{ lzy-login-icon }}</a>
     <div class="lzy-login-menu" style="display:none;">
         <div>{{ User account }} <strong>$displayName</strong></div>
         <ol>
@@ -830,12 +834,14 @@ EOT;
     private function checkInsecureConnection()
     {
         global $globalParams;
-        if ($this->config->debug_suppressInsecureConnectWarning) {
-            return true;
-        }
-        if (!$this->config->isLocalhost && !(isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] == 'on')) {
-            $url = str_replace('http://', 'https://', $globalParams['pageUrl']);
-            $this->page->addMessage("{{ Warning insecure connection }}<br />{{ Please switch to }}: <a href='$url'>$url</a>");
+        $relaxedHosts = str_replace('*', '', $this->config->site_allowInsecureConnectionsTo);
+
+        if (!$this->config->isLocalhost && !(isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] === 'on')) {
+            $url = str_ireplace('http://', 'https://', $globalParams['pageUrl']);
+            $url1 = preg_replace('|https?://|i', '', $globalParams['pageUrl']);
+            if (strpos($url1, $relaxedHosts) !== 0) {
+                $this->page->addMessage("{{ Warning insecure connection }}<br />{{ Please switch to }}: <a href='$url'>$url</a>");
+            }
             return false;
         }
         return true;

@@ -20,15 +20,15 @@ body {
     width: auto;
     height: 1.2em;
 }
-.lzy-login-link-menu,
 .lzy-login-link {
-    margin-left: 5px;
+    display: inline-block;
+    position: relative;
 }
+
 .lzy-login-link-menu a:hover,
 .lzy-login-link a:hover {
     border-bottom: none;
 }
-
 .lzy-onetime-code-sent-overlay {
     border: 1px dashed red;
     margin: 50px 10px 10px 10px;
@@ -90,19 +90,6 @@ body {
     margin-top: 5px;
     height: 5em;
 }
-/*
-
-.lzy-form-show-password label,
-.lzy-form-show-password input {
-    display: inline-block;
-}
-.lzy-form-show-password label {
-    width: auto;
-}
-.lzy-form-show-password input {
-    width: 1.5em;
-}
-*/
 
 .lzy-error-message {
 	display: block;
@@ -187,6 +174,11 @@ a.lzy-show-signup-info
 .lzy-form-show-password a,
 .lzy-admin-show-info {
     border-bottom: none;
+}
+
+.lzy-form-show-password,
+.lzy-admin-show-info {
+    position: relative;
 }
 .lzy-form-show-password {
     height: 18px; /* height of icon */

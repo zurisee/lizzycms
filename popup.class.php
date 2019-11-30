@@ -100,6 +100,7 @@ EOT;
             $this->getArg('triggerEvent', 'click');
             $this->getArg('confirmButton', $defaultConfirmBtn);
             $this->getArg('cancelButton', $defaultCancelBtn);
+            $this->getArg('onOpen');
             $this->getArg('onConfirm');
             $this->getArg('onConfirmFrom');
             $this->getArg('onCancel');
@@ -145,6 +146,16 @@ EOT;
                 $this->argStr .= "transition: 'all {$this->speed}s',\n";
             }
 
+            // onOpen$onOpen = '';
+            $onOpen = '';
+            if ($this->onOpen) {
+                $onOpen = $this->onOpen;
+                $onOpen = str_replace('&#34;', '"', $onOpen);
+                $onOpen = "\n\t$onOpen";
+//                $this->argStr .= $onOpen;
+            }
+
+
             // invocation:
             if ($this->triggerSource) {
                 if ($this->triggerEvent == "right-click") {
@@ -168,11 +179,11 @@ $('{$this->triggerSource}').on({
 EOT;
 
                 } else {
-                    $jq .= "$('{$this->triggerSource}').bind('{$this->triggerEvent}', function(e) { e.preventDefault(); $('$_popupId').popup('show'); });\n";
+                    $jq .= "\n$('{$this->triggerSource}').bind('{$this->triggerEvent}', function(e) { e.preventDefault(); $('$_popupId').popup('show'); });\n";
                 }
                 $this->getArg('triggerEvent', 'click');
                 $jq .= "$('{$this->triggerSource}').attr('aria-expanded', false);\n";
-                $this->argStr .= "onopen: function() { $('{$this->triggerSource}').attr('aria-expanded', true); },\n";
+                $this->argStr .= "onopen: function() { $('{$this->triggerSource}').attr('aria-expanded', true); $onOpen},\n";
                 $this->argStr .= "onclose: function() { $('{$this->triggerSource}').attr('aria-expanded', false); },\n";
                 if ($this->autoOpen) {
                     $this->argStr .= "autoopen: true,\n";
@@ -180,6 +191,7 @@ EOT;
             } else {
                 $this->argStr .= "autoopen: true,\n";
             }
+
 
             // confirmButton:
             $confirmButton = '';
@@ -255,7 +267,7 @@ EOT;
                 $this->argStr = "\t\t".str_replace("\n", "\n\t\t", $this->argStr);
             }
             if ($this->triggerEvent != "hover") {
-            $jq .= <<<EOT
+                $jq .= <<<EOT
 
 $('$_popupId')
 $addClass$buttons

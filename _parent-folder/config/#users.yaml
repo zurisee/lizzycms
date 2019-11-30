@@ -1,5 +1,6 @@
-# Access Restrictions
-
+# User DB
+#==========
+#
 #--------------------------------------------------------------------------------------
 # See https://getlizzy.net/misc/access_control/ for reference
 # Options:
@@ -7,7 +8,8 @@
 # password:
 #       A hash code of the password is stored, not the original password.
 # groups:
-#       Only members of a group here get access. Predefined groups: admins, editors. 
+#       Only members of a group here get access. 
+#       Predefined groups: admins, editors, fileadmins. 
 #       In the sitemap file (config/sitemap.txt) pages may be designated as 
 #       restricted:group
 # email:

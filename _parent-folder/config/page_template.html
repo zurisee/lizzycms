@@ -5,8 +5,8 @@
 	<title>{{ page_title }}</title>
 	<meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1.0" />
     <meta name="generator" content="Lizzy {{ lzy-version }}" />
-	<link href="~sys/css/normalize.min.css" rel="stylesheet" />
-	<link href="~sys/css/_lizzy.css" rel="stylesheet" />
+	<link href="~sys/css/_normalize.css" rel="stylesheet" />
+	<link href="~sys/css/__lizzy.css" rel="stylesheet" />
 	<link href="~/css/__styles.css" rel="stylesheet" />
 {{ head_injections }}
 </head>
@@ -26,27 +26,36 @@
 		<header class='header'>
 
 {{^ header }}
-{{^ nav( top ) }}
+{{^ nav( top, class:'lzy-nav-colored' ) }}
 
 		</header>
 
 
 <!-- === page content =============== -->
 		<main id='main' class='main'>
-{{^ nav( breadcrumb ) }}
+{{#^ nav( breadcrumb ) }}
 
 {{ content }}
+
+            <div data-iframe-height=''>&nbsp;</div>
 		</main>
 <!-- === /page content =============== -->
 
 
 
-		<footer class='footer'>
-
-{{^ footer }}
-
-            <div id='loggedInUser'>{{  toggle-edit-mode }}{{ Log-in }}</div>
+		<footer class='lzy-footer lzy-large-screen-footer'>
+			<div>
+{{^ footer }}{{^ large-screen-footer }} 
+			</div>
+            <div class='lzy-logged-in-user'>{{ lzy-lang-selection }}{{^ lzy-config--open-button }}{{ lzy-toggle-edit-mode }}{{ lzy-fileadmin-button }}{{ lzy-login-button }}</div>
 		</footer>
+		<footer class='lzy-footer lzy-small-screen-footer'>
+			<div>
+{{^ footer }}{{^ small-screen-footer }}
+			</div>
+            <div class='lzy-logged-in-user'>{{ lzy-lang-selection }}{{^ lzy-config--open-button }}{{ lzy-toggle-edit-mode }}{{ lzy-fileadmin-button }}{{ lzy-login-button }}</div>
+		</footer>
+
 
 {{^ nav( small-screen-header ) }}
   </div><!-- /.page -->

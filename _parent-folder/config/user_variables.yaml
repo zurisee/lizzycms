@@ -34,6 +34,15 @@ Skip to Sitemap:
     _:  Skip to Sitemap
 
 
+
+## -> un-comment and adapt if needed:
+#small-screen-footer:
+#    _: '<span style="display: inline-block;">Small Screen Footer</span>'
+
+#large-screen-footer:
+#    _: '<span style="display: inline-block;">Large Screen Footer</span>'
+
+
 __END__
 
 Explanations:

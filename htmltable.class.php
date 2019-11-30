@@ -14,7 +14,7 @@ class HtmlTable
         $this->page 		= $lzy->page;
         $this->tableCounter = &$tableCounter;
         $this->helpText = false;
-        if ($options == 'help') {
+        if ($options === 'help') {
             $this->helpText = [];
             $options = [];
         }
@@ -26,6 +26,7 @@ class HtmlTable
         $this->cellIds 	            = $this->getOption('cellIds', '(optional) If true, each cell gets an ID which is derived from the cellClass');
         $this->nRows 		        = $this->getOption('nRows', '(optional) Number of rows: if set the table is forced to this number of rows');
         $this->nCols 		        = $this->getOption('nCols', '(optional) Number of columns: if set the table is forced to this number of columns');
+        $this->includeKeys          = $this->getOption('includeKeys', '[true|false] If true and not a .csv source: key elements will be included in data.');
         $this->interactive          = $this->getOption('interactive', '[true|false] If true, module "Datatables" is activated, providing for interactive features such as sorting, searching etc.');
         $this->excludeColumns       = $this->getOption('excludeColumns', '(optional) Allows to exclude specific columns, e.g. "excludeColumns:2,4-5"');
         $this->sort 		        = $this->getOption('sort', '(optional) Allows to sort the table on a given columns, e.g. "sort:3"');
@@ -44,10 +45,11 @@ class HtmlTable
         $this->tableDataAttr	    = $this->getOption('tableDataAttr', '(optional) ');
         $this->renderDivRows        = $this->getOption('renderDivRows', '(optional) If set, each row is wrapped in an additional &lt;div> tag. Omitting this may be useful in conjunction with CSS grid.');
         $this->includeCellRefs	    = $this->getOption('includeCellRefs', '(optional) If set, data-source and cell-coordinates are added as \'data-xy\' attributes');
-        $this->cellMask 	        = $this->getOption('cellMask', '(optional) Lets you define regions that a masked and thus will not get the cellClass. Selection code: rY -> row, cX -> column, eX,Y -> cell element.');
-        $this->cellMaskedClass      = $this->getOption('cellMaskedClass', '(optional) Class that will be applied to masked cells');
+//        $this->cellMask 	        = $this->getOption('cellMask', '(optional) Lets you define regions that a masked and thus will not get the cellClass. Selection code: rY -> row, cX -> column, eX,Y -> cell element.');
+//        $this->cellMaskedClass      = $this->getOption('cellMaskedClass', '(optional) Class that will be applied to masked cells');
         $this->process	            = $this->getOption('process', '(optional) Provide name of a frontmatter variable to activate this feature. In the frontmatter area define an array containing instructions for manipulating table data. See <a href="https://getlizzy.net/macros/extensions/table/" target="_blank">Doc</a> for further details.');
         $this->processInstructionsFile	= $this->getOption('processInstructionsFile', 'The same as \'process\' except that instructions are retrieved from a .yaml file');
+        $this->suppressError        = $this->getOption('suppressError', '(optional) Suppresses the error message in case dataSource is not available.');
 
         $this->checkArguments($inx);
         
@@ -165,7 +167,7 @@ class HtmlTable
 
         $out = <<<EOT
 
-<table id='$this->id' class='$tableClass'$dataSource{$this->tableDataAttr}>
+<table id='{$this->id}' class='$tableClass'$dataSource{$this->tableDataAttr}>
 {$this->caption}
 $thead	<tbody>
 $tbody	</tbody>
@@ -219,7 +221,7 @@ EOT;
 
         $out = <<<EOT
 
-<div id='$this->id' class='{$this->tableClass}'$dataSource{$this->tableDataAttr}>
+<div id='{$this->id}' class='{$this->tableClass}'$dataSource{$this->tableDataAttr}>
 {$this->caption}
     <div class="$tableClass">
 $body
@@ -674,7 +676,7 @@ EOT;
         }
         $tdId = '';
         $ref = '';
-        if (preg_match('/(@@([\w- ]*)@@)/', $cell, $m)) { // extract tdClass
+        if (preg_match('/(@@ ([\w\- ]*) @@)/x', $cell, $m)) { // extract tdClass
             $tdClass = trim($m[2]);
             $cell = trim(str_replace($m[1], '', $cell));
         }
@@ -817,7 +819,7 @@ EOT;
     private function checkArguments($inx)
     {
         if (!$this->id) {
-            $this->id = 'table' . $inx;
+            $this->id = 'lzy-table' . $inx;
         }
         if ($this->tableDataAttr) {
             list($name, $value) = explode('=', $this->tableDataAttr);
@@ -1045,8 +1047,12 @@ EOT;
     {
         $data = [];
         $r = 0;
-        foreach ($this->data as $rec) {
+        foreach ($this->data as $key => $rec) {
             $c = 0;
+            if ($this->includeKeys) {
+                $data[$r][$c] = $key;
+                $c++;
+            }
             foreach ($rec as $value) {
                 $data[$r][$c] = $value;
                 $c++;

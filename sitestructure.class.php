@@ -72,6 +72,7 @@ class SiteStructure
                 'restricted' => false,
                 'parent' => null
             ];
+            http_response_code(404);
             return;
         }
 
@@ -194,7 +195,7 @@ class SiteStructure
 				$args = preg_replace('/:?\s*(\{[^\}]*\})/', "$1", $m[3]);;
 
 				$rec['name'] = $transName ? $transName : trim($m[2]);
-				if (strlen($indent) == 0) {
+				if (strlen($indent) === 0) {
                     $level = 0;
                 } else {
 				    // siteIdententation -> 4 blanks count as one tab
@@ -204,13 +205,14 @@ class SiteStructure
                     $level = strlen($indent);
                 }
 				if (($level - $lastLevel) > 1) {
-                    writeLog("Error in sitemap.txt: indentation on line $line (level: $level / lastLevel: $lastLevel)", 'errlog');
+                    writeLog("Error in sitemap.txt: indentation on line $line (level: $level / lastLevel: $lastLevel)", true);
+//                    writeLog("Error in sitemap.txt: indentation on line $line (level: $level / lastLevel: $lastLevel)", 'errlog');
                     $level = $lastLevel + 1;
 				}
                 $rec['level'] = $level;
 				$lastLevel = $level;
 
-				$rec['folder'] = basename(translateToIdentifier($name, true), '.html').'/';
+				$rec['folder'] = basename(translateToFilename($name, true), '.html').'/';
 				if ($args) {
 					$args = parseArgumentStr($args);
 					if (is_array($args)) {
@@ -251,10 +253,30 @@ class SiteStructure
                     unset($rec['hide']);    // beyond this point hide is permanently replaced by hide!
                 }
 
-				// case: page only visible to privileged users:
-				if (preg_match('/non\-?privileged/i',$rec['hide!'])) {
-                    $rec['hide!'] = !$this->config->isPrivileged;
+
+				// case: page only visible to selected users:
+                $hideArg = &$rec['hide!'];
+
+                if ($hideArg) {
+                    // detect leading inverter (non or not or !):
+                    $neg = false;
+                    if (preg_match('/^((non|not|\!)\-?)/i', $hideArg, $m)) {
+                        $neg = true;
+                        $hideArg = substr($hideArg, strlen($m[1]));
+                    }
+
+                    if (preg_match('/privileged/i', $hideArg)) {
+                        $hideArg = $this->config->isPrivileged;
+                    } elseif (preg_match('/loggedin/i', $hideArg)) {
+                        $hideArg = $_SESSION['lizzy']['user'];
+                    } elseif (($hideArg !== 'true') && !is_bool($hideArg)) {        // if not 'true', it's interpreted as a group
+                        $hideArg = $this->lzy->auth->checkGroupMembership($hideArg);
+                    }
+                    if ($neg) {
+                        $hideArg = !$hideArg;
+                    }
                 }
+
 
                 // check time dependencies:
 				if (isset($rec['availablefrom'])) {
@@ -293,7 +315,8 @@ class SiteStructure
                     $rec['actualFolder'] = $rec['folder'];
                 }
                 if (isset($rec['alias']) && $rec['alias']) {
-                    $rec['alias'] = resolvePath(fixPath($rec['alias']),false,false,true);
+                    $rec['alias'] = resolvePath(fixPath($rec['alias']));
+//                    $rec['alias'] = resolvePath(fixPath($rec['alias']),false,false,true);
                 }
                 $list[] = $rec;
             }
@@ -321,7 +344,7 @@ class SiteStructure
 		$j = 0;         // $j -> counter within level
 		$tree = array();
 		$hasVisibleChildren = false;
-		if ($path == './') {
+		if ($path === './') {
 		    $path = '';
         }
 
@@ -336,7 +359,7 @@ class SiteStructure
 				$lastRec['hasChildren'] = $visChildren;
 				$tree[$j-1] = (isset($tree[$j-1])) ? array_merge($tree[$j-1], $subtree) : $subtree;
 
-			} elseif ($level == $lastLevel) {
+			} elseif ($level === $lastLevel) {
 				$rec = &$list[$i];
                 $rec['hasChildren'] = false;
 				if (substr($rec['folder'], 0, 2) != '~/') {
@@ -351,7 +374,7 @@ class SiteStructure
                     $rec['actualFolder'] = (strlen($rec['actualFolder']) > 2) ? substr($rec['actualFolder'], 2) : '';
 				}
                 $mdFiles = getDir("$pagesPath{$rec['actualFolder']}*.md");
-                $rec['noContent'] = (sizeof($mdFiles) == 0);
+                $rec['noContent'] = (sizeof($mdFiles) === 0);
 
 				$list[$i]['parent'] = $parent;
 				if (isset($rec['hide!']) && $rec['hide!']) {
@@ -429,11 +452,11 @@ class SiteStructure
 	//....................................................
 	public function findSiteElem($str, $returnRec = false, $allowNameToSearch = false)
 	{
-	    if (($str == '/') || ($str == './')) {
+	    if (($str === '/') || ($str === './')) {
             $str = '';
-        } elseif ((strlen($str) > 0) && ($str{0} == '/')) {
+        } elseif ((strlen($str) > 0) && ($str{0} === '/')) {
 	        $str = substr($str, 1);
-        } elseif ((strlen($str) > 0) && (substr($str,0,2) == '~/')) {
+        } elseif ((strlen($str) > 0) && (substr($str,0,2) === '~/')) {
             $str = substr($str, 2);
         }
         if (!$this->list) {
@@ -442,14 +465,20 @@ class SiteStructure
         
 		$list = $this->list;
 		$found = false;
+		$foundLevel = 0;
 		foreach($list as $key => $elem) {
 			if ($found || ($str === $elem['folder']) || ($str.'/' === $elem['folder'])) {
-//			if ($found || ($str === $elem['name']) || ($str === $elem['folder']) || ($str.'/' === $elem['folder'])) {
 				$folder = $this->config->path_pagesPath.$elem['folder'];
 				if (isset($elem['showthis']) && $elem['showthis']) {	// no 'skip empty folder trick' in case of showthis
                     $found = true;
                     break;
 				}
+
+				// case: falling through empty page-folders and hitting the bottom:
+				if ($found && ($foundLevel >= $elem['level'])) {
+				    $key = max(0, $key - 1);
+				    break;
+                }
 
                 if (!$found && !file_exists($folder)) { // if folder doesen't exist, let it be created later in handleMissingFolder()
                     $found = true;
@@ -457,7 +486,7 @@ class SiteStructure
                 }
 				$dir = getDir($this->config->path_pagesPath.$elem['folder'].'*');	// check whether folder is empty, if so, move to the next non-empty one
 				$nFiles = sizeof(array_filter($dir, function($f) {
-                    return ((substr($f, -3) == '.md') || (substr($f, -5) == '.link') || (substr($f, -5) == '.html'));
+                    return ((substr($f, -3) === '.md') || (substr($f, -5) === '.link') || (substr($f, -5) === '.html'));
 				}));
 				if ($nFiles > 0) {
 				    $found = true;
@@ -465,6 +494,7 @@ class SiteStructure
 				} else {
 					$found = true;
                     $this->noContent = true;
+                    $foundLevel = $elem['level'];
 				}
 
 			} elseif (isset($elem['alias']) && ($str === $elem['alias'])) {
@@ -550,7 +580,7 @@ class SiteStructure
 
     public function clearCache()
     {
-        if (file_exists($this->cacheFile)) {
+        if (isset($this->cacheFile) && file_exists($this->cacheFile)) {
             unlink($this->cacheFile);
         }
     } // clearCache

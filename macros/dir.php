@@ -54,7 +54,7 @@ class DirRenderer
     public function render()
     {
         $this->path0 = fixPath($this->path0);
-        $this->path1 = resolvePath($this->path0, true);
+        $this->path1 = resolvePath($this->path0, false, false, true, true);
         $this->path = $this->path1 . $this->pattern;
         $this->exclPath = $this->path1 . $this->exclude;
 
@@ -98,8 +98,8 @@ class DirRenderer
                 continue;
             }
             $name = base_name($file);
-            $file = resolvePath($this->path0 . basename($file), true, true);
-            $str .= "\t\t<li><a href='$file'{$this->target}>$name</a></li>\n";
+            $fileUrl = resolvePath($this->path0 . basename($file), true, true);
+            $str .= "\t\t<li><a href='$fileUrl'{$this->target}>$name</a></li>\n";
         }
         $str = <<<EOT
 

@@ -7,8 +7,9 @@ define('SERVICE_LOG',       PATH_TO_APP_ROOT.'.#logs/backend-log.txt');	    //
 define('ERROR_LOG',         PATH_TO_APP_ROOT.'.#logs/errlog.txt');	//
 define('RECYCLE_BIN',           '.#recycleBin/');
 define('RECYCLE_BIN_PATH',      '~page/'.RECYCLE_BIN);
+define('MKDIR_MASK',            0700);
 
-$appRoot = preg_replace('/_lizzy\/.*$/', '', getcwd());
+$appRoot = preg_replace('/_lizzy\/.*$/', '', getcwd().'/');
 
 //---------------------------------------------------------------------------
 function array2DKey(&$key)
@@ -76,12 +77,19 @@ function resolvePath($path)
         '|~page/|',
     ];
     $to = [
-        '',
-        $_SESSION["lizzy"]["dataPath"],
+        PATH_TO_APP_ROOT,
+        PATH_TO_APP_ROOT.$_SESSION["lizzy"]["dataPath"],
         SYSTEM_PATH,
-        EXTENSIONS_PATH,
-        $_SESSION["lizzy"]["pathToPage"],
+        PATH_TO_APP_ROOT.EXTENSIONS_PATH,
+        PATH_TO_APP_ROOT.$_SESSION["lizzy"]["pathToPage"],
     ];
+//    $to = [
+//        '',
+//        $_SESSION["lizzy"]["dataPath"],
+//        SYSTEM_PATH,
+//        EXTENSIONS_PATH,
+//        $_SESSION["lizzy"]["pathToPage"],
+//    ];
 
     $path = preg_replace($from, $to, $path);
     return $path;
@@ -91,16 +99,16 @@ function resolvePath($path)
 
 
 //---------------------------------------------------------------------------
-function mylog($str)
+function mylog($str, $user = false)
 {
-//    $file = $GLOBALS["appRoot"].SERVICE_LOG;
+    if (!$user) {
+        $user = isset($_SESSION['lizzy']['user']) && $_SESSION['lizzy']['user'] ? $_SESSION['lizzy']['user'] : 'anonymous';
+    }
     $path = dirname(SERVICE_LOG);
-//    $path = dirname($file);
     if (!file_exists($path)) {
         mkdir($path, MKDIR_MASK, true);
     }
-    file_put_contents(SERVICE_LOG, timestamp()." user:  $str\n", FILE_APPEND);
-//    file_put_contents($file, timestamp()." user:  $str\n", FILE_APPEND);
+    file_put_contents(SERVICE_LOG, timestamp()." user $user:  $str\n", FILE_APPEND);
 } // mylog
 
 
@@ -115,3 +123,10 @@ function timestamp($short = false)
     }
 } // timestamp
 
+
+
+//---------------------------------------------------------------------------
+function var_r($var)
+{
+    return str_replace("\n", '', var_export($var, true));
+}

@@ -16,7 +16,7 @@ class ImageGallery
     //-----------------------------------------------------------------------------
     public function __construct($galleryPath, $id, $options)
     {
-        $this->galleryPath = resolvePath($galleryPath, true);
+        $this->galleryPath = resolvePath($galleryPath, true, false, false, true);
         $this->id = $id;
         $this->options = $options;
         if (!file_exists($this->galleryPath)) {
@@ -89,7 +89,7 @@ class ImageGallery
 
         $out = <<<EOT
 
-          <div id="{$this->id}" class="gallery" style='display: none'>
+          <div id="{$this->id}" class="lzy-gallery" style='display: none'>
 $out          </div>
 EOT;
         return $out;

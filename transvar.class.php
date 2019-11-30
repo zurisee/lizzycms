@@ -156,7 +156,7 @@ class Transvar
 
 
     //....................................................
-    private function translateVariable($varName)
+    public function translateVariable($varName)
     {
         $val = $this->getVariable($varName);
         if ($val === false) {
@@ -598,7 +598,7 @@ class Transvar
     //....................................................
     public function loadUserComputedVariables()
     {
-        $code = $this->config->path_userCodePath.$this->config->custom_computedVariablesFile;
+        $code = USER_VAR_DEF_FILE;
         if ($this->config->custom_permitUserVarDefs && file_exists($code)) {
             $this->doUserCode( basename($code, '.php'), $this->config->custom_permitUserVarDefs );
         }
@@ -942,7 +942,8 @@ EOT;
         }
         $undefinedVars = getYamlFile(UNDEFINED_VARS_FILE);
         $rec = [];
-        foreach ($this->config->site_supportedLanguages as $l) {
+        $supportedLanguages = explode(',', str_replace(' ', '', $this->config->site_supportedLanguages ));
+        foreach ($supportedLanguages as $l) {
             $rec[$l] = '';
         }
 

@@ -13,8 +13,9 @@ $this->addMacro($macroName, function () {
     $file = $this->getArg($macroName, 'file', 'File name to be checked (relative to page path by default)', '');
     $path = $this->getArg($macroName, 'path', 'Checks whether the pattern is found in the path from filesystem root to the current page', '');
     $urlArg = $this->getArg($macroName, 'urlArg', 'Name of URL-argument, e.g. "?arg=true"', '');
-    $request = $this->getArg($macroName, 'request', 'Name of request-argument, either GET or POST as submitted by a form', '');
-    $variable = $this->getArg($macroName, 'request', 'Name of a Session-Variable', '');
+    $post = $this->getArg($macroName, 'post', 'Name of post-argument as submitted by a form', '');
+    $sessVar = $this->getArg($macroName, 'sessVar', 'Name of a general Session-Variable, e.g. $_SESSION["var"]', '');
+    $lizzySessVar = $this->getArg($macroName, 'lizzySessVar', 'Name of a Session-Variable, e.g. $_SESSION{"lizzy"}["var"]', '');
     $op = $this->getArg($macroName, 'op', "[==, <, >, <=, >=, !=] Operand to be applied in comparison of config-value and argument.  \nOr file-op [exists, empty, <, >]", '');
     $arg = $this->getArg($macroName, 'arg', 'Argument to be applied in comparison', '');
     $then = $this->getArg($macroName, 'then', 'What to return if the state is active', '');
@@ -26,6 +27,9 @@ $this->addMacro($macroName, function () {
     if (is_string($state)) {
         $state = strtolower($state);
     }
+    if ($state === 'help') {
+        return '';
+    }
 
     if (($state === true) || ($state === 'true')) {
         $res = true;
@@ -33,10 +37,19 @@ $this->addMacro($macroName, function () {
     } elseif (($state === false) || ($state === 'false')) {
         $res = false;
 
-    } elseif ($state == 'islocalhost') {
+    } elseif ($state === 'islocalhost') {
         $res = isLocalCall();
 
-    } elseif ($state == 'isprivileged') {
+    } elseif ($state === 'loggedin') {
+        $res = $this->lzy->auth->getLoggedInUser();
+
+    } elseif ($state === 'user') {
+        $res = ($_SESSION['lizzy']['user'] === $arg);
+
+    } elseif ($state === 'group') {
+        $res = $this->lzy->auth->checkGroupMembership($arg);
+
+    } elseif ($state === 'isprivileged') {
         $res = $this->lzy->config->isPrivileged;
 
     } elseif ($config) {
@@ -49,13 +62,13 @@ $this->addMacro($macroName, function () {
         $file = resolvePath($file, true);
         if (!$op) {
             $res = (file_exists($file) && filesize($file));
-        } elseif ($op == 'exists') {
+        } elseif ($op === 'exists') {
             $res = file_exists($file);
-        } elseif ($op == 'empty') {
-            $res = (file_exists($file) && (filesize($file) == 0));
-        } elseif (($op == '&lt;') || ($op == 'lt') || ($op == '<')) {
+        } elseif ($op === 'empty') {
+            $res = (file_exists($file) && (filesize($file) === 0));
+        } elseif (($op === '&lt;') || ($op === 'lt') || ($op === '<')) {
             $res = (!file_exists($file) || (filesize($file) < intval($arg)));
-        } elseif (($op == '&gt;') || ($op == 'gt') || ($op == '>')) {
+        } elseif (($op === '&gt;') || ($op === 'gt') || ($op === '>')) {
             $res = (file_exists($file) && (filesize($file) > intval($arg)));
         }
 
@@ -64,21 +77,25 @@ $this->addMacro($macroName, function () {
         $res = (strpos($currPath, $path) !== false);
 
     } elseif ($urlArg) {
-        if (!$op) {
-            $res = getUrlArg($urlArg);
-        } else {
-            $val = getUrlArg($urlArg, true);
-            $res = evalOp($val, $op, $arg);
+        $res = getUrlArg($urlArg);
+        if ($op) {
+            $res = evalOp($res, $op, $arg);
         }
-    } elseif ($request) {
-        if (!$op) {
-            $res = isset($_REQUEST['$request']) ? $_REQUEST['$request'] : '';
-        } else {
-            $val = isset($_REQUEST['$request']) ? $_REQUEST['$request'] : '';
-            $res = evalOp($val, $op, $arg);
+    } elseif ($post) {
+        $res = isset($_POST[$post]) ? $_POST[$post] : '';
+        if ($op) {
+            $res = evalOp($res, $op, $arg);
         }
-    } elseif ($variable) {
-        $res = isset($_SESSION['lizzy']['$variable']) ? $_REQUEST['$variable'] : '';
+    } elseif ($sessVar) {
+        $res = isset($_SESSION[$sessVar]) ? $_SESSION[$sessVar] : '';
+        if ($op) {
+            $res = evalOp($res, $op, $arg);
+        }
+    } elseif ($lizzySessVar) {
+        $res = isset($_SESSION['lizzy'][$lizzySessVar]) ? $_SESSION['lizzy'][$lizzySessVar] : '';
+        if ($op) {
+            $res = evalOp($res, $op, $arg);
+        }
     }
     $this->optionAddNoComment = true;
 
@@ -139,10 +156,14 @@ function evalResult($trans, $code, $inx)
                 $trans->page->addPopup($arg);
                 break;
 
+            case 'variable' :
+                $out = $trans->translateVariable($arg);
+                break;
+
             case 'macro' :
                 if (preg_match('/([\w-]+) \( (.*) \)/x', $arg, $m)) {
                     $macro = $m[1];
-                    $arg = $m[2];
+                    $arg = revertQuotes($m[2]);
                     $out = $trans->translateMacro($macro, $arg);
                 }
                 break;
@@ -160,7 +181,9 @@ function evalResult($trans, $code, $inx)
                 break;
 
             case 'include' :
-                $filename = resolvePath($arg, true);
+                $filename = html_entity_decode($arg);
+                $filename = str_replace(['"', "'"], '', $filename);
+                $filename = resolvePath($filename, true);
                 $str = getFile($filename);
                 if ($str) {
                     $str = compileMarkdownStr($str);
@@ -183,15 +206,15 @@ function evalResult($trans, $code, $inx)
 
 
 function evalOp($arg, $op, $val) {
-    if (($op == 'eq') || ($op == '==')) {
-        $res = ($val == $arg);
-    } elseif (($op == 'lt') || ($op == '<')) {
+    if (($op === 'eq') || ($op === '==')) {
+        $res = ($val === $arg);
+    } elseif (($op === 'lt') || ($op === '<')) {
         $res = ($val < $arg);
-    } elseif (($op == 'le') || ($op == '<=')) {
+    } elseif (($op === 'le') || ($op === '<=')) {
         $res = ($val <= $arg);
-    } elseif (($op == 'ge') || ($op == '>=')) {
+    } elseif (($op === 'ge') || ($op === '>=')) {
         $res = ($val >= $arg);
-    } elseif (($op == 'ne') || ($op == '!=')) {
+    } elseif (($op === 'ne') || ($op === '!=')) {
         $res = ($val != $arg);
     }
     return $res;

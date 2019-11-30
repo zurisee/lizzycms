@@ -240,7 +240,7 @@ function closeAllAccordions($parentLi, setOpenCls) {
 
 
 function openCurrentElement() {
-    $('.lzy-nav.lzy-nav-open-current .active').each(function () {
+    $('.lzy-nav.lzy-nav-open-current .lzy-active').each(function () {
         $parentLi = $( this );
         $parentLi.addClass('lzy-open');
         $( 'div', $parentLi ).attr({'aria-hidden': 'false'});        // next div
@@ -260,7 +260,7 @@ function adaptMainMenuToScreenSize( smallScreen ) {
         if ($('.lzy-nav-small-tree').length) {
             openAccordion($('.lzy-primary-nav .lzy-has-children'), true, true); // open all
         } else {
-            $('.lzy-primary-nav .active').each(function() {
+            $('.lzy-primary-nav .lzy-active').each(function() {
                 console.log( $(this) );
                 openAccordion( $(this), false, true );
             });

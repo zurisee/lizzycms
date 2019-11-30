@@ -6,7 +6,8 @@ $page->addCssFiles("~sys/third-party/unite_gallery/css/unite-gallery.css");
 $page->addJqFiles(["JQUERY", "~sys/third-party/unite_gallery/js/unitegallery.min.js", "~sys/third-party/unite_gallery/themes/tiles/ug-theme-tiles.js"]);
 
 $jq = <<<EOT
-    $('.gallery').each(function() {
+
+    $('.lzy-gallery').each(function() {
         $(this).unitegallery({ tiles_type:'justified', tile_enable_textpanel:true, tile_textpanel_title_text_align: 'center' });
     });
     
@@ -53,7 +54,7 @@ $this->addMacro($macroName, function () {
 			'thumbnailSize'	=> $previewImgSize,
 		];
 	}
-	$id = 'gallery'.$inx;
+	$id = 'lzy-gallery'.$inx;
 	$album = new ImageGallery($galleryPath, $id, $options);
 	$str = $album->render();
 

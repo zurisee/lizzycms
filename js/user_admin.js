@@ -23,10 +23,13 @@ function setGenericEventHandlers() {
         e.preventDefault();
         if ($('.lzy-form-password').attr('type') == 'text') {
             $('.lzy-form-password').attr('type', 'password');
-            $('.lzy-form-show-password svg .crossed').css('display', 'none');   // toggles line in svg icon
+            // $('.lzy-form-show-password svg .crossed').css('display', 'none');   // toggles line in svg icon
+            $('.lzy-form-show-password lzy-icon-show:before').text('\006b');
+            $('.lzy-form-show-password span').removeClass('lzy-icon-hide').addClass('lzy-icon-show');
         } else {
             $('.lzy-form-password').attr('type', 'text');
-            $('.lzy-form-show-password svg .crossed').css('display', 'block');
+            // $('.lzy-form-show-password svg .crossed').css('display', 'block');
+            $('.lzy-form-show-password span').removeClass('lzy-icon-show').addClass('lzy-icon-hide');
         }
     });
 

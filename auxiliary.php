@@ -33,7 +33,7 @@ function parseArgumentStr($str, $delim = ',')
         $val = '';
 
         // grab next value, can be bare or enclosed in ' or "
-        if ($c == '"') {    // -> "
+        if ($c === '"') {    // -> "
             $p = findNextPattern($str, '"', 1);
             if ($p) {
                 $val = substr($str, 1, $p - 1);
@@ -44,7 +44,7 @@ function parseArgumentStr($str, $delim = ',')
                 fatalError("Error in key-value string: '$str0'", 'File: '.__FILE__.' Line: '.__LINE__);
             }
 
-        } elseif ($c == "'") {    // -> '
+        } elseif ($c === "'") {    // -> '
             $p = findNextPattern($str, "'", 1);
             if ($p) {
                 $val = substr($str, 1, $p - 1);
@@ -55,7 +55,7 @@ function parseArgumentStr($str, $delim = ',')
                 fatalError("Error in key-value string: '$str0'", 'File: '.__FILE__.' Line: '.__LINE__);
             }
 
-        } elseif ($c == '{') {    // -> {
+        } elseif ($c === '{') {    // -> {
             $p = findNextPattern($str, "}", 1);
             if ($p) {
                 $val = substr($str, 1, $p - 1);
@@ -87,12 +87,12 @@ function parseArgumentStr($str, $delim = ',')
         }
 
         // now, check whether it's a single value or a key:value pair
-        if ($str && ($str[0] == ':')) {         // -> key:value pair
+        if ($str && ($str[0] === ':')) {         // -> key:value pair
             $str = substr($str, 1);
             $assoc = true;
             $key = $val;
 
-        } elseif (!$str || ($str[0] == $delim)) {  // -> single value
+        } elseif (!$str || ($str[0] === $delim)) {  // -> single value
             if ($assoc) {
                 $options[$key] = $val;
             } else {
@@ -113,15 +113,21 @@ function parseArgumentStr($str, $delim = ',')
 
 function parseInlineBlockArguments($str, $returnElements = false)
 {
-    // Example: article  #my-id  .my-class  color:orange .class2 aria-expanded=false line-height: '1.5em;' !off .class3 aria-hidden= 'true' lang=de-CH literal=true md-compile=false
-    $tag = $id = $class = $style = $attr = $lang = $comment = '';
+    // Example: span  #my-id  .my-class  color:orange .class2 aria-expanded=false line-height: '1.5em;' !off .class3 aria-hidden= 'true' lang=de-CH literal=true md-compile=false "some text"
+    // Usage:
+    //   list($tag, $id, $class, $style, $attr, $text, $comment) = parseInlineBlockArguments($str, true);
+    //   list($tag, $str, $lang, $comment, $literal, $mdCompile, $text) = parseInlineBlockArguments($str);
+
+    $tag = $id = $class = $style = $attr = $lang = $comment = $text = '';
     $literal = false;
     $mdCompile = true;
     $elems = [];
 
     if (preg_match('/(.*) !(\S+) (.*)/x', $str, $m)) {      // !arg
         $str = $m[1].$m[3];
-        list($k, $v) = explode('=', strtolower($m[2]));
+        $arr = explode('=', strtolower($m[2]));
+        $k = isset($arr[0])? $arr[0] : '';
+        $v = isset($arr[1])? $arr[1] : '';
         if ($k === 'lang') {
             $attr .= " data-lang='$v'";
             $lang = $v;
@@ -158,18 +164,18 @@ function parseInlineBlockArguments($str, $returnElements = false)
         list($name, $arg) = explode('=', $elem);
         $arg = trim($arg);
         $ch1 = isset($arg[0]) ? $arg[0]: '';
-        if ($ch1 == '"') {
+        if ($ch1 === '"') {
             $arg = trim($arg, '"');
-        } elseif ($ch1 == "'") {
+        } elseif ($ch1 === "'") {
             $arg = trim($arg, "'");
         }
 
-        if (strtolower($name) == 'lang') {                                  // pseudo-attr: 'lang'
+        if (strtolower($name) === 'lang') {                                  // pseudo-attr: 'lang'
             $lang = $arg;
         }
-        if (strtolower($name) == 'literal') {                               // pseudo-attr: 'literal'
+        if (strtolower($name) === 'literal') {                               // pseudo-attr: 'literal'
             $literal = stripos($arg, 'true') !== false;
-        } elseif (strtolower($name) == 'md-compile') {                      // pseudo-attr: 'md-compile'
+        } elseif (strtolower($name) === 'md-compile') {                      // pseudo-attr: 'md-compile'
             $mdCompile = stripos($arg, 'false') === false;
         } else {
             $attr .= " $name='$arg'";
@@ -184,7 +190,7 @@ function parseInlineBlockArguments($str, $returnElements = false)
             } else {
                 $id = $m[2];
             }
-            $comment = "#{$m[2]}"; //??? where used???
+            $comment = "#{$m[2]}"; // -> comment which can be used in end tag, e.g. <!-- /.myclass -->
         }
     }
 
@@ -197,15 +203,20 @@ function parseInlineBlockArguments($str, $returnElements = false)
         $class = ' class="'. trim($class) .'"';
     }
 
+    if (preg_match('/(["\']) ([^\1]*) \1 /x', $str, $m)) {            // text
+        $text = $m[2];
+        $str = str_replace($m[0], '', $str);
+    }
+
     if (preg_match('/\b(\w+)\b/', trim($str), $m)) {            // tag
         $tag = $m[1];
     }
 
     if ($returnElements) {
-        return [$tag, $id, $class, trim($style), $attr];
+        return [$tag, $id, $class, trim($style), $attr, $text, $comment];
     } else {
         $str = "$id$class$style$attr";
-        return [$tag, $str, $lang, $comment, $literal, $mdCompile];
+        return [$tag, $str, $lang, $comment, $literal, $mdCompile, $text];
     }
 } // parseInlineBlockArguments
 
@@ -325,7 +336,7 @@ function convertYaml($str, $stopOnError = true, $origin = '', $convertDates = tr
                 if ($stopOnError) {
                     fatalError("Error in Yaml-Code: <pre>\n$str\n</pre>\n" . $e->getMessage(), 'File: '.__FILE__.' Line: '.__LINE__, $origin);
                 } else {
-                    writeLog("Error in Yaml-Code: [$str] -> " . $e->getMessage(), 'errlog');
+                    writeLog("Error in Yaml-Code: [$str] -> " . $e->getMessage(), true);
                     return null;
                 }
             }
@@ -335,11 +346,13 @@ function convertYaml($str, $stopOnError = true, $origin = '', $convertDates = tr
         return $data;
     }
     $data1 = [];
-    foreach ($data as $key => $value) {
-        if (is_string($key) && ($t = strtotime($key))) {
-            $data1[$t] = $value;
-        } else {
-            $data1[$key] = $value;
+    if (is_array($data)) {
+        foreach ($data as $key => $value) {
+            if (is_string($key) && ($t = strtotime($key))) {
+                $data1[$t] = $value;
+            } else {
+                $data1[$key] = $value;
+            }
         }
     }
     return $data1;
@@ -366,11 +379,21 @@ function getYamlFile($filename, $returnStructure = false)
     }
 	if ($returnStructure) {     // return structure of data
 	    if (!$structure) {      // source fild didn't contain a '_structure' record, so derive it from data:
-	        $yaml = trim(removeHashTypeComments($yaml));
-	        if (preg_match('/^ [\'"]? ([\w-]*?) [\'"]? \: .*/x', $yaml, $m)) {
+	        $yaml = removeHashTypeComments($yaml);
+            $yaml = preg_replace("/\n.*/", '', $yaml);
+            $inx0 = '';
+	        if (preg_match('/^ ([\'"]) ([\w\-\s:T]*) \1 : .*/x', $yaml, $m)) {
+                $inx0 = $m[2];
+            } elseif (preg_match('/^ ([\w\-\s:T]*) : .*/x', $yaml, $m)) {
 	            $inx0 = $m[1];
+            }
+	        if ($inx0) {
                 if (strtotime(($inx0))) {
-                    $structure['key'] = 'date';
+                    if (preg_match('/\d\d:\d\d/', $inx0)) {
+                        $structure['key'] = 'datetime';
+                    } else {
+                        $structure['key'] = 'date';
+                    }
                 } elseif (preg_match('/^\d+$/', $inx0)) {
                     $structure['key'] = 'number';
                 } else {
@@ -382,6 +405,9 @@ function getYamlFile($filename, $returnStructure = false)
                 foreach (array_keys($data[ $inxs[0] ]) as $name) {   // extract field names
                     $structure['fields'][$name] = 'string';
                 }
+            }
+	        if (!isset($structure['key'])) {
+                $structure['key'] = 'string';
             }
         }
 	    return [$data, $structure, $structDefined];
@@ -408,7 +434,8 @@ function writeToYamlFile($file, $data, $level = 3, $saveToRecycleBin = false)
         $ps = new PageSource;
 	    $ps->copyFileToRecycleBin($file);
     }
-	file_put_contents($file, $yaml);
+	$hdr = getHashCommentedHeader($file);
+	file_put_contents($file, $hdr.$yaml);
 } // writeToYamlFile
 
 
@@ -527,10 +554,15 @@ function removeHashTypeComments($str)
         return '';
     }
 	$lines = explode(PHP_EOL, $str);
+    $lead = true;
 	foreach ($lines as $i => $l) {
-		if (isset($l{0}) && ($l{0} == '#')) {
-			unset($lines[$i]);
-		}
+		if (isset($l{0}) && ($l{0} === '#')) {  // # at beginning of line
+			    unset($lines[$i]);
+        } elseif ($lead && !$l) {   // empty line while no data line encountered
+            unset($lines[$i]);
+        } else {
+            $lead = false;
+        }
 	}
 	return implode("\n", $lines);
 } // removeHashTypeComments
@@ -542,22 +574,29 @@ function removeCStyleComments($str)
 {
 	$p = 0;
 	while (($p = strpos($str, '/*', $p)) !== false) {		// /* */ style comments
-		if ($p && ($str{$p-1} == '\\')) {					// avoid shielded /*
-			$str = substr($str, 0, $p-1).substr($str,$p);
-			$p += 2;
-			continue;
-		}
+		if ($p) {
+		    $ch1 = $str{$p-1};
+		    if ($ch1 === '\\') {					// avoid shielded /*
+                $str = substr($str, 0, $p-1).substr($str,$p);
+                $p += 2;
+                continue;
+            }
+		    if ($ch1 === '/') {					    // skip dangerous pattern //*
+                $p += 2;
+                continue;
+            }
+        }
 		$p2 = strpos($str, "*/", $p);
 		$str = substr($str, 0, $p).substr($str, $p2+2);
 	}
 
 	$p = 0;
 	while (($p = strpos($str, '//', $p)) !== false) {		// // style comments
-		if ($p && ($str{$p-1} == ':')) {			// avoid http://
+		if ($p && ($str{$p-1} === ':')) {			// avoid http://
 			$p += 2;
 			continue;
 		}
-		if ($p && ($str{$p-1} == '\\')) {					// avoid shielded //
+		if ($p && ($str{$p-1} === '\\')) {					// avoid shielded //
 			$str = substr($str, 0, $p-1).substr($str,$p);
 			$p += 2;
 			continue;
@@ -566,7 +605,7 @@ function removeCStyleComments($str)
 		if ($p2 === false) {
 			return substr($str, 0, $p);
 		}
-		if ((!$p || ($str{$p-1} == "\n")) && ($str{$p2})) {
+		if ((!$p || ($str{$p-1} === "\n")) && ($str{$p2})) {
 			$p2++;
 		}
 		$str = substr($str, 0, $p).substr($str, $p2);
@@ -577,66 +616,98 @@ function removeCStyleComments($str)
 
 
 //--------------------------------------------------------------
-function getDir($pat)
+function getDir($pat, $supportLinks = false)
 {
 	if (strpos($pat, '{') === false) {
         $files = glob($pat);
     } else {
         $files = glob($pat, GLOB_BRACE);
     }
-	$files = array_filter($files, 'isNotShielded');
-	$path = dirname($pat).'/';
-	$fPat = basename($pat);
-	$linkFiles = array_filter(glob($path.'*.link'), 'isNotShielded');
-	foreach ($linkFiles as $f) {
-		$linkedFiles = explode(PHP_EOL, getFile($f, 'hashTypeComments+emptyLines'));
-		foreach($linkedFiles as $f) {
-			if (strpos($f, '~/') === 0) {
-				$pat1 = substr($f, 2);
-			} else {
-				$pat1 = $path.$f;
-			}
-			$lf = glob($pat1.$fPat);
-			$files = array_merge($files, $lf);
-		}
-	}
+    $files = array_filter($files, function ($str) {
+        return ($str && ($str{0} !== '#') && (strpos($str,'/#') === false));
+    });
+
+    if ($supportLinks) {
+        $path = dirname($pat) . '/';
+        $fPat = basename($pat);
+        $linkFiles = array_filter(glob($path . '*.link'), 'isNotShielded');
+        foreach ($linkFiles as $f) {
+            $linkedFiles = explode(PHP_EOL, getFile($f, 'hashTypeComments+emptyLines'));
+            foreach ($linkedFiles as $f) {
+                if (strpos($f, '~/') === 0) {
+                    $pat1 = substr($f, 2);
+                } else {
+                    $pat1 = $path . $f;
+                }
+                $lf = glob($pat1 . $fPat);
+                $files = array_merge($files, $lf);
+            }
+        }
+    }
 	return $files;
 } // getDir
+
 
 
 
 //--------------------------------------------------------------
 function getDirDeep($path, $onlyDir = false, $assoc = false, $returnAll = false)
 {
-    if (($path === false) || ($path === null)) {
-        return null;
+    $files = [];
+    $f = basename($path);
+    if (strpos($f, '*') !== false) {
+        $path = dirname($path);
     }
-    $flag = ($onlyDir) ? GLOB_ONLYDIR : 0;
-    $path = rtrim($path, '/').'/';
-    if ($returnAll) {
-        $dir = glob($path . '{,.}[!.,!..]*',GLOB_MARK|GLOB_BRACE|$flag);
-    } else {
-        $dir = glob($path . '*', $flag);
-    }
-    foreach($dir as $inx => $entry) {
-        if (is_dir($entry)) {
-            $dir[$inx] = rtrim($entry, '/').'/';
-            $dir = array_merge($dir, getDirDeep($entry, $flag, $assoc, $returnAll));
+    $it = new RecursiveDirectoryIterator($path);
+    foreach(new RecursiveIteratorIterator($it) as $fileRec) {
+        $f = $fileRec->getFilename();
+        $p = $fileRec->getPathname();
+        if ($onlyDir) {
+            if (($f === '.') && !preg_match('|/[_#]|', $p)) {
+                $files[] = rtrim($p, '.');
+            }
+            continue;
+        }
+        if (!$returnAll && preg_match('|/[._#]|', $p)) {
+            continue;
+        }
+        if ($assoc) {
+            $files[$f] = $p;
+        } else {
+            $files[] =$p;
         }
     }
-    if (!$returnAll) {
-        $dir = array_filter($dir, 'isNotShielded');
-    }
-    if ($assoc) {
-        $dd = [];
-        foreach ($dir as $e) {
-            $b = basename($e);
-            $dd[$b] = $e;
-        }
-        $dir = $dd;
-    }
-    return $dir;
+    return $files;
 } // getDirDeep
+
+
+
+
+//--------------------------------------------------------------
+function lastModified($path, $recursive = true, $exclude = null)
+{
+    $newest = 0;
+    $path = resolvePath($path);
+
+    if ($recursive) {
+        $path = './' . rtrim($path, '*');
+
+        $it = new RecursiveDirectoryIterator($path);
+        foreach (new RecursiveIteratorIterator($it) as $fileRec) {
+        	// ignore files starting with . or # or _
+            if (preg_match('|^[._#]|', $fileRec->getFilename())) {
+                continue;
+            }
+            $newest = max($newest, $fileRec->getMTime());
+        }
+    } else {
+        $files = glob($path);
+        foreach ($files as $file) {
+            $newest = max($newest, filemtime($file));
+        }
+    }
+    return $newest;
+} // filesTime
 
 
 
@@ -645,19 +716,20 @@ function getDirDeep($path, $onlyDir = false, $assoc = false, $returnAll = false)
 function is_inCommaSeparatedList($keyword, $list)
 {
     $list = ','.str_replace(' ', '', $list).',';
-    $res = (strpos($list, ",$keyword,") !== false);
     return (strpos($list, ",$keyword,") !== false);
 } // is_inCommaSeparatedList
 
 
 
-
 //--------------------------------------------------------------
-function fileExt($file, $reverse = false)
+function fileExt($file0, $reverse = false)
 {
+    $file = basename($file0);
+    $file = preg_replace(['|^\w{1,6}://|', '/[#?&:].*/'], '', $file);
     if ($reverse) {
-        $l = strlen(pathinfo($file, PATHINFO_EXTENSION)) + 1;
-        return substr($file, 0, -$l);
+        $path = dirname($file0).'/';
+        $file = pathinfo($file, PATHINFO_FILENAME);
+        return $path.$file;
 
     } else {
         return pathinfo($file, PATHINFO_EXTENSION);
@@ -669,7 +741,7 @@ function fileExt($file, $reverse = false)
 //--------------------------------------------------------------
 function isNotShielded($str)
 {	// first char of file or dirname must not be '#'
-	return (($str{0} != '#') && (strpos($str,'/#') === false));
+	return (($str{0} !== '#') && (strpos($str,'/#') === false));
 } // isNotShielded
 
 
@@ -686,7 +758,7 @@ function base_name($file, $incl_ext = true, $incl_args = false) {
 	if (!$incl_args && ($pos = strpos($file, '#'))) {
 		$file = substr($file, 0, $pos);
 	}
-	if (substr($file,-1) == '/') {
+	if (substr($file,-1) === '/') {
 		return '';
 	}
 	$file = basename($file);
@@ -705,7 +777,7 @@ function dir_name($path)
     if (!$path) {
         return '';
     }
-    if ($path{strlen($path)-1} == '/') {  // ends in '/'
+    if ($path{strlen($path)-1} === '/') {  // ends in '/'
         return $path;
     }
     $path = preg_replace('/[\#\?].*/', '', $path);
@@ -785,7 +857,7 @@ function makePathDefaultToPage($path)
 function convertFsToHttpPath($path)
 {
     $pagesPath = $GLOBALS['globalParams']['pathToPage'];
-    if (($path{0} != '~') && (strpos($path, $pagesPath) == 0)) {
+    if ($path && ($path{0} != '~') && (strpos($path, $pagesPath) === 0)) {
         $path = '~page/'.substr($path, strlen($pagesPath));
     }
     return $path;
@@ -793,27 +865,51 @@ function convertFsToHttpPath($path)
 
 
 
+
 //------------------------------------------------------------
-//function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false)
-function resolvePath($path, $relativeToCurrPage = false, $resourceAccess = false, $pageAccess = false)
-// $resourceAccess  -> includes 'pages/' in path
-// $pageAccess      -> excludes 'pages/' in path as used for access to html pages
+function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $absolutePath = false, $isResource = null)
 {
     global $globalParams;
 
-    if (!$path && !$relativeToCurrPage) {
-        return '';
-    } elseif (strpos($path, ':') !== false) {   // https://, tel:, sms:, etc.
+    $path = trim($path);
+    $path0 = $path;
+    if (!$path) {
+        if ($relativeToCurrPage) {
+            $path = '~page/';
+        } else {
+            $path = '~/';
+        }
+    } elseif (preg_match('/^https?:/i', $path)) {   // https://
         return $path;
     }
-    $path = trim($path);
-	if ($relativeToCurrPage) {		// for HTTP Requests
-        $path = makePathRelativeToPage($path);
+    $ch1=$path[0];
+    if ($ch1 === '/') {
+        $path = '~'.$path;
+    } else {
+        if ($relativeToCurrPage) {        // for HTTP Requests
+            $path = makePathRelativeToPage($path);
 
-	} else {
-        if ((($ch1=$path[0]) != '/') && ($ch1 != '~') && ($ch1 != '.')/* && ($ch1 != '_')*/) {	//default to path local to page ???always ok?
-            $path = '~/'.$path;
+        } else {
+            if (($ch1 != '/') && ($ch1 != '~')) {    //default to path local to page ???always ok?
+                $path = '~/' . $path;
+            }
         }
+    }
+
+    $ext = fileExt($path);
+    if ($isResource === null) { // not explicitly specified:
+        if ($httpAccess) {      // !$isResource only possible in case of HTTP access, i.e. page request:
+            $isResource = (stripos(',png,gif,jpg,jpeg,svg,pdf,css,txt,js,md,csv,json,yaml,', ",$ext,") !== false);
+        } else {                // in all other cases it's a plain and normal path (including 'pages/')
+            $isResource = true;
+        }
+    }
+
+	$urlToRoot  = $globalParams["pathToRoot"];
+    if ($isResource || !$httpAccess) {
+        $pathToPage = $globalParams["pathToPage"];
+    } else {
+        $pathToPage = $globalParams["pagePath"];
     }
 
     $from = [
@@ -823,77 +919,85 @@ function resolvePath($path, $relativeToCurrPage = false, $resourceAccess = false
         '|~ext/|',
         '|~page/|',
     ];
-    $to = [
-        '',
-        $globalParams['dataPath'],
-        SYSTEM_PATH,
-        EXTENSIONS_PATH,
-        $globalParams['pathToPage'],
-    ];
 
-    $pathToRoot = $globalParams['pathToRoot'];
-    if ($resourceAccess) {    // -> include 'pages/' in path
-        for ($i=0; $i<4; $i++) {
-            $to[$i] = $pathToRoot.$to[$i];
+    if ($httpAccess) {    // relative path for http access:
+        $to = [
+            $urlToRoot,
+            $urlToRoot.$globalParams['dataPath'],
+            $urlToRoot.SYSTEM_PATH,
+            $urlToRoot.EXTENSIONS_PATH,
+            '',
+        ];
+        if ($isResource) {
+            $to[4] = $urlToRoot.$pathToPage;
         }
-        $to[4] = $globalParams["host"].$globalParams["appRoot"].$globalParams['pathToPage'];
-//        $to[4] = $globalParams["host"].$globalParams['pathToPage'];
-    }
-    if ($pageAccess) {    // -> exclude 'pages/' in path
-        $to[4] = './';
-//        $to[4] = $globalParams['pathToRoot'].$globalParams['pagePath'];
-    }
 
+    } else {    // relative path for file access:
+        $to = [
+            '',
+            $globalParams['dataPath'],
+            SYSTEM_PATH,
+            EXTENSIONS_PATH,
+            $pathToPage,
+        ];
+    }
     $path = preg_replace($from, $to, $path);
+
+    // Absolute path requested:
+    if ($absolutePath) {
+        if ($httpAccess) {
+            if ($relativeToCurrPage) {
+                $path = $GLOBALS["globalParams"]["pageUrl"] . $path;
+            } else {
+                $path = $GLOBALS["globalParams"]["absAppRootUrl"] . $path0;
+            }
+        } else {
+            if ($relativeToCurrPage) {
+                $path = $GLOBALS["globalParams"]["absAppRoot"] . $path;
+            } else {
+                $path = $GLOBALS["globalParams"]["absAppRoot"] . $path;
+            }
+        }
+    }
+    $path = normalizePath($path);
     return $path;
 } // resolvePath
 
 
 
+
 //------------------------------------------------------------
-function makePathRelativeToPage($path, $forImgRessources = false)
+function normalizePath($path)
+{
+    $hdr = '';
+    if (preg_match('|^ ((\.\./)+) (.*)|x', $path, $m)) {
+        $hdr = $m[1];
+        $path = $m[3];
+    }
+    while ($path && preg_match('|(.*?) ([^/\.]+/\.\./) (.*)|x', $path, $m)) {
+        $path = $m[1] . $m[3];
+    }
+    $path = str_replace('/./', '/', $path);
+    return $hdr.$path;
+} // normalizePath
+
+
+
+
+//------------------------------------------------------------
+function makePathRelativeToPage($path)
 {
     if (!$path) {
         return '';
     }
 
-    if ((($ch1=$path{0}) != '/') && ($ch1 != '~') && ($ch1 != '.')) {	//default to path local to page
-        if ($forImgRessources) {
-            if (($dirname = dirname($path).'/') == './') {
-                $dirname = '';
-            }
-            $path = '~page/' . $dirname.'_/'.basename($path);
-        } else {
+    if ((($ch1=$path{0}) != '/') && ($ch1 != '~')) {	//default to path local to page
             $path = '~page/' . $path;
-        }
-    } else {
-        if ($forImgRessources) {
-            $dirname = dirname($path) . '/';
-            $basename = basename($path);
-            $path = $dirname . '_/' . basename($path);
-        }
+
     }
+
     return $path;
 } // makePathRelativeToPage
-
-
-
-//------------------------------------------------------------
-function resolveAllPaths( &$html, $requestRewriteActive = true)
-{
-	global $globalParams;
-	$pathToRoot = $globalParams['pathToRoot'];
-
-    if (!$requestRewriteActive) {
-        resolveHrefs($html);
-    }
-
-    $html = preg_replace('|~/|', $pathToRoot, $html);
-	$html = preg_replace('|~data/|', $pathToRoot.$globalParams['dataPath'], $html);
-	$html = preg_replace('|~sys/|', $pathToRoot.SYSTEM_PATH, $html);
-	$html = preg_replace('|~ext/|', $pathToRoot.EXTENSIONS_PATH, $html);
-	$html = preg_replace(['|~page/|', '|\^/|'], $pathToRoot.$globalParams['pathToPage'], $html);    // -> only resource links! would be wrong for html links!
-} // resolveAllPaths
 
 
 
@@ -904,7 +1008,7 @@ function resolveHrefs( &$html )
     $prefix = $appRoot.'?lzy=';
     $p = strpos($html, '~/');
     while ($p !== false) {
-        if (substr($html, $p-6, 5) == 'href=') {
+        if (substr($html, $p-6, 5) === 'href=') {
             if (preg_match('|^([\w-/\.]*)|', substr($html, $p + 2, 30), $m)) {
                 $s = $m[1];
                 if (!file_exists($s)) {
@@ -915,7 +1019,6 @@ function resolveHrefs( &$html )
         $p = strpos($html, '~/', $p + 2);
     }
 } // resolveHrefs
-
 
 
 
@@ -930,7 +1033,7 @@ function generateNewVersionCode()
     }
     do {
         $randCode = rand(0, 9) . rand(0, 9);
-    } while ($prevRandCode && ($prevRandCode == $randCode));
+    } while ($prevRandCode && ($prevRandCode === $randCode));
     file_put_contents(VERSION_CODE_FILE, $randCode);
     return $randCode;
 } // generateNewVersionCode
@@ -990,7 +1093,7 @@ function parseNumbersetDescriptor($descr, $minValue = 1, $maxValue = 9, $headers
 		        $names[$i] = $m[2];
             }
 			$inx = alphaIndexToInt($elem, $headers);
-			if ($inx == 0) {
+			if ($inx === 0) {
                 fatalError("Error in table()-macro: unknown element '$elem'", 'File: '.__FILE__.' Line: '.__LINE__);
             }
 			$out[] = $inx; //alphaIndexToInt($elem, $headers);
@@ -1033,6 +1136,41 @@ function alphaIndexToInt($str, $headers = false, $ignoreCase = true)
 	}
 	return $int;
 } // alphaIndexToInt
+
+
+
+
+//-----------------------------------------------------------------------
+function setNotificationMsg($msg)
+{
+    // notification message is displayed once on next page load
+    $_SESSION['lizzy']['reload-arg'] = $msg;
+} // setNotificationMsg
+
+
+
+//-----------------------------------------------------------------------
+function getNotificationMsg($clearMsg = true)
+{
+    if (isset($_SESSION['lizzy']['reload-arg'])) {
+        $arg = $_SESSION['lizzy']['reload-arg'];
+        if ($clearMsg) {
+            clearNotificationMsg();
+        }
+    } else {
+        $arg = getUrlArg('reload-arg', true);
+    }
+    return $arg;
+} // getNotificationMsg
+
+
+
+
+//-----------------------------------------------------------------------
+function clearNotificationMsg()
+{
+    unset($_SESSION['lizzy']['reload-arg']);
+} // clearNotificationMsg
 
 
 
@@ -1157,16 +1295,12 @@ function reloadAgent($target = false, $getArg = false)
     if ($target === true) {
         $target = $globalParams['requestedUrl'];
     } elseif ($target) {
-        $target = resolvePath($target, false, 'https');
+        $target = resolvePath($target, false, true);
     } else {
         $target = $globalParams['pageUrl'];
     }
     if ($getArg) {
-        if (strpos($target, '?') === false) {
-            $target .= "?reload-arg=$getArg";
-        } else {
-            $target .= "&reload-arg=$getArg";
-        }
+        setNotificationMsg($getArg);
     }
     header("Location: $target");
     exit;
@@ -1190,7 +1324,7 @@ function get_post_data($varName, $permitNL = false)
 //------------------------------------------------------------
 function path_info($file)
 {
-	if (substr($file, -1) == '/') {
+	if (substr($file, -1) === '/') {
 		$pi['dirname'] = $file;
 		$pi['filename'] = '';
 		$pi['extension'] = '';
@@ -1208,12 +1342,14 @@ function path_info($file)
 //------------------------------------------------------------
 function preparePath($path)
 {
-    if ($path[0] == '~') {
+    if ($path && ($path[0] === '~')) {
         $path = resolvePath($path);
     }
 	$path = dirname($path.'x');
     if (!file_exists($path)) {
-        if (!mkdir($path, MKDIR_MASK2, true)) {
+        try {
+            mkdir($path, MKDIR_MASK2, true);
+        } catch (Exception $e) {
             fatalError("Error: failed to create folder '$path'", 'File: '.__FILE__.' Line: '.__LINE__);
         }
     }
@@ -1336,7 +1472,7 @@ function translateToFilename($str, $appendExt = true)
 // translates special characters (such as , , ) into "filename-safe" non-special equivalents (a, o, U)
 	$str = strToASCII(trim(mb_strtolower($str)));	// replace special chars
 	$str = strip_tags($str);						// strip any html tags
-	$str = str_replace(' ', '_', $str);				// replace blanks with _
+	$str = str_replace([' ', '-'], '_', $str);				// replace blanks with _
 	$str = str_replace('/', '_', $str);				// replace '/' with _
 	$str = preg_replace("/[^[:alnum:]\._-`]/m", '', $str);	// remove any non-printables
 	$str = preg_replace("/\.+/", '.', $str);		// reduce multiple ... to one .
@@ -1381,29 +1517,32 @@ function mylog($str, $destination = false)
 
 
 //------------------------------------------------------------
-function writeLog($str, $destination = false)
+function writeLog($str, $errlog = false)
 {
     global $globalParams;
 
-    if (($path = $globalParams['path_logPath']) && ($destination != 'errlog')) {
-        if (!$globalParams['activityLoggin']) {
+    if (!$errlog) {
+        if (!$globalParams['activityLoggingEnabled']) {
             return;
         }
-        if ($destination) {
-            if (($destination[0] == '~') || ($destination[0] == '/')) {
-                $destination = resolvePath($destination);
-            }
-        } else {
-            $destination = LOG_FILE;
-        }
-        preparePath($destination);
-        file_put_contents($destination, timestamp()."  $str\n", FILE_APPEND);
+        preparePath(LOG_FILE);
+        file_put_contents(LOG_FILE, timestamp()."  $str\n", FILE_APPEND);
 
-    } elseif ($destination == 'errlog') {
-        if (!$globalParams['errorLogging']) {
+    } else {
+        if (!$globalParams['errorLoggingEnabled']) {
             return;
         }
-        $destination = $globalParams['errorLogFile'];
+        if (is_string($errlog)) {
+            // only allow files in LOGS_PATH and only with extension .txt or .log:
+            $errlog = LOGS_PATH . base_name($errlog);
+            $ext = fileExt($errlog);
+            if (($ext !== 'txt') && ($ext !== 'log')) {
+                $errlog = fileExt($errlog, true).'.txt';
+            }
+            $destination = resolvePath($errlog);
+        } else {
+            $destination = $globalParams['errorLogFile'];
+        }
         if ($destination) {
             preparePath($destination);
             file_put_contents($destination, timestamp() . "  $str\n", FILE_APPEND);
@@ -1416,7 +1555,7 @@ function writeLog($str, $destination = false)
 //------------------------------------------------------------
 function logError($str)
 {
-    writeLog($str, 'errlog');
+    writeLog($str, true);
 } // logError
 
 
@@ -1426,6 +1565,37 @@ function shield_str($s)
 {
 	return str_replace('"', '\\"', $s);
 } // shield_str
+
+
+
+
+//------------------------------------------------------------------------------
+function explodeTrim($sep, $str)
+{
+    if (strlen($sep > 1)) {
+        $sep = preg_quote($sep);
+        $out = array_map('trim', preg_split("/[$sep]/", $str));
+        return $out;
+    } else {
+        return array_map('trim', explode($sep, $str));
+    }
+} // explodeTrim
+
+
+
+
+//------------------------------------------------------------------------------
+function revertQuotes($s, $unshield = true)
+{
+    // &#39; -> '
+    // &#34; -> "
+    // unless shielded by preceding '\'
+    $s = preg_replace(['/(?<!\\\) (&\#39;)/x', '/(?<!\\\) (&\#34;)/x'], ["'", '"'], $s);
+    if ($unshield) {
+        $s = str_replace(['\\&#39;', '\\&#34;'], ['&#39;', '&#34;'], $s);
+    }
+	return $s;
+} // revertQuotes
 
 
 
@@ -1585,7 +1755,7 @@ function strPosMatching($str, $pat1 = '{{', $pat2 = '}}', $p0 = 0)
         if ($p2 === false) { // no more closing pat
                 return [false, false];
 		}
-		if ($cnt == 0) {	// not in nexted structure
+		if ($cnt === 0) {	// not in nexted structure
 			if ($p3 === false) {	// no more opening pat
 				return [$p0, $p2];
 			}
@@ -1632,7 +1802,7 @@ function checkNesting($str, $pat1, $pat2)
 function findNextPattern($str, $pat, $p1 = 0)
 {
 	while (($p1 = strpos($str, $pat, $p1)) !== false) {
-		if (($p1 == 0) || (substr($str, $p1-1, 1) != '\\')) {
+		if (($p1 === 0) || (substr($str, $p1-1, 1) != '\\')) {
 			break;
 		}
 		$p1 += strlen($pat);
@@ -1662,17 +1832,17 @@ function trunkPath($path, $n = 1, $leaveNotRemove = true)
             return "$path/$file";
             return implode('/', explode('/', $path, -$n)) . '/';
         } else {        // leave from left
-            $path = ($path[0] == '/') ? substr($path, 1) : $path;
+            $path = ($path[0] === '/') ? substr($path, 1) : $path;
             $parray = explode('/', $path);
             return '/'.implode('/', array_splice($parray, 0, -$n)).'/';
         }
 
     } else {
         if ($n > 0) {   // trunk from right
-            $path = ($path[strlen($path) - 1] == '/') ? rtrim($path, '/') : dirname($path);
+            $path = ($path[strlen($path) - 1] === '/') ? rtrim($path, '/') : dirname($path);
             return implode('/', explode('/', $path, -$n)) . '/';
         } else {        // trunk from left
-            $path = ($path[0] == '/') ? substr($path, 1) : $path;
+            $path = ($path[0] === '/') ? substr($path, 1) : $path;
             $parray = explode('/', $path);
             return implode('/', array_splice($parray, -$n));
         }
@@ -1708,7 +1878,7 @@ function rrmdir($src)
 //-----------------------------------------------------------------------------
 function compileMarkdownStr($mdStr, $removeWrappingPTags = false)
 {
-    $md = new MyMarkdown();
+    $md = new LizzyMarkdown();
     $str = $md->parseStr($mdStr);
     if ($removeWrappingPTags) {
         $str = preg_replace('/^\<p>(.*)\<\/p>(\s*)$/ms', "$1$2", $str);
@@ -1736,7 +1906,7 @@ function isLocalCall()
     if (($state = getStaticVariable('localcall')) !== null) {
         return $state;
     }
-    if (($serverName == 'localhost') || ($remoteAddress == '::1')) {
+    if (($serverName === 'localhost') || ($remoteAddress === '::1')) {
         return true;
     } else {
         return false;
@@ -1792,7 +1962,7 @@ function fatalError($msg, $origin = '', $offendingFile = '')
         reloadAgent();
     }
 
-    if (isset($globalParams['localCall']) && $globalParams['localCall']) {
+    if (isLocalCall()) {
         exit($msg);
     } else {
         exit;
@@ -1826,93 +1996,18 @@ function handleFatalPhpError() {
 
 
 //....................................................
-function parseDimString($str, $imageFile = false, $aspectRatio = false)
+function parseDimString($str)
 {
-    // E.g. 200x150, or 200x  or x150 etc. -> reads size of given image
-    $h = $w = 0;
-    if (strpos($str, 'x') === false) {      // no 'x' present
-        if (!$str) {
-            $w = $h = $aspectRatio = 0;
-
-        } else {
-            if (!$aspectRatio) {
-                if (file_exists($imageFile)) {
-                    list($w0, $h0) = getimagesize($imageFile);
-                    $aspectRatio = $h0 / $w0;
-                } else {
-                    $aspectRatio = DEFAULT_ASPECT_RATIO;
-                }
-            } elseif ($aspectRatio < 1) {
-                $w = intval($str);
-                $h = (int)round($w * $aspectRatio);
-            } else {
-                $h = intval($str);
-                $w = (int)round($h / $aspectRatio);
-            }
-        }
-
-    } else {                    // 'x' present
-        list($w, $h) = explode('x', $str);
-        $w = intval($w);
-        $h = intval($h);
-        if (!$aspectRatio && $imageFile) {
-            if ($imageFile{0} == '~') {
-                $imageFile = resolvePath($imageFile, true);
-            }
-            if (file_exists($imageFile)) {
-                list($w0, $h0) = getimagesize($imageFile);
-                if ($w0 && $h0) {
-                    $aspectRatio = $h0 / $w0;
-                } else {
-                    $aspectRatio = DEFAULT_ASPECT_RATIO;
-                }
-            } else {
-                $aspectRatio = DEFAULT_ASPECT_RATIO;
-            }
-        } elseif (!$aspectRatio) {
-            $aspectRatio = DEFAULT_ASPECT_RATIO;
-        }
-
-        if (!$w) {
-            $w = (int) round($h / $aspectRatio);
-        } elseif (!$h) {
-            $h = (int) round($w * $aspectRatio);
-        }
+    // E.g. 200x150, or 200x  or x150 or 200 etc.
+    $h = $w = null;
+    if (preg_match('/(\d*)x(\d*)/', $str, $m)) {
+        $w = intval($m[1]);
+        $h = intval($m[2]);
+    } elseif (preg_match('/(\d+)/', $str, $m)) {
+        $w = intval($m[1]);
     }
     return [$w, $h];
 } // parseDimString
-
-
-
-//....................................................
-function parseFileName($filename, $aspectRatio)
-{
-    $path = dirname($filename).'/';
-    $fname = base_name($filename);
-    $dimFound = false;
-    $w = $h = '';
-
-    if (preg_match('/([^\(]*) \( (.*) \) (\.\w+)/x', $fname, $m)) {    // (WxH) size specifier present?
-        $basename = $m[1];
-        $dimStr = $m[2];
-        $ext = $m[3];
-
-        $imgFullsizeFile = $path.$basename.$ext;
-
-        list($w, $h) = parseDimString($dimStr, $imgFullsizeFile, $aspectRatio);
-
-        $filename = $path.$basename."({$w}x$h)".$ext;
-        $dimFound = true;
-
-    } else {
-        $basename = base_name($fname, false);
-        $ext = '.'.fileExt($fname);
-        $f = resolvePath($filename);
-    }
-    $filename = convertFsToHttpPath($filename);
-    $path = convertFsToHttpPath($path);
-    return [$filename, $path, $basename, $ext, $w, $h, $dimFound];
-} // parseFileName
 
 
 

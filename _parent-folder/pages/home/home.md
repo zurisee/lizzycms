@@ -1,3 +1,10 @@
+---
+css: |
+	.page_home .mybutton {
+		padding: 3px 1em;
+	}
+---
+
 # New Lizzy-Based Website
 
 Congratulations! It's working.
@@ -12,8 +19,5 @@ If not, visit {{ link( 'https://getlizzy.net/', type:external ) }}.
 
 {{ if( 
     file:'~/config/users.yaml', 
-    op: '<', 
-    arg: 1, 
-    then: "%include: to-delete/intro.md" 
+    else: "%include: to-delete/intro.md" 
 ) }}
-

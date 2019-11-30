@@ -34,7 +34,11 @@ class AdminTasks
             if (!$this->auth->isAdmin()) { return false; }
             $email = get_post_data('lzy-add-user-email');
             $pw = get_post_data('lzy-add-user-password-password');
-            $pw = password_hash($pw, PASSWORD_DEFAULT);
+            if ($pw) {
+                $pw = password_hash($pw, PASSWORD_DEFAULT);
+            } else {
+                $pw = '';
+            }
             $un = get_post_data('lzy-add-user-username');
             $key = ($un) ? $un : $email;
             $rec[$key] = [
@@ -46,7 +50,7 @@ class AdminTasks
                 'emaillist' => get_post_data('lzy-add-user-emaillist')
             ];
             $str = $this->addUser($rec);
-            $res = [false, $str, 'Override'];
+            $res = [false, $str, 'Message'];
 
 
         } else {
@@ -201,7 +205,8 @@ class AdminTasks
     public function sendSignupMail($email, $group = 'guest')
     {
         $accessCodeValidyTime = $this->lzy->config->admin_defaultAccessLinkValidyTime;
-        $message = $this->sendCodeByMail($email, 'email-signup', $accessCodeValidyTime, 'unknown-user', false);
+        list($message) = $this->sendCodeByMail($email, 'email-signup', $accessCodeValidyTime, 'unknown-user', false);
+//        $message = $this->sendCodeByMail($email, 'email-signup', $accessCodeValidyTime, 'unknown-user', false);
         return $message;
     } // sendSignupMail
 
@@ -213,7 +218,8 @@ class AdminTasks
     {
         $accessCodeValidyTime = $this->lzy->config->admin_defaultAccessLinkValidyTime;
         $userRec = $this->auth->getLoggedInUser(true);
-        $message = $this->sendCodeByMail($email, 'email-change-mail', $accessCodeValidyTime, $userRec);
+        list($message) = $this->sendCodeByMail($email, 'email-change-mail', $accessCodeValidyTime, $userRec);
+//        $message = $this->sendCodeByMail($email, 'email-change-mail', $accessCodeValidyTime, $userRec);
         return $message;
     } // sendChangeMailAddress_Mail
 
@@ -244,11 +250,11 @@ class AdminTasks
             foreach ($newRecs as $rec) {
                 $str .= "<li><span class='lzy-adduser-mail'>{$rec['email']}</span> [<span class='lzy-adduser-name'>{$rec['displayName']}</span>]</li>\n";
             }
-            $str = "<div class='lzy-adduser-wrapper'>\n<div>{{ lzy-add-users-response }} <strong>$group</strong> {{ lzy-add-users-response2 }}:</div>\n<ul>$str</ul>\n</div>\n";
+            $str = "<div class='lzy-adduser-wrapper lzy-adduser-response'>\n<div>{{ lzy-add-users-response }} <strong>$group</strong> {{ lzy-add-users-response2 }}:</div>\n<ul>$str</ul>\n</div>\n";
             $this->addUsersToDB($newRecs);
 
         } else {
-            $str = "<div class='lzy-adduser-wrapper'>{{ lzy-add-users-none-added }} <strong>$group</strong> {{ lzy-add-users-none-added2 }</div>";
+            $str = "<div class='lzy-adduser-wrapper lzy-adduser-response'>{{ lzy-add-users-none-added }} <strong>$group</strong> {{ lzy-add-users-none-added2 }</div>";
         }
         return $str;
     }
@@ -260,7 +266,7 @@ class AdminTasks
     {
         $this->addUsersToDB($rec);
         $rec = array_pop($rec); //???
-        $str = "<div class='lzy-adduser-wrapper'>{{ lzy-add-user-response }}: {$rec['email']}</div>";
+        $str = "<div class='lzy-adduser-wrapper lzy-adduser-response'>{{ lzy-add-user-response }}: {$rec['email']}</div>";
         return $str;
     }
 
@@ -474,7 +480,8 @@ class AdminTasks
 
     private function addUsersToDB($userRecs)
     {
-        $userRecs = array_merge($this->auth->getKnownUsers(), $userRecs);
+        $knownUsers = $this->auth->getKnownUsers();
+        $userRecs = array_merge($knownUsers, $userRecs);
         writeToYamlFile($this->auth->userDB, $userRecs);
         return true;
     } // addUsersToDB
@@ -523,7 +530,8 @@ class AdminTasks
         if (isset($userRec['displayName'])) {
             $displayName = $userRec['displayName'];
         } else {
-            $displayName = $user;
+            $displayName = $submittedEmail;
+//            $displayName = $user;
         }
 
         $tick = new Ticketing();
@@ -541,6 +549,7 @@ class AdminTasks
             $userAcc = new UserAccountForm(null);
 
             $message = $userAcc->renderOnetimeLinkEntryForm($user, $validUntilStr, 'lzy-onetime access link');
+            writeLog("one time link sent to: $submittedEmail -> '$hash'", LOGIN_LOG_FILENAME);
 
         } elseif ($mode == 'email-signup') {
             $subject = "[{{ site_title }}] {{ lzy-email-sign-up-subject }} {$globalParams['host']}";
@@ -569,7 +578,8 @@ class AdminTasks
 
             $message = $userAcc->renderOnetimeLinkEntryForm($submittedEmail, $validUntilStr, 'lzy-change-mail-link');
         }
-        return $message;
+        return [$message, $displayName];
+//        return $message;
     }
 
 
