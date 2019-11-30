@@ -45,6 +45,7 @@ function installLizzy()
 {
     copyFolder('_lizzy/_parent-folder/', '.');
     rename('htaccess','.htaccess');
+    unlink('install.php');
 }
 
 
