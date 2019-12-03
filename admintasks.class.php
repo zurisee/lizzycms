@@ -131,7 +131,6 @@ class AdminTasks
     {
         $notification = getStaticVariable('lastLoginMsg');
         $group = getUrlArg('group', true);
-//        $userAdminInitialized = file_exists(CONFIG_PATH.$this->lzy->config->admin_usersFile);
 
         $accountForm = new UserAccountForm($this->lzy);
         if (!$this->loggedInUser) {
