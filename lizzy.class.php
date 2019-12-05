@@ -312,8 +312,9 @@ class Lizzy
 
     private function handleAdminRequests()
     {
+        $userAdminInitialized = file_exists(CONFIG_PATH.$this->config->admin_usersFile);
         if (!isset($_REQUEST['lzy-user-admin']) ||
-            !$this->auth->isAdmin()) {
+            (!$this->auth->isAdmin() && $userAdminInitialized)) {
             return false;   // nothing to do
         }
         require_once SYSTEM_PATH.'admintasks.class.php';
@@ -1364,7 +1365,9 @@ EOT;
 
 
         //====================== the following is restricted to editors and admins:
-        if ($editingPermitted = $this->auth->checkGroupMembership('editors')) {
+        $userAdminInitialized = file_exists(CONFIG_PATH.$this->config->admin_usersFile);
+        $editingPermitted = $this->auth->checkGroupMembership('editors');
+        if ($editingPermitted || !$userAdminInitialized) {
             if (isset($_GET['convert'])) {                                  // convert (pw to hash)
                 $this->renderPasswordConverter();
             }
@@ -1981,8 +1984,8 @@ EOT;
     //....................................................
     private function checkInstallation0()
     {
-        if (version_compare(PHP_VERSION, '7.0.0') < 0) {
-            die("Lizzy requires at PHP version 7 or higher to run.");
+        if (version_compare(PHP_VERSION, '7.1.0') < 0) {
+            die("Lizzy requires PHP version 7.1 or higher to run.");
         }
 
         if (!file_exists(DEFAULT_CONFIG_FILE)) {
