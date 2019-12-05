@@ -131,12 +131,12 @@ function initPrimaryNav() {
         $('.lzy-large-screen .lzy-primary-nav .lzy-has-children').each(function () {
             closeAllAccordions($( this ), true);
             return;
-            var $elem = $(this);
-            var $nextDivs = $('div', $elem);
-            $elem.removeClass('lzy-open lzy-hover');
-            $('li', $elem).removeClass('lzy-open');       // close all li below parent li
-            $nextDivs.attr({'aria-hidden': 'true'});        // make all sub-elements hidden
-            $('a', $nextDivs).attr({'tabindex': '-1'}); // make sub-menus un-focusable
+            // var $elem = $(this);
+            // var $nextDivs = $('div', $elem);
+            // $elem.removeClass('lzy-open lzy-hover');
+            // $('li', $elem).removeClass('lzy-open');       // close all li below parent li
+            // $nextDivs.attr({'aria-hidden': 'true'});        // make all sub-elements hidden
+            // $('a', $nextDivs).attr({'tabindex': '-1'}); // make sub-menus un-focusable
         });
     } else {
         $('.lzy-large-screen .lzy-primary-nav .lzy-nav').each(function() {
