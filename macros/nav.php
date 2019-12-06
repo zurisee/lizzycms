@@ -106,11 +106,7 @@ function inPageNav($page, $options, $inx, $inPageSizeThreshold)
     }
 
     $listElemTag = ($listTag == 'div') ? 'div' : 'li';
-    if ($targetElem) {
-        inPageByTargetElement($page, $inx, $targetElem, $listElemTag, $inPageSizeThreshold);
-    } else {
-        inPageHierarchie($page, $inx, $depth, $listElemTag, $inPageSizeThreshold);
-    }
+    renderInPageNav($page, $inx, $targetElem, $depth, $listElemTag, $inPageSizeThreshold);
 
     $out = "\t<nav class='lzy-in-page-nav' aria-label='{{ InPage TOC }}'>$title<$listTag id='lzy-in-page-nav$inx' class='lzy-in-page-nav'></$listTag></nav>\n";
     return $out;
@@ -119,29 +115,37 @@ function inPageNav($page, $options, $inx, $inPageSizeThreshold)
 
 
 
-function inPageHierarchie($page, $inx, $depth, $listElemTag, $inPageSizeThreshold)
+function renderInPageNav($page, $inx, $targetElems, $depth, $listElemTag, $inPageSizeThreshold)
 {
     $depth = intval($depth);
     $hMax = "H$depth";
+    if ($targetElems) {
+        $targetElems = ',' . strtoupper(str_replace(' ', '', $targetElems)) . ',';
+    }
     $jq = <<<EOT
 
     var str = '';
     var nElems = 0;
+    var targetElems = '$targetElems';
     $(':header').each(function() {
         var \$this = $(this);
         if (\$this.closest('.lzy-mobile-page-header').length) {
             return;
         }
+        var tagName = this.tagName;
+        if (targetElems) {  // skip tags if not in targetElems
+            if (!targetElems.match(tagName)) {
+                return;
+            }
+        }
         var hdrText = \$this.text();
         var id = hdrText.replace(/[^a-z0-9]/gi, '_');
         \$this.attr('id', id);
         var hdrId =  \$this.attr('id');
-        var nodeName = this.nodeName;
-
-        if (nodeName <= '$hMax') {
-            str += '<$listElemTag class="'+nodeName+'"><a href="#'+hdrId+'">'+hdrText+'</a></$listElemTag>';
+        if (tagName <= '$hMax') {
+            str += '<$listElemTag class="'+tagName+'"><a href="#'+hdrId+'">'+hdrText+'</a></$listElemTag>';
             nElems++;
-        }
+       }
     });
     $('#lzy-in-page-nav$inx').append(str);
     if (nElems < $inPageSizeThreshold) {
@@ -149,35 +153,7 @@ function inPageHierarchie($page, $inx, $depth, $listElemTag, $inPageSizeThreshol
     }
 
 EOT;
+
     $page->addJQ($jq);
+} // renderInPageNav
 
-} // inPageHierarchie
-
-
-
-function inPageByTargetElement($page, $inx, $targetElem, $listElemTag, $inPageSizeThreshold)
-{
-    $jq = <<<EOT
-
-    var str = '';
-    var nElems = 0;
-    $('$targetElem').each(function() {
-        var \$this = $(this);
-        if (\$this.closest('.lzy-mobile-page-header').length) {
-            return;
-        }
-        var hdrText = \$this.text();
-        var id = hdrText.replace(/[^a-z0-9]/gi, '_');
-        \$this.attr('id', id);
-        var hdrId =  \$this.attr('id');
-        str += '<$listElemTag><a href="#'+hdrId+'">'+hdrText+'</a></$listElemTag>';
-    });
-    $('#lzy-in-page-nav$inx').append(str);
-    if (nElems < $inPageSizeThreshold) {
-        $('#lzy-in-page-nav$inx').closest('nav.lzy-in-page-nav').parent().hide();
-    }
-
-EOT;
-    $page->addJQ($jq);
-
-} // inPageByTargetElement
