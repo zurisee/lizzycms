@@ -167,6 +167,10 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
     /* === Buttons =============================== */
     .lzy-form-field-type-buttons {
         text-align: right;
+        input {
+            width: unset;
+            padding: 0 1em;
+        }
     }
     .lzy-form-form-button {
         width: 7em;

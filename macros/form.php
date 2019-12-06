@@ -29,37 +29,39 @@ $this->addMacro($macroName, function () {
     $args = $this->getArgsArray($macroName);
 
 
-    if ($inx == 1) {
+    if ($inx === 1) {
         $this->form = new Forms($this->page, $this);
     }
-    if (isset($args[0]) && ($args[0] == 'help')) {
+    if (isset($args[0]) && ($args[0] === 'help')) {
         return $this->form->renderHelp();
     }
+    $mailto = $this->getArg($macroName, 'mailto', '', '');
 
-    $str = $this->form->render([ 'type' => 'form-head' ]);
+    $str = $this->form->render([ 'type' => 'form-head', 'mailto' => $mailto ]);
     $buttons = [ 'label' => '', 'type' => 'button', 'value' => '' ];
     foreach ($args as $label => $arg) {
         if (is_string($arg)) {
             $arg = ['type' => $arg ? $arg : 'text'];
         }
         if (isset($arg[0])) {
-            if ($arg[0] == 'required') {
+            if ($arg[0] === 'required') {
                 $arg['required'] = true;
                 unset($arg[0]);
             } else {
                 $arg['type'] = $arg[0];
             }
         }
-        if ($label == 'submit') {
+        if ($label === 'submit') {
             $buttons["label"] .= isset($arg['label']) ? $arg['label'].',': '{{ Submit }},';
             $buttons["value"] .= 'submit,';
             $arg['type'] = 'button';
 
-        } elseif ($label == 'cancel') {
+        } elseif ($label === 'cancel') {
             $buttons["label"] .= isset($arg['label']) ? $arg['label'].',': '{{ Cancel }},';
             $buttons["value"] .= 'cancel,';
             $arg['type'] = 'button';
 
+        } elseif ($label === 'mailto') {
         } else {
             $arg['label'] = $label;
             $str .= $this->form->render($arg);

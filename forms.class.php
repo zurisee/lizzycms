@@ -123,7 +123,8 @@ class Forms
 				return $this->formTail();
 
             default:
-                $elem = "<p>Error: form type unknown: '{$this->type}'</p>\n";
+                $type = isset($this->type)? $this->type : '';
+                $elem = "<p>Error: form type unknown: '$type'</p>\n";
         }
 
         $type = $this->currRec->type;
@@ -869,6 +870,8 @@ EOT;
 		$userSuppliedData = $this->userSuppliedData;
 		
 		$str = "$formName\n===================\n\n";
+		$log = '';
+		$labelNames = '';
 		foreach($names as $i => $name) {
 			if (is_array($labels[$i])) {
 				$label = $labels[$i][0];
@@ -882,6 +885,9 @@ EOT;
 				$value = str_replace("\n", "\n\t\t\t", $value);
 			}
 			$str .= mb_str_pad($label, 22, '.').": $value\n\n";
+			$value = str_replace("'", '&#39;', $value);
+			$log .= "'$value'; ";
+            $labelNames .= "'$name'; ";
 		}
 		$str = trim($str, "\n\n");
 		if ($res = $this->saveCsv($currFormDescr)) {
@@ -903,8 +909,8 @@ EOT;
 		} else {
 			$out = '{{ lzy-form-data-received-ok }}';
 		}
-        writeLog("Form '$formName' response to: '$mailto' text: '$str'");
-		return $out;
+        $this->writeLog($labelNames, $log, $formName, $mailto);
+        return $out;
 	} // defaultFormEvaluation()
 
 
@@ -928,7 +934,6 @@ EOT;
         $labels = $currFormDescr->formData['labels'];
 
         $db = new DataStorage2($fileName);
-//        $db = new DataStorage($fileName);
         $data = $db->read();
 
         if (!$data) {   // no data yet -> prepend header row containing labels:
@@ -1202,6 +1207,22 @@ EOT;
 EOT;
         $this->page->addJq($jq);
     } // renderHelp
+
+
+
+
+
+    private function writeLog($labels, $log, $formName, $mailto)
+    {
+        writeLog("Form '$formName' response to: '$mailto'; body: '$log'");
+
+        $timeStamp = timestamp();
+        $logFile = LOGS_PATH."$formName.csv";
+        if (!file_exists($logFile)) {
+            file_put_contents($logFile, "{$labels}Timestamp\n");
+        }
+        file_put_contents($logFile, "$log$timeStamp\n", FILE_APPEND);
+    } // writeLog
 
 } // Forms
 
