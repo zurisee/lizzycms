@@ -96,7 +96,7 @@ class CreateLink
 
         if (stripos($this->option, 'download') !== false) {
             $this->target .= ' download';
-            $this->class .= ' lzy-download';
+            $this->class .= ' lzy-download_link';
         }
         $this->class = ($this->class) ? " class='lzy-link {$this->class}'" : '';
         if (preg_match('/^ ([^\?&]*) (.*)/x', $this->href, $m)) {     // remove blanks from href
