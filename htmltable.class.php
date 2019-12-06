@@ -47,6 +47,8 @@ class HtmlTable
         $this->includeCellRefs	    = $this->getOption('includeCellRefs', '(optional) If set, data-source and cell-coordinates are added as \'data-xy\' attributes');
 //        $this->cellMask 	        = $this->getOption('cellMask', '(optional) Lets you define regions that a masked and thus will not get the cellClass. Selection code: rY -> row, cX -> column, eX,Y -> cell element.');
 //        $this->cellMaskedClass      = $this->getOption('cellMaskedClass', '(optional) Class that will be applied to masked cells');
+        $this->cellMask 	        = false;
+        $this->cellMaskedClass      = false;
         $this->process	            = $this->getOption('process', '(optional) Provide name of a frontmatter variable to activate this feature. In the frontmatter area define an array containing instructions for manipulating table data. See <a href="https://getlizzy.net/macros/extensions/table/" target="_blank">Doc</a> for further details.');
         $this->processInstructionsFile	= $this->getOption('processInstructionsFile', 'The same as \'process\' except that instructions are retrieved from a .yaml file');
         $this->suppressError        = $this->getOption('suppressError', '(optional) Suppresses the error message in case dataSource is not available.');
