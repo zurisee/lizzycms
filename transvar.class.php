@@ -701,6 +701,7 @@ class Transvar
 
 		$out .= $this->renderAllMacros();
 
+		$out = str_replace('~', '&#126;', $out);
         return $out;
 
 	}
@@ -710,7 +711,7 @@ class Transvar
     private function renderAllVariables($transvars)
     {
         uksort($transvars, "strnatcasecmp");
-        $str = "\n\t<div class='lzy-list-transvars'>\n\t\t<h1>Transvars:</h1>\n";
+        $str = "\n\t<div class='lzy-list-transvars lzy-encapsulated'>\n\t\t<h1>Transvars:</h1>\n";
         foreach ($transvars as $key => $rec) {
             if (isset($rec['uu'])) {
                 $inactive = ' unused';
@@ -772,7 +773,7 @@ EOT;
             $out .= "<div><span class='lzy-macro-name'>$name()</span>: <span class='lzy-macro-info'>$info</span></div>\n";
         }
 
-        $out = "<h2>Macros</h2>$out\n";
+        $out = "<h2>Macros</h2>\n<div class=' lzy-encapsulated'>$out</div>\n";
         return $out;
     }
 
