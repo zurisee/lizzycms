@@ -68,19 +68,19 @@ class LizzyMarkdown
 		
 		$this->setDefaults();
 		
-		if ($this->page->mdVariant == 'standard') {	// Markdown
+		if ($this->page->mdVariant === 'standard') {	// Markdown
 			$str = $this->handeCodeBlocks($str);
 			$this->md = new Markdown;
 			$str = $this->md->parse($str);
 
-		} elseif ($this->page->mdVariant == 'extra') {	// MarkdownExtra
+		} elseif ($this->page->mdVariant === 'extra') {	// MarkdownExtra
 			$str = $this->handeCodeBlocks($str);
 			$this->md = new MarkdownExtra;
 			$str = $this->md->parse($str);
 
 		} else {										// Lizzy's MD extensions
 			$str = $this->preprocess($str);
-			if (isset($this->page->md) && ($this->page->md == false)) {
+			if (isset($this->page->md) && ($this->page->md === false)) {
 				$this->page->addContent($str);
 				return $this->page;
 			}
@@ -168,7 +168,7 @@ class LizzyMarkdown
 	    // prepare modified patterns if it contains look-behind:
 	    if (!isset($this->replaces2)) {
             foreach ($this->replaces as $key => $value) {
-                if ($key{0} == '(') {
+                if ($key{0} === '(') {
                     $k = str_replace('\\', '', substr($key, strpos($key, ')')+1));
                     $this->replaces2[$key] = $k;
                 }
@@ -210,7 +210,7 @@ class LizzyMarkdown
 			$lines = explode("\n", $str);
 			$lastBlockquoteLine = 0;
 			foreach ($lines as $i => $l) {
-				if ((($s = substr($l,0,2)) == '> ') || ($s == ">\t")) {
+				if ((($s = substr($l,0,2)) === '> ') || ($s === ">\t")) {
 					$lines[$i] = '> '.str_replace("\t", '&nbsp;&nbsp;&nbsp;&nbsp;', substr($l,2)).'<br>';
 					$lastBlockquoteLine = $i;
 				}
@@ -286,7 +286,7 @@ class LizzyMarkdown
             if (preg_match('/^(.*)\b([\w\-]+)\s*$/ms', $before, $m)) {
                 $before = $m[1];
                 $var = $m[2];
-                if ($val[0] == '&') {   // option to send variable content through the md-parser
+                if ($val[0] === '&') {   // option to send variable content through the md-parser
                     $val = $md->parse($val);
                     $val = preg_replace('/^\<p>(.*)\<\/p>\n$/', "$1", $val);
                 } else {
@@ -342,7 +342,7 @@ class LizzyMarkdown
 			if (preg_match('/^\$(\w+)\s?=\s*(.*)/', $l, $m)) { // variable definition
 				$var = trim($m[1]);
 				$val = trim($m[2]);
-				if ($val == '<<<EOT') {         // handle <<<EOT
+				if ($val === '<<<EOT') {         // handle <<<EOT
 				    $withinEot = true;
                     $textBlock = '';
 				    continue;
@@ -370,7 +370,7 @@ class LizzyMarkdown
 			}
 			$p = 0;
 			while (($p = strpos($l, '$' . $sym, $p)) !== false) {
-				if (($p > 0) && (substr($l, $p-1, 1) == '\\') && (substr($l, $p-2, 1) != '\\')) { // symbol shielded with \
+				if (($p > 0) && (substr($l, $p-1, 1) == '\\') && (substr($l, $p-2, 1) !== '\\')) { // symbol shielded with \
 					$l = substr($l, 0, $p - 1) . substr($l, $p);
 					continue;
 				}
@@ -387,7 +387,7 @@ class LizzyMarkdown
 				}
 				$l1 = substr($l, 0, $p);	// leading text
 				$l2 = substr($l, $p + strlen($sym) + 1);	// trailing text
-				if ((substr($l1,-1) == '{') && (substr($l2,0,1) == '}')) {
+				if ((substr($l1,-1) === '{') && (substr($l2,0,1) === '}')) {
 					$l1 = substr($l1,0,-1);
 					$l2 = substr($l2,1);
 				}
@@ -415,16 +415,16 @@ class LizzyMarkdown
 					);
 				}
 			
-				if ($op_l == '++') {
+				if ($op_l === '++') {
 					$this->variable[$sym] = $str = $mm2p;
 					$l1             = substr($l1, 0, -2);
-				} elseif ($op_l == '--') {
+				} elseif ($op_l === '--') {
 					$this->variable[$sym] = $str = $mm2m;
 					$l1             = substr($l1, 0, -2);
-				} elseif ($op_r == '++') {
+				} elseif ($op_r === '++') {
 					$this->variable[$sym] = $mm2p;
 					$l2             = substr($l2, 2);
-				} elseif ($op_r == '--') {
+				} elseif ($op_r === '--') {
 					$this->variable[$sym] = $mm2m;
 					$l2             = substr($l2, 2);
 				}
@@ -527,7 +527,7 @@ class LizzyMarkdown
                 $olStart = $m[2];
 			    continue;
 
-            } elseif (($olStart !== false) && ($l == '<ol>')) {
+            } elseif (($olStart !== false) && ($l === '<ol>')) {
 			    $l = "<ol start='$olStart'>";
                 $olStart = false;
             }
@@ -573,12 +573,12 @@ class LizzyMarkdown
 
 		if ($args) {
 			$c1 = $args{0};
-			if ($c1 == '"') {		                                                        // span
+			if ($c1 === '"') {		                                                        // span
                 if (preg_match('/([^"]*) " ([^"]*) " \s* ,? (.*)/x', $args, $mm)) {	// "
                     $span = $mm[2];
                     $args = $mm[1] . $mm[3];
                 }
-            } elseif ($c1 == "'") {
+            } elseif ($c1 === "'") {
                 if (preg_match("/([^ ']*) ' ([^']*) ' \s* ,? (.*)/x", $args, $mm)) {	 // '
                     $span = $mm[2];
                     $args = $mm[1] . $mm[3];
