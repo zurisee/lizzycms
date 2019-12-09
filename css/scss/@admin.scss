@@ -231,6 +231,7 @@
   }
   .lzy-list-var {
       width: 24em;
+      color: maroon;
   }
   .lzy-list-line {
       span {
@@ -238,8 +239,14 @@
       }
   }
   .lzy-list-attr-name {
-      width: 6em;
+      display: inline-block;
+      width: 4em;
       text-align: right;
+      font-size: 80%;
+  }
+  .lzy-list-src {
+      font-size: 90%;
+      font-family: "Courier New", Courier, monospace;
   }
   .lzy-macro-info {
       display: inline-block;
@@ -247,6 +254,7 @@
   .lzy-list-attr-value {
       width: calc(100% - 12em);
       margin-left: 0.5em;
+      font-size: 90%;
   }
   .lzy-list-scalar-value {
       margin-left: 7em;
