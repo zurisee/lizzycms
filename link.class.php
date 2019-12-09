@@ -141,7 +141,7 @@ class CreateLink
         } else {
             $hiddenText = "<span class='print_only'> [$this->href]</span>";
         }
-        $this->href .= $arg;
+        $this->href = "mailto:{$this->href}$arg";
         return $hiddenText;
     }
 
@@ -162,7 +162,7 @@ class CreateLink
         if (preg_match('|^(\w+:) ([^/]{2} .*)|x', $this->href, $m)) {
             $this->href = "{$m[1]}//{$m[2]}";
         }
-        return;
+        $this->href = "sms://{$this->href}";
     }
 
 
@@ -183,7 +183,7 @@ class CreateLink
         if (preg_match('|^(\w+:) ([^/]{2} .*)|x', $this->href, $m)) {
             $this->href = "{$m[1]}//{$m[2]}";
         }
-        return;
+        $this->href = "tel://{$this->href}";
     }
 
 
@@ -197,6 +197,7 @@ class CreateLink
             $this->text = preg_replace('|^.*:/?/? ([^\?\&]*) .*|x', "$1", $this->href);
         }
         $this->target = " target='_blank' rel='noopener noreferrer'";
+        $this->href = "geo://{$this->href}";
     }
 
 
@@ -210,6 +211,7 @@ class CreateLink
             $this->text = preg_replace('|^.*:/?/? ([^\?\&]*) .*|x', "$1", $this->href);
         }
         $this->target = " target='_blank' rel='noopener noreferrer'";
+        $this->href = "slack://{$this->href}";
     }
 
 
