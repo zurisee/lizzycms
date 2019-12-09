@@ -244,6 +244,10 @@ class LizzyMarkdown
 	private function prepareTabulators($str)
     {   // need to handle lists explicitly to avoid corruption in MD-parser
         // -> shield '-' and '1.' (and '1!.')
+
+        // Alternative Syntax: ··>>·· or ··10em>>··  (where · == space)
+        $str = preg_replace('/\s\s(\d{1,3}\w{1,2})?>>\s\s/', "{{ tab($1) }}", $str);
+
         $lines = explode(PHP_EOL, $str);
         foreach ($lines as $i => $l) {
             if (preg_match('/\{\{ \s* tab\b [^\}]* \s* \}\}/x', $l)) { // tab present?
