@@ -971,8 +971,8 @@ EOT;
 	//....................................................
 	private function getTemplate()
 	{
-		if (isset($this->page->template)) {
-			$template = $this->page->template;
+		if ($tpl = $this->page->get('template')) {
+			$template = basename($tpl);
 		} elseif (isset($this->siteStructure->currPageRec['template'])) {
 			$template = $this->siteStructure->currPageRec['template'];
 		} else {
@@ -1789,8 +1789,12 @@ EOT;
 	//....................................................
 	private function renderConfigOverlay()
 	{
+	    $configCmd = getUrlArg('config', true);
+	    if ($configCmd === 'raw') {
+	        return $this->renderRawConfigOverlay();
+        }
         $level1Class = $level2Class = $level3Class = '';
-        $level = max(1, min(3, intval(getUrlArg('config', true))));
+        $level = max(1, min(3, intval($configCmd)));
         switch ($level) {
             case 1: $level1Class = ' class="lzy-config-viewer-hl"'; break;
             case 2: $level2Class = ' class="lzy-config-viewer-hl"'; break;
@@ -1865,6 +1869,32 @@ EOT;
         return $out;
     } // renderConfigOverlay
 
+
+
+
+    private function renderRawConfigOverlay()
+    {
+        $out = '';
+        $lastElem = '';
+        $configItems = $this->config->getConfigInfo();
+        ksort($configItems);
+        foreach ($configItems as $item => $rec) {
+            if (is_bool($rec[0])) {
+                $val = $rec[0]? 'false':'true';
+            } else {
+                $val = $rec[0];
+            }
+
+            $str = str_pad("$item: $val", 45, ' ');
+            if (substr($item, 0, 2) !== $lastElem) {
+                $str = "\n$str";
+                $lastElem = substr($item, 0, 2);
+            }
+            $out .= "$str# {$rec[1]}\n";
+        }
+        $this->page->addJq("$('#raw-config-text').selText();");
+        return "<pre id='raw-config-text'>$out\n\n</pre>";
+    }
 
 
 
@@ -2316,6 +2346,8 @@ EOT;
         $this->trans->loadStandardVariables($this->siteStructure);
         $this->trans->addVariable('next_page', "<a href='~/{$this->siteStructure->nextPage}'>{{ nextPageLabel }}</a>");
         $this->trans->addVariable('prev_page', "<a href='~/{$this->siteStructure->prevPage}'>{{ prevPageLabel }}</a>");
+        $this->trans->addVariable('next_page_href', $this->siteStructure->nextPage);
+        $this->trans->addVariable('prev_page_href', $this->siteStructure->prevPage);
     } // initializeSiteInfrastructure
 
 
