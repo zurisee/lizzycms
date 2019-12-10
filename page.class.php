@@ -1044,8 +1044,8 @@ EOT;
     //....................................................
     private function injectAllowOrigin()
     {
-        if (isset($this->feature_enableAllowOrigin)) {  // from frontmatter
-            $allowOrigin = $this->feature_enableAllowOrigin;
+        if (isset($this->allowOrigin)) {  // from frontmatter
+            $allowOrigin = $this->allowOrigin;
         } else {
             $allowOrigin = $this->config->feature_enableAllowOrigin;
         }
