@@ -1108,10 +1108,8 @@ EOT;
 			$cls = trim($cls);
 			$str = $newPage->get('content');
 
-			if ($this->config->custom_wrapperTag) {
+			if (!$wrapperTag = $newPage->get('wrapperTag')) {
                 $wrapperTag = $this->config->custom_wrapperTag;
-            } else {
-                $wrapperTag = $newPage->get('wrapperTag');
             }
 
 			// extract <aside> and append it after </section>
