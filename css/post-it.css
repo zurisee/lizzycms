@@ -1,0 +1,64 @@
+/* Post-it */
+
+.post-it {
+  position: absolute;
+  font-size: 100%;
+  transform: rotate(5deg);
+}
+
+.post-it-bg:after {
+  z-index: -1;
+  position: absolute;
+  content: "";
+  bottom: 13px;
+  right: 4px;
+  left: auto;
+  width: 70%;
+  top: 80%;
+  max-width:300px;
+  background: #777;
+  box-shadow: 0 10px 7px #444;
+  transform: rotate(7deg);
+}
+.post-it, .post-it-content, .post-it-bg {
+  width: 14em;
+  min-height: 12em;
+  padding: 2em 1em;
+}
+.post-it-content, .post-it-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.post-it-content {
+  background: #ffc;
+  border-left: 1px solid #eeb;
+  border-bottom: 1px solid #eeb;
+  /*font-family: cursive;*/
+  /*font-family: 'Kalam', cursive;*/
+}
+.post-it-content .close_icon {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  text-decoration: none;
+  border: none;
+  opacity: 0.6;
+}
+.post-it-content .close_icon:hover {
+  opacity: 1;
+}
+.post-it-content .close_icon img {
+  width: 2em;
+  height: auto;
+}
+.post-it-content h1 {
+	margin: 0em 0;
+	font-size: 140%;
+}
+
+
+/* To compensate styling by Panzoom: */
+main, .main {
+  overflow: visible;
+}
