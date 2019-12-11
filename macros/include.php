@@ -61,17 +61,17 @@ $this->addMacro($macroName, function () {
         $allMD = false;
     }
 
-    if($url) {                                   // url & selector for remote element
-        if (!$selector) {
+    if ($url) {                                   // url & selector for remote element
+        if (!$selector && $url) {
             list($url, $selector) = explode(' ', $url);
         }
         if ($selector) {
-            $jq = "console.log('loading content from: \"$url $selector\"');\n$('#$id').load( '$url $selector' );\n";
+            $jq = "\nconsole.log('loading content from: \"$url $selector\"');\n$('#$id').load( '$url $selector' );\n";
             $this->page->addJq($jq);
             $str = "\t\t<div id='$id'>{{ Loading }}</div>\n";
             
         } else {
-            $str .= "\t\t<iframe src='$contentFrom' />\n";
+            $str .= "\t\t<iframe src='$url' />\n";
         }
         $allMD = false;
     }

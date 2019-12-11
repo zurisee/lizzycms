@@ -113,7 +113,6 @@ class CreateLink
 
     private function isTypeLink($type)
     {
-//        $type = ($type === 'mailto') ? 'mail' : $type;
         return (($this->proto === $type) || (stripos($this->type, $type) !== false));
     }
 

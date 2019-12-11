@@ -43,11 +43,11 @@ $this->addMacro($macroName, function () {
         $widgetSelector = ".lzy-panels-widget";
         $widgetClassSelector = ".lzy-panels-widget";
 
-    } elseif ($selector[0] == '#') {
+    } elseif ($selector[0] === '#') {
         $widgetSelector = $selector;
         $widgetClassSelector = ".lzy-panels-widget$inx";
 
-    } elseif ($selector[0] == '.') {
+    } elseif ($selector[0] === '.') {
         $widgetSelector = $selector;
         $widgetClassSelector = $selector;
 
@@ -57,10 +57,10 @@ $this->addMacro($macroName, function () {
     }
 
     // Preset modes:
-    if ($mode == 'accordion') {
+    if ($mode === 'accordion') {
         $this->page->addJq("$('$widgetSelector').addClass('lzy-accordion'); setMode();\n");
 
-    } elseif ($mode == 'tabs') {
+    } elseif ($mode === 'tabs') {
         $this->page->addJq("$('$widgetSelector').addClass('lzy-tabs'); setMode();\n");
     }
 
