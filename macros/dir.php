@@ -10,12 +10,13 @@ $this->addMacro($macroName, function () {
     $path = $this->getArg($macroName, 'path', 'Selects the folder to be read', '~page/');
 
     if ($path === 'help') {
-        $pattern = $this->getArg($macroName, 'pattern', 'The search-pattern with which to look for files (-> \'glob style\')', '*');
-        $deep = $this->getArg($macroName, 'deep', 'Whether to recursively search sub-folders', false);
-        $order = $this->getArg($macroName, 'order', '[reverse] Displays result in reversed order', false);
-        $hierarchical = $this->getArg($macroName, 'hierarchical', 'If true, found files will be displayed in hierarchical view.', false);
-        $class = $this->getArg($macroName, 'class', 'class to be applied to the enclosing li-tag', '');
-        $target = $this->getArg($macroName, 'target', '"target" attribute to be applied to the a-tag', '');
+        $this->getArg($macroName, 'pattern', 'The search-pattern with which to look for files (-> \'glob style\')', '*');
+        $this->getArg($macroName, 'deep', 'Whether to recursively search sub-folders', false);
+        $this->getArg($macroName, 'order', '[reverse] Displays result in reversed order', false);
+        $this->getArg($macroName, 'hierarchical', 'If true, found files will be displayed in hierarchical view.', false);
+        $this->getArg($macroName, 'class', 'class to be applied to the enclosing li-tag', '');
+        $this->getArg($macroName, 'target', '"target" attribute to be applied to the a-tag', '');
+        $this->getArg($macroName, 'maxAge', '[integer] Maximum age of file (in number of days)', '');
         return '';
     }
 
@@ -44,7 +45,7 @@ class DirRenderer
         $this->class = $this->getArg('class');
         $this->target = $this->getArg('target');
         $this->exclude = $this->getArg('exclude');
-        $this->order = $this->getArg('order');
+        $this->maxAge = $this->getArg('maxAge');
     }
 
 
@@ -52,7 +53,6 @@ class DirRenderer
 
     public function render()
     {
-//        $this->path0 = fixPath($this->path0);
         if (!$this->pattern) {
             if (preg_match('|(.*/)? ([^/]* [\*\.\w]+ [^/]*) $|x', $this->path0, $m)) {
                 $this->path0 = fixPath($m[1]);
@@ -107,13 +107,18 @@ class DirRenderer
             $dir = array_reverse($dir);
         }
         $str = '';
+        $maxAge = 0;
+        if ($this->maxAge) {
+            $maxAge = time() - 86400 * $this->maxAge;
+        }
         foreach ($dir as $file) {
 //        if ($exclDir && in_array($file, $exclDir)) {
 //            continue;
 //        }
-            if (is_dir($file)) {
+            if (is_dir($file) || (filemtime($file) < $maxAge)) {
                 continue;
             }
+
             $name = base_name($file);
             $fileUrl = resolvePath($this->path0 . basename($file), true, true);
             $str .= "\t\t<li><a href='$fileUrl'{$this->target}>$name</a></li>\n";
@@ -138,6 +143,12 @@ EOT;
             $path1 = $path;
             $path = substr($path,0 -1);
         }
+
+        $maxAge = 0;
+        if ($this->maxAge) {
+            $maxAge = time() - 86400 * $this->maxAge;
+        }
+
         $dir = getDir($path1);
         if (strpos($this->order, 'revers') !== false) {
             $dir = array_reverse($dir);
@@ -150,6 +161,9 @@ EOT;
                 $str1 = $this->hierarchicalList(fixPath($file), $lvl+1);
                 $str .= "\t\t$indent  <li><span>$name</span>\n$str1\n\t\t$indent  </li>\n";
             } else {
+                if (filemtime($file) < $maxAge) {
+                    continue;
+                }
                 $name = base_name($file);
                 $ext = fileExt($file);
                 if ($ext == 'url') {
