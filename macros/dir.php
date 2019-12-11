@@ -7,16 +7,15 @@ $this->addMacro($macroName, function () {
 	$macroName = basename(__FILE__, '.php');
 	$this->invocationCounter[$macroName] = (!isset($this->invocationCounter[$macroName])) ? 0 : ($this->invocationCounter[$macroName]+1);
 
-    $pattern = $this->getArg($macroName, 'pattern', 'The search-pattern with which to look for files (-> \'glob style\')', '*');
-    $path0 = $this->getArg($macroName, 'path', 'Selects the folder to be read', '~page/');
-    $deep = $this->getArg($macroName, 'deep', 'Whether to recursively search sub-folders', false);
-    $order = $this->getArg($macroName, 'order', '[reverse] Displays result in reversed order', false);
-    $hierarchical = $this->getArg($macroName, 'hierarchical', 'If true, found files will be displayed in hierarchical view.', false);
-    $class = $this->getArg($macroName, 'class', 'class to be applied to the enclosing li-tag', '');
-    $target = $this->getArg($macroName, 'target', '"target" attribute to be applied to the a-tag', '');
-//    $exclude = $this->getArg($macroName, 'exclude', 'pattern to be excluded (-> \'glob style\'), default is \'*.md\'', '');
+    $path = $this->getArg($macroName, 'path', 'Selects the folder to be read', '~page/');
 
-    if ($pattern == 'help') {
+    if ($path === 'help') {
+        $pattern = $this->getArg($macroName, 'pattern', 'The search-pattern with which to look for files (-> \'glob style\')', '*');
+        $deep = $this->getArg($macroName, 'deep', 'Whether to recursively search sub-folders', false);
+        $order = $this->getArg($macroName, 'order', '[reverse] Displays result in reversed order', false);
+        $hierarchical = $this->getArg($macroName, 'hierarchical', 'If true, found files will be displayed in hierarchical view.', false);
+        $class = $this->getArg($macroName, 'class', 'class to be applied to the enclosing li-tag', '');
+        $target = $this->getArg($macroName, 'target', '"target" attribute to be applied to the a-tag', '');
         return '';
     }
 
@@ -37,8 +36,8 @@ class DirRenderer
     public function __construct($args)
     {
         $this->args = $args;
-        $this->pattern = $this->getArg('pattern');
         $this->path0 = $this->getArg('path');
+        $this->pattern = $this->getArg('pattern');
         $this->deep = $this->getArg('deep');
         $this->order = $this->getArg('order');
         $this->hierarchical = $this->getArg('hierarchical');
@@ -53,7 +52,23 @@ class DirRenderer
 
     public function render()
     {
-        $this->path0 = fixPath($this->path0);
+//        $this->path0 = fixPath($this->path0);
+        if (!$this->pattern) {
+            if (preg_match('|(.*/)? ([^/]* [\*\.\w]+ [^/]*) $|x', $this->path0, $m)) {
+                $this->path0 = fixPath($m[1]);
+                $this->pattern = $m[2];
+            } else {
+                $this->pattern = '*.*';
+            }
+        } else {
+            $this->path0 = dir_name($this->path0);
+        }
+
+        if (!$this->path0) {
+            $this->path0 = '~page/';
+        } else {
+            $this->path0 = makePathRelativeToPage($this->path0);
+        }
         $this->path1 = resolvePath($this->path0, false, false, true, true);
         $this->path = $this->path1 . $this->pattern;
         $this->exclPath = $this->path1 . $this->exclude;
@@ -79,13 +94,15 @@ class DirRenderer
         $str = $this->straightList($dir);
 
         return $str;
-
     }
 
 
 
     private function straightList($dir)
     {
+        if (!$dir) {
+            return "{{ nothing to display }}";
+        }
         if (strpos($this->order, 'revers') !== false) {
             $dir = array_reverse($dir);
         }
