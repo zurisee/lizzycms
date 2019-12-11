@@ -15,5 +15,6 @@ $this->addMacro($macroName, function () {
     }
     $width = ($width) ? " style='width:$width'" : '';
 	$str = "<span class='lzy-h-space'$width></span>";
-	return $str;
+    $this->optionAddNoComment = true;
+    return $str;
 });
