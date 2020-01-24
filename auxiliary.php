@@ -1572,7 +1572,9 @@ function shield_str($s)
 //------------------------------------------------------------------------------
 function explodeTrim($sep, $str)
 {
-    if (strlen($sep > 1)) {
+    if (!$str) {
+        return [];
+    } elseif (strlen($sep) > 1) {
         $sep = preg_quote($sep);
         $out = array_map('trim', preg_split("/[$sep]/", $str));
         return $out;
