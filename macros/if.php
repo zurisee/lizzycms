@@ -200,6 +200,7 @@ function evalResult($trans, $code, $inx)
         $out = $trans->translateMacro($macro, $arg);
     }
 
+    $out = str_replace(['&#34;', '&#39;'], ['"', "'"], $out);
     return $out;
 }
 
