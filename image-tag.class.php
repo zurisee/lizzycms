@@ -8,7 +8,6 @@ class ImageTag
     private $aspRatio = null;
     private $imgFullsizeWidth = null;
     private $imgFullsizeHeight = null;
-    private $fileSize = null;
 
     public function __construct($obj, $args) {
         list($feature_image_default_max_width) = parseDimString($obj->config->feature_ImgDefaultMaxDim);
@@ -71,7 +70,6 @@ class ImageTag
 
             if ($this->srcFile && file_exists($this->srcFile)) {
                 list($w0, $h0) = getimagesize($this->srcFile);
-                $this->fileSize = filesize($this->srcFile);
                 $this->imgFullsizeWidth = $w0;
                 $this->imgFullsizeHeight = $h0;
                 $this->qvDataAttr = " data-qv-src='~/{$this->srcFile}' data-qv-width='$w0' data-qv-height='$h0'";
@@ -100,14 +98,13 @@ class ImageTag
     private function renderSrcset()
     {
         $srcFile = resolvePath($this->srcFile);
-        $this->fileSize = filesize($srcFile);
         $this->srcset = ($this->srcset === null) ? true : $this->srcset;
 
         $basename = '_/'.base_name($srcFile, false);
         $ext = '.'.fileExt($srcFile);
         $path = $GLOBALS["globalParams"]["appRoot"].$GLOBALS["globalParams"]["pathToPage"]; // absolute path from app root
 
-        if ($this->srcset && ($this->fileSize > 50000)) {   // activate only if source file is largen than 50kb
+        if ($this->srcset) {   // activate only if source file is largen than 50kb
             $w1 = ($this->w) ? $this->w : 300;
             $h1 = ($this->h) ? $this->h : round(300 * $this->aspRatio);
             $this->srcset = '';

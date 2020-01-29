@@ -53,8 +53,14 @@ class ImageResizer
             $origSrc = $src;
 
             // find srcset-attribute within img-tag:
-            $p1 = strpos($html, 'srcset=', $p);
-            $s = trim(substr($html, $p1+7));
+            $p1 = strpos($html, '>', $p);
+            $s1 = substr($html, $p, $p1-$p+1);
+            $p1 = strpos($s1, 'srcset=');
+            if (!$p1) {
+                $p = strpos($html, '<img', $p+1);
+                continue;
+            }
+            $s = trim(substr($html, $p+$p1+7));
             $quote = $s[0];
             if (($p1 !== false) && preg_match("/$quote([^$quote]*)$quote/", $s, $m)) {
                 $srcset = explode(',', $m[1]);
