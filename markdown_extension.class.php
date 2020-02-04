@@ -139,7 +139,7 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
 
             if (isset($line[0]) && ($line[0] == '|')) {  // next cell starts
                 $line = substr($line,1);
-                $cells = preg_split('/(?<!\\\)\|/', $line);
+                $cells = preg_split('/\s(?<!\\\)\|/', $line); // pattern is ' |'
                 foreach ($cells as $cell) {
                     $col++;
                     $table[$row][$col] = str_replace('\|','|', $cell);
