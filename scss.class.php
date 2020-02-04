@@ -120,19 +120,33 @@ class SCssCompiler
         
     private function getFile($file)
     {
-        $out = getFile($file);
         if ($this->localCall && $this->config->debug_compileScssWithLineNumbers) {
+            $out = getFile($file);
             $fname = basename($file);
             $lines = explode(PHP_EOL, $out);
             $out = '';
             foreach ($lines as $i => $l) {
-                if (preg_match('/^[^\/\*]+\{/', $l)) {
-                    $l .= " /* content: '$fname:".($i+1)."'; */";
+                $l = preg_replace('|^ (.*?) // .*|x', "$1", $l);
+
+                if (preg_match('|^ [^/\*]+ \{|x', $l)) {  // add line-number in comment
+                    $l .= " [[* content: '$fname:".($i+1)."'; *]]";
                 }
-                $out .= $l."\n";
+                if ($l) {
+                    $out .= $l . "\n";
+                }
             }
+
+            $p1 = strpos($out, '/*');
+            while ($p1 !== false) {
+                $p2 = strpos($out, '*/');
+                if (($p2 !== false) && ($p1 < $p2)) {
+                    $out = substr($out, 0, $p1) . substr($out, $p2 + 2);
+                }
+                $p1 = strpos($out, '/*', $p1 + 1);
+            }
+            $out = str_replace(['[[*', '*]]'], ['/*', '*/'], $out);
         } else {
-            $out = removeCStyleComments($out);
+            $out = getFile($file, true);
         }
         return $out . "\n";
     } // getFile
