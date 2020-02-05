@@ -50,10 +50,32 @@ class DataStorage2
         $this->initDbTable();
         $this->appPath = getcwd();
 
+        if ($this->doLockDB) {
+            $this->lockDB();
+        }
+
     } // __construct
 
 
 
+    //---------------------------------------------------------------------------
+    public function __destruct()
+    {
+        chdir($this->appPath); // workaround for include bug
+
+        $this->exportToFile(); // saves data if modified
+        if ($this->lzyDb) {
+            if ($this->doLockDB) {
+                $this->unlockDB();
+            }
+            $this->lzyDb->close();
+        }
+    } // __destruct
+
+
+
+
+    //---------------------------------------------------------------------------
     public function read()
     {
         $data = $this->getData();
@@ -235,7 +257,7 @@ class DataStorage2
             }
         }
         return false;   // it's not locked
-    } // lockDB
+    } // isLockDB
 
 
 
@@ -863,7 +885,7 @@ EOT;
             (isset($args['dataSource']) ? $args['dataSource'] : ''); // for compatibility
         $this->dataFile = resolvePath($this->dataFile);
         $this->sid = isset($args['sid']) ? $args['sid'] : '';
-        $this->lockDB = isset($args['lockDB']) ? $args['lockDB'] : false;
+        $this->doLockDB = isset($args['lockDB']) ? $args['lockDB'] : false;
         $this->format = isset($args['format']) ? $args['format'] : '';
         $this->secure = isset($args['secure']) ? $args['secure'] : true;
         $this->useRecycleBin = isset($args['useRecycleBin']) ? $args['useRecycleBin'] : false;
@@ -1040,19 +1062,6 @@ EOT;
         $tableName = preg_replace('|^[\./_]*|', '', $tableName);
         return $tableName; // remove leading '../...'
     }
-
-
-
-    //---------------------------------------------------------------------------
-    public function __destruct()
-    {
-        chdir($this->appPath); // workaround for include bug
-
-        $this->exportToFile(); // saves data if modified
-        if ($this->lzyDb) {
-            $this->lzyDb->close();
-        }
-    } // __destruct
 
 } // DataStorage
 
