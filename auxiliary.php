@@ -870,9 +870,7 @@ function convertFsToHttpPath($path)
 function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $absolutePath = false, $isResource = null)
 {
     global $globalParams;
-
     $path = trim($path);
-    $path0 = $path;
     if (!$path) {
         if ($relativeToCurrPage) {
             $path = '~page/';
@@ -884,7 +882,7 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
     }
     $ch1=$path[0];
     if ($ch1 === '/') {
-        $path = '~'.$path;
+        $path = '~docroot'.$path;
     } else {
         if ($relativeToCurrPage) {        // for HTTP Requests
             $path = makePathRelativeToPage($path);
@@ -905,60 +903,103 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
         }
     }
 
-	$urlToRoot  = $globalParams["pathToRoot"];
-    if ($isResource || !$httpAccess) {
-        $pathToPage = $globalParams["pathToPage"];
-    } else {
-        $pathToPage = $globalParams["pagePath"];
-    }
+	$host  = isset($globalParams["host"]) ? $globalParams["host"] : '';
+	$appRoot  = isset($globalParams["appRoot"]) ? $globalParams["appRoot"] : '';
+	$pathToPage  = isset($globalParams["pathToPage"]) ? $globalParams["pathToPage"] : '';
+	$absAppRoot = isset($globalParams["absAppRoot"]) ? $globalParams["absAppRoot"] : '';
 
-    $from = [
-        '|~/|',
-        '|~data/|',
-        '|~sys/|',
-        '|~ext/|',
-        '|~page/|',
-    ];
 
-    if ($httpAccess) {    // relative path for http access:
-        $to = [
-            $urlToRoot,
-            $urlToRoot.$globalParams['dataPath'],
-            $urlToRoot.SYSTEM_PATH,
-            $urlToRoot.EXTENSIONS_PATH,
-            '',
-        ];
-        if ($isResource) {
-            $to[4] = $urlToRoot.$pathToPage;
-        }
-
-    } else {    // relative path for file access:
-        $to = [
-            '',
-            $globalParams['dataPath'],
-            SYSTEM_PATH,
-            EXTENSIONS_PATH,
-            $pathToPage,
-        ];
-    }
-    $path = preg_replace($from, $to, $path);
-
-    // Absolute path requested:
-    if ($absolutePath) {
-        if ($httpAccess) {
-            if ($relativeToCurrPage) {
-                $path = $GLOBALS["globalParams"]["pageUrl"] . $path;
-            } else {
-                $path = $GLOBALS["globalParams"]["absAppRootUrl"] . $path0;
+    if (preg_match('|^(~.*?/)(.*)|', $path, $m)) {
+        $path = $m[2];
+        if ($httpAccess) {    // http access:
+            switch ($m[1]) {
+                case '~/':
+                    if ($absolutePath) {
+                        $path = "$host$appRoot$path";
+                    } else {
+                        $path = "$appRoot$path";
+                    }
+                    break;
+                case '~page/':
+                    if ($isResource) {
+                        if ($absolutePath) {
+                            $path = "$host$appRoot$pathToPage$path";
+                        }
+                    } else {
+                        if ($absolutePath) {
+                            $path = "$host$appRoot$pathToPage$path";
+                        }
+                    }
+                    break;
+                case '~data/':
+                    $path = $appRoot . $globalParams['dataPath'] . $path;
+                    if ($absolutePath) {
+                        $path = "$host$path";
+                    }
+                    break;
+                case '~sys/':
+                    $path = $appRoot . SYSTEM_PATH . $path;
+                    if ($absolutePath) {
+                        $path = "$host$path";
+                    }
+                    break;
+                case '~ext/':
+                    $path = $appRoot . EXTENSIONS_PATH . $path;
+                    if ($absolutePath) {
+                        $path = "$host$path";
+                    }
+                    break;
+                case '~docroot/':
+                    if ($absolutePath) {
+                        $path = "$host$path";
+                    } else {
+                        $path = "/$path";
+                    }
+                    break;
             }
-        } else {
-            if ($relativeToCurrPage) {
-                $path = $GLOBALS["globalParams"]["absAppRoot"] . $path;
-            } else {
-                $path = $GLOBALS["globalParams"]["absAppRoot"] . $path;
+        } else {            // file access:
+            switch ($m[1]) {
+                case '~/':    //
+                    if ($absolutePath) {
+                        $path = "$absAppRoot$path";
+                    }
+                    break;
+                case '~page/':    // case B
+                    if ($absolutePath) {
+                        $path = "$absAppRoot$pathToPage$path";
+                    } else {
+                        $path = "$pathToPage$path";
+                    }
+                    break;
+                case '~data/':
+                    $path = $globalParams['dataPath'] . $path;
+                    if ($absolutePath) {
+                        $path = "$absAppRoot$path";
+                    }
+                    break;
+                case '~sys/':
+                    $path = SYSTEM_PATH . $path;
+                    if ($absolutePath) {
+                        $path = "$absAppRoot$path";
+                    }
+                    break;
+                case '~ext/':
+                    $path = EXTENSIONS_PATH . $path;
+                    if ($absolutePath) {
+                        $path = "$absAppRoot$path";
+                    }
+                    break;
+                case '~docroot/':
+                    if ($absolutePath) {
+                        $path = $_SERVER["DOCUMENT_ROOT"] . '/' . $path;
+                    } else {
+                        $path = "{$globalParams["filepathToDocroot"]}$path";
+                    }
+                    break;
             }
         }
     }
+
     $path = normalizePath($path);
     return $path;
 } // resolvePath
@@ -977,7 +1018,11 @@ function normalizePath($path)
     while ($path && preg_match('|(.*?) ([^/\.]+/\.\./) (.*)|x', $path, $m)) {
         $path = $m[1] . $m[3];
     }
+    if (strpos($path, '//')) {
+        $x = true;
+    }
     $path = str_replace('/./', '/', $path);
+    $path = preg_replace('|(?<!:)//|', '/', $path);
     return $hdr.$path;
 } // normalizePath
 
