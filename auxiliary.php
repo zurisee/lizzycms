@@ -658,17 +658,23 @@ function getDirDeep($path, $onlyDir = false, $assoc = false, $returnAll = false)
     if (strpos($f, '*') !== false) {
         $path = dirname($path);
     }
+    $patt = '|/[_#]|';
+    $patt2 = '|/[._#]|';
+    if ($returnAll) {
+        $patt = '|/#|';
+        $patt2 = '|/[.#]|';
+    }
     $it = new RecursiveDirectoryIterator($path);
     foreach(new RecursiveIteratorIterator($it) as $fileRec) {
         $f = $fileRec->getFilename();
         $p = $fileRec->getPathname();
         if ($onlyDir) {
-            if (($f === '.') && !preg_match('|/[_#]|', $p)) {
+            if (($f === '.') && !preg_match($patt, $p)) {
                 $files[] = rtrim($p, '.');
             }
             continue;
         }
-        if (!$returnAll && preg_match('|/[._#]|', $p)) {
+        if (!$returnAll && preg_match($patt2, $p)) {
             continue;
         }
         if ($assoc) {
