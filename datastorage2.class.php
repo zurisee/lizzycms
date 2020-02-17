@@ -61,6 +61,9 @@ class DataStorage2
     //---------------------------------------------------------------------------
     public function __destruct()
     {
+        if (!isset($this->appPath)) {
+            return;
+        }
         chdir($this->appPath); // workaround for include bug
 
         $this->exportToFile(); // saves data if modified
