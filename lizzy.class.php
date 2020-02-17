@@ -21,7 +21,7 @@ define('USER_INIT_CODE_FILE',   USER_CODE_PATH.'init-code.php');
 define('USER_VAR_DEF_FILE',     USER_CODE_PATH.'var-definitions.php');
 define('ICS_PATH',              'ics/'); // where .ics files are located
 
-define('USER_DAILY_CODE_FILE',   USER_CODE_PATH.'_daily-task.php');
+define('USER_DAILY_CODE_FILE',   USER_CODE_PATH.'@daily-task.php');
 define('CACHE_DEPENDENCY_FILE', '.#page-cache.dependency.txt');
 define('CACHE_FILENAME',        '.#page-cache.dat');
 
@@ -33,7 +33,7 @@ define('LOG_FILE',              LOGS_PATH.'log.txt');
 define('ERROR_LOG',             LOGS_PATH.'errlog.txt');
 define('ERROR_LOG_ARCHIVE',     LOGS_PATH.'errlog_archive.txt');
 define('VERSION_CODE_FILE',     LOGS_PATH.'version-code.txt');
-define('BROWSER_SIGNATURES_FILE',     LOGS_PATH.'browser-signatures.txt');
+define('BROWSER_SIGNATURES_FILE', LOGS_PATH.'browser-signatures.txt');
 define('UNKNOWN_BROWSER_SIGNATURES_FILE',     LOGS_PATH.'unknown-browser-signatures.txt');
 define('LOGIN_LOG_FILENAME',    LOG_FILE);
 define('UNDEFINED_VARS_FILE',   CACHE_PATH.'undefinedVariables.yaml');
@@ -71,6 +71,7 @@ require_once SYSTEM_PATH.'sandbox.class.php';
 require_once SYSTEM_PATH.'uadetector.class.php';
 require_once SYSTEM_PATH.'user-account-form.class.php';
 require_once SYSTEM_PATH.'ticketing.class.php';
+require_once SYSTEM_PATH.'service-tasks.php';
 
 
 $globalParams = array(
@@ -103,14 +104,12 @@ class Lizzy
 
 
 	//....................................................
-    public function __construct( $daemonRun = false)
+    public function __construct()
     {
-        if ($daemonRun || (isset($_GET['service']))) {
-            return;
-        }
+        $this->setDefaultTimezone();
+        $this->checkInstallation();
 
-        $this->checkInstallation0();
-        $this->dailyHousekeeping();
+        runServiceTasks($this);
 		$this->init();
 		$this->setupErrorHandling();
 
@@ -125,37 +124,9 @@ class Lizzy
         $this->restoreEdition();  // if user chose to activate a previous edition of a page
 
         $this->trans->addVariable('debug_class', '');   // just for compatibility
-        $this->dailyHousekeeping(2);
+
+        runServiceTasks($this, 2);
     } // __construct
-
-
-
-
-    //....................................................
-    public function serviceRun($codeFile, $useSiteInfrastructure = false)
-    {
-        if (!$this->config->custom_permitServiceCode) {
-            $msg ="Warning: attempt to run service-routine '$codeFile' failed -> not enabled";
-            setNotificationMsg($msg );
-            return $msg;
-        }
-
-        if ($useSiteInfrastructure && ($this->config->site_sitemapFile || $this->config->feature_sitemapFromFolders)) {
-            $this->initializeSiteInfrastructure();
-
-        } else {
-            $this->initializeAsOnePager();
-        }
-
-        $codeFile = USER_CODE_PATH.'@'.base_name($codeFile, false).'.php';
-        if (file_exists($codeFile)) {
-            $msg = require($codeFile);
-        } else {
-            $msg = "Warning: attempt to run service-routine '$codeFile' failed -> file not found";
-            setNotificationMsg($msg );
-        }
-        return $msg;
-    } // serviceRun
 
 
 
@@ -1277,50 +1248,6 @@ EOT;
 
 
 
-	//....................................................
-    private function clearCache()
-    {
-		$dir = glob($this->config->cachePath.'*');
-		foreach($dir as $file) {
-			unlink($file);
-		}
-
-		// clear all 'pages/*/.#page-cache.dat'
-		$dir = getDirDeep($this->config->path_pagesPath, true);
-		foreach ($dir as $folder) {
-		    $filename = $folder.$this->config->cacheFileName;
-		    if (file_exists($filename)) {
-		        unlink($filename);
-            }
-		    $filename = $folder.CACHE_DEPENDENCY_FILE;
-		    if (file_exists($filename)) {
-		        unlink($filename);
-            }
-        }
-	} // clearCache
-
-
-
-
-
-    //....................................................
-    private function clearCaches($secondRun = false)
-    {
-        if (!$secondRun) {
-            session_unset();
-            $_SESSION['lizzy']['reset'] = true;
-            $this->userRec = false;
-
-            if (file_exists(ERROR_LOG_ARCHIVE)) {   // clear error log
-                unlink(ERROR_LOG_ARCHIVE);
-            }
-        } else {
-            $this->clearCache();                            // clear page caches
-            $this->siteStructure->clearCache();             // clear siteStructure cache
-        }
-    } // clearCaches
-
-
 
     private function disableCaching()
     {
@@ -1342,7 +1269,8 @@ EOT;
 
         if (getUrlArg('reset')) {			            // reset (cache)
             $this->disableCaching();
-            $this->clearCaches();
+            clearCaches( $this, false );
+//            $this->clearCaches();
         }
 
 
@@ -1378,8 +1306,10 @@ EOT;
                 setStaticVariable('nc', true);
             }
 
-            if (getUrlArg('purge')) {                        // empty recycleBins
-                $this->purgeRecyleBins();
+            if (getUrlArg('purge')) {                        // empty recycleBins and caches
+                purgeRecyleBins( $this );
+                clearCache( $this );
+                clearLogs();
                 reloadAgent();
             }
 
@@ -1942,75 +1872,8 @@ EOT;
 
 
 
-
     //....................................................
-    private function purgeRecyleBins()
-    {
-        $pageFolder = $this->config->path_pagesPath;
-        $recycleBinFolderName = substr(RECYCLE_BIN,0, -1);
-
-        // purge in page folders:
-        $pageFolders = getDirDeep($pageFolder, true, false, true);
-        foreach ($pageFolders as $item) {
-            $basename = basename($item);
-            if (($basename === $recycleBinFolderName) || ($basename == '_')) {      // it's a recycle bin:
-                rrmdir($item);
-            }
-        }
-
-        // purge global recycle bin:
-        $sysRecycleBin = resolvePath(SYSTEM_RECYCLE_BIN_PATH);
-        if (file_exists($sysRecycleBin)) {
-            rrmdir($sysRecycleBin);
-        }
-
-    } // purgeRecyleBins
-
-
-
-
-
-    //....................................................
-    private function dailyHousekeeping($run = 1)
-    {
-        if ($run === 1) {
-            if (file_exists(HOUSEKEEPING_FILE)) {
-                $fileTime = intval(filemtime(HOUSEKEEPING_FILE) / 86400);
-                $today = intval(time() / 86400);
-                if (($fileTime) === $today) {    // update once per day
-                    $this->housekeeping = false;
-                    return;
-                }
-            }
-            if (!file_exists(CACHE_PATH)) {
-                mkdir(CACHE_PATH, MKDIR_MASK);
-            }
-            touch(HOUSEKEEPING_FILE);
-            chmod(HOUSEKEEPING_FILE, 0770);
-
-            $this->checkInstallation();
-
-            $this->housekeeping = true;
-            $this->clearCaches();
-
-        } elseif ($this->housekeeping) {
-            writeLog("Daily housekeeping run.");
-            $this->checkInstallation2();
-            $this->clearCaches(true);
-            if ($this->config->admin_enableDailyUserTask) {
-                if (file_exists(USER_DAILY_CODE_FILE)) {
-                    require( USER_DAILY_CODE_FILE );
-                }
-            }
-            touch(HOUSEKEEPING_FILE);
-            chmod(HOUSEKEEPING_FILE, 0770);
-        }
-    } // dailyHousekeeping
-
-
-
-    //....................................................
-    private function checkInstallation0()
+    private function checkInstallation()
     {
         if (version_compare(PHP_VERSION, '7.1.0') < 0) {
             die("Lizzy requires PHP version 7.1 or higher to run.");
@@ -2023,77 +1886,8 @@ EOT;
             echo "</pre>";
             exit;
         }
-    } // checkInstallation0
-
-
-
-    //....................................................
-    private function checkInstallation()
-    {
-        $writableFolders = ['data/', '.#cache/', '.#logs/'];
-        $readOnlyFolders = ['_lizzy/','code/','config/','css/','pages/'];
-        $out = '';
-        foreach ($writableFolders as $folder) {
-            if (!file_exists($folder)) {
-                mkdir($folder, MKDIR_MASK2);
-            }
-            if (!is_writable( $folder )) {
-                $out .= "<p>folder not writable: '$folder'</p>\n";
-            }
-            foreach( getDir($folder.'*') as $file) {
-                if (!is_writable( $file )) {
-                    $out .= "<p>folder not writable: '$file'</p>\n";
-                }
-            }
-        }
-
-        foreach ($readOnlyFolders as $folder) {
-            if (!file_exists($folder)) {
-                mkdir($folder, MKDIR_MASK);
-            }
-            if (!is_readable( $folder )) {
-                $out .= "<p>folder not readable: '$folder'</p>\n";
-            }
-
-        }
-        if ($out) {
-            exit( $out );
-        }
-        return;
-
-        print( trim(shell_exec('whoami')).':'.trim(shell_exec('groups'))."<br>\n");
-
-        $all = array_merge($writableFolders, $readOnlyFolders);
-        foreach ($all as $folder) {
-            $rec = posix_getpwuid(fileowner($folder));
-            $name = $rec['name'];
-            $rec = posix_getgrgid(filegroup($filename));
-            $group = $rec['name'];
-            print("$folder: $name:$group<br>\n");
-        }
-        exit;
     } // checkInstallation
 
-
-
-    //....................................................
-    private function checkInstallation2()
-    {
-        $out = '';
-        if ($this->config->admin_enableEditing) {
-            if (!is_writable( 'pages' )) {
-                $out .= "<p>folder not writable: 'pages/'</p>\n";
-            }
-            foreach(getDirDeep('pages/*') as $file) {
-                if (!is_writable( $file )) {
-                    $out .= "<p>file or folder not writable: '$file'</p>\n";
-                }
-            }
-        }
-        if ($out) {
-            exit( $out );
-        }
-    } // checkInstallation2
 
 
 
@@ -2107,6 +1901,7 @@ EOT;
         }
         return $html;
     } // postprocess
+
 
 
 
@@ -2131,21 +1926,31 @@ EOT;
 
         $timeZone = ($this->config->site_timeZone === 'auto') ? '' : $this->config->site_timeZone;
         if ($timeZone) {
-            $systemTimeZone = $timeZone;
-        } else {
-            exec('date +%Z',$systemTimeZone, $res);
-            if ($res || !isset($systemTimeZone[0])) {
-                $systemTimeZone = 'UTC';
-            } else {
-                $systemTimeZone = $systemTimeZone[0];
+            if ($timeZone === 'CEST') {    // workaround: CEST not supported
+                $timeZone = 'CET';
             }
+            date_default_timezone_set($timeZone);
+        }
+        setStaticVariable('systemTimeZone', $timeZone);
+    } // setLocale
+
+
+
+
+    private function setDefaultTimezone()
+    {
+        exec('date +%Z',$systemTimeZone, $res);
+        if ($res || !isset($systemTimeZone[0])) {
+            $systemTimeZone = 'UTC';
+        } else {
+            $systemTimeZone = $systemTimeZone[0];
         }
         if ($systemTimeZone == 'CEST') {    // workaround: CEST not supported
             $systemTimeZone = 'CET';
         }
         date_default_timezone_set($systemTimeZone);
         setStaticVariable('systemTimeZone', $systemTimeZone);
-    } // setLocale
+    } // setDefaultTimezone
 
 
 
@@ -2334,6 +2139,7 @@ EOT;
         $globalParams['pagePath'] = $this->pagePath;                    // excludes pages/, takes not showThis into account
         $globalParams['pathToPage'] = $this->pathToPage;
         $globalParams['filepathToRoot'] = str_repeat('../', substr_count($this->pathToPage, '/'));
+        $globalParams['filepathToDocroot'] = str_repeat('../', substr_count($globalParams["appRoot"], '/')-1);
         $_SESSION['lizzy']['pageHttpPath'] = $this->pageHttpPath;               // for _ajax_server.php and _upload_server.php
         $_SESSION['lizzy']['pagePath'] = $this->pagePath;               // for _ajax_server.php and _upload_server.php
         $_SESSION['lizzy']['pathToPage'] = $this->config->path_pagesPath . $this->pagePath;
