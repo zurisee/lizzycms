@@ -244,6 +244,10 @@ figure a {
 		vertical-align: top;
 	}
 }
+.lzy-table-wrapping tr {
+	display: flex;
+	flex-wrap: wrap;
+}
 
 
 /* === Definition Lists in table layout ======== */
