@@ -4,7 +4,7 @@
  *
  *  -> Daily housekeeping
  *  -> purging temp folders (caches, recycle bins, logs etc)
- *  -> service tasks invoked by cron (-> ?service)
+ *  -> service tasks launched by cron (-> invoke as ?service)
  *      -> reads data/schedule.yaml for instructions
 */
 
@@ -269,10 +269,10 @@ function executeScheduledTasks($lzy, $run = 1 )
         if (preg_match('/(Mo|Tu|We|Th|Fr|Sa|Su)/', $scheduledTime, $m)) {
             $wday = array_search($m[1], $wdays);
             $wdayToday = intval(date('w'));
-            if ($wday === $wdayToday) {
+            if ($wday === $wdayToday) { // send on specified week-day only:
                 $scheduledTime = str_replace($m[1], date('Y-m-d'), $scheduledTime);
             } else {
-                $scheduledTime = str_replace($m[1], '2000-01-01', $scheduledTime);
+                continue;
             }
         }
 
@@ -293,7 +293,8 @@ function executeScheduledTasks($lzy, $run = 1 )
             if (file_exists($do)) {
                 require_once $do ;
                 runService($lzy, $scheduleRec['args']);
-            } else {
+
+            } elseif (!sendSimpleNotification($scheduleRec['args'])) { // send msg directly, if msg is defined
                 die("Error: schedule-handler '$do' not found.");
             }
         }
@@ -303,4 +304,19 @@ function executeScheduledTasks($lzy, $run = 1 )
 
 
 
+function sendSimpleNotification($args)
+{
+    if (!isset($args['from']) ||
+        !isset($args['to']) ||
+        !isset($args['msg'])) {
+        return false;
+    }
+    $subject = isset($args['subject']) ? $args['subject'] : '';
+
+    require_once SYSTEM_PATH . 'messenger.class.php';
+
+    $mess = new Messenger($args['from']);
+    $mess->send($args['to'], $args['msg'], $subject);
+    return true;
+} // sendSimpleNotification
 
