@@ -126,7 +126,7 @@ class SCssCompiler
             $lines = explode(PHP_EOL, $out);
             $out = '';
             foreach ($lines as $i => $l) {
-                $l = preg_replace('|^ (.*?) // .*|x', "$1", $l);
+                $l = preg_replace('|^ (.*?) (?<!:)// .*|x', "$1", $l);
 
                 if (preg_match('|^ [^/\*]+ \{|x', $l)) {  // add line-number in comment
                     $l .= " [[* content: '$fname:".($i+1)."'; *]]";
