@@ -76,6 +76,9 @@ $this->addMacro($macroName, function () {
     if (!$args['src']) {
         return "\t<div class='lzy-warning'>&#123;&#123; Error: image file '{$args['origSrc']}' not found. }}</div>\n";
     }
+
+    // make sure img filename doesn't contain blanks:
+    $args['src'] = str_replace(' ', '_', $args['src']);
     $args['srcFile'] = resolvePath($args['src']);
 
     $impTag = new ImageTag($this, $args);
