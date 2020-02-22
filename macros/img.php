@@ -78,7 +78,6 @@ $this->addMacro($macroName, function () {
     }
 
     // make sure img filename doesn't contain blanks:
-    $args['src'] = str_replace(' ', '_', $args['src']);
     $args['srcFile'] = resolvePath($args['src']);
 
     $impTag = new ImageTag($this, $args);
@@ -140,11 +139,12 @@ function prepareImageWorkingCopy($reqImg0, $imgDefaultMaxDim = '1920x1024')
 
     $path = dir_name($reqImgFile);
     $fileName = base_name($reqImgFile);
+//    $fileName = str_replace(' ', '_', $fileName);
     if (!file_exists($reqImgFile)) {
         $reqImgFile = $path.'#'.$fileName;
     }
 
-    $fileName = str_replace(['(', ')'], '_', $fileName);
+    $fileName = str_replace(['(', ')', ' '], '_', $fileName);
 
     $workSrc = "~page/_/$fileName";
     $workSrcFile = resolvePath($workSrc);
