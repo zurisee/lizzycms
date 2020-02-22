@@ -62,7 +62,7 @@ EOT;
         if (preg_match($pattern, $this->from, $m)) {
             $from = $m[1];
         } elseif (isset($this->lzy->trans)) {
-            $from = $this->trans->getVariable('webmaster_email');
+            $from = $this->lzy->trans->getVariable('webmaster_email');
         } else {
             $from = 'unknown'; //ToDo
         }
