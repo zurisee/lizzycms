@@ -49,7 +49,7 @@ define('PATH_TO_APP_ROOT', 	'../');		                            // root folder 
 //define('ERROR_LOG',         PATH_TO_APP_ROOT.'.#logs/errlog.txt');	//
 define('LOCK_TIMEOUT', 		120);	                                // max time till field is automatically unlocked
 define('MAX_URL_ARG_SIZE',  255);
-define('MKDIR_MASK',        0700);                                  // remember to modify _lizzy/_install/install.sh as well
+//define('MKDIR_MASK',        0700);                                  // remember to modify _lizzy/_install/install.sh as well
 //define('RECYCLE_BIN',           '.#recycleBin/');
 //define('RECYCLE_BIN_PATH',      '~page/'.RECYCLE_BIN);
 
@@ -77,7 +77,7 @@ class AjaxServer
         }
         $this->clear_duplicate_cookies();
 
-        $timezone = isset($_SESSION['lizzy']['systemTimeZone']) ? $_SESSION['lizzy']['systemTimeZone'] : 'CET';
+        $timezone = isset($_SESSION['lizzy']['systemTimeZone']) && $_SESSION['lizzy']['systemTimeZone'] ? $_SESSION['lizzy']['systemTimeZone'] : 'CET';
         date_default_timezone_set($timezone);
 
 
