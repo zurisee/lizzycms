@@ -1935,13 +1935,7 @@ EOT;
             setlocale(LC_ALL, "en_UK.utf-8");
         }
 
-        $timeZone = ($this->config->site_timeZone === 'auto') ? '' : $this->config->site_timeZone;
-        if ($timeZone) {
-            if ($timeZone === 'CEST') {    // workaround: CEST not supported
-                $timeZone = 'CET';
-            }
-            date_default_timezone_set($timeZone);
-        }
+        $timeZone = ($this->config->site_timeZone === 'auto') ? $this->setDefaultTimezone() : $this->config->site_timeZone;
         setStaticVariable('systemTimeZone', $timeZone);
     } // setLocale
 
@@ -1961,6 +1955,7 @@ EOT;
         }
         date_default_timezone_set($systemTimeZone);
         setStaticVariable('systemTimeZone', $systemTimeZone);
+        return $systemTimeZone;
     } // setDefaultTimezone
 
 
