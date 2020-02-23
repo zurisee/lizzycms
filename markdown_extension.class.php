@@ -137,12 +137,22 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
                 continue;
             }
 
-            if (isset($line[0]) && ($line[0] == '|')) {  // next cell starts
+            if (isset($line[0]) && ($line[0] === '|')) {  // next cell starts
                 $line = substr($line,1);
                 $cells = preg_split('/\s(?<!\\\)\|/', $line); // pattern is ' |'
                 foreach ($cells as $cell) {
-                    $col++;
-                    $table[$row][$col] = str_replace('\|','|', $cell);
+                    if ($cell[0] === '>') {
+                        $cells2 = explode('|', $cell);
+                        foreach ($cells2 as $j => $c) {
+                            $table[$row][$col] = $c;
+                            $col++;
+                        }
+                        unset($cells2);
+                        unset($c);
+                    } else {
+                        $col++;
+                        $table[$row][$col] = str_replace('\|', '|', $cell);
+                    }
                 }
 
             } else {
@@ -152,6 +162,7 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
         }
         $nCols++;
         $nRows = $row+1;
+        unset($cells);
 
 
         $id = $class = $style = $attr = $text = $tag = '';
