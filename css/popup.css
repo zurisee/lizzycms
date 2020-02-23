@@ -53,7 +53,7 @@
     padding: 1em 1em 0.6em 1em;
     border: none;
     border-radius: 4px;
-    box-shadow: 0 0 15px black;
+    box-shadow: 0 0 7px #4f4f4f;
     min-width: 12em;
     transform: scale(0.5);
 }
@@ -78,4 +78,7 @@
 .popup_wrapper h1 {
     margin: 0 0 0.5em;
     font-size: 14pt;
+}
+.popup_visible .page {
+  filter: blur(4px);
 }
