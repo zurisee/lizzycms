@@ -246,7 +246,7 @@ class LizzyMarkdown
         // -> shield '-' and '1.' (and '1!.')
 
         // Alternative Syntax: ··>>·· or ··10em>>··  (where · == space)
-        $str = preg_replace('/(\s\s|\t)(\d{1,3}\w{1,2})?>>\s\s/', "{{ tab($2) }}", $str);
+        $str = preg_replace('/(\s\s|\t)(\d{1,3}\w{1,2})?>>\s/', "{{ tab($2) }}", $str);
 
         $lines = explode(PHP_EOL, $str);
         foreach ($lines as $i => $l) {
