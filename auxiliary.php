@@ -931,6 +931,8 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
                     if ($isResource) {
                         if ($absolutePath) {
                             $path = "$host$appRoot$pathToPage$path";
+                        } else {
+                            $path = "$appRoot$pathToPage$path";
                         }
                     } else {
                         if ($absolutePath) {
