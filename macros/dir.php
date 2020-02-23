@@ -37,7 +37,7 @@ class DirRenderer
     {
         $this->lzy = $lzy;
         $this->args = $args;
-        $this->path = $this->path0 = $this->getArg('path');
+        $this->path = $this->getArg('path');
         $this->pattern = $this->getArg('pattern');
         $this->deep = $this->getArg('deep');
         $this->order = $this->getArg('order');
@@ -202,7 +202,7 @@ EOT;
                 } else {                // regular file:
                     $href = '~/' . $path . basename($file);
                 }
-                $str .= "\t\t$indent  <li class='lzy-dir-file'><a href='$href'{$this->target}>$name</a></li>\n";
+                $str .= "\t\t$indent  <li class='lzy-dir-file'><a href='$href'{$this->targetAttr}{$this->linkClass}>$name</a></li>\n";
             }
         }
         $str = <<<EOT
