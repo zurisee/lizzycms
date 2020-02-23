@@ -27,7 +27,7 @@ $this->addMacro($macroName, function () {
 		return '';
 	}
 
-	$src = resolvePath($src, true, true, false, true);
+	$src = resolvePath($src, true, true, true);
 
 	$out = <<<EOT
 
