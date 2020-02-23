@@ -144,8 +144,8 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
                     if ($cell[0] === '>') {
                         $cells2 = explode('|', $cell);
                         foreach ($cells2 as $j => $c) {
-                            $table[$row][$col] = $c;
                             $col++;
+                            $table[$row][$col] = $c;
                         }
                         unset($cells2);
                         unset($c);
