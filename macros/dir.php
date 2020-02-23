@@ -7,22 +7,21 @@ $this->addMacro($macroName, function () {
 	$macroName = basename(__FILE__, '.php');
 	$this->invocationCounter[$macroName] = (!isset($this->invocationCounter[$macroName])) ? 0 : ($this->invocationCounter[$macroName]+1);
 
-    $path = $this->getArg($macroName, 'path', 'Selects the folder to be read', '~page/');
+    $path = $this->getArg($macroName, 'path', 'Selects the folder to be read', '');
+    $this->getArg($macroName, 'pattern', 'The search-pattern with which to look for files (-> \'glob style\')', '');
+    $this->getArg($macroName, 'deep', '[false,true,flat] Whether to recursively descend into sub-folders. ("flat" means deep as a non-hierarchical list.)', false);
+    $this->getArg($macroName, 'order', '[reverse] Displays result in reversed order', false);
+    $this->getArg($macroName, 'class', 'class to be applied to the enclosing li-tag', '');
+    $this->getArg($macroName, 'target', '"target" attribute to be applied to the a-tag', '');
+    $this->getArg($macroName, 'maxAge', '[integer] Maximum age of file (in number of days)', '');
 
     if ($path === 'help') {
-        $this->getArg($macroName, 'pattern', 'The search-pattern with which to look for files (-> \'glob style\')', '*');
-        $this->getArg($macroName, 'deep', 'Whether to recursively search sub-folders', false);
-        $this->getArg($macroName, 'order', '[reverse] Displays result in reversed order', false);
-        $this->getArg($macroName, 'hierarchical', 'If true, found files will be displayed in hierarchical view.', false);
-        $this->getArg($macroName, 'class', 'class to be applied to the enclosing li-tag', '');
-        $this->getArg($macroName, 'target', '"target" attribute to be applied to the a-tag', '');
-        $this->getArg($macroName, 'maxAge', '[integer] Maximum age of file (in number of days)', '');
         return '';
     }
 
     $args = $this->getArgsArray($macroName);
 
-    $r = new DirRenderer($args);
+    $r = new DirRenderer($this->lzy, $args);
     $out = $r->render();
     return $out;
 });
@@ -34,18 +33,21 @@ $this->addMacro($macroName, function () {
 
 class DirRenderer
 {
-    public function __construct($args)
+    public function __construct($lzy, $args)
     {
+        $this->lzy = $lzy;
         $this->args = $args;
-        $this->path0 = $this->getArg('path');
+        $this->path = $this->path0 = $this->getArg('path');
         $this->pattern = $this->getArg('pattern');
         $this->deep = $this->getArg('deep');
         $this->order = $this->getArg('order');
-        $this->hierarchical = $this->getArg('hierarchical');
         $this->class = $this->getArg('class');
         $this->target = $this->getArg('target');
         $this->exclude = $this->getArg('exclude');
         $this->maxAge = $this->getArg('maxAge');
+        if ($this->getArg('hierarchical')) {
+            $this->deep = true;
+        }
     }
 
 
@@ -53,48 +55,59 @@ class DirRenderer
 
     public function render()
     {
-        if (!$this->pattern) {
-            if (preg_match('|(.*/)? ([^/]* [\*\.\w]+ [^/]*) $|x', $this->path0, $m)) {
-                $this->path0 = fixPath($m[1]);
-                $this->pattern = $m[2];
-            } else {
-                $this->pattern = '*.*';
+        if ((strpos(base_name($this->path), '*') === false)) {
+            if (!$this->pattern) {
+                $this->pattern = "*";
             }
         } else {
-            $this->path0 = dir_name($this->path0);
+            if (!$this->pattern) {
+                $this->pattern = base_name($this->path);
+            }
+            $this->path = dirname($this->path);
+        }
+        if ($this->path) {
+            $this->path = fixPath($this->path);
+            $this->path = makePathRelativeToPage($this->path);
+        } else {
+            $this->path = '~page/';
         }
 
-        if (!$this->path0) {
-            $this->path0 = '~page/';
-        } else {
-            $this->path0 = makePathRelativeToPage($this->path0);
-        }
-        $this->path1 = resolvePath($this->path0, false, false, true, true);
-        $this->path = $this->path1 . $this->pattern;
-        $this->exclPath = $this->path1 . $this->exclude;
+        $this->exclPath = $this->path . $this->exclude;
 
         if ($this->target) {
-            $this->target = " target='{$this->target}'";
+            if ($this->target === 'newwin') {
+                $this->targetAttr = " target='_blank'";
+            } else {
+                $this->targetAttr = " target='{$this->target}'";
+            }
+        } else {
+            $this->targetAttr = '';
         }
 
         if ($this->class) {
             $this->class = " class='{$this->class}'";
         }
-
-        if ($this->hierarchical) {
-            $str = $this->hierarchicalList($this->path);
-            return $str;
-
-        } elseif ($this->deep) {
-            $dir = getDirDeep($this->path);
-        } else {
-            $dir = getDir($this->path);
+        $this->linkClass = '';
+        if ($this->target) {
+            $this->linkClass = " class='lzy-link lzy-newwin_link'";
         }
 
-        $str = $this->straightList($dir);
+        $path = resolvePath($this->path);
+        if ($this->deep) {
+            if ($this->deep === 'flat') {
+                $dir = getDirDeep($path . $this->pattern);
+                $str = $this->straightList($dir);
+            } else {
+                $this->pregPattern = '|'.str_replace(['.', '*'], ['\\.', '.*'], $this->pattern).'|';
+                $str = $this->_hierarchicalList($path);
+            }
+        } else {
+            $dir = getDir($path.$this->pattern);
+            $str = $this->straightList($dir);
+        }
 
         return $str;
-    }
+    } // render
 
 
 
@@ -112,16 +125,22 @@ class DirRenderer
             $maxAge = time() - 86400 * $this->maxAge;
         }
         foreach ($dir as $file) {
-//        if ($exclDir && in_array($file, $exclDir)) {
-//            continue;
-//        }
             if (is_dir($file) || (filemtime($file) < $maxAge)) {
                 continue;
             }
-
             $name = base_name($file);
-            $fileUrl = resolvePath($this->path0 . basename($file), true, true);
-            $str .= "\t\t<li><a href='$fileUrl'{$this->target}>$name</a></li>\n";
+            $url = $this->parseUrlFile($file);
+            if ($url) { // it's a link file (.url or .webloc):
+                $name = base_name($file, false);
+                require_once SYSTEM_PATH.'link.class.php';
+                $lnk = new CreateLink($this->lzy);
+                $link = $lnk->render(['href' => $url, 'text' => $name, 'target' => $this->target]);
+                $str .= "\t\t<li class='lzy-dir-file'>$link</li>\n";
+
+            } else {    // it's regular local file:
+                $url = '~/'.$file;
+                $str .= "\t\t<li class='lzy-dir-file'><a href='$url'{$this->targetAttr}{$this->linkClass}>$name</a></li>\n";
+            }
         }
         $str = <<<EOT
 
@@ -135,52 +154,55 @@ EOT;
 
 
 
-    private function hierarchicalList($path, $lvl = 0)
+    private function _hierarchicalList($path, $lvl = 0)
     {
-        if (isset($path[-1]) & ($path[-1] != '*')) {
-            $path1 = fixPath($path).'*';
-        } else {
-            $path1 = $path;
-            $path = substr($path,0 -1);
-        }
-
         $maxAge = 0;
         if ($this->maxAge) {
             $maxAge = time() - 86400 * $this->maxAge;
         }
 
-        $dir = getDir($path1);
+        $dir = getDir("$path*");
         if (strpos($this->order, 'revers') !== false) {
             $dir = array_reverse($dir);
         }
         $str = '';
         $indent = str_pad('', $lvl, "\t");
-        foreach ($dir as $file) {
-            if (is_dir($file)) {
+        foreach ($dir as $file) {   // loop over items on this level:
+
+            if (is_dir($file)) {        // it's a dir -> decend:
                 $name = basename($file);
-                $str1 = $this->hierarchicalList(fixPath($file), $lvl+1);
-                $str .= "\t\t$indent  <li><span>$name</span>\n$str1\n\t\t$indent  </li>\n";
-            } else {
-                if (filemtime($file) < $maxAge) {
+                $nextPath = fixPath($file);
+                $str1 = $this->_hierarchicalList($nextPath, $lvl+1);
+                $str .= "\t\t$indent  <li class='lzy-dir-folder'><span>$name</span>\n$str1\n\t\t$indent  </li>\n";
+
+            } else {                    // it's a file
+                if (filemtime($file) < $maxAge) {   // check age, skip if too old
                     continue;
                 }
                 $name = base_name($file);
                 $ext = fileExt($file);
-                if ($ext == 'url') {
+
+                if ($this->pattern) {       // apply pattern:
+                    if (!preg_match($this->pregPattern, $name)) {
+                        continue;
+                    }
+                }
+
+                if ($ext === 'url') {   // special case: file-ext 'url' -> render content as link
                     $href = file_get_contents($file);
                     $name = basename($file, '.url');
 
-                } elseif ($ext == 'webloc') {
+                } elseif ($ext === 'webloc') {   // special case: file-ext 'webloc' -> extract link
                     $href = str_replace("\n", ' ', file_get_contents($file));
                     if (preg_match('|\<string\>(https?\://.*)\</string\>|', $href, $m)) {
                         $href = $m[1];
                     }
                     $name = basename($file, '.webloc');
 
-                } else {
+                } else {                // regular file:
                     $href = '~/' . $path . basename($file);
                 }
-                $str .= "\t\t$indent  <li><a href='$href'{$this->target}>$name</a></li>\n";
+                $str .= "\t\t$indent  <li class='lzy-dir-file'><a href='$href'{$this->target}>$name</a></li>\n";
             }
         }
         $str = <<<EOT
@@ -193,8 +215,25 @@ EOT;
 
         return $str;
 
-    } // hierarchicalList
+    } // _hierarchicalList
 
+
+
+    private function parseUrlFile($file)
+    {
+        if (!file_exists($file)) {
+            return false;
+        }
+        $str = file_get_contents($file);
+        if (preg_match('|url=(.*)|ixm', $str, $m)) {    // Windows link
+            $url = trim($m[1]);
+        } elseif (preg_match('|<string>(.*)</string>|ixm', $str, $m)) { // Mac link
+            $url = $m[1];
+        } else {
+            $url = false;
+        }
+        return $url;
+    } // parseUrlFile
 
 
 
@@ -202,4 +241,5 @@ EOT;
     {
         return (isset($this->args[$name])) ? $this->args[$name] : '';
     }
+
 } // DirRenderer
