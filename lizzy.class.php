@@ -1426,23 +1426,34 @@ EOT;
 
 		// printing support:
         if (getUrlArg('print-preview')) {              // activate Print-Preview
-            $this->page->addModules('PAGED_POLYFILL');
+//            $this->page->addModules('PAGED_POLYFILL');
             $url = './?print';
             unset($_GET['print-preview']);
             foreach ($_GET as $k => $v) {   // make sure all other url-args are preserved:
                 $url .= "&$k=$v";
             }
             $jq = <<<EOT
-    $('body').append( "<div class='lzy-print-btns'><a href='$url' class='lzy-button' >{{ lzy-print-now }}</a><a href='./' onclick='window.close();' class='lzy-button' >{{ lzy-close }}</a></div>" ).addClass('lzy-print-preview');
+	setTimeout(function() {
+	    console.log('now running paged.polyfill.js'); 
+	    $.getScript( "~sys/third-party/paged.polyfill/paged.polyfill.js"); 
+	}, 1000);
+	setTimeout(function() {
+	    console.log('now adding buttons'); 
+        $('body').append( "<div class='lzy-print-btns'><a href='$url' class='lzy-button' >{{ lzy-print-now }}</a><a href='./' onclick='window.close();' class='lzy-button' >{{ lzy-close }}</a></div>" ).addClass('lzy-print-preview');
+	}, 1200);
 EOT;
             $this->page->addJq($jq);
         }
         if (getUrlArg('print')) {              // activate Print-supprt and start printing dialog
-            $this->page->addModules('PAGED_POLYFILL');
+//            $this->page->addModules('PAGED_POLYFILL');
             $jq = <<<EOT
+	setTimeout(function() {
+	    console.log('now running paged.polyfill.js'); 
+	    $.getScript( "~sys/third-party/paged.polyfill/paged.polyfill.js");
+	}, 1000);
     setTimeout(function() {
         window.print();
-    }, 800);
+    }, 2000);
 EOT;
 
             $this->page->addJq($jq);
