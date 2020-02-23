@@ -397,7 +397,10 @@ EOT;
     {
         // While Lizzy's file-manager is active (admin_enableFileManager=true), the upload feature is not working due
         // to an incompatibility. Thus, we render a dummy button containing a warning:
-        if ($this->transvar->config->admin_enableFileManager) {
+        $e1 = $this->transvar->config->admin_enableFileManager;
+        $e2 = !isset($this->transvar->page->frontmatter["admin_enableFileManager"]) || $this->transvar->page->frontmatter["admin_enableFileManager"];
+        $e3 = !isset($this->transvar->page->frontmatter["enableFileManager"]) || $this->transvar->page->frontmatter["enableFileManager"];
+        if ($e1 && $e2 && $e3) {
             $str = "<button class='lzy-form-file-upload-label lzy-button'><span class='lzy-icon-error' title='Upload() not working while Lizzy&#39;s file-manager is active.'></span>{$this->currRec->label}</button>";
             return $str;
         }

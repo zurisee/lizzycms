@@ -23,11 +23,6 @@ $this->addMacro($macroName, function () {
     }
     $args = $this->getArgsArray($macroName);
 
-//    if ($this->config->admin_enableFileManager) {
-//        $str = "<button class='lzy-form-file-upload-label lzy-button'><span class='lzy-icon-error' title='Upload() not working while Lizzy&quot;s file-manager is active.'></span>{{ Upload File(s) }}</button>";
-//        return $str;
-//    }
-
     if ($inx == 1) {
 		$this->form = new Forms($this->page, $this);
 	}
