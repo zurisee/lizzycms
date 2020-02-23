@@ -656,6 +656,7 @@ function getDirDeep($path, $onlyDir = false, $assoc = false, $returnAll = false)
     $files = [];
     $f = basename($path);
     if (strpos($f, '*') !== false) {
+        $pattern = basename($path);
         $path = dirname($path);
     }
     $patt = '|/[_#]|';
@@ -786,7 +787,7 @@ function dir_name($path)
     if ($path{strlen($path)-1} === '/') {  // ends in '/'
         return $path;
     }
-    $path = preg_replace('/[\#\?].*/', '', $path);
+    $path = preg_replace('/[\#\?\*].*/', '', $path);
     if (strpos(basename($path), '.') !== false) {  // if it contains a '.' we assume it's a file
         return dirname($path).'/';
     } else {
