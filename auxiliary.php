@@ -1041,13 +1041,12 @@ function normalizePath($path)
 //------------------------------------------------------------
 function makePathRelativeToPage($path)
 {
-    if (!$path) {
-        return '';
+    if (!$path || (stripos($path, 'http') === 0)) {
+        return $path;
     }
 
     if ((($ch1=$path{0}) != '/') && ($ch1 != '~')) {	//default to path local to page
             $path = '~page/' . $path;
-
     }
 
     return $path;

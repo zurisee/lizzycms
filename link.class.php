@@ -317,7 +317,7 @@ class CreateLink
                 }
             }
         }
-        if (stripos($this->option, 'noprint') === false) {
+        if ((stripos($this->option, 'noprint') === false) && (stripos($this->href, 'http') !== 0)) {
             $href = resolvePath($this->href, true, true, true);
             $hiddenText = "<span class='print_only'> [$href]</span>";
         } else {
