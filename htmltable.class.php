@@ -452,24 +452,6 @@ EOT;
 
 
 
-
-    private function applyClass($class)
-    {
-        if ($class) {
-            $c['class'] = $class;
-            foreach ($this->data as $r => $row) {
-                if ($this->headers && ($r == 0)) {
-                    continue;
-                }
-                $c['content'] = $this->data[$r][$col];
-                $this->data[$r][$col] = $c;
-            }
-        }
-    } // applyClass
-
-
-
-
     private function applyClassToColumn($column, $class, $inclHead = false)
     {
         $c = $column;
@@ -980,7 +962,7 @@ EOT;
             foreach ($data as $r => $row) {
                 foreach ($data[$r] as $c => $col) {
                     $d = trim($data[$r][$c]);
-                    if (preg_match_all('/([\w-\.]*?)\@([\w-\.]*?\.\w{2,6})/', $d, $m)) {
+                    if (preg_match_all('/ ([\w\-\.]*?) \@ ([\w\-\.]*?\.\w{2,6}) /x', $d, $m)) {
                         foreach ($m[0] as $addr) {
                             $d = str_replace($addr, "<a href='mailto:$addr'>$addr</a>", $d);
                         }
@@ -990,13 +972,13 @@ EOT;
                         if (strlen($tel) > 7) {
                             $d = "<a href='tel:$tel'>$d</a>";
                         }
-                    } elseif (preg_match('|^( (https?://)? ([\w-\.]+ \. [\w-]{1,6}))$|xi', $d, $m)) {
+                    } elseif (preg_match('|^( (https?://)? ([\w\-\.]+ \. [\w\-]{1,6}))$|xi', $d, $m)) {
                         if (!$m[2]) {
                             $url = "https://".$m[3];
                         } else {
                             $url = $m[1];
                         }
-                        if (strlen($tel) > 7) {
+                        if (strlen($url) > 7) {
                             $d = "<a href='$url'>$d</a>";
                         }
                     }
