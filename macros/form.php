@@ -36,6 +36,7 @@ $this->addMacro($macroName, function () {
         return $this->form->renderHelp();
     }
     $mailto = $this->getArg($macroName, 'mailto', '', '');
+    $legend = $this->getArg($macroName, 'legend', '', '');
 
     $str = $this->form->render([ 'type' => 'form-head', 'mailto' => $mailto ]);
     $buttons = [ 'label' => '', 'type' => 'button', 'value' => '' ];
@@ -61,7 +62,7 @@ $this->addMacro($macroName, function () {
             $buttons["value"] .= 'cancel,';
             $arg['type'] = 'button';
 
-        } elseif ($label === 'mailto') {
+        } elseif (($label === 'mailto') || ($label === 'legend')) {
         } else {
             $arg['label'] = $label;
             $str .= $this->form->render($arg);
@@ -73,6 +74,9 @@ $this->addMacro($macroName, function () {
 
     $str .= $this->form->render([ 'type' => 'form-tail' ]);
 
+    if ($legend) {
+        $str = "<div class='lzy-form-legend'>$legend</div>$str";
+    }
 
 	return $str;
 });
