@@ -114,7 +114,7 @@ $this->addMacro($macroName, function () {
 
         $caption = str_replace('##', $this->figureCounter, $caption);
         $caption = "\t<figcaption>$caption</figcaption>\n";
-        $str = "<figure id='figure_$id' class='$class'>\n\t$str\n$caption</figure>\n";
+        $str = "<figure id='figure_$id' class='lzy-figure $class'>\n\t$str\n$caption</figure>\n";
     }
     return $str;
 });

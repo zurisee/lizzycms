@@ -189,6 +189,13 @@ figure a {
 	max-width: 100%;
 	height: auto;
 }
+.lzy-figure {
+	max-width: 100%;
+	max-width: min-content;
+	.lzy-img {
+		max-width: 90vw;
+	}
+}
 
 /* === Icons ============================== */
 //.lzy-user-logged-in .lzy-footer {
