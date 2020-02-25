@@ -36,12 +36,12 @@ $this->addMacro($macroName, function () {
         return $this->form->renderHelp();
     }
     $label = $this->getArg($macroName, 'formName', '', '');
-    $mailto = $this->getArg($macroName, 'mailto', '', '');
+    $file = ($label) ? translateToFilename($label, 'csv') : '';
     $mailfrom = $this->getArg($macroName, 'mailfrom', '', '');
     $mailto = $this->getArg($macroName, 'mailto', '', '');
     $legend = $this->getArg($macroName, 'legend', '', '');
 
-    $str = $this->form->render([ 'type' => 'form-head', 'label' => $label, 'mailto' => $mailto, 'mailfrp,' => $mailfrom ]);
+    $str = $this->form->render([ 'type' => 'form-head', 'label' => $label, 'mailto' => $mailto, 'mailfrp,' => $mailfrom, 'file' => $file ]);
     $buttons = [ 'label' => '', 'type' => 'button', 'value' => '' ];
     foreach ($args as $label => $arg) {
         if (is_string($arg)) {
@@ -65,8 +65,7 @@ $this->addMacro($macroName, function () {
             $buttons["value"] .= 'cancel,';
             $arg['type'] = 'button';
 
-//        } elseif (($label === 'mailto') || ($label === 'legend')) {
-        } elseif (strpos('formName,mailto,mailfrom,legend', $label) !== fa;se) {
+        } elseif (strpos('formName,mailto,mailfrom,legend', $label) !== false) {
         } else {
             $arg['label'] = $label;
             $str .= $this->form->render($arg);

@@ -928,7 +928,7 @@ EOT;
 		$errorDescr = false;
 
 		if (isset($currFormDescr->file) && $currFormDescr->file) {
-		    $fileName = resolvePath($currFormDescr->file);
+		    $fileName = resolvePath($currFormDescr->file, true);
         } else {
             $fileName = resolvePath("~page/{$formId}_data.csv");
         }
