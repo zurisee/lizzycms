@@ -605,8 +605,8 @@ lzy-config-button:
 
 #--- Forms ----------------------------------------
 lzy-form-data-received-ok:
-    de: "Ihre Eingaben wurden abgespeichert. Besten Dank."
-    _: "Your entries have been saved successfully. Thank you."
+    de: "Ihre Eingaben wurden übermittelt. Besten Dank."
+    _: "Your entries have been successfully transmitted. Thank you."
 
 lzy-form-feedback-local: "<strong>Feedback on localhost only:</strong>"
 

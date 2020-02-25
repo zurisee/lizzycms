@@ -35,10 +35,13 @@ $this->addMacro($macroName, function () {
     if (isset($args[0]) && ($args[0] === 'help')) {
         return $this->form->renderHelp();
     }
+    $label = $this->getArg($macroName, 'formName', '', '');
+    $mailto = $this->getArg($macroName, 'mailto', '', '');
+    $mailfrom = $this->getArg($macroName, 'mailfrom', '', '');
     $mailto = $this->getArg($macroName, 'mailto', '', '');
     $legend = $this->getArg($macroName, 'legend', '', '');
 
-    $str = $this->form->render([ 'type' => 'form-head', 'mailto' => $mailto ]);
+    $str = $this->form->render([ 'type' => 'form-head', 'label' => $label, 'mailto' => $mailto, 'mailfrp,' => $mailfrom ]);
     $buttons = [ 'label' => '', 'type' => 'button', 'value' => '' ];
     foreach ($args as $label => $arg) {
         if (is_string($arg)) {
@@ -62,7 +65,8 @@ $this->addMacro($macroName, function () {
             $buttons["value"] .= 'cancel,';
             $arg['type'] = 'button';
 
-        } elseif (($label === 'mailto') || ($label === 'legend')) {
+//        } elseif (($label === 'mailto') || ($label === 'legend')) {
+        } elseif (strpos('formName,mailto,mailfrom,legend', $label) !== fa;se) {
         } else {
             $arg['label'] = $label;
             $str .= $this->form->render($arg);

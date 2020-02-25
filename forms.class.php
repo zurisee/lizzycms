@@ -881,7 +881,8 @@ EOT;
 			} else {
 				$label = $labels[$i];
 			}
-			$value = (isset($userSuppliedData[$name])) ? $userSuppliedData[$name] : '';
+            $label = html_entity_decode($label);
+            $value = (isset($userSuppliedData[$name])) ? $userSuppliedData[$name] : '';
 			if (is_array($value)) {
 				$value = implode(', ', $value);
 			} else {
@@ -943,6 +944,7 @@ EOT;
             $data = [];
             $j = 0;
             foreach($labels as $l => $label) {
+                $label = html_entity_decode($label);
                 if (is_array($label)) { // checkbox returns array of values
                     $name = $names[$l];
                     $splitOutput = (isset($currFormDescr->formElements[$name]->splitOutput))? $currFormDescr->formElements[$name]->splitOutput: false ;
