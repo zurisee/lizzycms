@@ -12,6 +12,7 @@ function parseArgumentStr($str, $delim = ',')
 {
     $str0 = $str;
     $str = trim($str);
+    $str = str_replace("\t", '    ', $str);
     if (!($str = trim($str))) {
         return false;
     }
