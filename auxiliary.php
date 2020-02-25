@@ -1042,7 +1042,7 @@ function normalizePath($path)
 //------------------------------------------------------------
 function makePathRelativeToPage($path)
 {
-    if (!$path || (stripos($path, 'http') === 0)) {
+    if (!$path || (preg_match('/^\w{3,10}:/', $path))) {
         return $path;
     }
 
