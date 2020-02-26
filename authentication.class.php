@@ -408,14 +408,23 @@ class Authentication
 
 
     public function checkPrivilege($criteria) {
+        if (!$criteria) {
+            return false;
+        }
+
+        $not = false;
+        if ($criteria[0] === '!') {
+            $not = true;
+            $criteria = substr($criteria, 1);
+        }
         if (preg_match('/logged-?in/', $criteria)) {
-            return $this->isLoggedIn();
+            return $this->isLoggedIn() xor $not;
 
         } elseif ($criteria === 'privileged') { // editor or admin
-            return $this->isPrivileged();
+            return $this->isPrivileged() xor $not;
 
         } elseif ($criteria === 'admin') {
-            return $this->isAdmin();
+            return $this->isAdmin() xor $not;
         }
         return false;
     } // checkPrivilege
