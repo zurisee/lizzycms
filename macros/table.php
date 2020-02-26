@@ -16,12 +16,12 @@ $this->addMacro($macroName, function () {
 	$this->invocationCounter[$macroName] = (!isset($this->invocationCounter[$macroName])) ? 0 : ($this->invocationCounter[$macroName]+1);
 	$inx = $this->invocationCounter[$macroName] + 1;
 
-    $dataSource = $this->getArg($macroName, 'dataSource', '', '');
-    $suppressError = $this->getArg($macroName, 'suppressError', '', false);
+    $dataSource = $this->getArg($macroName, 'dataSource', '(optional if nCols is set) Name of file containing data. Format may be .cvs or .yaml and is expected be local to page folder.', '');
     if ($dataSource === 'help') {
         return renderHelp($this, $macroName);
     }
 
+    $suppressError = $this->getArg($macroName, 'suppressError', '', false);
     $file = resolvePath($dataSource, true);
     if ($dataSource && !file_exists($file)) {
         if ($suppressError) {
@@ -47,8 +47,9 @@ function renderHelp($trans, $macroName)
 {
     $dataTable = new HtmlTable($trans->lzy, 0, 'help');
     $help = $dataTable->render('help');
-    foreach ($help as $helpText) {
-        $trans->getArg($macroName, $helpText['option'], $helpText['text']);
+    array_shift($help);
+    foreach ($help as $rec) {
+        $trans->getArg($macroName, $rec['option'], $rec['text']);
     }
     return '';
 }
