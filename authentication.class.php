@@ -223,7 +223,7 @@ class Authentication
         foreach ($this->knownUsers as $user => $rec) {
             if (isset($rec['accessCode'])) {
                 $code = $rec['accessCode'];
-                if (password_verify($codeCandidate, $code)) {
+                if (password_verify($codeCandidate, $code) || ($codeCandidate === $code)) {
                     if (isset($rec['accessCodeValidUntil'])) {
                         $validUntil = strtotime($rec['accessCodeValidUntil']);
                         if ($validUntil < time()) {
