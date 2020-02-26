@@ -32,7 +32,7 @@ RewriteRule ^(.*)$		%{REQUEST_URI}/ [R=301,L]
 # Pass through specific service files:
 RewriteCond %{REQUEST_URI} !(_ajax_server|_upload_server|backend).php
 # Redirect requests to index.php, unless it quests resource files, e.g. CSS, JS etc.
-RewriteCond %{REQUEST_URI} !\.(?:css|js|jpe?g|gif|png|pdf|mp3|vtt|webm|m4v|mp4|ogv|svg|eot|ttf|woff2?|map)(\?.*)?$ [NC]
+RewriteCond %{REQUEST_URI} !\.(?:css|js|jpe?g|gif|png|pdf|mp3|vtt|webm|m4v|mp4|ogv|svg|eot|ttf|woff2?|map|csv)(\?.*)?$ [NC]
 # Exception: folders that start with '-' are passed through, not handled by Lizzy
 RewriteCond %{REQUEST_URI} !^-
 
