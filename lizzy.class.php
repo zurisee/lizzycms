@@ -1478,7 +1478,12 @@ EOT;
             return;
         }
 
-
+        if (getUrlArg('iframe')) {                                          // iframe
+            if (!$this->config->feature_enableIFrameResizing) {
+                $msg = "Warning: to use ?iframe request you need to enable 'feature_enableIFrameResizing'";
+                $this->page->addMessage($msg);
+            }
+        }
 
         if (getUrlArg('access-link')) {                                    // reorg-css
             $user = getUrlArg('access-link', true);
