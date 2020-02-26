@@ -7,6 +7,7 @@
 # ========
 # password:
 #       A hash code of the password is stored, not the original password.
+#       -> use convert tool '<url>?convert' to create hashed password.
 # groups:
 #       Only members of a group here get access. 
 #       Predefined groups: admins, editors, fileadmins. 
@@ -32,10 +33,11 @@
 #       (optional) defines the time during whith a one-time access code (or link) 
 #       is valid. Maximum time possible is 60 minutes.
 # accessCode:
-#       (optional) hash of a string that can be used to build a custom link: append 
-#       to the URL like an additional subfolder. Any user who knows this link can 
-#       automatically log in and access the corresponding page. 
-#       Not very secure but convenient.
+#       (optional) a password-like string consisting of 6 uppercase letters and digits
+#       (plain or hashed) that can be used to build a custom link: append to the URL
+#       like a subfolder, e.g. https://getlizzy.net/mypage/U8KDF2
+#       Any user who knows this link can automatically log in and access otherwise
+#       restricted pages. Not very secure but convenient.
 # accessCodeValidUntil:
 #       (optional) defines the date and time until an accessCode (see above) expires.
 #--------------------------------------------------------------------------------------
@@ -43,17 +45,21 @@
 
 # The sample password below is 'insecure-pw' - do not use in production!
 
-#admin:
-#	password:	$2a$10$nvgug7wDF/.ErP5lVzKnY.977FaZP0kedf4UQkwk7BCpVCrgZrHD6
-#	groups:		admins
-#	validity-period: 600
+# admin:
+#     password:     $2a$10$nvgug7wDF/.ErP5lVzKnY.977FaZP0kedf4UQkwk7BCpVCrgZrHD6
+#     groups:       admins
+#     email:        webmaster@domain.net
 
 
-#author:
-#	password:	$2a$10$nvgug7wDF/.ErP5lVzKnY.977FaZP0kedf4UQkwk7BCpVCrgZrHD6
-#	groups:		editors
+# author:
+#     password:     $2a$10$nvgug7wDF/.ErP5lVzKnY.977FaZP0kedf4UQkwk7BCpVCrgZrHD6
+#     groups:       editors
+#     email:        name@domain.net
 
 
-#user:
-#	password:	$2a$10$nvgug7wDF/.ErP5lVzKnY.977FaZP0kedf4UQkwk7BCpVCrgZrHD6
-#	groups:		testgroup
+# user:
+#     password:     $2a$10$nvgug7wDF/.ErP5lVzKnY.977FaZP0kedf4UQkwk7BCpVCrgZrHD6
+#     groups:       members, vips
+#     email:        user@domain.net
+#     displayName:  John Doe
+
