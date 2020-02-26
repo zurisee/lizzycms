@@ -95,8 +95,11 @@ class CreateLink
         }
 
         if (stripos($this->option, 'download') !== false) {
-            $this->target .= ' download';
+            $this->target .= ' download target="_blank"';
             $this->class .= ' lzy-download_link';
+            $this->href = resolvePath($this->href, true, true);
+            $this->text = basename($this->text);
+            $hiddenText = '';
         }
         $this->class = ($this->class) ? " class='lzy-link {$this->class}'" : '';
         if (preg_match('/^ ([^\?&]*) (.*)/x', $this->href, $m)) {     // remove blanks from href
