@@ -1044,6 +1044,12 @@ EOT;
 
 			$mdStr = $this->extractFrontmatter($mdStr, $newPage);
 
+            // frontmatter option 'visibility' -> reveal only to logged in users:
+            $visibility = $newPage->get('visibility', true);
+            if (($visibility) && !$this->auth->checkPrivilege($visibility)) {
+                continue;
+            }
+
             $variables = $newPage->get('variables', true);
             if ($variables) {
                 $this->trans->addVariables($variables);
