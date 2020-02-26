@@ -234,7 +234,7 @@ class Authentication
                     $requestedUrl = $GLOBALS['globalParams']['requestedUrl'];
                     $requestedUrl = preg_replace('|/[A-Z][A-Z0-9]{4,}/?$|', '', $requestedUrl);
                     writeLog("*** user '$user' successfully logged in via access link ($codeCandidate).");
-                    reloadAgent($requestedUrl, 'login-successful');
+                    reloadAgent($requestedUrl, 'lzy-login-successful');
                 }
             }
         }
