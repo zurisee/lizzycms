@@ -407,6 +407,21 @@ class Authentication
 
 
 
+    public function checkPrivilege($criteria) {
+        if (preg_match('/logged-?in/', $criteria)) {
+            return $this->isLoggedIn();
+
+        } elseif ($criteria === 'privileged') { // editor or admin
+            return $this->isPrivileged();
+
+        } elseif ($criteria === 'admin') {
+            return $this->isAdmin();
+        }
+        return false;
+    } // checkPrivilege
+
+
+
     public function checkGroupMembership($requiredGroup)
     {
         if ($this->localCall && $this->config->admin_autoAdminOnLocalhost) {	// no restriction
