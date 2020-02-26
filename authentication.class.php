@@ -392,8 +392,11 @@ class Authentication
 
 
 
-    public function isKnownUser($user, $tolerant = false)
+    public function isKnownUser($user = false, $tolerant = false)
     {
+        if (!$user) {
+            return $this->isLoggedIn();
+        }
         if ($tolerant) {
             return findUserRecKey($user);
         } else {
@@ -552,6 +555,15 @@ class Authentication
     public function isPrivileged()
     {
         return $this->checkAdmission('admins,editors');
+    } // isPrivileged
+
+
+
+
+    //-------------------------------------------------------------
+    public function isLoggedIn()
+    {
+        return $this->isAdmin() || (bool) $this->userRec;
     } // isPrivileged
 
 
