@@ -43,11 +43,31 @@ function scrollIntoView( selector, container )
 
 
 
-//--------------------------------------------------------------
+// === Message Box =================================
+if ($('.lzy-msgbox').length) {
+    setupMessageHandler(800);
+}
+function setupMessageHandler( delay)
+{
+    setTimeout(function () {
+        $('.lzy-msgbox').addClass('lzy-msg-show');
+    }, delay);
+    setTimeout(function () {
+        $('.lzy-msgbox').removeClass('lzy-msg-show');
+    }, 5000);
+    $('.lzy-msgbox').click(function () {
+        $(this).toggleClass('lzy-msg-show');
+    }).dblclick(function () {
+        $(this).hide()
+    });
+    lzyMsgInitialized = true;
+}
+
 function showMessage( txt )
 {
-    $('.MsgBox').remove();
-    $('body').prepend( '<div class="MsgBox"><p>' + txt + '</p></div>' );
+    $('.lzy-msgbox').remove();
+    $('body').prepend( '<div class="lzy-msgbox"><p>' + txt + '</p></div>' );
+    setupMessageHandler(0);
 }
 
 

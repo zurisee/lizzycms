@@ -29,7 +29,7 @@ html body, section {
 p {
 	padding: 0;
 	margin: 0.2em 0 0.5em 0;
-	line-height: 1.4em;
+	line-height: 1.25em;
 }
 li {
 	padding: 0;
@@ -591,12 +591,15 @@ pre {
 @-webkit-keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
 @-moz-keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
 @keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
-.MsgBox,
-.WarningBox {
+
+
+.lzy-msgbox,
+.lzy-warning-box {
 	position: fixed!important;
 	top: 5px;
-	right: 0;
-	max-width: 80%;
+	left: calc(100vw - 5px);
+	max-width: 80vw;
+	min-width: 30vw;
 	padding:0.5em 1em;
 	background: #fbfb77;
 	border-radius: 5px;
@@ -604,22 +607,21 @@ pre {
 	color: black;
     box-shadow: 0 0 5px grey;
 	z-index: 99;
-//	animation: slide 1s forwards;
-	animation: slide 5s forwards;
-    transform: translateX(100%);
+	transform:  translateX(0);
+	transition: transform var(--lzy-msg-transition-time, 0.6s);
 }
-.MsgBox:hover,
-.WarningBox:hover {
-	animation: unset;
+.lzy-msgbox::after {
+	position: absolute;
+	content: ' ';
+	background: transparent;
+	left: -10px; 
+	right: -10px;
+	top: 0; 
+	bottom: 0;
 }
-@keyframes slide {
-//  0% { transform: translateX(100%); }
-  10% { transform: translateX(-3%); }
-  90% { transform: translateX(-3%); }
-  100% { transform: translateX(97%); }
-//  10% { right: 5%; }
-//  90% { right: 5%; }
-//  100% { right: -0%; }
+.lzy-msgbox.lzy-msg-show {
+    transform:  translateX(-100%);
+	transition: transform var(--lzy-msg-transition-time, 0.6s);
 }
 
 #lzy-log:empty {
@@ -997,8 +999,8 @@ dd {
     .print_no,
     .print-no,
 	#lzy-log,
-	.Warning,
-	.MsgBox,
+	.lzy-warning,
+	.lzy-msgbox,
     #debugInfo,
     .debugInfo,
     .lzy-quickview-overlay,

@@ -1673,7 +1673,7 @@ function var_r($var, $varName = '', $flat = false)
 
 //------------------------------------------------------------------------------
 function createWarning($msg) {
-	return "\t\t<div class='MsgBox Warning'>$msg</div>\n";
+	return "\t\t<div class='lzy-msgbox lzy-warning'>$msg</div>\n";
 } // createWarning
 
 
