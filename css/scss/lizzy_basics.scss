@@ -132,6 +132,18 @@ figure a {
 .lzy-next-page-link a {
 	right: 0;
 }
+.lzy-page-switcher-links a::before {
+	content: ' ';
+	position: absolute;
+	top: -4px;
+	right: -4px;
+	bottom: -4px;
+	left: -4px;
+	z-index: -1;
+}
+.lzy-page-switcher-links a:hover::before {
+	background: rgba(169, 227, 255, 0.75);
+}
 
 // Footer depeding on small/large screen:
 .lzy-large-screen {

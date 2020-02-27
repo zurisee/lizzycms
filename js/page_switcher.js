@@ -16,10 +16,10 @@ $( document ).ready(function() {
                 console.log('page switching suppressed: was over scrolling element');
 		        return;
             }
-			if ((prevLink != 'undefined') && prevLink && (ev.type == 'swiperight')) {
+			if ((typeof prevLink !== 'undefined') && prevLink && (ev.type === 'swiperight')) {
                 window.location = prevLink;
 			}
-			if ((nextLink != 'undefined') && nextLink && (ev.type == 'swipeleft')) {
+			if ((typeof nextLink !== 'undefined') && nextLink && (ev.type === 'swipeleft')) {
                 window.location = nextLink;
 			}
 		});
@@ -34,20 +34,28 @@ $( document ).ready(function() {
         var keycode = e.which;
 
         // Standard arrow key handling:
-        if ((keycode == 37) || (keycode == 33)) {	// left or pgup
-            console.log('prevLink: '+prevLink);
-            e.preventDefault();
-            window.location = prevLink;
-            return false;
+        if ((keycode === 37) || (keycode === 33)) {	// left or pgup
+            if (typeof prevLink !== 'undefined') {
+                console.log('prevLink: ' + prevLink);
+                e.preventDefault();
+                window.location = prevLink;
+                return false;
+            } else {
+                console.log('Error: prevLink is not defined');
+            }
         }
-        if ((keycode == 39) || (keycode == 34)) {	// right or pgdown
+        if ((keycode === 39) || (keycode === 34)) {	// right or pgdown
+            if (typeof nextLink !== 'undefined') {
             console.log('nextLink: '+nextLink);
             e.preventDefault();
             window.location = nextLink;
             return false;
+            } else {
+                console.log('Error: nextLink is not defined');
+            }
         }
-        if (keycode == 115) {
-            if (typeof simplemde == 'undefined') {	// F4 -> start editing mode
+        if (keycode === 115) {
+            if (typeof simplemde === 'undefined') {	// F4 -> start editing mode
                 e.preventDefault();
                 window.location = '?edit';
                 return false;
@@ -68,7 +76,7 @@ function isProtectedTarget()
         $('.inhibitPageSwitch').length  ||				                // class .inhibitPageSwitch found
         $('.slideshow-support').length  ||				                // class .slideshow-support found
         ($('.ug-lightbox').length &&
-            ($('.ug-lightbox').css('display') != 'none')) ||            // special case: ug-album in full screen mode
+            ($('.ug-lightbox').css('display') !== 'none')) ||            // special case: ug-album in full screen mode
         $( document.activeElement ).closest('.lzy-panels-widget').length	// Focus within lzy-panels-widget field
     )
     {
