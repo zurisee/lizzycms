@@ -41,8 +41,13 @@ $this->addMacro($macroName, function () {
     $mailto = $this->getArg($macroName, 'mailto', '', '');
     $legend = $this->getArg($macroName, 'legend', '', '');
 
+    // create form head:
     $str = $this->form->render([ 'type' => 'form-head', 'label' => $label, 'mailto' => $mailto, 'mailfrp,' => $mailfrom, 'file' => $file ]);
+
+    // create form buttons:
     $buttons = [ 'label' => '', 'type' => 'button', 'value' => '' ];
+
+    // parse further arguments, interpret as form field definitions:
     foreach ($args as $label => $arg) {
         if (is_string($arg)) {
             $arg = ['type' => $arg ? $arg : 'text'];
