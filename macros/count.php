@@ -22,7 +22,7 @@ $this->addMacro($macroName, function () {
     $filename = resolvePath(DEFAULT_COUNTER_FILENAME, true);
     $counters = getYamlFile($filename);
     $doCount = !$avoidRepeatCount || (!isset($counters['_lastRequest']) || ($counters['_lastRequest'] !== $reqId));
-//    if (!isset($counters['_lastRequest']) || ($counters['_lastRequest'] !== $reqId)) {
+
     if ($doCount) {
         if (isset($counters[$counterName])) {
             $counters[$counterName] += 1;
