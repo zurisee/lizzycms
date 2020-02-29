@@ -8,7 +8,7 @@ use Symfony\Component\Yaml\Yaml;
 
 
 //--------------------------------------------------------------
-function parseArgumentStr($str, $delim = ',')
+function parseArgumentStr($str, $delim = ',', $yamlCompatibiity = false)
 {
     $str0 = $str;
     $str = trim($str);
@@ -22,10 +22,24 @@ function parseArgumentStr($str, $delim = ',')
 
     $options = [];
 
-    // for compatibility with Yaml, the argument list may come enclosed in { }
-    if (preg_match('/^\s* \{  (.*)  \} \s* $/x', $str, $m)) {
-        $str = $m[1];
+    if ($yamlCompatibiity) {
+        // for compatibility with Yaml, the argument list may come enclosed in { }
+        if (preg_match('/^\s* \{  (.*)  \} \s* $/x', $str, $m)) {
+            $str = $m[1];
+        }
     }
+    $supportedBrackets1 = [
+        '"' => '"',
+        "'" => "'",
+    ];
+    $supportedBrackets2 = [
+        '"' => '"',
+        "'" => "'",
+        '(' => ')',
+        '[' => ']',
+        '{' => '}',
+        '<' => '>',
+    ];
 
     $assoc = false;
     while ($str || $assoc) {
@@ -33,9 +47,15 @@ function parseArgumentStr($str, $delim = ',')
         $c = (isset($str[0])) ? $str[0] : '';
         $val = '';
 
-        // grab next value, can be bare or enclosed in ' or "
-        if ($c === '"') {    // -> "
-            $p = findNextPattern($str, '"', 1);
+        // grab next value, can be bare or enclosed:
+        if ($assoc && !$yamlCompatibiity) {
+            $supportedBrackets = &$supportedBrackets2;
+        } else {
+            $supportedBrackets = &$supportedBrackets1;
+        }
+        if (array_key_exists($c, $supportedBrackets)) {
+            $cEnd = $supportedBrackets[$c];
+            $p = findNextPattern($str, $cEnd, 1);
             if ($p) {
                 $val = substr($str, 1, $p - 1);
                 $val = str_replace('\\"', '"', $val);
@@ -44,32 +64,6 @@ function parseArgumentStr($str, $delim = ',')
             } else {
                 fatalError("Error in key-value string: '$str0'", 'File: '.__FILE__.' Line: '.__LINE__);
             }
-
-        } elseif ($c === "'") {    // -> '
-            $p = findNextPattern($str, "'", 1);
-            if ($p) {
-                $val = substr($str, 1, $p - 1);
-                $val = str_replace("\\'", "'", $val);
-                $str = trim(substr($str, $p + 1));
-                $str = preg_replace('/^\s*↵\s*$/', '', $str);
-            } else {
-                fatalError("Error in key-value string: '$str0'", 'File: '.__FILE__.' Line: '.__LINE__);
-            }
-
-        } elseif ($c === '{') {    // -> {
-            $p = findNextPattern($str, "}", 1);
-            if ($p) {
-                $val = substr($str, 1, $p - 1);
-                $val = str_replace("\\}", "}", $val);
-
-                $val = parseArgumentStr($val);
-
-                $str = trim(substr($str, $p + 1));
-                $str = preg_replace('/^\s*↵\s*$/', '', $str);
-            } else {
-                fatalError("Error in key-value string: '$str0'", 'File: '.__FILE__.' Line: '.__LINE__);
-            }
-
         } else {    // -> bare value
             $rest = strpbrk($str, ':'.$delim);
             if ($rest) {
@@ -79,6 +73,53 @@ function parseArgumentStr($str, $delim = ',')
             }
             $str = $rest;
         }
+
+
+//        if ($c === '"') {    // -> "
+//            $p = findNextPattern($str, '"', 1);
+//            if ($p) {
+//                $val = substr($str, 1, $p - 1);
+//                $val = str_replace('\\"', '"', $val);
+//                $str = trim(substr($str, $p + 1));
+//                $str = preg_replace('/^\s*↵\s*$/', '', $str);
+//            } else {
+//                fatalError("Error in key-value string: '$str0'", 'File: '.__FILE__.' Line: '.__LINE__);
+//            }
+//
+//        } elseif ($c === "'") {    // -> '
+//            $p = findNextPattern($str, "'", 1);
+//            if ($p) {
+//                $val = substr($str, 1, $p - 1);
+//                $val = str_replace("\\'", "'", $val);
+//                $str = trim(substr($str, $p + 1));
+//                $str = preg_replace('/^\s*↵\s*$/', '', $str);
+//            } else {
+//                fatalError("Error in key-value string: '$str0'", 'File: '.__FILE__.' Line: '.__LINE__);
+//            }
+//
+//        } elseif ($c === '{') {    // -> {
+//            $p = findNextPattern($str, "}", 1);
+//            if ($p) {
+//                $val = substr($str, 1, $p - 1);
+//                $val = str_replace("\\}", "}", $val);
+//
+//                $val = parseArgumentStr($val);
+//
+//                $str = trim(substr($str, $p + 1));
+//                $str = preg_replace('/^\s*↵\s*$/', '', $str);
+//            } else {
+//                fatalError("Error in key-value string: '$str0'", 'File: '.__FILE__.' Line: '.__LINE__);
+//            }
+//
+//        } else {    // -> bare value
+//            $rest = strpbrk($str, ':'.$delim);
+//            if ($rest) {
+//                $val = substr($str, 0, strpos($str, $rest));
+//            } else {
+//                $val = $str;
+//            }
+//            $str = $rest;
+//        }
         if ($val === 'true') {
             $val = true;
         } elseif ($val === 'false') {
