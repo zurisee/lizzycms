@@ -559,7 +559,7 @@ class LizzyMarkdown
             }
         }
 
-		if (!preg_match('/(.*) \[\[ ([^\]]*) \]\] (.*)/x', $line, $m)) {
+		if (!preg_match('/(.*) \[\[ (.*?) \]\] (.*)/x', $line, $m)) {
             if ($returnElements) {
                 return [$line, null, null, null, null];
             } else {
@@ -572,14 +572,10 @@ class LizzyMarkdown
         $span = '';
 
 		if ($args) {
+		    // extract part within single or double quotes:
 			$c1 = $args{0};
-			if ($c1 === '"') {		                                                        // span
-                if (preg_match('/([^"]*) " ([^"]*) " \s* ,? (.*)/x', $args, $mm)) {	// "
-                    $span = $mm[2];
-                    $args = $mm[1] . $mm[3];
-                }
-            } elseif ($c1 === "'") {
-                if (preg_match("/([^ ']*) ' ([^']*) ' \s* ,? (.*)/x", $args, $mm)) {	 // '
+			if (strpbrk($args, '\'"') !== false) {
+                if (preg_match("/([^$c1]*) $c1 (.*?) $c1 \s* ,? (.*)/x", $args, $mm)) {
                     $span = $mm[2];
                     $args = $mm[1] . $mm[3];
                 }
