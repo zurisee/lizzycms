@@ -1,7 +1,6 @@
 <?php
 
 define('DEFAULT_COUNTER_FILENAME', '~data/_counters.yaml');
-define('DEFAULT_COUNTER_ID', 'counter');
 
 $macroName = basename(__FILE__, '.php');    // macro name normally the same as the file name
 $this->addMacro($macroName, function () {
