@@ -762,7 +762,8 @@ EOT;
             $this->ds = $ds;
             $this->data = $ds->read();
             if ($ds->getSourceFormat() !== 'csv') {
-                $this->convertTo2D();
+                $this->convertTo2D( true );
+//                $this->convertTo2D();
 
             } elseif ($this->headers === true) {
                 array_shift($this->data);
@@ -991,59 +992,55 @@ EOT;
 
 
 
-//    private function arrangeData()
-//    {
-//        if (isset($this->data[0])) {    // tabular data (probably from csv -> nothing to do
-//            return;
-//        }
-//
-//        // data is array of records (probably from a yaml source):
-//        $data = [];
-//        $headers = false;
-//        foreach ($this->data as $key => $rec) {
-//            if ($key[0] === '_') {
-//                continue;
-//            }
-//            if (!$headers) {
-//                foreach ($rec as $name => $item) {
-//                    $headers[] = $name;
-//                }
-//                $headers[] = 'index';
-//                $data[] = $headers;
-//            }
-//            $newRec = [];
-//            foreach ($headers as $name) {
-//                if ($name == 'index') {
-//                    $newRec[] = $key;
-//                } else {
-//                    $newRec[] = isset($rec[$name]) ? $rec[$name] : '???';
-//                }
-//            }
-//            $data[] = $newRec;
-//        }
-//        $this->data = $data;
-//    } // arrangeData
-
-
-
-
-    private function convertTo2D()
+    private function convertTo2D($includeKeys = null)
     {
         $data = [];
-        $r = 0;
+        if ($includeKeys === null) {
+            $includeKeys = $this->includeKeys;
+        }
+
         foreach ($this->data as $key => $rec) {
-            $c = 0;
-            if ($this->includeKeys) {
-                $data[$r][$c] = $key;
-                $c++;
+            if (is_array($rec)) {
+                if (!$data && is_string((array_keys($rec))[0])) {
+                    $c = 0;
+                    $data[0][$c++] = 'Index';
+                    foreach ($rec as $k => $v) {
+                        $data[0][$c++] = $k;
+                    }
+                }
             }
-            foreach ($rec as $value) {
-                $data[$r][$c] = $value;
-                $c++;
+
+            if ($includeKeys) {
+                if (is_array($rec)) {
+                    if (is_int($key) && ($key > 1546297200)) {
+                        $key = date('Y-m-d H:i', $key);
+                        if (substr($key, 12) === '00:00') {
+                            $key = substr($key, 0, 12);
+                        }
+                    }
+                    $rec = array_values($rec);
+                    array_unshift($rec, $key);
+                } else {
+                    $rec = [$key, $rec];
+                }
             }
-            $r++;
+            $data[] = $rec;
         }
         $this->data = $data;
     } // convertTo2D
+
+
+    
+    private function isNumericIndex($rec)
+    {
+        $i = 0;
+        foreach ($rec as $inx => $item) {
+            if ($inx !== $i) {
+                return false;
+            }
+            $i++;
+        }
+        return true;
+    } // isNumericIndex
 
 } // HtmlTable
