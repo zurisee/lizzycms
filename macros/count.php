@@ -6,21 +6,28 @@ $macroName = basename(__FILE__, '.php');    // macro name normally the same as t
 $this->addMacro($macroName, function () {
 	$macroName = basename(__FILE__, '.php');
 	$this->invocationCounter[$macroName] = (!isset($this->invocationCounter[$macroName])) ? 0 : ($this->invocationCounter[$macroName]+1);
+    $inx = $this->invocationCounter[$macroName] + 1;
 
-    $counterName = $this->getArg($macroName, 'name', '(optional) Identifier for counter to', '');
+    $counterName = $this->getArg($macroName, 'name', '(optional) Identifier for the counter', '');
     $renderResult = $this->getArg($macroName, 'renderResult', '[true,false,loggedin,privileged] Whether and to whom the result shall be shown.', false);
     $label = $this->getArg($macroName, 'label', 'Optional label preceding the count, if rendered', '');
     $option = $this->getArg($macroName, 'option', '[as-comment] How result shall be shown.', false);
     $avoidRepeatCount = $this->getArg($macroName, 'avoidRepeatCount', '(optional) If true, does not count repeated loading of same page.', true);
+    $freezeTime = $this->getArg($macroName, 'freezeTime', '(optional) If set, defines the time (in sec) during which page hits within the same sesssion are ignored (default: 60s).', 60);
+
+    if ($counterName === 'help') {
+        return '';
+    }
 
     if (!$counterName) {
-        $counterName = translateToIdentifier($GLOBALS["globalParams"]["pagePath"]);
+        $counterName = "{$GLOBALS["globalParams"]["pagePath"]}counter-$inx";
     }
-    $reqId = "{$_SERVER["REMOTE_ADDR"]}/$counterName";
 
     $filename = resolvePath(DEFAULT_COUNTER_FILENAME, true);
     $counters = getYamlFile($filename);
-    $doCount = !$avoidRepeatCount || (!isset($counters['_lastRequest']) || ($counters['_lastRequest'] !== $reqId));
+    $lastAccess = getStaticVariable('lastCounterAccess');
+    $lastAccessTime = isset($lastAccess[$counterName]) ? $lastAccess[$counterName]: 0;
+    $doCount = !$avoidRepeatCount || ($lastAccessTime < (time() - $freezeTime));
 
     if ($doCount) {
         if (isset($counters[$counterName])) {
@@ -28,7 +35,10 @@ $this->addMacro($macroName, function () {
         } else {
             $counters[$counterName] = 1;
         }
-        $counters['_lastRequest'] = $reqId;
+        if ($avoidRepeatCount) {
+            $lastAccess[$counterName] = time();
+            setStaticVariable('lastCounterAccess', $lastAccess);
+        }
         writeToYamlFile($filename, $counters);
     }
 
