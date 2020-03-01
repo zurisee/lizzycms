@@ -22,6 +22,7 @@ class CreateLink
         $this->subject = isset($args['subject'])? $args['subject']: '';
         $this->body = isset($args['body'])? $args['body']: '';
         $this->option = isset($args['option'])? $args['option']: '';
+        $this->relativeToPage = isset($args['relativeToPage'])? $args['relativeToPage']: false;
 
         if ($this->title) {
             $this->title = " title='{$this->title}'";
@@ -278,14 +279,29 @@ class CreateLink
     private function renderRegularLink()
     {
         $c1 = $this->href[0];
-        if ((stripos($this->href, 'http') !== 0) && ($c1 !== '~') && ($c1 !== '.')) {   // unqualified link -> check whether it corresponds to a page
-            $rec = $this->lzy->siteStructure->findSiteElem($this->href, true, true);
+        $rec = false;
+
+        $href = $this->href;
+        $hash = '';
+        // remove target (#id) and url-args (?x) if present:
+        if (preg_match('/^ (.*?) ([#?].*)/x', $href, $m)) {
+            $hash = $m[2];
+            $href = $m[1];
+        }
+
+        // unqualified link -> check whether it corresponds to a page:
+        if ((stripos($href, 'http') !== 0) && ($c1 !== '~') && ($c1 !== '.')) {
+            $rec = $this->lzy->siteStructure->findSiteElem($href, true, true);
             if ($rec) {
-                $this->href = '~/'.$rec['folder'];
+                $this->href = '~/'.$rec['folder'].$hash;
                 $this->text = $rec['name'];
             }
         }
 
+        // if not found in previous step, make it relative-to-page (if requested):
+        if (!$rec && $this->relativeToPage) {
+            $this->href = makePathRelativeToPage($this->href);
+        }
 
         // prepareLinkText:
         if (!$this->text) {
@@ -320,7 +336,9 @@ class CreateLink
                 }
             }
         }
-        if ((stripos($this->option, 'noprint') === false) && (stripos($this->href, 'http') !== 0)) {
+
+        if ((stripos($this->option, 'noprint') === false) && (stripos($this->text, 'http') !== 0)) {
+//        if ((stripos($this->option, 'noprint') === false) && (stripos($this->href, 'http') !== 0)) {
             $href = resolvePath($this->href, true, true, true);
             $hiddenText = "<span class='print_only'> [$href]</span>";
         } else {

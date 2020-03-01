@@ -51,7 +51,14 @@ $this->addMacro($macroName, function () {
         $args['text'] = $text;
     }
 
-    $args['href'] = makePathRelativeToPage($args['href']);
+    $args['relativeToPage'] = true;
+    if (stripos($args['href'], 'http') === 0) {
+        $args['relativeToPage'] = false;
+
+    } elseif ((stripos($args['href'], 'www.') === 0) || preg_match('/^ ([\w-]+ \. \w+)+ $/x', $args['href'])) {
+        $args['href'] = "https://{$args['href']}";
+        $args['relativeToPage'] = false;
+    }
     $cl = new CreateLink( $this->lzy );
     $str = $cl->render($args);
 
