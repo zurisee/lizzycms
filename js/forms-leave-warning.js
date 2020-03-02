@@ -7,7 +7,8 @@ $('.lzy-form').submit(function() {
 });
 $(window).bind('beforeunload', function(e){
     $('.lzy-form .lzy-form-field-wrapper input').each(function() {
-        if ( $(this).val() !== '') {
+        var type = $(this).attr('type');
+        if ( ($(this).val() !== '') && (type !== 'checkbox') && (type !== 'radio') && (type !== 'range')) {
             formEmpty = false;
         }
     });

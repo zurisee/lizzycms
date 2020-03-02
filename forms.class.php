@@ -1137,7 +1137,7 @@ EOT;
 ## General
 
 Every form must begin with a header element (``type:form-head``) and end with closing element ``type:form-tail``.
-In between you place form fields of desired types.
+In between you place form fields of desired types. (The *form()* macro does this automatically)
 
 ## form-head
 
