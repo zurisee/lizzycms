@@ -45,6 +45,8 @@ class Forms
 
         $this->inx++;
         $this->parseArgs($args);
+
+        $wrapperClass = 'lzy-form-field-wrapper';
         
         switch ($this->currRec->type) {
             case 'help':
@@ -79,6 +81,7 @@ class Forms
             
             case 'button':
                 $elem = $this->renderButtons();
+                $wrapperClass = '';
                 break;
 
             case 'date':
@@ -134,10 +137,10 @@ class Forms
             $type = 'buttons';
         }
         if (isset($this->currRec->wrapperClass) && ($this->currRec->wrapperClass)) {
-	        $class = "lzy-form-field-wrapper lzy-form-field-type-$type {$this->currRec->wrapperClass}";
+	        $class = "$wrapperClass lzy-form-field-type-$type {$this->currRec->wrapperClass}";
 		} else {
             $elemId = $this->currForm->formId.'_'. $this->currRec->elemId;
-            $class = $elemId.' lzy-form-field-wrapper lzy-form-field-type-'.$type;
+            $class = "$elemId $wrapperClass lzy-form-field-type-$type";
 		}
 
         // error in supplied data? -> signal to user:
@@ -194,7 +197,8 @@ class Forms
     private function renderTextInput()
     {
         $out = $this->getLabel();
-        $out .= "<input type='text' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}' />\n";
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $out .= "<input type='text' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
         return $out;
     } // renderTextInput
 
@@ -202,7 +206,8 @@ class Forms
 //-------------------------------------------------------------
     private function renderPassword()
     {
-        $input = "<input type='password' class='lzy-form-password' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} aria-invalid='false' aria-describedby='password-hint' value='{$this->currRec->value}' />\n";
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $input = "<input type='password' class='lzy-form-password' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} aria-invalid='false' aria-describedby='password-hint' value='{$this->currRec->value}'$cls />\n";
         $hint = <<<EOT
             <label class='lzy-form-pw-toggle' for="showPassword"><input type="checkbox" id="lzy-form-showPassword{$this->inx}" class="lzy-form-showPassword"><img src="~sys/rsc/show.png" class="lzy-form-login-form-icon" alt="{{ show password }}" title="{{ show password }}" /></label>
 EOT;
@@ -215,8 +220,9 @@ EOT;
 //-------------------------------------------------------------
     private function renderTextarea()
     {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<textarea id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} >{$this->currRec->value}</textarea>\n";
+        $out .= "<textarea id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls>{$this->currRec->value}</textarea>\n";
         return $out;
     } // renderTextarea
 
@@ -224,8 +230,9 @@ EOT;
 //-------------------------------------------------------------
     private function renderEMailInput()
     {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='email' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}' />\n";
+        $out .= "<input type='email' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
         return $out;
     } // renderEMailInput
 
@@ -234,6 +241,7 @@ EOT;
     //-------------------------------------------------------------
     private function renderRadio()
     {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $values = ($this->currRec->value) ? preg_split('/\s*\|\s*/', $this->currRec->value) : [];
         if (isset($this->currRec->valueNames)) {
             $valueNames = preg_split('/\s*\|\s*/', $this->currRec->valueNames);
@@ -253,7 +261,7 @@ EOT;
 
             $checked = ($checkedElem && ($val == $checkedElem)) ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-radio-elem lzy-form-choice-elem'>\n";
-            $out .= "\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked /><label for='$id'>$value</label>\n";
+            $out .= "\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked$cls /><label for='$id'>$value</label>\n";
             $out .= "\t\t\t</div>\n";
         }
         $out .= "\t\t\t  </div><!--/lzy-fieldset-body -->\n\t\t\t</fieldset>\n";
@@ -264,6 +272,7 @@ EOT;
 //-------------------------------------------------------------
     private function renderCheckbox()
     {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $values = ($this->currRec->value) ? preg_split('/\s*\|\s*/', $this->currRec->value) : [];
         if (isset($this->currRec->valueNames)) {
             $valueNames = preg_split('/\s*\|\s*/', $this->currRec->valueNames);
@@ -281,7 +290,7 @@ EOT;
 
             $checked = ($data && in_array($value, $data)) ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-checkbox-elem lzy-form-choice-elem'>\n";
-            $out .= "\t\t\t\t<input id='$id' type='checkbox' name='{$groupName}[]' value='$name'$checked /><label for='$id'>$value</label>\n";
+            $out .= "\t\t\t\t<input id='$id' type='checkbox' name='{$groupName}[]' value='$name'$checked$cls /><label for='$id'>$value</label>\n";
             $out .= "\t\t\t</div>\n";
         }
         $out .= "\t\t\t  </div><!--/lzy-fieldset-body -->\n\t\t\t</fieldset>\n";
@@ -293,8 +302,9 @@ EOT;
 //-------------------------------------------------------------
     private function renderDate()
     {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='date' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}' />\n";
+        $out .= "<input type='date' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
         return $out;
     } // renderDate
 
@@ -302,8 +312,9 @@ EOT;
 //-------------------------------------------------------------
     private function renderTime()
     {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='time' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}' />\n";
+        $out .= "<input type='time' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
         return $out;
     } // renderDate
 
@@ -311,16 +322,18 @@ EOT;
 //-------------------------------------------------------------
     private function renderMonth()
     {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='month' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}' />\n";
+        $out .= "<input type='month' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
         return $out;
     } // renderMonth
 
 //-------------------------------------------------------------
     private function renderNumber()
     {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='number' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}' />\n";
+        $out .= "<input type='number' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
         return $out;
     } // renderNumber
 
@@ -328,8 +341,9 @@ EOT;
 //-------------------------------------------------------------
     private function renderRange()
     {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='range' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}' />\n";
+        $out .= "<input type='range' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
         return $out;
     } // renderRange
 
@@ -337,8 +351,9 @@ EOT;
 //-------------------------------------------------------------
     private function renderTel()
     {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='tel' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}' />\n";
+        $out .= "<input type='tel' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
         return $out;
     } // renderTel
 
@@ -346,9 +361,10 @@ EOT;
 //-------------------------------------------------------------
     private function renderDropdown()
     {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $values = ($this->currRec->value) ? preg_split('/\s*\|\s*/', $this->currRec->value) : [];
         $out = $this->getLabel();
-        $out .= "<select id='fld_{$this->currRec->name}' name='{$this->currRec->name}'>\n";
+        $out .= "<select id='fld_{$this->currRec->name}' name='{$this->currRec->name}'$cls>\n";
         $out .= "\t\t\t\t<option value=''></option>\n";
 
         foreach ($values as $item) {
@@ -655,6 +671,9 @@ EOT;
 
 			$this->errorDescr = $this->restoreErrorDescr();
 
+            if (!isset($args['warnLeavingPage']) || $args['warnLeavingPage']) {
+                $this->page->addModules('~sys/js/forms-leave-warning.js');
+            }
 		} else {
             $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form-Elem'.($this->inx + 1);
             $this->translateLabel = (isset($args['translateLabel'])) ? $args['translateLabel'] : true;
@@ -1115,34 +1134,88 @@ EOT;
         $help = <<<EOT
 
 # Options for macro *form()* end *formelem()*:
+## General
+
+Every form must begin with a header element (``type:form-head``) and end with closing element ``type:form-tail``.
+In between you place form fields of desired types.
+
+## form-head
+
+type: 
+: ``form-head ``  
+: The first element (required)
+
+label (macro *form()*  only): 
+: Text which will be placed in front of the form.
+
+class: 
+: Class applied to the form field.
+
+method:
+: [post|get] How to send data to the server (default: post).
+
+action:
+: (optional) Where to submit entered form data.
+
+next:
+: Where to take user after submitting data and receiving a confirmation.
+
+file:
+: In which file to store submitted data (in .csv format).  
+: May contain a path, e.g. ``~data/mydata.csv``.
+
+mailto:
+: Data entered by users will be sent to this address.
+
+mailfrom: 
+: The sender address of the mail above.
+
+process:
+: (optional) Name of php-script (in folder _code/) that will process submitted data.
+
+warnLeavingPage:
+: If true (=default), user will be warned if attempting to leave the page without submitting entries.
+
+encapsulate:
+: If true, applies Lizzy's CSS encapsulation (i.e. adds lzy-encapsulated class to form element).
+
+
+
+## Form Elements
+Arguments applicable to regular form element:
 
 type:
-: [init, radio, checkbox, date, month, number, range, text, email, password, textarea, button]
+: [init, radio, checkbox, date, month, number, range, text, email, password, textarea, button]  
+: (mandatory) Defines the type of the form element.
 
 label:
 : Some meaningful label used for the form element
 
 class:
-: Class identifier that is added to the surrounding div
+: Class identifier that is added to form element.
+
+wrapperClass:
+: Applied to the element's wrapper div, if supplied - otherwise class will be applied.
 
 required:
-: Enforces user input
+: Forces user input.
 
 placeholder:
-: Text displayed in empty field, disappears when user enters input field
+: Text displayed in empty field, disappears when user enters data.
 
 shortlabel:
-: text to be used in mail and .csv data file
+: text to be used in mail and .csv data file.
 
 value:
 : Defines a preset value  
-: Radio and checkbox element only:  
+: *Radio and checkbox element only:*  
 : {{ space }} -> list of values separated by '|', e.g. "A | BB | CCC"   
-: Button element only:  
+: *Button element only:*  
 : {{ space }} -> [submit, reset]
 
 splitOutput (Checkbox only):
-: [true|false] -> If true, there is one field (i.e column) in the output data
+: [true|false] -> If true, there is one field (i.e column) in data 
+: written to the log-file and sent as a notification message.
 
 min:
 : Range element only: min value
@@ -1150,23 +1223,9 @@ min:
 max:
 : Range element only: max value
 
-wrapperClass:
-: Applied to the element's wrapper div, if supplied - otherwise class will be applied
 
-form-head:
-: The first element (required)
 
-mailto:
-: Data entered by users will be sent to this address
-
-mailfrom: 
-: The sender address of the mail above
-
-process:
-: Name of php-script (in folder _code/) that will process submitted data
-
-encapsulate:
-: If true, applies Lizzy's CSS encapsulation (i.e. adds lzy-encapsulated class to form element)
+## form-tail
 
 form-tail:
 : The last element (required)
