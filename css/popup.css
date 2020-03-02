@@ -57,6 +57,9 @@
     min-width: 12em;
     transform: scale(0.5);
 }
+.lzy-close-button.lzy-popup {
+    padding-top: 32px;
+}
 .lzy-small-screen
 .lzy-popup {
     background: #eee;
@@ -65,7 +68,7 @@
     transform: scale(0.5);
     font-size: 4vw;
     display: block;
-        width: 100%;
+    width: 100%;
 }
 .lzy-popup-confirm .popup_content {
     padding: 2em 2em 1em 2em;
