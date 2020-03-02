@@ -7,7 +7,9 @@ define('SERVICE_LOG',       PATH_TO_APP_ROOT.'.#logs/backend-log.txt');	    //
 define('ERROR_LOG',         PATH_TO_APP_ROOT.'.#logs/errlog.txt');	//
 define('RECYCLE_BIN',           '.#recycleBin/');
 define('RECYCLE_BIN_PATH',      '~page/'.RECYCLE_BIN);
-//define('MKDIR_MASK',            0700);
+if (!defined('MKDIR_MASK')) {
+    define('MKDIR_MASK', 0700);
+}
 
 $appRoot = preg_replace('/_lizzy\/.*$/', '', getcwd().'/');
 
