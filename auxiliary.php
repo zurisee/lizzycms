@@ -585,17 +585,10 @@ function removeCStyleComments($str)
 {
 	$p = 0;
 	while (($p = strpos($str, '/*', $p)) !== false) {		// /* */ style comments
-		if ($p) {
-		    $ch1 = $str{$p-1};
-		    if ($ch1 === '\\') {					// avoid shielded /*
-                $str = substr($str, 0, $p-1).substr($str,$p);
-                $p += 2;
-                continue;
-            }
-		    if ($ch1 === '/') {					    // skip dangerous pattern //*
-                $p += 2;
-                continue;
-            }
+        $ch_1 = $p? $str{$p-1} : "\n"; // char preceding '/*' must be whitespace
+        if (strpbrk(" \n\t", $ch_1) === false) {
+            $p += 2;
+            continue;
         }
 		$p2 = strpos($str, "*/", $p);
 		$str = substr($str, 0, $p).substr($str, $p2+2);
@@ -686,7 +679,7 @@ function getDirDeep($path, $onlyDir = false, $assoc = false, $returnAll = false)
             }
             continue;
         }
-        if (!$returnAll && preg_match($patt2, $p)) {
+        if (!$returnAll && (preg_match($patt2, $p) || !fnmatch($pattern, $f))) {
             continue;
         }
         if ($assoc) {
