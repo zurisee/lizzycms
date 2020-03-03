@@ -659,6 +659,7 @@ function getDirDeep($path, $onlyDir = false, $assoc = false, $returnAll = false)
 {
     $files = [];
     $f = basename($path);
+    $pattern = '*';
     if (strpos($f, '*') !== false) {
         $pattern = basename($path);
         $path = dirname($path);
