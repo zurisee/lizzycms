@@ -23,6 +23,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'admin_useRequestRewrite'           => [true, 'If true, assumes web-server supports request-rewrite (i.e. .htaccess).', 3 ],
     'admin_userAllowSelfAdmin'          => [false, 'If true, user can modify their account after they logged in', 3 ],
     'admin_enableFileManager'           => [true, 'If true, the file-manager (upload, rename, delete) is enabled for privileged users.', 2 ],
+    'admin_enableDailyFilePurge'        => [true, 'If true, Lizzy reads '.DAILY_PURGE_FILE.' and deletes all listed files one per day.', 2 ],
 
     'custom_permitServiceCode'          => [false, "Enables the 'service routine' mechanism: run PHP code in '".USER_CODE_PATH."' (filename starting with '@')", 1 ],
     'custom_permitUserCode'             => [false, "Only if true, user-provided code can be executed. And only if located in '".USER_CODE_PATH."'", 1 ],

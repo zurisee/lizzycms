@@ -22,7 +22,8 @@ define('USER_INIT_CODE_FILE',   USER_CODE_PATH.'init-code.php');
 define('USER_VAR_DEF_FILE',     USER_CODE_PATH.'var-definitions.php');
 define('ICS_PATH',              'ics/'); // where .ics files are located
 
-define('USER_DAILY_CODE_FILE',   USER_CODE_PATH.'@daily-task.php');
+define('DAILY_PURGE_FILE',      CONFIG_PATH.'daily-purge.txt');
+define('USER_DAILY_CODE_FILE',  USER_CODE_PATH.'@daily-task.php');
 define('CACHE_DEPENDENCY_FILE', '.#page-cache.dependency.txt');
 define('CACHE_FILENAME',        '.#page-cache.dat');
 

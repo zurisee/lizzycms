@@ -58,6 +58,11 @@ function runServiceTasks($lzy, $run = 1)
         if ($lzy->housekeeping) {
             writeLog("Daily housekeeping run.");
 
+            // daily cleanup round:
+            if ($lzy->config->admin_enableDailyFilePurge) {
+                execDailyPurge();
+            }
+
             // if auto-off of dev-mode is enabled:
             if ($lzy->config->debug_enableDevModeAutoOff) {
                 autoOffDevMode();
@@ -89,6 +94,44 @@ function autoOffDevMode()
         reloadAgent();
     }
 } // autoOffDevMode
+
+
+
+//....................................................
+function execDailyPurge()
+{
+    if (file_exists(DAILY_PURGE_FILE)) {
+        $files0 = file(DAILY_PURGE_FILE);
+        $files = [];
+        // parse lines, omit blank lines and comments, resolve wildcards
+        foreach ($files0 as $i => $file) {
+            $file = trim($file);
+            if (!$file || ($file[0] === '#')) {
+                continue;
+            }
+            if ($file === '__END__') {
+                break;
+            }
+            if (strpos($file, '*') !== false) {
+                $f = glob($file);
+                $files = array_merge($files, $f);
+            } else {
+                $files[] = $file;
+            }
+        }
+
+        // now do the actual purging of files:
+        foreach ($files as $file) {
+            if (file_exists($file)) {
+                if (is_dir($file)) {
+                    rrmdir($file);
+                } else {
+                    unlink($file);
+                }
+            }
+        }
+    }
+} // execDailyPurge
 
 
 
