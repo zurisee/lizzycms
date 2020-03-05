@@ -58,6 +58,11 @@ function runServiceTasks($lzy, $run = 1)
         if ($lzy->housekeeping) {
             writeLog("Daily housekeeping run.");
 
+            // if auto-off of dev-mode is enabled:
+            if ($lzy->config->debug_enableDevModeAutoOff) {
+                autoOffDevMode();
+            }
+
             checkInstallation2($lzy);   // check pages/ -> writable if editing is enabled
 
             clearCaches($lzy, true);
@@ -72,6 +77,18 @@ function runServiceTasks($lzy, $run = 1)
         }
     }
 } // runServiceTasks
+
+
+
+//....................................................
+function autoOffDevMode()
+{
+    if (file_exists(DEV_MODE_CONFIG_FILE)) {
+        $commentedFilename = dirname(DEV_MODE_CONFIG_FILE).'/#'.basename(DEV_MODE_CONFIG_FILE);
+        rename(DEV_MODE_CONFIG_FILE, $commentedFilename);
+        reloadAgent();
+    }
+} // autoOffDevMode
 
 
 

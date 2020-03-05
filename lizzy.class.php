@@ -11,6 +11,7 @@ define('USER_CODE_PATH',        'code/');
 define('PATH_TO_APP_ROOT',      '');
 define('SYSTEM_PATH',           basename(dirname(__FILE__)).'/'); // _lizzy/
 define('DEFAULT_CONFIG_FILE',   CONFIG_PATH.'config.yaml');
+define('DEV_MODE_CONFIG_FILE',  CONFIG_PATH.'dev-mode-config.yaml');
 
 define('DATA_PATH',            'data/');
 define('CACHE_PATH',            '.#cache/');

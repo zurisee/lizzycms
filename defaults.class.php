@@ -33,6 +33,8 @@ private $userConfigurableSettingsAndDefaults      = [
     'debug_allowDebugInfo'              => [false, '[false|true] If true, debugging Info can be activated: log in as admin and invoke URL-cmd "?debug"', 2 ],
     'debug_collectBrowserSignatures'    => [false, 'If true, Lizzy records browser signatures of visitors.', 3 ],
     'debug_compileScssWithLineNumbers'  => [false, 'If true, original line numbers are added as comments to compiled CSS."', 1 ],
+    'debug_enableDevMode'               => [false, '[false|true] Enables devolepment mode', 1 ],
+    'debug_enableDevModeAutoOff'        => [false, '[false|true] If true, devolepment mode is automatically turned of the next morning', 1 ],
     'debug_errorLogging'                => [false, 'Enable or disabling logging.', 1 ],
     'debug_forceBrowserCacheUpdate'     => [false, 'If true, the browser is forced to ignore the cache and reload css and js resources on every time.', 2 ],
     'debug_logClientAccesses'           => [false, 'If true, Lizzy records visits (IP-addresses and browser/os types).', 3 ],
@@ -174,6 +176,11 @@ private $userConfigurableSettingsAndDefaults      = [
 
         $this->getConfigValues($configFile);
 
+        if ($this->debug_enableDevMode && file_exists(DEV_MODE_CONFIG_FILE)) {
+            $this->getConfigValues(DEV_MODE_CONFIG_FILE, true);
+        }
+
+
         // userConfigurableSettingsAndDefaults will be needed if ?config arg was used, so keep it
         if (!getUrlArg('config')) {
             unset($this->userConfigurableSettingsAndDefaults);
@@ -183,7 +190,7 @@ private $userConfigurableSettingsAndDefaults      = [
 
 
     //....................................................
-    private function getConfigValues($configFile)
+    private function getConfigValues($configFile, $append = false)
     {
         $configValues = getYamlFile($configFile);
 
@@ -217,7 +224,7 @@ private $userConfigurableSettingsAndDefaults      = [
                     $this->$key = $val;
                 }
 
-            } else {
+            } elseif (!$append) {
                 $this->$key = $this->userConfigurableSettingsAndDefaults[$key][0];
             }
         }
@@ -232,6 +239,10 @@ private $userConfigurableSettingsAndDefaults      = [
 
         if ($this->path_logPath == '1/') {
             $this->path_logPath = LOGS_PATH;
+        }
+
+        if ($append) {
+            return;
         }
 
         if (!$this->site_supportedLanguages) {
