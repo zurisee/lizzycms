@@ -1632,7 +1632,11 @@ function explodeTrim($sep, $str)
 {
     if (!$str) {
         return [];
-    } elseif (strlen($sep) > 1) {
+    }
+    if (strpos($str, $sep) === false) {
+        return [ $str ];
+    }
+    if (strlen($sep) > 1) {
         $sep = preg_quote($sep);
         $out = array_map('trim', preg_split("/[$sep]/", $str));
         return $out;
