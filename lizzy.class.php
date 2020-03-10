@@ -1496,6 +1496,10 @@ EOT;
             $this->reorganizeCss($filename);
         }
 
+        if (getUrlArg('gitstat')) {                                    // git-status
+            $this->renderGitStatus();
+        }
+
         if (getUrlArg('unused')) {							        // unused
             $str = $this->trans->renderUnusedVariables();
             $str = "<h1>Unused Variables</h1>\n$str";
@@ -2139,6 +2143,39 @@ EOT;
         }
     }
 
+
+
+    private function renderGitStatus()
+    {
+        $status = '';
+        if (file_exists('.git')) {
+            $status = "Main Project:\n======================\n";
+            $status .= shell_exec('git status');
+            $status .= "\n\n\n";
+        }
+        $status .= "Lizzy Project:\n======================\n";
+        $status .= shell_exec('cd _lizzy; git status');
+
+        if ($this->config->custom_relatedGitProjects) {
+            $gitProjects = explodeTrim(',', $this->config->custom_relatedGitProjects);
+            foreach ($gitProjects as $project) {
+                if (file_exists($project)) {
+                    $name = str_replace('../', '', $project);
+                    $status .= "\n\n\n";
+                    $status .= "$name Project:\n======================\n";
+
+                    if (file_exists("$project.git")) {
+                        $status .= shell_exec("cd $project; git status");
+                    } else {
+                        $status .= "No git project found\n";
+                    }
+                }
+            }
+        }
+
+        print("<pre>$status</pre>");
+        exit;
+    }
 
 
 
