@@ -167,6 +167,14 @@ function checkInstallation1()
     if ($out) {
         exit( $out );
     }
+
+    // check and fix access rights to img cache folders:
+    $dir = getDirDeep('pages/*', true, false, true);
+    foreach ($dir as $folder) {
+        if (strpos($folder, '/_/') === strlen($folder)) {
+            chmod($folder, 0755);
+        }
+    }
     return;
 
     print( trim(shell_exec('whoami')).':'.trim(shell_exec('groups'))."<br>\n");
