@@ -171,7 +171,7 @@ function checkInstallation1()
     // check and fix access rights to img cache folders:
     $dir = getDirDeep('pages/*', true, false, true);
     foreach ($dir as $folder) {
-        if (strpos($folder, '/_/') === strlen($folder)) {
+        if (strpos($folder, '/_/') !== false) {
             chmod($folder, 0755);
         }
     }
