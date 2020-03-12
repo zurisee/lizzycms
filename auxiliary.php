@@ -567,7 +567,6 @@ function removeHashTypeComments($str)
 	$lines = explode(PHP_EOL, $str);
     $lead = true;
 	foreach ($lines as $i => $l) {
-//		if (isset($l{0}) && ($l{0} === '#')) {  // # at beginning of line
 		if (isset($l[0]) && ($l[0] === '#')) {  // # at beginning of line
 			    unset($lines[$i]);
         } elseif ($lead && !$l) {   // empty line while no data line encountered
@@ -586,7 +585,7 @@ function removeCStyleComments($str)
 {
 	$p = 0;
 	while (($p = strpos($str, '/*', $p)) !== false) {		// /* */ style comments
-//        $ch_1 = $p? $str{$p-1} : "\n"; // char preceding '/*' must be whitespace
+
         $ch_1 = $p? $str[$p-1] : "\n"; // char preceding '/*' must be whitespace
         if (strpbrk(" \n\t", $ch_1) === false) {
             $p += 2;
@@ -598,12 +597,12 @@ function removeCStyleComments($str)
 
 	$p = 0;
 	while (($p = strpos($str, '//', $p)) !== false) {		// // style comments
-//		if ($p && ($str{$p-1} === ':')) {			// avoid http://
+
 		if ($p && ($str[$p-1] === ':')) {			// avoid http://
 			$p += 2;
 			continue;
 		}
-//		if ($p && ($str{$p-1} === '\\')) {					// avoid shielded //
+
 		if ($p && ($str[$p-1] === '\\')) {					// avoid shielded //
 			$str = substr($str, 0, $p-1).substr($str,$p);
 			$p += 2;
@@ -613,7 +612,7 @@ function removeCStyleComments($str)
 		if ($p2 === false) {
 			return substr($str, 0, $p);
 		}
-//		if ((!$p || ($str{$p-1} === "\n")) && ($str{$p2})) {
+
 		if ((!$p || ($str[$p-1] === "\n")) && ($str[$p2])) {
 			$p2++;
 		}
@@ -633,7 +632,6 @@ function getDir($pat, $supportLinks = false)
         $files = glob($pat, GLOB_BRACE);
     }
     $files = array_filter($files, function ($str) {
-//        return ($str && ($str{0} !== '#') && (strpos($str,'/#') === false));
         return ($str && ($str[0] !== '#') && (strpos($str,'/#') === false));
     });
 
@@ -759,7 +757,6 @@ function fileExt($file0, $reverse = false)
 //--------------------------------------------------------------
 function isNotShielded($str)
 {	// first char of file or dirname must not be '#'
-//	return (($str{0} !== '#') && (strpos($str,'/#') === false));
 	return (($str[0] !== '#') && (strpos($str,'/#') === false));
 } // isNotShielded
 
@@ -796,7 +793,7 @@ function dir_name($path)
     if (!$path) {
         return '';
     }
-//    if ($path{strlen($path)-1} === '/') {  // ends in '/'
+
     if ($path[strlen($path)-1] === '/') {  // ends in '/'
         return $path;
     }
@@ -877,7 +874,6 @@ function makePathDefaultToPage($path)
 function convertFsToHttpPath($path)
 {
     $pagesPath = $GLOBALS['globalParams']['pathToPage'];
-//    if ($path && ($path{0} != '~') && (strpos($path, $pagesPath) === 0)) {
     if ($path && ($path[0] != '~') && (strpos($path, $pagesPath) === 0)) {
         $path = '~page/'.substr($path, strlen($pagesPath));
     }
@@ -1059,7 +1055,6 @@ function makePathRelativeToPage($path)
         return $path;
     }
 
-//    if ((($ch1=$path{0}) != '/') && ($ch1 != '~')) {	//default to path local to page
     if ((($ch1=$path[0]) != '/') && ($ch1 != '~')) {	//default to path local to page
             $path = '~page/' . $path;
     }
@@ -1510,7 +1505,7 @@ function dateFormatted($date = false, $format = false)
         $date = time();
     } if (is_string($date)) {
         $date = strtotime($date);
-}
+    }
     if (!$format) {
         $format = '%x';
     }
@@ -2062,7 +2057,7 @@ function sendMail($to, $from, $subject, $message)
 //....................................................
 function handleFatalPhpError() {
     $last_error = error_get_last();
-//    if($last_error['type'] === E_ERROR) {
+
     if (isset($last_error['type']) && ($last_error['type'] === E_ERROR)) {
         print( $last_error['message'] );
     }

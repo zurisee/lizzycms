@@ -652,7 +652,7 @@ EOT;
     {
         if ($this->redirect) {
             $url = resolvePath($this->redirect, true, true);
-//            $url = resolvePath($this->redirect, false, true);
+
             header('Location: ' . $url);
             exit;
         }
@@ -780,16 +780,6 @@ EOT;
         $rootJs .= "\t\tvar screenSizeBreakpoint = $screenSizeBreakpoint;\n";
         $rootJs .= "\t\tvar pagePath = '{$this->lzy->pagePath}';\n";
 
-//        if (isset($this->config->editingMode) && $this->config->editingMode && $this->config->admin_hideWhileEditing) {  // for online-editing: add admin_hideWhileEditing
-//            $selectors = '';
-//            foreach (explode(',', $this->config->admin_hideWhileEditing) as $elem) {
-//                $elem = trim(str_replace(['"',"'"], '', $elem));
-//                $selectors .= "'".$elem."',";
-//            }
-//            $selectors = rtrim($selectors, ',');
-//            $rootJs .= "\n\t\tvar admin_hideWhileEditing = [$selectors];";
-//        }
-
         if (($this->config->debug_allowDebugInfo) &&
             (($this->config->debug_showDebugInfo)) || getUrlArgStatic('debug')) {
             if ($this->config->isPrivileged) {
@@ -897,14 +887,12 @@ EOT;
                 if (strpos($str, ',') !== false) {
                     $mods = preg_split('/\s*,+\s*/', $str);
                     foreach ($mods as $j => $mod) {
-//                        if (($mod{0} !== '~') && (strpos($mod, '//') === false)) {
                         if (($mod[0] !== '~') && (strpos($mod, '//') === false)) {
                             $mod = '~sys/'.$mod;
                         }
                         $primaryModules[] = [$mod, $rank];
                     }
                 } else {
-//                    if (($str{0} !== '~') && (strpos($str, '//') === false)) {
                     if (($str[0] !== '~') && (strpos($str, '//') === false)) {
                         $str = '~sys/'.$str;
                     }
@@ -1068,7 +1056,6 @@ EOT;
             return;
         }
         if ($this->lzy->localCall && !isset($_SERVER['HTTP_ORIGIN'])) {
-//            mylog("allowOrigin : no \$_SERVER['HTTP_ORIGIN'] available, allowing any");
             header('Access-Control-Allow-Origin: *');
             return;
         }

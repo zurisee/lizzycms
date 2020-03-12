@@ -366,8 +366,8 @@ class Lizzy
         } elseif ($this->config->debug_forceBrowserCacheUpdate) {
             $forceUpdate = getVersionCode( true );
 
-//        } elseif ($this->config->debug_autoForceBrowserCache) {
-//            $forceUpdate = getVersionCode();
+        //        } elseif ($this->config->debug_autoForceBrowserCache) {
+        //            $forceUpdate = getVersionCode();
         } else {
             return;
         }
@@ -549,34 +549,34 @@ class Lizzy
         $globalParams['pathToPage'] = null; // needs to be set after determining actually requested page
 
         $pageHttpPath = $this->auth->handleAccessCodeInUrl( $pageHttpPath );
-//        $pageHttpPath0      = $pageHttpPath;
+
         $pageHttpPath       = strtolower($pageHttpPath);
         if ($this->config->feature_filterRequestString) {
             // Example: abc[2]/
             $pageHttpPath = preg_replace('/[^a-z_-]+ \w* [^a-z_-]+/ix', '', rtrim($pageHttpPath, '/')).'/';
         }
         $pathToRoot = str_repeat('../', sizeof(explode('/', $requestedpageHttpPath)) - 1);
-//        $globalParams['pagePath'] = null;
+
         $globalParams['pageHttpPath'] = $pageHttpPath;
         $globalParams['pagesFolder'] = $this->config->path_pagesPath;
-//        $globalParams['pathToPage'] = $this->config->path_pagesPath.$pagePath;//???
-//        $globalParams['pathToPage'] = null; // needs to be set after determining actually requested page
+
+
         $globalParams['dataPath'] = $this->config->site_dataPath;
 
         $globalParams['pathToRoot'] = $pathToRoot;  // path from requested folder to root (= ~/), e.g. ../
         $this->pageHttpPath = $pageHttpPath;
         $this->pathToRoot = $pathToRoot;
         $this->config->pathToRoot = $pathToRoot;
-//        $requestScheme = ((isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'])) ? $_SERVER['REQUEST_SCHEME'].'://' : 'HTTP://';
+
         $globalParams['host'] = $requestScheme.$_SERVER['HTTP_HOST'].'/';
         $this->pageUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestedPath;
         $globalParams['pageUrl'] = $this->pageUrl;
-//        $requestedUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestUri;
-//        $globalParams['requestedUrl'] = $requestedUrl;
+
+
         $globalParams['absAppRoot'] = $absAppRoot;  // path from FS root to base folder of app, e.g. /Volumes/...
         $globalParams['absAppRootUrl'] = $globalParams["host"] . substr($appRoot, 1);  // path from FS root to base folder of app, e.g. /Volumes/...
 
-//        $pageHttpPath = $this->auth->handleAccessCodeInUrl( $pageHttpPath0 );
+
 
         if (!$pageHttpPath) {
             $pageHttpPath = './';
@@ -624,10 +624,10 @@ class Lizzy
         $globalParams['redirectedPath'] = $redirectedPath;  // the part that is optionally skippped by htaccess
         $globalParams['localCall'] = $this->localCall;
 
-//        $_SESSION['lizzy']['pagePath'] = $pagePath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
+
         $_SESSION['lizzy']['pagePath'] = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
         $_SESSION['lizzy']['pageHttpPath'] = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
-//        $_SESSION['lizzy']['pathToPage'] = $this->config->path_pagesPath.$pagePath;
+
         $_SESSION['lizzy']['pathToPage'] = null; //???
         $_SESSION['lizzy']['pagesFolder'] = $this->config->path_pagesPath;
         $baseUrl = $requestScheme.$_SERVER['SERVER_NAME'];
@@ -1059,7 +1059,6 @@ EOT;
             if ($ext == 'md') {             // it's an MD file, convert it
 
                 $eop = strpos($mdStr, '__EOP__');           // check for 'end of page' marker, if found exclude all following (also following mdFiles)
-//                if (($eop !== false) && ($mdStr{$eop-1} != '\\')) {
                 if (($eop !== false) && ($mdStr[$eop-1] != '\\')) {
                     $mdStr = preg_replace('/__EOP__.*/sm', '', $mdStr);
                     $eop = true;
@@ -1278,7 +1277,7 @@ EOT;
         if (getUrlArg('reset')) {			            // reset (cache)
             $this->disableCaching();
             clearCaches( $this, false );
-//            $this->clearCaches();
+
         }
 
 
@@ -1434,7 +1433,7 @@ EOT;
 
 		// printing support:
         if (getUrlArg('print-preview')) {              // activate Print-Preview
-//            $this->page->addModules('PAGED_POLYFILL');
+
             $url = './?print';
             unset($_GET['print-preview']);
             foreach ($_GET as $k => $v) {   // make sure all other url-args are preserved:
@@ -1453,7 +1452,7 @@ EOT;
             $this->page->addJq($jq);
         }
         if (getUrlArg('print')) {              // activate Print-supprt and start printing dialog
-//            $this->page->addModules('PAGED_POLYFILL');
+
             $jq = <<<EOT
 	setTimeout(function() {
 	    console.log('now running paged.polyfill.js'); 

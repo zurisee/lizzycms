@@ -53,7 +53,6 @@ $this->addMacro($macroName, function () {
 
     if ($contentFrom) {
         // . or # -> jq, else .load
-//        if (($contentFrom{0} == '.') || ($contentFrom{0} == '#')) {     // selector for a local element
         if (($contentFrom[0] == '.') || ($contentFrom[0] == '#')) {     // selector for a local element
             $jq = "$('#$id').html( $('$contentFrom').html() );\n";
             $this->page->addJq($jq);

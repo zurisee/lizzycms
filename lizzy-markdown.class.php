@@ -168,7 +168,6 @@ class LizzyMarkdown
 	    // prepare modified patterns if it contains look-behind:
 	    if (!isset($this->replaces2)) {
             foreach ($this->replaces as $key => $value) {
-//                if ($key{0} === '(') {
                 if ($key[0] === '(') {
                     $k = str_replace('\\', '', substr($key, strpos($key, ')')+1));
                     $this->replaces2[$key] = $k;
@@ -603,7 +602,6 @@ class LizzyMarkdown
 
 		if ($args) {
 		    // extract part within single or double quotes:
-//			$c1 = $args{0};
 			$c1 = $args[0];
 			if (strpbrk($args, '\'"') !== false) {
                 if (preg_match("/([^$c1]*) $c1 (.*?) $c1 \s* ,? (.*)/x", $args, $mm)) {

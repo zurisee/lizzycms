@@ -537,7 +537,6 @@ class Transvar
         if (isset($this->transvars[$key])) {
             $entry = $this->transvars[$key];
 
-//            if (($key{0} != '_') && (!in_array($key, $this->sysVariables))) {
             if (($key[0] != '_') && (!in_array($key, $this->sysVariables))) {
                 $this->usedVars['@:'.$key] = $entry;
             }
@@ -577,7 +576,6 @@ class Transvar
             }
 
         } else {
-//            if ((strlen($key) > 0) && ($key{0} != '_') && (!in_array($key, $this->sysVariables))) {
             if ((strlen($key) > 0) && ($key[0] != '_') && (!in_array($key, $this->sysVariables))) {
                 $this->usedVars['_@:'.$key] = '';
             }
@@ -621,7 +619,6 @@ class Transvar
             if (file_exists($phpFile)) {
                 $page = &$this->page;
                 if (($execType === 'true') || ($execType === true)) {
-//                if ($execType == 'true') {
                     $res =  require($phpFile);
                     if (is_array($res)) {
                         foreach ($res as $key => $value) {
@@ -852,7 +849,6 @@ EOT;
                 $rec = '';
                 $unused = false;
             }
-//            if ((isset($line{0}) && ($line{0} != '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
             if ((isset($line[0]) && ($line[0] != '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
                 if (isset($this->transvars[$var]['uu'])) {
                     $unused = true;
@@ -900,7 +896,6 @@ EOT;
             if (preg_match('/^([^\#]*):\s*$/m', $line, $m)) {
                 $var = $m[1];
             }
-//            if ((isset($line{0}) && ($line{0} != '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
             if ((isset($line[0]) && ($line[0] != '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
                 if (isset($this->transvars[$var]['uu'])) {
                     $out .= $line;
@@ -969,7 +964,6 @@ EOT;
 
     private function handleModifers($var)
     {
-//        $c1 = $var{0};
         $c1 = $var[0];
         if (strpos('#^!&', $c1) !== false) {    // modifier? #, ^, !, &
             $var = trim(substr($var, 1));

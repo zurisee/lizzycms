@@ -292,7 +292,6 @@ EOT;
                 // theoretical case: ~/ appears somewhere within the path -> remove everything before
                 $path = substr($path, $r);
 
-//            } elseif ($path{0} == '/') {
             } elseif ($path[0] === '/') {
                 // case path starts with '/', -> assume app-root, turn it into '~/':
                 $path = '~'.$path;
@@ -359,11 +358,11 @@ EOT;
                 }
                 if (!$stop && isset($elem[0])) {	// does it have children?
 
-//                    if ($this->horizTop) {
+
                     if ($this->accordion) {
                         $firstElem = "<a href='$path'$aClass$target $tabindex>$name</a>";   // A1
                     }
-//                    if ($this->horizTop && ($level !== 1)) {
+
                     if ($this->horizTop && ($level !== 1)) {
                         $aria1 = '';
                     }
