@@ -354,7 +354,7 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
 
         $last = $current;
         // consume following lines containing {tab}
-        for($i = $current, $count = count($lines); $i < $count-1; $i++) {
+        for($i = $current, $count = count($lines); $i <= $count-1; $i++) {
             $line = $lines[$i];
             if (preg_match('/\{\{\s* tab\b[^\}]* \s*\}\}/x', $line, $m)) {
                 $block['content'][] = $line;

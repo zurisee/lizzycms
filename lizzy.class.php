@@ -10,6 +10,7 @@ define('USER_CODE_PATH',        'code/');
 define('PATH_TO_APP_ROOT',      '');
 define('SYSTEM_PATH',           basename(dirname(__FILE__)).'/'); // _lizzy/
 define('DEFAULT_CONFIG_FILE',   CONFIG_PATH.'config.yaml');
+define('DEV_MODE_CONFIG_FILE',  CONFIG_PATH.'dev-mode-config.yaml');
 
 define('DATA_PATH',            'data/');
 define('CACHE_PATH',            '.#cache/');
@@ -20,7 +21,8 @@ define('USER_INIT_CODE_FILE',   USER_CODE_PATH.'init-code.php');
 define('USER_VAR_DEF_FILE',     USER_CODE_PATH.'var-definitions.php');
 define('ICS_PATH',              'ics/'); // where .ics files are located
 
-define('USER_DAILY_CODE_FILE',   USER_CODE_PATH.'@daily-task.php');
+define('DAILY_PURGE_FILE',      CONFIG_PATH.'daily-purge.txt');
+define('USER_DAILY_CODE_FILE',  USER_CODE_PATH.'@daily-task.php');
 define('CACHE_DEPENDENCY_FILE', '.#page-cache.dependency.txt');
 define('CACHE_FILENAME',        '.#page-cache.dat');
 
@@ -1493,6 +1495,10 @@ EOT;
             $this->reorganizeCss($filename);
         }
 
+        if (getUrlArg('gitstat')) {                                    // git-status
+            $this->renderGitStatus();
+        }
+
         if (getUrlArg('unused')) {							        // unused
             $str = $this->trans->renderUnusedVariables();
             $str = "<h1>Unused Variables</h1>\n$str";
@@ -2136,6 +2142,39 @@ EOT;
         }
     }
 
+
+
+    private function renderGitStatus()
+    {
+        $status = '';
+        if (file_exists('.git')) {
+            $status = "Main Project:\n======================\n";
+            $status .= shell_exec('git status');
+            $status .= "\n\n\n";
+        }
+        $status .= "Lizzy Project:\n======================\n";
+        $status .= shell_exec('cd _lizzy; git status');
+
+        if ($this->config->custom_relatedGitProjects) {
+            $gitProjects = explodeTrim(',', $this->config->custom_relatedGitProjects);
+            foreach ($gitProjects as $project) {
+                if (file_exists($project)) {
+                    $name = str_replace('../', '', $project);
+                    $status .= "\n\n\n";
+                    $status .= "$name Project:\n======================\n";
+
+                    if (file_exists("$project.git")) {
+                        $status .= shell_exec("cd $project; git status");
+                    } else {
+                        $status .= "No git project found\n";
+                    }
+                }
+            }
+        }
+
+        print("<pre>$status</pre>");
+        exit;
+    }
 
 
 

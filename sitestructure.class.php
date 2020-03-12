@@ -206,7 +206,6 @@ class SiteStructure
                 }
 				if (($level - $lastLevel) > 1) {
                     writeLog("Error in sitemap.txt: indentation on line $line (level: $level / lastLevel: $lastLevel)", true);
-//                    writeLog("Error in sitemap.txt: indentation on line $line (level: $level / lastLevel: $lastLevel)", 'errlog');
                     $level = $lastLevel + 1;
 				}
                 $rec['level'] = $level;
@@ -214,7 +213,7 @@ class SiteStructure
 
 				$rec['folder'] = basename(translateToFilename($name, true), '.html').'/';
 				if ($args) {
-					$args = parseArgumentStr($args);
+					$args = parseArgumentStr($args, ',', true);
 					if (is_array($args)) {
 						foreach($args as $key => $value) {
 							if (($key === 'folder') || ($key === 'showthis')) {
@@ -316,7 +315,6 @@ class SiteStructure
                 }
                 if (isset($rec['alias']) && $rec['alias']) {
                     $rec['alias'] = resolvePath(fixPath($rec['alias']));
-//                    $rec['alias'] = resolvePath(fixPath($rec['alias']),false,false,true);
                 }
                 $list[] = $rec;
             }

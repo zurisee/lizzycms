@@ -8,7 +8,7 @@ use Symfony\Component\Yaml\Yaml;
 
 
 //--------------------------------------------------------------
-function parseArgumentStr($str, $delim = ',')
+function parseArgumentStr($str, $delim = ',', $yamlCompatibiity = false)
 {
     $str0 = $str;
     $str = trim($str);
@@ -22,10 +22,23 @@ function parseArgumentStr($str, $delim = ',')
 
     $options = [];
 
-    // for compatibility with Yaml, the argument list may come enclosed in { }
-    if (preg_match('/^\s* \{  (.*)  \} \s* $/x', $str, $m)) {
-        $str = $m[1];
+    if ($yamlCompatibiity) {
+        // for compatibility with Yaml, the argument list may come enclosed in { }
+        if (preg_match('/^\s* \{  (.*)  \} \s* $/x', $str, $m)) {
+            $str = $m[1];
+        }
     }
+    $supportedBrackets1 = [
+        '"' => '"',
+        "'" => "'",
+    ];
+    $supportedBrackets2 = [
+        '"' => '"',
+        "'" => "'",
+        '(' => ')',
+        '[' => ']',
+        '<' => '>',
+    ];
 
     $assoc = false;
     while ($str || $assoc) {
@@ -33,23 +46,18 @@ function parseArgumentStr($str, $delim = ',')
         $c = (isset($str[0])) ? $str[0] : '';
         $val = '';
 
-        // grab next value, can be bare or enclosed in ' or "
-        if ($c === '"') {    // -> "
-            $p = findNextPattern($str, '"', 1);
+        // grab next value, can be bare or enclosed:
+        if ($assoc && !$yamlCompatibiity) {
+            $supportedBrackets = &$supportedBrackets2;
+        } else {
+            $supportedBrackets = &$supportedBrackets1;
+        }
+        if (array_key_exists($c, $supportedBrackets)) {
+            $cEnd = $supportedBrackets[$c];
+            $p = findNextPattern($str, $cEnd, 1);
             if ($p) {
                 $val = substr($str, 1, $p - 1);
                 $val = str_replace('\\"', '"', $val);
-                $str = trim(substr($str, $p + 1));
-                $str = preg_replace('/^\s*↵\s*$/', '', $str);
-            } else {
-                fatalError("Error in key-value string: '$str0'", 'File: '.__FILE__.' Line: '.__LINE__);
-            }
-
-        } elseif ($c === "'") {    // -> '
-            $p = findNextPattern($str, "'", 1);
-            if ($p) {
-                $val = substr($str, 1, $p - 1);
-                $val = str_replace("\\'", "'", $val);
                 $str = trim(substr($str, $p + 1));
                 $str = preg_replace('/^\s*↵\s*$/', '', $str);
             } else {
@@ -79,6 +87,8 @@ function parseArgumentStr($str, $delim = ',')
             }
             $str = $rest;
         }
+
+        // shape value:
         if ($val === 'true') {
             $val = true;
         } elseif ($val === 'false') {
@@ -575,17 +585,10 @@ function removeCStyleComments($str)
 {
 	$p = 0;
 	while (($p = strpos($str, '/*', $p)) !== false) {		// /* */ style comments
-		if ($p) {
-		    $ch1 = $str{$p-1};
-		    if ($ch1 === '\\') {					// avoid shielded /*
-                $str = substr($str, 0, $p-1).substr($str,$p);
-                $p += 2;
-                continue;
-            }
-		    if ($ch1 === '/') {					    // skip dangerous pattern //*
-                $p += 2;
-                continue;
-            }
+        $ch_1 = $p? $str{$p-1} : "\n"; // char preceding '/*' must be whitespace
+        if (strpbrk(" \n\t", $ch_1) === false) {
+            $p += 2;
+            continue;
         }
 		$p2 = strpos($str, "*/", $p);
 		$str = substr($str, 0, $p).substr($str, $p2+2);
@@ -656,6 +659,7 @@ function getDirDeep($path, $onlyDir = false, $assoc = false, $returnAll = false)
 {
     $files = [];
     $f = basename($path);
+    $pattern = '*';
     if (strpos($f, '*') !== false) {
         $pattern = basename($path);
         $path = dirname($path);
@@ -676,7 +680,7 @@ function getDirDeep($path, $onlyDir = false, $assoc = false, $returnAll = false)
             }
             continue;
         }
-        if (!$returnAll && preg_match($patt2, $p)) {
+        if (!$returnAll && (preg_match($patt2, $p) || !fnmatch($pattern, $f))) {
             continue;
         }
         if ($assoc) {
@@ -1628,7 +1632,11 @@ function explodeTrim($sep, $str)
 {
     if (!$str) {
         return [];
-    } elseif (strlen($sep) > 1) {
+    }
+    if (strpos($str, $sep) === false) {
+        return [ $str ];
+    }
+    if (strlen($sep) > 1) {
         $sep = preg_quote($sep);
         $out = array_map('trim', preg_split("/[$sep]/", $str));
         return $out;

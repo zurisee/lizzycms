@@ -10,10 +10,11 @@ $this->addMacro($macroName, function () {
     $path = $this->getArg($macroName, 'path', 'Selects the folder to be read', '');
     $this->getArg($macroName, 'pattern', 'The search-pattern with which to look for files (-> \'glob style\')', '');
     $this->getArg($macroName, 'deep', '[false,true,flat] Whether to recursively descend into sub-folders. ("flat" means deep as a non-hierarchical list.)', false);
-    $this->getArg($macroName, 'order', '[reverse] Displays result in reversed order', false);
-    $this->getArg($macroName, 'class', 'class to be applied to the enclosing li-tag', '');
-    $this->getArg($macroName, 'target', '"target" attribute to be applied to the a-tag', '');
-    $this->getArg($macroName, 'maxAge', '[integer] Maximum age of file (in number of days)', '');
+    $this->getArg($macroName, 'showPath', '[false,true] Whether to render the entire path per file in deep:flat mode.', false);
+    $this->getArg($macroName, 'order', '[reverse] Displays result in reversed order.', false);
+    $this->getArg($macroName, 'class', 'class to be applied to the enclosing li-tag.', '');
+    $this->getArg($macroName, 'target', '"target" attribute to be applied to the a-tag.', '');
+    $this->getArg($macroName, 'maxAge', '[integer] Maximum age of file (in number of days).', '');
 
     if ($path === 'help') {
         return '';
@@ -40,6 +41,7 @@ class DirRenderer
         $this->path = $this->getArg('path');
         $this->pattern = $this->getArg('pattern');
         $this->deep = $this->getArg('deep');
+        $this->showPath = $this->getArg('showPath');
         $this->order = $this->getArg('order');
         $this->class = $this->getArg('class');
         $this->target = $this->getArg('target');
@@ -64,6 +66,9 @@ class DirRenderer
                 $this->pattern = base_name($this->path);
             }
             $this->path = dirname($this->path);
+        }
+        if (strpos($this->pattern, ',') !== false) {
+            $this->pattern = explodeTrim(',', $this->pattern);
         }
         if ($this->path) {
             $this->path = fixPath($this->path);
@@ -95,13 +100,24 @@ class DirRenderer
         $path = resolvePath($this->path);
         if ($this->deep) {
             if ($this->deep === 'flat') {
-                $dir = getDirDeep($path . $this->pattern);
+                if (is_array($this->pattern)) {
+                    $dir = [];
+                    foreach ($this->pattern as $pattern) {
+                        $dir = array_merge($dir, getDirDeep($path . $pattern));
+                    }
+                } else {
+                    $dir = getDirDeep($path . $this->pattern);
+                }
+                sort($dir);
                 $str = $this->straightList($dir);
             } else {
                 $this->pregPattern = '|'.str_replace(['.', '*'], ['\\.', '.*'], $this->pattern).'|';
                 $str = $this->_hierarchicalList($path);
             }
         } else {
+            if (is_array($this->pattern)) {
+                $this->pattern = '{'.implode(',', $this->pattern).'}';
+            }
             $dir = getDir($path.$this->pattern);
             $str = $this->straightList($dir);
         }
@@ -128,7 +144,11 @@ class DirRenderer
             if (is_dir($file) || (filemtime($file) < $maxAge)) {
                 continue;
             }
-            $name = base_name($file);
+            if (!$this->showPath) {
+                $name = base_name($file);
+            } else {
+                $name = $file;
+            }
             $url = $this->parseUrlFile($file);
             if ($url) { // it's a link file (.url or .webloc):
                 $name = base_name($file, false);

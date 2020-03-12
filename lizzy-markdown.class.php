@@ -219,7 +219,9 @@ class LizzyMarkdown
 			$str = implode("\n", $lines);
 		}
 
+		$str = str_replace("\\\n", "  \n", $str);       // \ at end of line -> convert to 2-blanks
         $str = $this->convertLinks($str);
+        $str = $this->convertImages($str);
 		$str = $this->handleInTextVariableDefitions($str);
 
 		$str = str_replace('\\<', '@/@\\lt@\\@', $str);       // shield \<
@@ -246,7 +248,7 @@ class LizzyMarkdown
         // -> shield '-' and '1.' (and '1!.')
 
         // Alternative Syntax: ··>>·· or ··10em>>··  (where · == space)
-        $str = preg_replace('/(\s\s|\t) (\d{1,3}\w{1,2})? >> [\s\t]/x', "{{ tab($2) }}", $str);
+        $str = preg_replace('/(\s\s|\t) ([.\d]{1,3}\w{1,2})? >> [\s\t]/x', "{{ tab($2) }}", $str);
 
         $lines = explode(PHP_EOL, $str);
         foreach ($lines as $i => $l) {
@@ -441,6 +443,34 @@ class LizzyMarkdown
 
 
     //....................................................
+    private function convertImages($str)
+    {
+        // extracts MD style images and transforms it into macro calls {{ img() }}
+        // takes into account optional dimension information as produced by pandoc
+        // example:
+        //      ![](~/media/image1.jpeg){width="4.588888888888889in height="3.5840277777777776in"}
+        if (preg_match_all('/ \!\[ (.*?) \]\( (.*?) \) ( \{ (.*?) \})?/xms', $str, $m)) {
+            $i = 0;
+            while (isset($m[0][$i])) {
+                $pat = $m[0][$i];
+                $alt = $m[1][$i];
+                $file = $m[2][$i];
+                $dim = $m[4][$i];
+                if (preg_match('/width="([\d\.]*)/', $dim, $mm)) {
+                    $w = intval($mm[1]) * 254;
+                    $file = preg_replace('/^ (.*) \. (\w+) $/x', "$1[{$w}x].$2", $file);
+                }
+                $str = str_replace($pat, "{{ img('$file', alt:'$alt') }}", $str);
+                $i++;
+            }
+        }
+        return $str;
+    } // convertImages
+
+
+
+
+    //....................................................
     private function convertLinks($str)
     {
         $enabled = false;
@@ -452,7 +482,6 @@ class LizzyMarkdown
         }
         $feature_autoConvertLinks = isset($this->trans->lzy->config->feature_autoConvertLinks)? $this->trans->lzy->config->feature_autoConvertLinks : false;
         if ($enabled || $feature_autoConvertLinks) {
-//        if ($enabled || $this->trans->lzy->config->feature_autoConvertLinks) {
             $lines = explode("\n", $str);
             foreach ($lines as $i => $l) {
 
@@ -559,7 +588,7 @@ class LizzyMarkdown
             }
         }
 
-		if (!preg_match('/(.*) \[\[ ([^\]]*) \]\] (.*)/x', $line, $m)) {
+		if (!preg_match('/(.*) \[\[ (.*?) \]\] (.*)/x', $line, $m)) {
             if ($returnElements) {
                 return [$line, null, null, null, null];
             } else {
@@ -572,14 +601,10 @@ class LizzyMarkdown
         $span = '';
 
 		if ($args) {
+		    // extract part within single or double quotes:
 			$c1 = $args{0};
-			if ($c1 === '"') {		                                                        // span
-                if (preg_match('/([^"]*) " ([^"]*) " \s* ,? (.*)/x', $args, $mm)) {	// "
-                    $span = $mm[2];
-                    $args = $mm[1] . $mm[3];
-                }
-            } elseif ($c1 === "'") {
-                if (preg_match("/([^ ']*) ' ([^']*) ' \s* ,? (.*)/x", $args, $mm)) {	 // '
+			if (strpbrk($args, '\'"') !== false) {
+                if (preg_match("/([^$c1]*) $c1 (.*?) $c1 \s* ,? (.*)/x", $args, $mm)) {
                     $span = $mm[2];
                     $args = $mm[1] . $mm[3];
                 }
