@@ -21,6 +21,7 @@ class ImageResizer
     //--------------------------------------------------
     public function provideImages($html)
     {
+        $modified = false;
         // find all img-tags in html:
         $p = strpos($html, '<img');
         $appRoot = $GLOBALS['globalParams']['appRoot'];
@@ -48,6 +49,7 @@ class ImageResizer
                 if (!file_exists($src)) {
                     list($orig, $width, $height, $crop) = $this->deriveImageSize($src);
                     $this->resizeImage($orig, $src, $width, $height, $crop);
+                    $modified = true;
                 }
             }
             $origSrc = $src;
@@ -74,6 +76,7 @@ class ImageResizer
                     if (!file_exists($src)) {
                         list($orig, $width, $height, $crop) = $this->deriveImageSize($src);
                         $this->resizeImage($origSrc, $src, $width, $height, $crop);
+                        $modified = true;
                     }
                 }
             }
@@ -94,10 +97,12 @@ class ImageResizer
                 if (!file_exists($src)) {
                     list($orig, $width, $height, $crop) = $this->deriveImageSize($src);
                     $this->resizeImage($orig, $src, $width, $height, $crop);
+                    $modified = true;
                 }
             }
             $p = strpos($html, '<source', $p+1);
         }
+        return $modified;
     } // provideImages
 
 

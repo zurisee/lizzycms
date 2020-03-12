@@ -175,19 +175,19 @@ function checkInstallation1()
             chmod($folder, 0755);
         }
     }
-    return;
-
-    print( trim(shell_exec('whoami')).':'.trim(shell_exec('groups'))."<br>\n");
-
-    $all = array_merge($writableFolders, $readOnlyFolders);
-    foreach ($all as $folder) {
-        $rec = posix_getpwuid(fileowner($folder));
-        $name = $rec['name'];
-        $rec = posix_getgrgid(filegroup($filename));
-        $group = $rec['name'];
-        print("$folder: $name:$group<br>\n");
-    }
-    exit;
+    //    return;
+    //
+    //    print( trim(shell_exec('whoami')).':'.trim(shell_exec('groups'))."<br>\n");
+    //
+    //    $all = array_merge($writableFolders, $readOnlyFolders);
+    //    foreach ($all as $folder) {
+    //        $rec = posix_getpwuid(fileowner($folder));
+    //        $name = $rec['name'];
+    //        $rec = posix_getgrgid(filegroup($filename));
+    //        $group = $rec['name'];
+    //        print("$folder: $name:$group<br>\n");
+    //    }
+    //    exit;
 } // checkInstallation1
 
 

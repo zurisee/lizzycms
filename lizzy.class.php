@@ -1172,7 +1172,10 @@ EOT;
     private function prepareImages($html)
 	{
         $resizer = new ImageResizer($this->config->feature_ImgDefaultMaxDim);
-        $resizer->provideImages($html);
+        $modified = $resizer->provideImages($html);
+        if ($modified) {
+            checkInstallation1();
+        }
     } // prepareImages
 
 
