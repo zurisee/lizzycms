@@ -292,7 +292,8 @@ EOT;
                 // theoretical case: ~/ appears somewhere within the path -> remove everything before
                 $path = substr($path, $r);
 
-            } elseif ($path{0} == '/') {
+//            } elseif ($path{0} == '/') {
+            } elseif ($path[0] === '/') {
                 // case path starts with '/', -> assume app-root, turn it into '~/':
                 $path = '~'.$path;
 

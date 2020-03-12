@@ -452,7 +452,8 @@ class SiteStructure
 	{
 	    if (($str === '/') || ($str === './')) {
             $str = '';
-        } elseif ((strlen($str) > 0) && ($str{0} === '/')) {
+//        } elseif ((strlen($str) > 0) && ($str{0} === '/')) {
+        } elseif ((strlen($str) > 0) && ($str[0] === '/')) {
 	        $str = substr($str, 1);
         } elseif ((strlen($str) > 0) && (substr($str,0,2) === '~/')) {
             $str = substr($str, 2);

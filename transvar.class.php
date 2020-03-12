@@ -537,7 +537,8 @@ class Transvar
         if (isset($this->transvars[$key])) {
             $entry = $this->transvars[$key];
 
-            if (($key{0} != '_') && (!in_array($key, $this->sysVariables))) {
+//            if (($key{0} != '_') && (!in_array($key, $this->sysVariables))) {
+            if (($key[0] != '_') && (!in_array($key, $this->sysVariables))) {
                 $this->usedVars['@:'.$key] = $entry;
             }
             if ($this->config->debug_monitorUnusedVariables && is_array($entry)) {
@@ -576,7 +577,8 @@ class Transvar
             }
 
         } else {
-            if ((strlen($key) > 0) && ($key{0} != '_') && (!in_array($key, $this->sysVariables))) {
+//            if ((strlen($key) > 0) && ($key{0} != '_') && (!in_array($key, $this->sysVariables))) {
+            if ((strlen($key) > 0) && ($key[0] != '_') && (!in_array($key, $this->sysVariables))) {
                 $this->usedVars['_@:'.$key] = '';
             }
         }
@@ -850,7 +852,8 @@ EOT;
                 $rec = '';
                 $unused = false;
             }
-            if ((isset($line{0}) && ($line{0} != '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
+//            if ((isset($line{0}) && ($line{0} != '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
+            if ((isset($line[0]) && ($line[0] != '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
                 if (isset($this->transvars[$var]['uu'])) {
                     $unused = true;
                 }
@@ -897,7 +900,8 @@ EOT;
             if (preg_match('/^([^\#]*):\s*$/m', $line, $m)) {
                 $var = $m[1];
             }
-            if ((isset($line{0}) && ($line{0} != '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
+//            if ((isset($line{0}) && ($line{0} != '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
+            if ((isset($line[0]) && ($line[0] != '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
                 if (isset($this->transvars[$var]['uu'])) {
                     $out .= $line;
                 } else {
@@ -965,7 +969,8 @@ EOT;
 
     private function handleModifers($var)
     {
-        $c1 = $var{0};
+//        $c1 = $var{0};
+        $c1 = $var[0];
         if (strpos('#^!&', $c1) !== false) {    // modifier? #, ^, !, &
             $var = trim(substr($var, 1));
             if ($c1 == '#') {

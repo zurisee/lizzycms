@@ -1059,7 +1059,8 @@ EOT;
             if ($ext == 'md') {             // it's an MD file, convert it
 
                 $eop = strpos($mdStr, '__EOP__');           // check for 'end of page' marker, if found exclude all following (also following mdFiles)
-                if (($eop !== false) && ($mdStr{$eop-1} != '\\')) {
+//                if (($eop !== false) && ($mdStr{$eop-1} != '\\')) {
+                if (($eop !== false) && ($mdStr[$eop-1] != '\\')) {
                     $mdStr = preg_replace('/__EOP__.*/sm', '', $mdStr);
                     $eop = true;
                 }

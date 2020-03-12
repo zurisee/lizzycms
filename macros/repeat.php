@@ -30,7 +30,8 @@ $this->addMacro($macroName, function ($args) {
         return '';
     }
 
-    $c = $wrapperClass{0};
+//    $c = $wrapperClass{0};
+    $c = $wrapperClass[0];
     if (($c != '.') && ($c != '#')) {
         $wrapperClass = '.'.$wrapperClass;
     }

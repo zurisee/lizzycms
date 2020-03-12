@@ -897,13 +897,15 @@ EOT;
                 if (strpos($str, ',') !== false) {
                     $mods = preg_split('/\s*,+\s*/', $str);
                     foreach ($mods as $j => $mod) {
-                        if (($mod{0} !== '~') && (strpos($mod, '//') === false)) {
+//                        if (($mod{0} !== '~') && (strpos($mod, '//') === false)) {
+                        if (($mod[0] !== '~') && (strpos($mod, '//') === false)) {
                             $mod = '~sys/'.$mod;
                         }
                         $primaryModules[] = [$mod, $rank];
                     }
                 } else {
-                    if (($str{0} !== '~') && (strpos($str, '//') === false)) {
+//                    if (($str{0} !== '~') && (strpos($str, '//') === false)) {
+                    if (($str[0] !== '~') && (strpos($str, '//') === false)) {
                         $str = '~sys/'.$str;
                     }
                     $primaryModules[] = [$str, $rank];
