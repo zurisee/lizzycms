@@ -273,7 +273,7 @@ class Lizzy
             $timerMsg = 'Page rendering time: '.readTimer();
             $html = $this->page->lateApplyMessag($html, $timerMsg);
 		}
-
+$html .= "\n<!-- test modif -->\n";
         return $html;
     } // render
 
