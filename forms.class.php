@@ -39,7 +39,7 @@ class Forms
 //-------------------------------------------------------------
     public function render($args)
     {
-        if (isset($args[0]) && ($args[0] == 'help')) {
+        if (isset($args[0]) && ($args[0] === 'help')) {
             return $this->renderHelp();
         }
 
@@ -122,6 +122,14 @@ class Forms
             case 'fieldset-end':
                 return "\t\t\t\t</fieldset>\n";
 
+            case 'hidden':
+                $elem = $this->renderHidden();
+                break;
+
+            case 'bypassed':
+                $elem = '';
+                break;
+
             case 'form-tail':
 				return $this->formTail();
 
@@ -131,9 +139,9 @@ class Forms
         }
 
         $type = $this->currRec->type;
-        if (($type == 'radio') || ($type == 'checkbox')) {
+        if (($type === 'radio') || ($type === 'checkbox')) {
             $type .= ' lzy-form-field-type-choice';
-        } elseif ($type == 'button') {
+        } elseif ($type === 'button') {
             $type = 'buttons';
         }
         if (isset($this->currRec->wrapperClass) && ($this->currRec->wrapperClass)) {
@@ -152,7 +160,11 @@ class Forms
             $class .= ' lzy-form-error';
         }
         $class = $this->classAttr($class);
-		$out = "\t\t<div $class>$error\n$elem\t\t</div><!-- /field-wrapper -->\n\n";
+        if (($this->currRec->type !== 'hidden') && ($this->currRec->type !== 'bypassed')) {
+		    $out = "\t\t<div $class>$error\n$elem\t\t</div><!-- /field-wrapper -->\n\n";
+        } else {
+            $out = "\t\t$elem";
+        }
         return $out;
     } // render
     
@@ -198,7 +210,7 @@ class Forms
     {
         $out = $this->getLabel();
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $out .= "<input type='text' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
+        $out .= "<input type='text' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderTextInput
 
@@ -207,7 +219,7 @@ class Forms
     private function renderPassword()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $input = "<input type='password' class='lzy-form-password' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} aria-invalid='false' aria-describedby='password-hint' value='{$this->currRec->value}'$cls />\n";
+        $input = "<input type='password' class='lzy-form-password' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} aria-invalid='false' aria-describedby='password-hint'$cls />\n";
         $hint = <<<EOT
             <label class='lzy-form-pw-toggle' for="showPassword"><input type="checkbox" id="lzy-form-showPassword{$this->inx}" class="lzy-form-showPassword"><img src="~sys/rsc/show.png" class="lzy-form-login-form-icon" alt="{{ show password }}" title="{{ show password }}" /></label>
 EOT;
@@ -232,7 +244,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='email' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
+        $out .= "<input type='email' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderEMailInput
 
@@ -259,7 +271,7 @@ EOT;
             $name = $valueNames[$i];
             $id = "lzy-radio_{$groupName}_$i";
 
-            $checked = ($checkedElem && ($val == $checkedElem)) ? ' checked' : '';
+            $checked = ($checkedElem && ($val === $checkedElem)) ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-radio-elem lzy-form-choice-elem'>\n";
             $out .= "\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked$cls /><label for='$id'>$value</label>\n";
             $out .= "\t\t\t</div>\n";
@@ -304,7 +316,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='date' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
+        $out .= "<input type='date' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderDate
 
@@ -314,7 +326,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='time' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
+        $out .= "<input type='time' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderDate
 
@@ -324,7 +336,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='month' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
+        $out .= "<input type='month' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderMonth
 
@@ -333,7 +345,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='number' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
+        $out .= "<input type='number' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderNumber
 
@@ -343,7 +355,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='range' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
+        $out .= "<input type='range' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderRange
 
@@ -353,7 +365,8 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='tel' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} value='{$this->currRec->value}'$cls />\n";
+        $out .= "<input type='tel' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
+//        $out .= "<input type='tel' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderTel
 
@@ -585,7 +598,19 @@ EOT;
         return $out;
     } //renderButtons
 
-	
+
+
+
+//-------------------------------------------------------------
+    private function renderHidden()
+    {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $out = "<input type='hidden' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
+        return $out;
+    } // renderHidden
+
+
+
 //-------------------------------------------------------------
 	private function formTail()
     {
@@ -651,7 +676,7 @@ EOT;
 		    if (!isset($args['type'])) {
 		        fatalError("Forms: mandatory argument 'type' missing.");
             }
-			if ($args['type'] != 'form-head') {
+			if ($args['type'] !== 'form-head') {
                 fatalError("Error: syntax error \nor form field definition encountered without previous element of type 'form-head'", 'File: '.__FILE__.' Line: '.__LINE__);
 			}
             $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form'.($this->inx + 1);
@@ -683,10 +708,10 @@ EOT;
 		
 
 		$type = $args['type'] = (isset($args['type'])) ? $args['type'] : 'text';
-		if ($args['type'] == 'form-tail') {	// end-element is exception, doesn't need a label
+		if ($args['type'] === 'form-tail') {	// end-element is exception, doesn't need a label
 			$label = 'form-tail';
 		}
-		if ($type == 'form-head') {
+		if ($type === 'form-head') {
 			$this->currRec = new FormElement;
 			$this->currRec->type = 'form-head';
 			return;
@@ -746,12 +771,12 @@ EOT;
             $rec->uploadPath = '~/upload/';
         }
 
-        if ($type == 'form-head') {
+        if ($type === 'form-head') {
 			$this->currForm->formData['labels'][0] = 'Date';
 			$this->currForm->formData['names'] = [];
-		} elseif (($type != 'button') && ($type != 'form-tail') && (strpos($type, 'fieldset') === false)) {
+		} elseif (($type !== 'button') && ($type !== 'form-tail') && (strpos($type, 'fieldset') === false)) {
 			$rec->shortLabel = (isset($args['shortlabel'])) ? $args['shortlabel'] : $label;
-			if ($type == 'checkbox') {
+			if ($type === 'checkbox') {
 				$checkBoxLabels = ($rec->valueNames) ? preg_split('/\s* [\|,] \s*/x', $rec->valueNames) : [];
 				array_unshift($checkBoxLabels, $rec->shortLabel);
 				$this->currForm->formData['labels'][] = $checkBoxLabels;
@@ -767,10 +792,10 @@ EOT;
         $inpAttr = '';
         foreach (['min', 'max', 'pattern', 'value', 'placeholder'] as $attr) {
             if (isset($args[$attr])) {
-                if (($type == 'checkbox') || ($type == 'radio')) {
+                if (($type === 'checkbox') || ($type === 'radio')) {
                     continue;
                 }
-                if (($type == 'textarea') && ($attr == 'value')) {
+                if (($type === 'textarea') && ($attr === 'value')) {
                     continue;
                 }
                 $inpAttr .= " $attr='{$args[$attr]}'";
@@ -901,12 +926,23 @@ EOT;
 				$label = $labels[$i];
 			}
             $label = html_entity_decode($label);
-            $value = (isset($userSuppliedData[$name])) ? $userSuppliedData[$name] : '';
-			if (is_array($value)) {
-				$value = implode(', ', $value);
-			} else {
-				$value = str_replace("\n", "\n\t\t\t", $value);
-			}
+
+            if ($currFormDescr->formElements[$name]->type === 'bypassed') {
+                $value = $currFormDescr->formElements[$name]->value;
+                if ($value === '$user') {
+                    $value = $GLOBALS["_SESSION"]["lizzy"]["user"];
+                    $this->userSuppliedData[$names[$i]] = $value;
+                }
+
+            } else {
+                $value = (isset($userSuppliedData[$name])) ? $userSuppliedData[$name] : '';
+            }
+            if (is_array($value)) {
+                $value = implode(', ', $value);
+            } else {
+                $value = str_replace("\n", "\n\t\t\t", $value);
+            }
+
 			$str .= mb_str_pad($label, 22, '.').": $value\n\n";
 			$value = str_replace("'", '&#39;', $value);
 			$log .= "'$value'; ";
@@ -920,7 +956,7 @@ EOT;
 		
 		$serverName = (isset($_SERVER['SERVER_NAME'])) ? $_SERVER['SERVER_NAME'] : 'localhost';
 		$remoteAddress = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : '';
-		$localCall = (($serverName == 'localhost') || (strpos($remoteAddress, '192.') === 0) || ($remoteAddress == '::1'));
+		$localCall = (($serverName === 'localhost') || (strpos($remoteAddress, '192.') === 0) || ($remoteAddress === '::1'));
 
 		if ($localCall) {
 		    $str1 = "-------------------------------\n$str\n\n-------------------------------\n(-> would be be sent to $mailto)\n";
@@ -989,7 +1025,14 @@ EOT;
         $errors = 0;
         foreach($names as $i => $name) {
             $value = (isset($userSuppliedData[$name])) ? $userSuppliedData[$name] : '';
-            if (is_array($value)) { // checkbox returns array of values
+            if ($currFormDescr->formElements[$name]->type === 'bypassed') {
+                if (@$currFormDescr->formElements[$name]->value[0] !== '$') {
+                    $data[$r][$j++] = $currFormDescr->formElements[$name]->value;
+                } else {
+                    $data[$r][$j++] = $value;
+                }
+
+            } elseif (is_array($value)) { // checkbox returns array of values
                 $name = $names[$l];
                 $splitOutput = (isset($currFormDescr->formElements[$name]->splitOutput))? $currFormDescr->formElements[$name]->splitOutput: false ;
                 if (!$splitOutput) {
@@ -1006,7 +1049,7 @@ EOT;
             } else {        // normal value
                 if (isset($formElements[$name])) {
                     $type = $formElements[$name]->type;
-                    if (($type == 'email') && $value) {
+                    if (($type === 'email') && $value) {
                         if (!preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,})$/i", $value)) {
                             $errorDescr[$formId][$name] = "{{ lzy-error-in-email-addr }}. {{ lzy-please-correct }}";
                             $errors++;
@@ -1017,71 +1060,12 @@ EOT;
             }
         }
         $data[$r][$j] = time();
-        if ($errors == 0) {
+        if ($errors === 0) {
             $db->write($data);
             return false;
         }
         return $errorDescr;
 	} // saveCsv
-
-
-
-
-/*
-    private function checkUserSuppliedData()
-    {
-//        $formId = $currFormDescr->formId;
-        $currFormDescr = $this->currFormDescr;
-        $formId = $currFormDescr->formId;
-        $errorDescr = false;
-
-        if (isset($currFormDescr->file) && $currFormDescr->file) {
-            $fileName = resolvePath($currFormDescr->file);
-        } else {
-            $fileName = resolvePath("~page/{$formId}_data.csv");
-        }
-
-        $userSuppliedData = $this->userSuppliedData;
-        $names = $currFormDescr->formData['names'];
-        $labels = $currFormDescr->formData['labels'];
-        $errors = 0;
-        foreach($names as $i => $name) {
-            $value = (isset($userSuppliedData[$name])) ? $userSuppliedData[$name] : '';
-            if (is_array($value)) { // checkbox returns array of values
-                $name = $names[$l];
-                $splitOutput = (isset($currFormDescr->formElements[$name]->splitOutput))? $currFormDescr->formElements[$name]->splitOutput: false ;
-                if (!$splitOutput) {
-                    $data[$r][$j++] = implode(', ', $value);
-
-                } else {
-                    $labs = $labels[$i];
-                    for ($k=1; $k<sizeof($labs); $k++) {
-                        $l = $labs[$k];
-                        $val = (in_array($l, $value)) ? '1' : '0';
-                        $data[$r][$j++] = $val;
-                    }
-                }
-            } else {        // normal value
-                if (isset($formElements[$name])) {
-                    $type = $formElements[$name]->type;
-                    if (($type == 'email') && $value) {
-                        if (!preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,})$/i", $value)) {
-                            $errorDescr[$formId][$name] = "{{ lzy-error-in-email-addr }}. {{ lzy-please-correct }}";
-                            $errors++;
-                        }
-                    }
-                }
-                $data[$r][$j++] = $value;
-            }
-        }
-        $data[$r][$j] = time();
-        if ($errors == 0) {
-            $db->write($data);
-            return false;
-        }
-        return $errorDescr;
-    }
-*/
 
 
 
@@ -1185,7 +1169,7 @@ encapsulate:
 Arguments applicable to regular form element:
 
 type:
-: [init, radio, checkbox, date, month, number, range, text, email, password, textarea, button]  
+: [init, radio, checkbox, date, month, number, range, text, email, password, textarea, hidden, bypassed, button]  
 : (mandatory) Defines the type of the form element.
 
 label:
