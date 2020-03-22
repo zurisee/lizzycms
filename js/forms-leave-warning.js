@@ -11,7 +11,9 @@ $('.lzy-form-continue *').click(function() {
 $(window).bind('beforeunload', function(e){
     $('.lzy-form .lzy-form-field-wrapper input').each(function() {
         var type = $(this).attr('type');
-        if ( ($(this).val() !== '') && (type !== 'checkbox') && (type !== 'radio') && (type !== 'range') && (type !== 'hidden')) {
+        var presetVal = $(this).attr('data-value');
+        presetVal = (typeof presetVal !== 'undefined')? presetVal: '';
+        if ( ($(this).val() !== presetVal) && (type !== 'checkbox') && (type !== 'radio') && (type !== 'range') && (type !== 'hidden')) {
             formEmpty = false;
         }
     });
