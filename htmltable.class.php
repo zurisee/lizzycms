@@ -28,6 +28,8 @@ class HtmlTable
         $this->nCols 		        = $this->getOption('nCols', '(optional) Number of columns: if set the table is forced to this number of columns');
         $this->includeKeys          = $this->getOption('includeKeys', '[true|false] If true and not a .csv source: key elements will be included in data.');
         $this->interactive          = $this->getOption('interactive', '[true|false] If true, module "Datatables" is activated, providing for interactive features such as sorting, searching etc.');
+        $this->paging               = $this->getOption('paging', '[true|false] When using "Datatables": turns paging on or off (default is on)');
+        $this->initialPageLength    = $this->getOption('initialPageLength', '[int] When using "Datatables": defines the initial page length (default is 10)');
         $this->excludeColumns       = $this->getOption('excludeColumns', '(optional) Allows to exclude specific columns, e.g. "excludeColumns:2,4-5"');
         $this->sort 		        = $this->getOption('sort', '(optional) Allows to sort the table on a given columns, e.g. "sort:3"');
         $this->sortExcludeHeader    = $this->getOption('sortExcludeHeader', '(optional) Allows to exclude the first row from sorting');
@@ -729,10 +731,18 @@ EOT;
                 $order = rtrim($order, ',');
                 $order = " 'order': [$order],";
             }
+            $paging = '';
+            if (!$this->paging) {
+                $paging = ' paging: false,';
+            }
+            $pageLength = '';
+            if ($this->initialPageLength) {
+                $pageLength = " pageLength: {$this->initialPageLength},";
+            }
             $jq = <<<EOT
 $('.lzy-datatable').DataTable({
     'language':{'search':'{{QuickSearch}}:', 'info': '_TOTAL_ {{Records}}'},
-    $order
+    $order$paging$pageLength
 });
 EOT;
 
@@ -761,6 +771,14 @@ EOT;
             $ds = new DataStorage2($this->options);
             $this->ds = $ds;
             $this->data = $ds->read();
+
+            //ToDo: workaround!
+            foreach ($this->data as $r => $rec) {
+                foreach ($rec as $c => $item) {
+                    $this->data[$r][$c] = trim($item, '"\'');
+                }
+            }
+
             if ($ds->getSourceFormat() !== 'csv') {
                 $this->convertTo2D( true );
 //                $this->convertTo2D();
