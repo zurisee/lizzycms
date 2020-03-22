@@ -400,6 +400,7 @@ $xCorr: 1em;
     .lzy-icon-triangle.lzy-icon-triangle {
         --lzy-triangle-angle: 90deg;
         --lzy-icon-factor: 0.8;
+        transform-origin: center;
         &:before {
             left: 60%;
             top: 36%;
