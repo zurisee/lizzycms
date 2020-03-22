@@ -610,8 +610,8 @@ lzy-config-button:
 
 #--- Forms ----------------------------------------
 lzy-form-data-received-ok:
-    de: "Ihre Eingaben wurden übermittelt. Besten Dank."
-    _: "Your entries have been successfully transmitted. Thank you."
+    de: "<p>Ihre Eingaben wurden übermittelt. Besten Dank.</p>"
+    _: "<p>Your entries have been successfully transmitted. Thank you.</p>"
 
 lzy-form-feedback-local: "<strong>Feedback on localhost only:</strong>"
 
