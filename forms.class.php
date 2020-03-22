@@ -190,7 +190,7 @@ class Forms
 
 		$this->currForm->mailto = (isset($args['mailto'])) ? $args['mailto'] : '';
 		$this->currForm->mailfrom = (isset($args['mailfrom'])) ? $args['mailfrom'] : '';
-		$this->currForm->process = (isset($args['process'])) ? $args['process'] : '';
+		$this->currForm->postprocess = (isset($args['postprocess'])) ? $args['postprocess'] : '';
 		$this->currForm->action = (isset($args['action'])) ? $args['action'] : '';
 		$this->currForm->next = (isset($args['next'])) ? $args['next'] : './';
 		$this->currForm->file = (isset($args['file'])) ? $args['file'] : '';
@@ -210,7 +210,7 @@ class Forms
     {
         $out = $this->getLabel();
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $out .= "<input type='text' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='text' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderTextInput
 
@@ -219,7 +219,7 @@ class Forms
     private function renderPassword()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $input = "<input type='password' class='lzy-form-password' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr} aria-invalid='false' aria-describedby='password-hint'$cls />\n";
+        $input = "<input type='password' class='lzy-form-password' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr} aria-invalid='false' aria-describedby='password-hint'$cls />\n";
         $hint = <<<EOT
             <label class='lzy-form-pw-toggle' for="showPassword"><input type="checkbox" id="lzy-form-showPassword{$this->inx}" class="lzy-form-showPassword"><img src="~sys/rsc/show.png" class="lzy-form-login-form-icon" alt="{{ show password }}" title="{{ show password }}" /></label>
 EOT;
@@ -234,7 +234,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<textarea id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls>{$this->currRec->value}</textarea>\n";
+        $out .= "<textarea id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls>{$this->currRec->value}</textarea>\n";
         return $out;
     } // renderTextarea
 
@@ -244,7 +244,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='email' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='email' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderEMailInput
 
@@ -316,7 +316,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='date' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='date' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderDate
 
@@ -326,7 +326,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='time' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='time' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderDate
 
@@ -336,7 +336,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='month' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='month' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderMonth
 
@@ -345,7 +345,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='number' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='number' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderNumber
 
@@ -355,7 +355,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='range' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='range' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderRange
 
@@ -365,8 +365,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='tel' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
-//        $out .= "<input type='tel' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='tel' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderTel
 
@@ -377,7 +376,7 @@ EOT;
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $values = ($this->currRec->value) ? preg_split('/\s*\|\s*/', $this->currRec->value) : [];
         $out = $this->getLabel();
-        $out .= "<select id='fld_{$this->currRec->name}' name='{$this->currRec->name}'$cls>\n";
+        $out .= "<select id='fld_{$this->currRec->elemId}' name='{$this->currRec->name}'$cls>\n";
         $out .= "\t\t\t\t<option value=''></option>\n";
 
         foreach ($values as $item) {
@@ -605,7 +604,7 @@ EOT;
     private function renderHidden()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $out = "<input type='hidden' id='fld_{$this->currRec->name}'{$this->currRec->inpAttr}$cls />\n";
+        $out = "<input type='hidden' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
         return $out;
     } // renderHidden
 
@@ -628,7 +627,7 @@ EOT;
 //-------------------------------------------------------------
     private function getLabel($id = false)
     {
-		$id = ($id) ? $id : "fld_{$this->currRec->name}";
+		$id = ($id) ? $id : "fld_{$this->currRec->elemId}";
         $requiredMarker = $this->getRequiredMarker();
 		$label = $this->currRec->label;
 		if ($this->translateLabel) {
@@ -661,6 +660,7 @@ EOT;
     } // getRequiredMarker
 
 
+
 //-------------------------------------------------------------
     private function classAttr($class = '')
     {
@@ -668,7 +668,8 @@ EOT;
         return trim($out);
     } // classAttr
     
-    
+
+
 //-------------------------------------------------------------
     private function parseArgs($args)
     {
@@ -705,9 +706,10 @@ EOT;
 			$formId = $this->currForm->formId;
 			$this->currForm = &$this->formDescr[ $formId ];
 		}
-		
 
-		$type = $args['type'] = (isset($args['type'])) ? $args['type'] : 'text';
+
+        $inpAttr = '';
+        $type = $args['type'] = (isset($args['type'])) ? $args['type'] : 'text';
 		if ($args['type'] === 'form-tail') {	// end-element is exception, doesn't need a label
 			$label = 'form-tail';
 		}
@@ -734,10 +736,14 @@ EOT;
 		$rec->label = $label;
 
 		if (isset($args['name'])) {
-            $rec->name = $name = $args['name'];
+            $name = $args['name'];
         } else {
-            $rec->name = $name = translateToIdentifier($label);
+            $name = translateToIdentifier($label);
         }
+		if (in_array($name, $this->currForm->formData["names"])) {
+		    $name .= $this->inx;
+        }
+		$this->name = $name;
         $_name = " name='$name'";
 
 
@@ -759,6 +765,11 @@ EOT;
 		} else {
 			$rec->value = '';
 		}
+        // announce initial value if not empty -> needed by form-leave-warning.js
+        if ($rec->value) {
+            $inpAttr .= " data-value='{$rec->value}'";
+        }
+
         if (isset($args['valueNames'])) {
             $rec->valueNames = $args['valueNames'];
         } else {
@@ -789,7 +800,6 @@ EOT;
         $rec->placeholder = (isset($args['placeholder'])) ? $args['placeholder'] : '';
         $rec->class = (isset($args['class'])) ? $args['class'] : '';
         
-        $inpAttr = '';
         foreach (['min', 'max', 'pattern', 'value', 'placeholder'] as $attr) {
             if (isset($args[$attr])) {
                 if (($type === 'checkbox') || ($type === 'radio')) {
@@ -877,25 +887,27 @@ EOT;
 		$formDescr = $this->restoreFormDescr($formId);
 		$currFormDescr = &$formDescr[$formId];
 
-        $str = '';
-		$next = $currFormDescr->next;
+		$next = @$currFormDescr->next;
 		
-		$userEval = isset($currFormDescr->process) ? $currFormDescr->process : '';
-		if ($userEval) {
-			$result = $this->transvar->doUserCode($userEval, null, true);
+        list($str, $msg) = $this->defaultFormEvaluation($currFormDescr);
+
+        $postprocess = isset($currFormDescr->postprocess) ? $currFormDescr->postprocess : false;
+        if ($postprocess) {
+			$result = $this->transvar->doUserCode($postprocess, null, true);
 			if (is_array($result)) {
                 fatalError($result[1]);
             }
 			if ($result) {
-				$str = evalForm($userSuppliedData, $currFormDescr);
+				$str1 = evalForm($userSuppliedData, $currFormDescr, $msg);
+				if (is_string($str1)) {
+				    $str .= $str1;
+                }
 			} else {
-                fatalError("Warning: executing code '$userEval' has been blocked; modify 'config/config.yaml' to fix this.", 'File: '.__FILE__.' Line: '.__LINE__);
+                fatalError("Warning: executing code '$postprocess' has been blocked; modify 'config/config.yaml' to fix this.", 'File: '.__FILE__.' Line: '.__LINE__);
 			}
-		} else {
-			$str = $this->defaultFormEvaluation($currFormDescr);
-		}
-		
-		if ($str) {
+        }
+
+        if ($str) {
             $this->page->addCss(".$formId { display: none; }");
             $str .= "<div class='lzy-form-continue'><a href='{$next}'>{{ lzy-form-continue }}</a></div>\n<form class='$formId'>";
             $this->clearCache();
@@ -919,6 +931,7 @@ EOT;
 		$str = "$formName\n===================\n\n";
 		$log = '';
 		$labelNames = '';
+		$out = '{{ lzy-form-data-received-ok }}';
 		foreach($names as $i => $name) {
 			if (is_array($labels[$i])) {
 				$label = $labels[$i][0];
@@ -927,7 +940,7 @@ EOT;
 			}
             $label = html_entity_decode($label);
 
-            if ($currFormDescr->formElements[$name]->type === 'bypassed') {
+            if (@$currFormDescr->formElements[$name]->type === 'bypassed') {
                 $value = $currFormDescr->formElements[$name]->value;
                 if ($value === '$user') {
                     $value = $GLOBALS["_SESSION"]["lizzy"]["user"];
@@ -958,18 +971,17 @@ EOT;
 		$remoteAddress = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : '';
 		$localCall = (($serverName === 'localhost') || (strpos($remoteAddress, '192.') === 0) || ($remoteAddress === '::1'));
 
-		if ($localCall) {
-		    $str1 = "-------------------------------\n$str\n\n-------------------------------\n(-> would be be sent to $mailto)\n";
-			$out = "<div class='lzy-form-response'>\n<p><em>{{ lzy-form-data-received-ok }}</em></p>\n<div class='lzy-localhost-response'><p>{{ lzy-form-feedback-local }}</p>\n<pre>\n$str1\n</pre>\n</div></div>\n";
-		} elseif ($mailto) {
-			$subject = "[$formName] user data received";
-			$this->sendMail($mailto, $mailfrom, $subject, $str);
-			$out = '{{ lzy-form-data-received-ok }}';
-		} else {
-			$out = '{{ lzy-form-data-received-ok }}';
-		}
+		if ($mailto) {
+            if ($localCall) {
+                $str1 = "-------------------------------\n$str\n\n-------------------------------\n(-> would be be sent to $mailto)\n";
+                $out = "<div class='lzy-form-response'>\n<p><em>{{ lzy-form-data-received-ok }}</em></p>\n<div class='lzy-localhost-response'><p>{{ lzy-form-feedback-local }}</p>\n<pre>\n$str1\n</pre>\n</div></div>\n";
+            } elseif ($mailto) {
+                $subject = "[$formName] user data received";
+                $this->sendMail($mailto, $mailfrom, $subject, $str);
+            }
+        }
         $this->writeLog($labelNames, $log, $formName, $mailto);
-        return $out;
+        return [$out, $str];
 	} // defaultFormEvaluation()
 
 
@@ -1025,7 +1037,7 @@ EOT;
         $errors = 0;
         foreach($names as $i => $name) {
             $value = (isset($userSuppliedData[$name])) ? $userSuppliedData[$name] : '';
-            if ($currFormDescr->formElements[$name]->type === 'bypassed') {
+            if (@$currFormDescr->formElements[$name]->type === 'bypassed') {
                 if (@$currFormDescr->formElements[$name]->value[0] !== '$') {
                     $data[$r][$j++] = $currFormDescr->formElements[$name]->value;
                 } else {
@@ -1033,7 +1045,7 @@ EOT;
                 }
 
             } elseif (is_array($value)) { // checkbox returns array of values
-                $name = $names[$l];
+                $name = $names[$i];
                 $splitOutput = (isset($currFormDescr->formElements[$name]->splitOutput))? $currFormDescr->formElements[$name]->splitOutput: false ;
                 if (!$splitOutput) {
                     $data[$r][$j++] = implode(', ', $value);
@@ -1154,7 +1166,7 @@ mailto:
 mailfrom: 
 : The sender address of the mail above.
 
-process:
+postprocess:
 : (optional) Name of php-script (in folder _code/) that will process submitted data.
 
 warnLeavingPage:
