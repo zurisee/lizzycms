@@ -898,7 +898,7 @@ EOT;
                 fatalError($result[1]);
             }
 			if ($result) {
-				$str1 = evalForm($userSuppliedData, $currFormDescr, $msg);
+				$str1 = evalForm($userSuppliedData, $currFormDescr, $msg, $this->page);
 				if (is_string($str1)) {
 				    $str .= $str1;
                 }
