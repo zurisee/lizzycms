@@ -161,7 +161,11 @@ class Forms
         }
         $class = $this->classAttr($class);
         if (($this->currRec->type !== 'hidden') && ($this->currRec->type !== 'bypassed')) {
-		    $out = "\t\t<div $class>$error\n$elem\t\t</div><!-- /field-wrapper -->\n\n";
+            $comment = '';
+            if ($this->currRec->comment) {
+                $comment = "\t\t\t<span class='lzy-form-elem-comment'>{$this->currRec->comment}\n\t\t</span>";
+            }
+		    $out = "\t\t<div $class>$error\n$elem\t\t$comment</div><!-- /field-wrapper -->\n\n";
         } else {
             $out = "\t\t$elem";
         }
@@ -776,6 +780,8 @@ EOT;
             $rec->valueNames = $rec->value;
         }
 
+        $rec->comment =  (isset($args['comment']))? $args['comment']: '';
+
         if (isset($args['path'])) {
 		    $rec->uploadPath = $args['path'];
         } else {
@@ -1219,6 +1225,8 @@ min:
 max:
 : Range element only: max value
 
+comment:
+: (optional) Comment added just after the input element (class: 'lzy-form-elem-comment')
 
 
 ## form-tail
