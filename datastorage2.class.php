@@ -169,7 +169,11 @@ class DataStorage2
         $data = $this->getData( true );
 
         if (is_array($key)) {
-            $data = array_merge($data, $key);
+            if ($data) {
+                $data = array_merge($data, $key);
+            } else {
+                $data = $key;
+            }
         } else {
             $data[$key] = $value;
         }
@@ -584,6 +588,10 @@ EOT;
     //---------------------------------------------------------------------------
     protected function initLizzyDB()
     {
+//        if ($this->resetCache) {
+//            unlink(LIZZY_DB);
+//        }
+//
         if (!file_exists(LIZZY_DB)) {
             preparePath(LIZZY_DB);
             touch(LIZZY_DB);
@@ -630,6 +638,10 @@ EOT;
 
         // check data file
         $dataFile = $this->dataFile;
+        if ($this->resetCache) {
+            touch($dataFile);
+        }
+
         if ($dataFile && !file_exists($dataFile)) {
             $path = pathinfo($dataFile, PATHINFO_DIRNAME);
             if (!file_exists($path) && $path) {
@@ -899,6 +911,7 @@ EOT;
             $rawData = $this->getRawData();
             $this->dataFile = PATH_TO_APP_ROOT.$rawData["origFile"];
         }
+        $this->resetCache = isset($args['resetCache']) ? $args['resetCache'] : false;
         return;
     } // parseArguments
 
@@ -1018,7 +1031,11 @@ EOT;
             $delim = (substr_count($str, $delim) > substr_count($str, "\t")) ? $delim : "\t";
         }
         if (!$enclos) {
-            $enclos = (substr_count($str, '"') > substr_count($str, "'")) ? '"': "'";
+            if (strpbrk($str[0], '"\'')) {
+                $enclos = $str[0];
+            } else {
+                $enclos = (substr_count($str, '"') > substr_count($str, "'")) ? '"' : "'";
+            }
         }
 
         $lines = explode(PHP_EOL, $str);
