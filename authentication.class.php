@@ -267,7 +267,7 @@ class Authentication
         if (isset($this->userRec["displayName"])) {
             return $this->userRec["displayName"];
         } else {
-            return $this->userRec["name"];
+            return @$this->userRec["name"];
         }
     } // getDisplayName
 
@@ -335,12 +335,14 @@ class Authentication
                 if (isset($this->knownUsers[$user]['validity-period'])) {
                     $validityPeriod = $this->knownUsers[$user]['validity-period'];
                     if ($lastLogin < (time() - $validityPeriod)) {
+                        writeLog("Login of $user expired by user's validity-period value $validityPeriod (last login: ".date('Y-m-d H:i').')');
                         $rec = false;
                         $res = [false, '{{ validity-period expired }}', 'LoginForm'];
                         $this->unsetLoggedInUser();
                     }
                 } elseif ($this->config->admin_defaultLoginValidityPeriod) {
                     if ($lastLogin < (time() - $this->config->admin_defaultLoginValidityPeriod)) {
+                        writeLog("Login of $user expired by default value {$this->config->admin_defaultLoginValidityPeriod} (last login: ".date('Y-m-d H:i').')');
                         $rec = false;
                         $res = [false, '{{ validity-period expired }}', 'LoginForm'];
                         $this->unsetLoggedInUser();
