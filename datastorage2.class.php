@@ -588,10 +588,6 @@ EOT;
     //---------------------------------------------------------------------------
     protected function initLizzyDB()
     {
-//        if ($this->resetCache) {
-//            unlink(LIZZY_DB);
-//        }
-//
         if (!file_exists(LIZZY_DB)) {
             preparePath(LIZZY_DB);
             touch(LIZZY_DB);
@@ -619,7 +615,6 @@ EOT;
         $this->lzyDb = new SQLite3(LIZZY_DB, SQLITE3_OPEN_READWRITE);
         $this->lzyDb->busyTimeout(5000);
         $this->lzyDb->exec('PRAGMA journal_mode = wal;'); // https://www.php.net/manual/de/sqlite3.exec.php
-//        mylog("LzyDB opened for readwrite");
     } // openDbReadWrite
 
 
@@ -716,7 +711,6 @@ EOT;
                 $this->getData();
             }
         }
-//        mylog("LzyDB: table '$tableName' opened");
 
         return;
     } // initDbTable
