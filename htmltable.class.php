@@ -740,7 +740,7 @@ EOT;
                 $pageLength = " pageLength: {$this->initialPageLength},";
             }
             $jq = <<<EOT
-$('.lzy-datatable').DataTable({
+lzyTable{$this->tableCounter} = $('.lzy-datatable').DataTable({
     'language':{'search':'{{QuickSearch}}:', 'info': '_TOTAL_ {{Records}}'},
     $order$paging$pageLength
 });
