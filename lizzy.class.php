@@ -1028,6 +1028,10 @@ EOT;
 		$langPatt = '.'.$this->config->lang.'.';
 
 		foreach($mdFiles as $f) {
+		    $ch1 = basename($f);
+		    if (@$ch1[0] === '-') {
+		        continue;
+            }
 			$newPage = new Page($this);
 			if ($this->config->site_multiLanguageSupport) {
 				if (preg_match('/\.\w\w\./', $f) && (strpos($f, $langPatt) === false)) {
