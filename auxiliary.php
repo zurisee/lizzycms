@@ -1473,15 +1473,16 @@ function safeStr($str, $permitNL = false)
 //-------------------------------------------------------------------------
 function strToASCII($str)
 {
-// translates special characters (such as ä, ö, ü) into pure ASCII
+// transliterate special characters (such as ä, ö, ü) into pure ASCII
 	$specChars = array('ä','ö','ü','Ä','Ö','Ü','é','â','á','à',
-		'ç','ñ','Ñ','Ç','É','Â','Á','À','ß','ø','å');
+		'ç','ñ','Ñ','Ç','É','Â','Á','À','ẞ','ß','ø','å');
 	$specCodes2 = array('ae','oe','ue','Ae',
 		'Oe','Ue','e','a','a','a','c',
 		'n','N','C','E','A','A','A',
-		'ss','o','a');
+		'SS','ss','o','a');
 	return str_replace($specChars, $specCodes2, $str);
 } // strToASCII
+
 
 
 
