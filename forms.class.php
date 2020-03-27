@@ -201,7 +201,8 @@ class Forms
 
 		$time = time();
 
-		$out = "\t<form$_class$_method$_action>\n";
+//		$out = "\t<form$_class$_method$_action>\n";
+		$out = "\t<form$_class$_method$_action accept-charset='utf-8'>\n";
 		$out .= "\t\t<input type='hidden' name='lizzy_form' value='{$this->currForm->formId}' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_time' name='lizzy_time' value='$time' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_next' value='{$this->currForm->next}' />\n";
