@@ -947,6 +947,7 @@ EOT;
 
         } elseif ($format === 'yaml') {
             $data = $this->convertYaml($rawData);
+// Todo: cases s/s, a/s, s/a, a/a
             if ($outputAsJson) {
                 if (isset($data["_structure"])) {
                     $structure = $data["_structure"];
