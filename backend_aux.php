@@ -70,13 +70,8 @@ function resolvePath($path)
         return $path;
     }
     $path = trim($path);
-
-    if (!isset($_SESSION["lizzy"]["dataPath"])) {
-        $_SESSION["lizzy"]["dataPath"] = '';
-    }
-    if (!isset($_SESSION["lizzy"]["pathToPage"])) {
-        $_SESSION["lizzy"]["pathToPage"] = '';
-    }
+    $dataPath = isset($_SESSION["lizzy"]["dataPath"])? $_SESSION["lizzy"]["dataPath"]: 'data/';
+    $pathToPage = isset($_SESSION["lizzy"]["pathToPage"])? $_SESSION["lizzy"]["pathToPage"]: '';
 
     $from = [
         '|~/|',
@@ -87,11 +82,12 @@ function resolvePath($path)
     ];
     $to = [
         PATH_TO_APP_ROOT,
-        PATH_TO_APP_ROOT.$_SESSION["lizzy"]["dataPath"],
+        PATH_TO_APP_ROOT.$dataPath,
 //        PATH_TO_APP_ROOT.$_SESSION["lizzy"]["dataPath"],
         SYSTEM_PATH,
         PATH_TO_APP_ROOT.EXTENSIONS_PATH,
-        PATH_TO_APP_ROOT.$_SESSION["lizzy"]["pathToPage"],
+        PATH_TO_APP_ROOT.$pathToPage,
+//        PATH_TO_APP_ROOT.$_SESSION["lizzy"]["pathToPage"],
     ];
 //    $to = [
 //        '',
