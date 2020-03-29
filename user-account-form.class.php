@@ -782,7 +782,8 @@ EOT;
     private function renderLoginAccountMenu( $userRec )
     {
         $pageUrl = $GLOBALS['globalParams']['pageUrl'];
-        $displayName = $this->getDisplayName();
+//        $displayName = $this->getDisplayName();
+        $displayName = $this->loggedInUser;
         $locked = isset($userRec['locked']) && $userRec['locked'];
         $option = '';
         if ($this->config->admin_userAllowSelfAdmin && !$locked) {
@@ -821,7 +822,8 @@ EOT;
     {
         if (isset($_SESSION['lizzy']['userDisplayName'])) {
             $username = $_SESSION['lizzy']['userDisplayName'];
-        } else {
+        }
+        if (!$username) {
             $username = $this->loggedInUser;
         }
         return $username;
