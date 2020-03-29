@@ -194,6 +194,8 @@ private $userConfigurableSettingsAndDefaults      = [
     //....................................................
     private function getConfigValues($configFile, $append = false)
     {
+        global $globalParams;
+
         $configValues = getYamlFile($configFile);
 
         $overridableSettings = array_keys($this->userConfigurableSettingsAndDefaults);
@@ -234,6 +236,7 @@ private $userConfigurableSettingsAndDefaults      = [
         foreach ($configValues as $key => $val) {
             if (strpos($key, 'my_') === 0) {
                 $this->$key = $val;
+                $globalParams[$key] = $val;
             }
         }
 
