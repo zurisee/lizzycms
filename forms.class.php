@@ -13,6 +13,8 @@ mb_internal_encoding("utf-8");
 
 require_once(SYSTEM_PATH.'form-def.class.php');
 
+// make option available to custom eval code:
+$GLOBALS["globalParams"]['preventMultipleSubmit'] = false;
 
 
 class Forms
@@ -200,9 +202,11 @@ class Forms
 		$this->currForm->file = (isset($args['file'])) ? $args['file'] : '';
 
 		$time = time();
+		if ($this->currForm->preventMultipleSubmit) {
+		    $this->activatePreventMultipleSubmit();
+        }
 
-//		$out = "\t<form$_class$_method$_action>\n";
-		$out = "\t<form$_class$_method$_action accept-charset='utf-8'>\n";
+		$out = "\t<form$_class$_method$_action>\n";
 		$out .= "\t\t<input type='hidden' name='lizzy_form' value='{$this->currForm->formId}' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_time' name='lizzy_time' value='$time' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_next' value='{$this->currForm->next}' />\n";
@@ -705,6 +709,14 @@ EOT;
             if (!isset($args['warnLeavingPage']) || $args['warnLeavingPage']) {
                 $this->page->addModules('~sys/js/forms-leave-warning.js');
             }
+
+            // activate 'prevent multiple submits':
+            $this->currForm->preventMultipleSubmit = false;
+            if (isset($args['preventMultipleSubmit']) && $args['preventMultipleSubmit']) {
+                $this->currForm->preventMultipleSubmit = true;
+                $GLOBALS["globalParams"]['preventMultipleSubmit'] = true;
+            }
+
 		} else {
             $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form-Elem'.($this->inx + 1);
             $this->translateLabel = (isset($args['translateLabel'])) ? $args['translateLabel'] : true;
@@ -1160,6 +1172,9 @@ method:
 action:
 : (optional) Where to submit entered form data.
 
+preventMultipleSubmit:
+: [true|false] Activates prevention of multiple submissions of the form (default: true).
+
 next:
 : Where to take user after submitting data and receiving a confirmation.
 
@@ -1278,6 +1293,30 @@ EOT;
     } // renderHelp
 
 
+
+
+    private function activatePreventMultipleSubmit()
+    {
+        $jq = <<<EOT
+
+jQuery.fn.preventDoubleSubmission = function() {
+  $(this).on('submit',function(e){
+    var \$form = $(this);
+    if (\$form.data('submitted') === true) {
+      // Previously submitted - don't submit again
+      e.preventDefault();
+    } else {
+      // Mark it so that the next submit can be ignored
+      \$form.data('submitted', true);
+    }
+  });
+  return this;
+};
+$('form').preventDoubleSubmission();
+
+EOT;
+        $this->page->addJq($jq);
+    } // activatePreventMultipleSubmit
 
 
 
