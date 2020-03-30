@@ -1,5 +1,6 @@
 <?php
 
+$GLOBALS['lzy']['tableCounter'] = 1;
 
 
 class HtmlTable
@@ -12,7 +13,7 @@ class HtmlTable
         $this->options      = $options;
         $this->lzy 		    = $lzy;
         $this->page 		= $lzy->page;
-        $this->tableCounter = &$tableCounter;
+        $this->tableCounter = &$GLOBALS['lzy']['tableCounter'];
         $this->helpText = false;
         if ($options === 'help') {
             $this->helpText = [];
@@ -58,7 +59,6 @@ class HtmlTable
         $this->checkArguments($inx);
         
         $this->handleDatatableOption($this->page);
-
         $tableCounter = $this->handleCaption($tableCounter);
     } // __construct
 
@@ -98,9 +98,7 @@ class HtmlTable
         $data = &$this->data;
 
         if ($this->headers === true) {
-            $structure = $this->ds->getRecStructure();
-            $headers = $structure['labels'];
-            array_unshift($data, $headers);
+            array_unshift($data, $this->headerElems);
 
         } else
         if (($this->headers) && ($this->headers !== true)) {
@@ -759,8 +757,20 @@ EOT;
     private function loadData()
     {
         if ($this->dataSource) {
-            if (!file_exists($this->dataSource)) {
-                $this->dataSource = false;
+            if (is_string($this->dataSource)) {
+                if (!file_exists($this->dataSource)) {
+                    $this->dataSource = false;
+                }
+            } elseif (is_array($this->dataSource)) {
+                $this->data = $this->dataSource;
+                if ($this->headers === true) {
+                    $this->headerElems = array_shift($this->data);
+                } else {
+                    $this->headerElems = $this->data[0];
+                }
+                $this->nCols = sizeof($this->data[0]);
+                $this->nRows = sizeof($this->data);
+                return;
             }
         } else {
             $this->dataSource = false;
@@ -771,6 +781,10 @@ EOT;
             $ds = new DataStorage2($this->options);
             $this->ds = $ds;
             $this->data = $ds->read();
+            if ($this->headers === true) {
+                $structure = $this->ds->getRecStructure();
+                $this->headerElems = $structure['labels'];
+            }
 
             //ToDo: workaround!
             foreach ($this->data as $r => $rec) {
