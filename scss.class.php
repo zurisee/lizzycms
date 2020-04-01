@@ -9,7 +9,7 @@
  *  Aggregation is skipped if the scss filename starts with a non-apha character, e.g. '@special.css'.
  *  -> Thus it's possible to distribute CSS rules over category files.
 */
-use Leafo\ScssPhp\Compiler;
+use ScssPhp\ScssPhp\Compiler;
 
 class SCssCompiler
 {

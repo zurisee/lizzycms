@@ -26,10 +26,7 @@ class ComposerStaticInitf773fc72f2df5c5db6b45dc256600503
             'Symfony\\Component\\Yaml\\' => 23,
             'Symfony\\Component\\DomCrawler\\' => 29,
             'Symfony\\Component\\CssSelector\\' => 30,
-        ),
-        'L' => 
-        array (
-            'Leafo\\ScssPhp\\' => 14,
+            'ScssPhp\\ScssPhp\\' => 16,
         ),
         'E' => 
         array (
@@ -70,9 +67,9 @@ class ComposerStaticInitf773fc72f2df5c5db6b45dc256600503
         array (
             0 => __DIR__ . '/..' . '/symfony/css-selector',
         ),
-        'Leafo\\ScssPhp\\' => 
+        'ScssPhp\\ScssPhp\\' => 
         array (
-            0 => __DIR__ . '/..' . '/leafo/scssphp/src',
+            0 => __DIR__ . '/..' . '/scssphp/scssphp/src',
         ),
         'Eluceo\\iCal\\' => 
         array (

@@ -2,11 +2,11 @@
     "require": {
         "symfony/yaml": "^3.2",
         "cebe/markdown": "^1.1",
-        "leafo/scssphp": "^0.6.7",
         "ralouphie/getallheaders": "^2.0",
         "symfony/dom-crawler": "^4.2",
         "symfony/css-selector": "^4.2",
         "eluceo/ical": "^0.15.0",
-        "chillerlan/php-qrcode": "^2.0"
+        "chillerlan/php-qrcode": "^2.0",
+        "scssphp/scssphp": "^1.0"
     }
 }

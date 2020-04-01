@@ -170,17 +170,17 @@
     },
     {
         "name": "eluceo/ical",
-        "version": "0.15.0",
-        "version_normalized": "0.15.0.0",
+        "version": "0.15.1",
+        "version_normalized": "0.15.1.0",
         "source": {
             "type": "git",
             "url": "https://github.com/markuspoerschke/iCal.git",
-            "reference": "add0ca99aa1f77f134a2e8b071f2ebc22b115139"
+            "reference": "bdd24747587f6f9b10770a7b873a13e273f85f39"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/markuspoerschke/iCal/zipball/add0ca99aa1f77f134a2e8b071f2ebc22b115139",
-            "reference": "add0ca99aa1f77f134a2e8b071f2ebc22b115139",
+            "url": "https://api.github.com/repos/markuspoerschke/iCal/zipball/bdd24747587f6f9b10770a7b873a13e273f85f39",
+            "reference": "bdd24747587f6f9b10770a7b873a13e273f85f39",
             "shasum": ""
         },
         "require": {
@@ -192,7 +192,7 @@
         "suggest": {
             "ext-mbstring": "Massive performance enhancement of line folding"
         },
-        "time": "2019-01-13T22:00:58+00:00",
+        "time": "2019-08-06T20:33:43+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
@@ -219,61 +219,6 @@
             "ical",
             "ics",
             "php calendar"
-        ]
-    },
-    {
-        "name": "leafo/scssphp",
-        "version": "v0.6.7",
-        "version_normalized": "0.6.7.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/leafo/scssphp.git",
-            "reference": "562213cd803e42ea53b0735554794c4022d8db89"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/leafo/scssphp/zipball/562213cd803e42ea53b0735554794c4022d8db89",
-            "reference": "562213cd803e42ea53b0735554794c4022d8db89",
-            "shasum": ""
-        },
-        "require": {
-            "php": ">=5.4.0"
-        },
-        "require-dev": {
-            "kherge/box": "~2.5",
-            "phpunit/phpunit": "~3.7",
-            "squizlabs/php_codesniffer": "~2.5"
-        },
-        "time": "2017-02-23T05:07:33+00:00",
-        "bin": [
-            "bin/pscss"
-        ],
-        "type": "library",
-        "installation-source": "dist",
-        "autoload": {
-            "psr-4": {
-                "Leafo\\ScssPhp\\": "src/"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "MIT"
-        ],
-        "authors": [
-            {
-                "name": "Leaf Corcoran",
-                "email": "leafot@gmail.com",
-                "homepage": "http://leafo.net"
-            }
-        ],
-        "description": "scssphp is a compiler for SCSS written in PHP.",
-        "homepage": "http://leafo.github.io/scssphp/",
-        "keywords": [
-            "css",
-            "less",
-            "sass",
-            "scss",
-            "stylesheet"
         ]
     },
     {
@@ -319,28 +264,91 @@
         "description": "A polyfill for getallheaders."
     },
     {
-        "name": "symfony/css-selector",
-        "version": "v4.2.8",
-        "version_normalized": "4.2.8.0",
+        "name": "scssphp/scssphp",
+        "version": "1.0.9",
+        "version_normalized": "1.0.9.0",
         "source": {
             "type": "git",
-            "url": "https://github.com/symfony/css-selector.git",
-            "reference": "48eddf66950fa57996e1be4a55916d65c10c604a"
+            "url": "https://github.com/scssphp/scssphp.git",
+            "reference": "c6626eebae7b123321d5ea803998487d835c260d"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/symfony/css-selector/zipball/48eddf66950fa57996e1be4a55916d65c10c604a",
-            "reference": "48eddf66950fa57996e1be4a55916d65c10c604a",
+            "url": "https://api.github.com/repos/scssphp/scssphp/zipball/c6626eebae7b123321d5ea803998487d835c260d",
+            "reference": "c6626eebae7b123321d5ea803998487d835c260d",
+            "shasum": ""
+        },
+        "require": {
+            "ext-ctype": "*",
+            "ext-json": "*",
+            "php": ">=5.6.0"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "^5.7 || ^6.5 || ^7.5 || ^8.3",
+            "squizlabs/php_codesniffer": "~2.5",
+            "twbs/bootstrap": "~4.3",
+            "zurb/foundation": "~6.5"
+        },
+        "time": "2020-04-01T15:23:18+00:00",
+        "bin": [
+            "bin/pscss"
+        ],
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "ScssPhp\\ScssPhp\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Anthon Pang",
+                "email": "apang@softwaredevelopment.ca",
+                "homepage": "https://github.com/robocoder"
+            },
+            {
+                "name": "Cédric Morin",
+                "email": "cedric@yterium.com",
+                "homepage": "https://github.com/Cerdic"
+            }
+        ],
+        "description": "scssphp is a compiler for SCSS written in PHP.",
+        "homepage": "http://scssphp.github.io/scssphp/",
+        "keywords": [
+            "css",
+            "less",
+            "sass",
+            "scss",
+            "stylesheet"
+        ]
+    },
+    {
+        "name": "symfony/css-selector",
+        "version": "v4.4.7",
+        "version_normalized": "4.4.7.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/symfony/css-selector.git",
+            "reference": "afc26133a6fbdd4f8842e38893e0ee4685c7c94b"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/symfony/css-selector/zipball/afc26133a6fbdd4f8842e38893e0ee4685c7c94b",
+            "reference": "afc26133a6fbdd4f8842e38893e0ee4685c7c94b",
             "shasum": ""
         },
         "require": {
             "php": "^7.1.3"
         },
-        "time": "2019-01-16T20:31:39+00:00",
+        "time": "2020-03-27T16:54:36+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
-                "dev-master": "4.2-dev"
+                "dev-master": "4.4-dev"
             }
         },
         "installation-source": "dist",
@@ -358,12 +366,12 @@
         ],
         "authors": [
             {
-                "name": "Jean-François Simon",
-                "email": "jeanfrancois.simon@sensiolabs.com"
-            },
-            {
                 "name": "Fabien Potencier",
                 "email": "fabien@symfony.com"
+            },
+            {
+                "name": "Jean-François Simon",
+                "email": "jeanfrancois.simon@sensiolabs.com"
             },
             {
                 "name": "Symfony Community",
@@ -375,17 +383,17 @@
     },
     {
         "name": "symfony/dom-crawler",
-        "version": "v4.2.8",
-        "version_normalized": "4.2.8.0",
+        "version": "v4.4.7",
+        "version_normalized": "4.4.7.0",
         "source": {
             "type": "git",
             "url": "https://github.com/symfony/dom-crawler.git",
-            "reference": "53c97769814c80a84a8403efcf3ae7ae966d53bb"
+            "reference": "4d0fb3374324071ecdd94898367a3fa4b5563162"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/symfony/dom-crawler/zipball/53c97769814c80a84a8403efcf3ae7ae966d53bb",
-            "reference": "53c97769814c80a84a8403efcf3ae7ae966d53bb",
+            "url": "https://api.github.com/repos/symfony/dom-crawler/zipball/4d0fb3374324071ecdd94898367a3fa4b5563162",
+            "reference": "4d0fb3374324071ecdd94898367a3fa4b5563162",
             "shasum": ""
         },
         "require": {
@@ -393,17 +401,21 @@
             "symfony/polyfill-ctype": "~1.8",
             "symfony/polyfill-mbstring": "~1.0"
         },
+        "conflict": {
+            "masterminds/html5": "<2.6"
+        },
         "require-dev": {
-            "symfony/css-selector": "~3.4|~4.0"
+            "masterminds/html5": "^2.6",
+            "symfony/css-selector": "^3.4|^4.0|^5.0"
         },
         "suggest": {
             "symfony/css-selector": ""
         },
-        "time": "2019-02-23T15:17:42+00:00",
+        "time": "2020-03-29T19:12:22+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
-                "dev-master": "4.2-dev"
+                "dev-master": "4.4-dev"
             }
         },
         "installation-source": "dist",
@@ -434,17 +446,17 @@
     },
     {
         "name": "symfony/polyfill-ctype",
-        "version": "v1.11.0",
-        "version_normalized": "1.11.0.0",
+        "version": "v1.15.0",
+        "version_normalized": "1.15.0.0",
         "source": {
             "type": "git",
             "url": "https://github.com/symfony/polyfill-ctype.git",
-            "reference": "82ebae02209c21113908c229e9883c419720738a"
+            "reference": "4719fa9c18b0464d399f1a63bf624b42b6fa8d14"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/82ebae02209c21113908c229e9883c419720738a",
-            "reference": "82ebae02209c21113908c229e9883c419720738a",
+            "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/4719fa9c18b0464d399f1a63bf624b42b6fa8d14",
+            "reference": "4719fa9c18b0464d399f1a63bf624b42b6fa8d14",
             "shasum": ""
         },
         "require": {
@@ -453,11 +465,11 @@
         "suggest": {
             "ext-ctype": "For best performance"
         },
-        "time": "2019-02-06T07:57:58+00:00",
+        "time": "2020-02-27T09:26:54+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
-                "dev-master": "1.11-dev"
+                "dev-master": "1.15-dev"
             }
         },
         "installation-source": "dist",
@@ -475,12 +487,12 @@
         ],
         "authors": [
             {
-                "name": "Symfony Community",
-                "homepage": "https://symfony.com/contributors"
-            },
-            {
                 "name": "Gert de Pagter",
                 "email": "BackEndTea@gmail.com"
+            },
+            {
+                "name": "Symfony Community",
+                "homepage": "https://symfony.com/contributors"
             }
         ],
         "description": "Symfony polyfill for ctype functions",
@@ -494,17 +506,17 @@
     },
     {
         "name": "symfony/polyfill-mbstring",
-        "version": "v1.11.0",
-        "version_normalized": "1.11.0.0",
+        "version": "v1.15.0",
+        "version_normalized": "1.15.0.0",
         "source": {
             "type": "git",
             "url": "https://github.com/symfony/polyfill-mbstring.git",
-            "reference": "fe5e94c604826c35a32fa832f35bd036b6799609"
+            "reference": "81ffd3a9c6d707be22e3012b827de1c9775fc5ac"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/fe5e94c604826c35a32fa832f35bd036b6799609",
-            "reference": "fe5e94c604826c35a32fa832f35bd036b6799609",
+            "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/81ffd3a9c6d707be22e3012b827de1c9775fc5ac",
+            "reference": "81ffd3a9c6d707be22e3012b827de1c9775fc5ac",
             "shasum": ""
         },
         "require": {
@@ -513,11 +525,11 @@
         "suggest": {
             "ext-mbstring": "For best performance"
         },
-        "time": "2019-02-06T07:57:58+00:00",
+        "time": "2020-03-09T19:04:49+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
-                "dev-master": "1.11-dev"
+                "dev-master": "1.15-dev"
             }
         },
         "installation-source": "dist",
@@ -555,17 +567,17 @@
     },
     {
         "name": "symfony/yaml",
-        "version": "v3.4.27",
-        "version_normalized": "3.4.27.0",
+        "version": "v3.4.39",
+        "version_normalized": "3.4.39.0",
         "source": {
             "type": "git",
             "url": "https://github.com/symfony/yaml.git",
-            "reference": "212a27b731e5bfb735679d1ffaac82bd6a1dc996"
+            "reference": "e701b47e11749970f63803879c4febb520f07b6c"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/symfony/yaml/zipball/212a27b731e5bfb735679d1ffaac82bd6a1dc996",
-            "reference": "212a27b731e5bfb735679d1ffaac82bd6a1dc996",
+            "url": "https://api.github.com/repos/symfony/yaml/zipball/e701b47e11749970f63803879c4febb520f07b6c",
+            "reference": "e701b47e11749970f63803879c4febb520f07b6c",
             "shasum": ""
         },
         "require": {
@@ -581,7 +593,7 @@
         "suggest": {
             "symfony/console": "For validating YAML files using the lint command"
         },
-        "time": "2019-03-25T07:48:46+00:00",
+        "time": "2020-03-25T12:02:26+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
