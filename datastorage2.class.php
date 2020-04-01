@@ -46,6 +46,9 @@ class DataStorage2
     public function __construct($args)
     {
         $this->parseArguments($args);
+        if (!$this->dataFile) {
+            die("Error: DataStorage2 invoked without dataFile being specified.");
+        }
         $this->initLizzyDB();
         $this->initDbTable();
         $this->appPath = getcwd();
@@ -494,12 +497,18 @@ UPDATE "{$this->tableName}" SET
     'modified' = $modified;
 
 EOT;
-        } else {
+        } elseif ($markModified) {
             $sql = <<<EOT
 UPDATE "{$this->tableName}" SET 
     "data" = "$json", 
     "lastUpdate" = $ftime, 
     'modified' = $modified;
+
+EOT;
+        } else {
+            $sql = <<<EOT
+UPDATE "{$this->tableName}" SET 
+    "data" = "$json";
 
 EOT;
         }
@@ -578,7 +587,7 @@ EOT;
             } else {
                 $metaData[$key] = $value;
             }
-            return $this->lowLevelWrite($data);
+            return $this->lowLevelWrite($data, false, false);
         }
     } // updateMetaData
 
@@ -962,8 +971,9 @@ EOT;
                     } else {
                         $structure['key'] = 'string';
                     }
-                    $structure['labels'] = array_keys($rec0);
-                    $structure['types'] = array_fill(0, sizeof($rec0), 'string');
+//???
+                    $structure['labels'] = false; //array_keys($rec0);
+                    $structure['types'] = false;//array_fill(0, sizeof($rec0), 'string');
 
                 } else {
                     return [[], $structure];
