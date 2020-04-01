@@ -136,7 +136,7 @@ function lzyReload( arg, url )
 
 
 //--------------------------------------------------------------
-function timeStamp()
+function timeStamp( long )
 {
 	var now = new Date();
 	var time = [ now.getHours(), now.getMinutes(), now.getSeconds() ];
@@ -145,7 +145,12 @@ function timeStamp()
 			time[i] = "0" + time[i];
 		}
 	}
-	return time.join(":");
+	var out = time.join(":");
+	if (typeof long !== 'undefined') {
+        var day = [ now.getFullYear(), now.getMonth(), now.getDay() ];
+        out = day.join(".") + ' ' + out;
+    }
+	return out;
 } // timeStamp
 
 
