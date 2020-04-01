@@ -76,7 +76,7 @@ class Ticketing
     {
         // finds a ticket that matches the given hash
         // if $key is provided, it finds a ticket that contains given data (i,e, key and value match)
-        if ($key) {
+        if ($key !== false) {
             return $this->ds->findRec($key, $value, true);
         } else {
             return $this->ds->readElement($value); // $value assumed to be the hash
