@@ -1049,7 +1049,7 @@ function normalizePath($path)
 
 
 //------------------------------------------------------------
-function makePathRelativeToPage($path)
+function makePathRelativeToPage($path, $resolvePath = false)
 {
     if (!$path || (preg_match('/^\w{3,10}:/', $path))) {
         return $path;
@@ -1057,6 +1057,9 @@ function makePathRelativeToPage($path)
 
     if ((($ch1=$path[0]) != '/') && ($ch1 != '~')) {	//default to path local to page
             $path = '~page/' . $path;
+    }
+    if ($resolvePath) {
+        $path = resolvePath($path);
     }
 
     return $path;
