@@ -125,7 +125,11 @@ class Lizzy
         $this->restoreEdition();  // if user chose to activate a previous edition of a page
 
         $this->trans->addVariable('debug_class', '');   // just for compatibility
-
+//Todo:
+// - optimize: init1 / init2 -> tasks unnecessary for serviceTasks
+// - move runServiceTasks(2) up before handleEditSaveRequests(), initializeSiteInfrastructure()
+// - poss. 3rd level at current position, i.e. after initializeSiteInfrastructure()
+// - option for serviceTask to define on which level it should be executed
         runServiceTasks($this, 2);
     } // __construct
 

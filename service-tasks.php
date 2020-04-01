@@ -20,7 +20,7 @@ function runServiceTasks($lzy, $run = 1)
 {
     if ($run === 1) {
         $lzy->runScheduledTaskAfterInit = false;
-        if (isset($_GET['service'])) {
+        if (isset($_GET['scheduled'])) {
              $res = executeScheduledTasks($lzy);
             if ($res === true) {
                 exit();
@@ -52,6 +52,14 @@ function runServiceTasks($lzy, $run = 1)
         if ($lzy->runScheduledTaskAfterInit) {
             if (executeScheduledTasks($lzy, 2 )) {
                 exit();
+            }
+        }
+
+        if (isset($_GET['service'])) {
+            $codeFile = $_GET['service'];
+            $res = executeServiceTask($lzy, $codeFile);
+            if ($res) {
+                return $res;
             }
         }
 
@@ -294,6 +302,24 @@ function purgeRecyleBins($lzy)
     }
 
 } // purgeRecyleBins
+
+
+
+function executeServiceTask($lzy, $codeFile)
+{
+    $codeFile = ltrim(base_name($codeFile, true), '-');
+    if (!$codeFile) {
+        return false;
+    }
+    $do = USER_CODE_PATH . "-$codeFile.php";
+    if (file_exists($do)) {
+        require_once $do;
+        executeService($lzy);   // normally exits providing json data to agent
+
+    } else {
+        die("Error: service-handler '$do' not found.");
+    }
+} // executeServiceTask
 
 
 
