@@ -95,12 +95,23 @@ class DataStorage2
 
     public function readElement($key)
     {
+        // supports scalar values and arrays
         $data = $this->getData();
 
+        // syntax variant '[d3][d31][d312]'
+        if (preg_match('/\[(.*)\]/', trim($key), $m)) {
+            $key = str_replace('][', ',', $m[1]);
+        }
+
+        // syntax variant 'd3,d31,d312'
         if (strpos($key, ',') !== false) {
             $rec = $data;
-            foreach (array_reverse(explode(',', $key)) as $k) {
+            foreach (explode(',', $key) as $k) {
                 $k = trim($k);
+                $n = intval($k);
+                if ($n || ($k === '0')) {
+                    $k = $n;
+                }
                 if (isset($rec[$k])) {
                     $rec = $rec[$k];
                 } else {
