@@ -1,0 +1,86 @@
+// LiveData
+
+var ajaxHndl = null;
+var lastUpdated = 0;
+var polltime = 60;
+var refs = '';
+var debugOutput = false;
+
+
+function initLiveData() {
+    // collect all references within page:
+    $('[data-live-data-ref]').each(function () {
+        var ref = $( this ).attr('data-live-data-ref');
+        refs = refs + ref + ',';
+    });
+    refs = refs.replace(/,+$/, '');
+
+    // check for polltime argument: (only apply first appearance)
+    $('[data-live-data-polltime]').each(function () {
+        polltime = parseInt($( this ).attr('data-live-data-polltime'));
+        console.log('custom polltime: ' + polltime + 's');
+        return;
+    });
+
+    debugOutput = ($('.debug').length !== 0);
+
+    updateLiveData(refs);
+} // init
+
+
+
+
+function updateLiveData() {
+    var url = appRoot + "_lizzy/_live_data_service.php";
+
+    ajaxHndl = $.ajax({
+        url: url,
+        type: 'POST',
+        data: { ref: refs, last: lastUpdated, polltime: polltime },
+        async: true,
+        cache: false,
+    }).done(function ( json ) {
+        if (!json) {
+            console.log('No data received');
+            return;
+        }
+        var data0 = JSON.parse(json);
+        if (typeof data0.lastUpdated !== 'undefined') {
+            lastUpdated = data0.lastUpdated;
+        }
+        if (typeof data0.result === 'undefined') {
+            console.log('_live_data_service.php reported an error');
+            console.log(json);
+            return;
+        }
+
+        // regular response:
+        if (typeof data0.data === 'undefined') {
+            if (debugOutput) {
+                console.log( timeStamp() + ': No new data');
+            }
+        } else {
+            for (var id in data0.data) {
+                var val = data0.data[id];
+                $('#' + id).text(val);
+                if (debugOutput) {
+                    console.log(id + ' -> ' + val);
+                }
+            }
+        }
+        $('.live-data-update-time').text( timeStamp() );
+        updateLiveData();
+    });
+} // update
+
+
+// initialize live data:
+$( document ).ready(function() {
+    if ($('[data-live-data-ref]').length) {
+        console.log('starting live-data');
+        setTimeout(function () {
+            initLiveData();
+        }, 2);
+    }
+});
+
