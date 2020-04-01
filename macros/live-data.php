@@ -12,7 +12,7 @@ $this->addMacro($macroName, function () {
 
 	// how to get access to macro arguments:
     $file = $this->getArg($macroName, 'file', 'Defines the data-source from which to retrieve the data element', '');
-    $elementName = $this->getArg($macroName, 'elementName', 'Name of the element to be visualized', '');
+    $elementName = $this->getArg($macroName, 'elementName', 'Name of the element to be visualized', false);
     $id = $this->getArg($macroName, 'id', '(optional) Id of DOM element.', "lzy-live-data$inx");
     $polltime = $this->getArg($macroName, 'polltime', '(optional) Polling time, i.e. the time server waits for new data before giving up.', false);
 
@@ -24,13 +24,15 @@ $this->addMacro($macroName, function () {
         $this->compileMd = true;
         return "**Error**: argument ``file`` not specified.";
     }
-    if (!$elementName) {
+    if (($elementName === false) || ($elementName === '')) {
         $this->compileMd = true;
         return "**Error**: argument ``elementName`` not specified.";
     }
+
     $file = makePathRelativeToPage($file, true);
     $db = new DataStorage2([ 'dataFile' => $file ]);
     $value = $db->readElement( $elementName );
+
     $tickRec[$inx - 1] = [
         'file' => $file,
         'elementName' => $elementName,
