@@ -32,7 +32,6 @@ class DataStorage2
 	protected $tableName;
 	protected $data = null;
 	protected $rawData = null;
-//	protected $is2Ddata = false;
 	protected $sid;
 	protected $format;
 	protected $lockDB = false;
@@ -54,7 +53,7 @@ class DataStorage2
         if ($this->doLockDB) {
             $this->lockDB();
         }
-        if ( session_status() === PHP_SESSION_ACTIVE ) {
+        if ( session_status() !== PHP_SESSION_ACTIVE ) {
             session_start();
         }
         $this->sessionId = session_id();
@@ -85,7 +84,7 @@ class DataStorage2
     // === DB level operations ==========================
     public function read()
     {
-        return $this->getData();
+        return $this->getData(true);
     } // read
 
 
@@ -96,10 +95,12 @@ class DataStorage2
             return false;
         }
         if ($replace) {
-            return $this->lowLevelWrite($data);
+            $res = $this->lowLevelWrite($data);
         } else {
-            return $this->updateDB($data);
+            $res = $this->updateDB($data);
         }
+        $this->getData(true);
+        return $res;
     } // write
 
 
@@ -211,7 +212,7 @@ class DataStorage2
         if ($this->isLockDB()) {
             return false;
         }
-        $data = $this->getData();
+        $data = $this->getData(true);
 
         $recId = $this->fixRecId($recId);
 
@@ -225,33 +226,80 @@ class DataStorage2
 
 
 
-    public function writeRecord($recId, $recData)
+    public function writeRecord($recId, $recData, $locking = false, $blocking = false)
     {
-        if ($this->isLockDB()) {
+        $recId = $this->fixRecId($recId);
+        if (!$this->awaitLockEnd($recId, $blocking)) {
             return false;
         }
-        if (!$this->isRecLocked( $recId )) {
-            return false;
+        if ($locking) {
+            if (!$this->lockRec($recId)) {
+                return false;
+            }
         }
-        $data = $this->getData();
+        $data = $this->getData(true);
 
         if ($recId !== false) {
-            $recId = $this->fixRecId($recId);
             $data[$recId] = $recData;
         } else {
             $data[] = $recData;
         }
 
         $this->lowLevelWrite($data);
+        if ($locking) {
+            $this->unlockRec($recId);
+        }
+        $this->getData(true);
+        return true;
     } // writeRecord
 
 
 
-
-    public function deleteRecord($recId)
+    private function awaitLockEnd($recId, $timeout)
     {
+        $timeout = min(5, $timeout);
+        $till = microtime(true) + $timeout;
+        while (($locked = $this->isLockDB()) && $timeout && (microtime(true) < $till)) {
+            sleep(1);
+        }
+        if ($locked) {
+            return false;
+        }
+        while (($locked = $this->isRecLocked($recId)) && $timeout && (microtime(true) < $till)) {
+            sleep($this->defaultPollingSleepTime);
+        }
+        return !$locked;
+    } // awaitLockEnd
 
+
+
+    public function deleteRecord($recId, $locking = false, $blocking = false)
+    {
+        $recId = $this->fixRecId($recId);
+        if (!$this->awaitLockEnd($recId, $blocking)) {
+            return false;
+        }
+        if ($locking) {
+            if (!$this->lockRec($recId)) {
+                return false;
+            }
+        }
+        $data = $this->getData(true);
+
+        $res = false;
+        if (isset($data[$recId])) {
+            unset($data[$recId]);
+            $data = array_values($data);
+            $this->lowLevelWrite($data);
+            $res = true;
+        }
+
+        if ($locking) {
+            $this->unlockRec($recId);
+        }
+        return $res;
     } // deleteRecord
+
 
 
     public function lockRec( $recId)
@@ -267,7 +315,8 @@ class DataStorage2
             'lockTime' => microtime(true),
             'lockOwner' => $mySessionID
         ];
-        return $this->updateMetaData('recLocks', $lockData);
+        $this->updateMetaData('recLocks', $lockData);
+        return true;
     } // lockRec
 
 
@@ -276,7 +325,7 @@ class DataStorage2
     {
         $recId = $this->fixRecId($recId);
 
-        if (!$force && !$this->isRecLocked( $recId )) { // rec already locked
+        if (!$force && $this->isRecLocked( $recId )) { // rec already locked
             return true;
         }
         $meta = $this->getMetaData();
@@ -328,7 +377,7 @@ class DataStorage2
     public function readElement($key)
     {
         // supports scalar values and arrays
-        $data = $this->getData();
+        $data = $this->getData(true);
 
         // syntax variant '[d3][d31][d312]'
         if (preg_match('/\[(.*)\]/', trim($key), $m)) {
@@ -368,7 +417,7 @@ class DataStorage2
         if ($this->isLockDB()) {
             return false;
         }
-        $data = $this->getData( true );
+        $data = $this->getData(true);
 
         // syntax variant '[d3][d31][d312]'
         if (preg_match('/\[(.*)\]/', trim($key), $m)) {
@@ -410,7 +459,7 @@ class DataStorage2
         if ($this->isLockDB()) {
             return false;
         }
-        $data = $this->getData( true );
+        $data = $this->getData(true);
 
         if (is_array($key)) {
             if ($data) {
@@ -433,7 +482,7 @@ class DataStorage2
             return false;
         }
         $modified = false;
-        $data = $this->getData( true );
+        $data = $this->getData(true);
         if (is_array($key)) {
             foreach ($key as $k) {
                 if (isset($data[$k])) {
@@ -532,7 +581,7 @@ class DataStorage2
     {
         $rawData = $this->getRawData();
         if ($rawData['lastUpdate'] > $lastUpdate) {
-            $data = $this->getData();
+            $data = $this->getData(true);
             if ($returnJson) {
                 $data['__lastUpdate'] = $rawData['lastUpdate'];
                 $data = json_encode($data);
@@ -575,15 +624,6 @@ class DataStorage2
 
 
 
-
-//    public function is2Ddata()
-//    {
-//        $rawData = $this->getRawData();$res = (bool) $rawData['2D'];
-//        return (bool) $rawData['2D'];
-//    } // is2Ddata
-
-
-
     public function getSourceFormat() {
         return $this->format;
     } // getSourceFormat
@@ -595,7 +635,7 @@ class DataStorage2
     //Todo: rename
     protected function updateDB($newData)
     {
-        $data = $this->getData( true );
+        $data = $this->getData(true);
         if ($data) {
             $newData = array_merge($data, $newData);
         }
@@ -607,7 +647,7 @@ class DataStorage2
 
     protected function updateElement($key, $value)
     {
-        $data = $this->getData( true );
+        $data = $this->getData(true);
         if (preg_match('/^(\d+),(\d+)/', $key, $m)) {
             $data[$m[2]][$m[1]] = $value;
         } else {
@@ -625,7 +665,7 @@ class DataStorage2
         $metaData = $this->jsonEncode($metaData);
         $sql = <<<EOT
 UPDATE "{$this->tableName}" SET 
-    'meta' = "$metaData"
+    'meta' = "$metaData";
 
 EOT;
 
@@ -635,7 +675,29 @@ EOT;
 
 
 
-    protected function lowLevelWrite($newData, $isJson = false, $markModified = true, $structure = false)
+    protected function lowLevelWriteStructure()
+    {
+        $this->openDbReadWrite();
+        $structureJson = $this->jsonEncode($this->structure);
+
+        $sql = <<<EOT
+UPDATE "{$this->tableName}" SET 
+    "structure" = "$structureJson";
+
+EOT;
+
+        try {
+            $res = $this->lzyDb->query($sql);
+        }
+        catch (exception $e) {
+            fatalError($e->getMessage());
+        }
+        return $res;
+    } // lowLevelWriteStructure
+
+
+
+    protected function lowLevelWrite($newData, $isJson = false, $markModified = true)
     {
         $this->openDbReadWrite();
 
@@ -646,16 +708,7 @@ EOT;
         $ftime = microtime(true);
         $modified = $markModified ? 1 : 0;
 
-        if ($structure) {
-            $sql = <<<EOT
-UPDATE "{$this->tableName}" SET 
-    "data" = "$json", 
-    "structure" = "$structure", 
-    "lastUpdate" = $ftime, 
-    'modified' = $modified;
-
-EOT;
-        } elseif ($markModified) {
+        if ($markModified) {
             $sql = <<<EOT
 UPDATE "{$this->tableName}" SET 
     "data" = "$json", 
@@ -817,34 +870,8 @@ EOT;
         $res = $stmt->execute();
         $table = $res->fetchArray(SQLITE3_ASSOC);
         if (!$table) {  // if table does not exist: create it and populate it with data from origFile
-            $sql = "CREATE TABLE IF NOT EXISTS \"$tableName\" (";
-            $sql .= '"id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,';
-            $sql .= '"data" VARCHAR, "meta" VARCHAR, "lastUpdate" REAL, "structure" VARCHAR, "2D" BIT, "origFile" VARCHAR, "modified" INTEGER, "lockedBy" VARCHAR, "lockTime" REAL)';
-            $res = $this->lzyDb->query($sql);
-            if ($res === false) {
-                die("Error: unable to create table in lzyDB: '$tableName'");
-            }
-
-            $origFileName = $this->dataFile;
-            if (PATH_TO_APP_ROOT && (strpos($origFileName, PATH_TO_APP_ROOT) === 0)) {
-                $origFileName = substr($origFileName, strlen(PATH_TO_APP_ROOT));
-            }
-            $is2D = (stripos($origFileName, '.csv') !== false) ? 1: 0;
-
-            $sql = <<<EOT
-INSERT INTO "$tableName" ("data", "meta", "lastUpdate", "structure", "2D", "origFile", "modified", "lockedBy", "lockTime")
-VALUES ("", "", 0.0, "", $is2D, "$origFileName", 0, "", 0.0);
-EOT;
-            $stmt = $this->lzyDb->prepare($sql);
-            $res = $stmt->execute();
-            if ($res === false) {
-                die("Error: unable to initialize table in lzyDB: '$tableName'");
-            }
-
-            $res = $this->importFromFile( true );
-            if ($res === false) {
-                die("Error: unable to populate table in lzyDB: '$tableName'");
-            }
+            $this->createNewTable($tableName);
+            $rawData = $this->getRawData();
 
         } else { // if table exists, check whether update necessary:
             $ftime = floatval(filemtime($dataFile));
@@ -858,6 +885,13 @@ EOT;
                 $this->getData();
             }
         }
+        if ($rawData["structure"] === 'null') {
+            $raw = $this->loadFile();
+            $this->analyseStructure($this->data, $raw);
+            $this->lowLevelWriteStructure();
+        } else {
+            $this->structure = $this->jsonDecode($rawData["structure"]);
+        }
 
         return;
     } // initDbTable
@@ -868,19 +902,9 @@ EOT;
     //--------------------------------------------------------------
     protected function importFromFile($initial = false)
     {
-        $lines = file($this->dataFile);
-        $rawData = '';
-        foreach ($lines as $line) {
-            if ($line && ($line[0] !== '#') && ($line[0] !== "\n")) { // skip commented and empty lines
-                $rawData .= $line;
-            }
-        }
-        list($json, $structure) = $this->decode($rawData, false, true);
-        if ($initial) {
-            $this->lowLevelWrite($json, true, false, $structure);
-        } else {
-            $this->lowLevelWrite($json, true, false);
-        }
+        $rawData = $this->loadFile();
+        $json = $this->decode($rawData, false, true, $initial);
+        $this->lowLevelWrite($json, true, false);
     } // importFromFile
 
 
@@ -908,7 +932,7 @@ EOT;
                 $ps->copyFileToRecycleBin($filename);
             }
 
-            $data = $this->getData( true );
+            $data = $this->getData();
             if ($this->format === 'yaml') {
                 $this->writeToYamlFile($filename, $data);
 
@@ -964,8 +988,11 @@ EOT;
 
 
 
-    protected function getData( $includeMetaData = false )
+    protected function getData( $force = false )
     {
+        if ($this->data && !$force) {
+            return $this->data;
+        }
         $rawData = $this->getRawData();
         $json = $rawData['data'];
         $json = str_replace('⌑⌇⌑', '"', $json);
@@ -1054,90 +1081,101 @@ EOT;
 
 
     //---------------------------------------------------------------------------
-    protected function decode($rawData, $format = false, $outputAsJson = false)
+    protected function decode($rawData, $fileFormat = false, $outputAsJson = false, $analyzeStructure = false)
     {
         if (!$rawData) {
             return null;
         }
-        $data = false;
-        $structure = [];
-        if (!$format) {
-            $format = $this->format;
+        if (!$fileFormat) {
+            $fileFormat = $this->format;
         }
-        if ($format === 'json') {
+        if ($fileFormat === 'json') {
             $rawData = str_replace(["\r", "\n", "\t"], '', $rawData);
-            if ($outputAsJson) {
-                $this->data = $this->jsonDecode($rawData);
+            $data = $this->jsonDecode($rawData);
 
-                $rec0 = $data[0];
-                $structure['key'] = 'index';
-                if (is_array($rec0)) {
-                    $structure['labels'] = array_values($rec0);
-                    $structure['types'] = array_fill(0, sizeof($rec0), 'string');
-                } else {
-                    $structure['labels'] = [];
-                    $structure['types'] = [];
-
-                }
-                $structure = $this->jsonEncode($structure);
-
-                $data = [$rawData, $structure];
-            } else {
-                $data = $this->jsonDecode($rawData, true);
-            }
-
-        } elseif ($format === 'yaml') {
+        } elseif ($fileFormat === 'yaml') {
             $data = $this->convertYaml($rawData);
-// Todo: cases s/s, a/s, s/a, a/a
-            if ($outputAsJson) {
-                if (isset($data["_structure"])) {
-                    $structure = $data["_structure"];
-                    unset($data["_structure"]);
-                } elseif ($data) {
-                    $rec0 = reset($data);
-                    $key0 = (array_keys($data))[0];
-                    if (is_int($key0)) {
-                        $structure['key'] = 'index';
-                    } elseif (preg_match('/^ \d{2,4} - \d\d - \d\d/x', $key0)) {
-                        $structure['key'] = 'date';
-                    } else {
-                        $structure['key'] = 'string';
-                    }
-//???
-                    $structure['labels'] = false; //array_keys($rec0);
-                    $structure['types'] = false;//array_fill(0, sizeof($rec0), 'string');
 
-                } else {
-                    return [[], $structure];
-                }
-
-                $this->data = $data;
-
-                $structure = $this->jsonEncode($structure);
-                $data = [$this->jsonEncode($data), $structure];
-            }
-
-        } elseif (($format === 'csv') || ($this->format === 'txt')) {
+        } elseif (($fileFormat === 'csv') || ($this->format === 'txt')) {
             $data = $this->parseCsv($rawData);
-            if ($outputAsJson) {
-                $this->data = $data;
 
-                $rec0 = $data[0];
-                $structure['key'] = 'index';
-                $structure['labels'] = array_values($rec0);
-                $structure['types'] = array_fill(0, sizeof($rec0), 'string');
+        } else {    // unknown fileType:
+            $data = false;
+        }
 
-                $structure = $this->jsonEncode($structure);
-                $data = [$this->jsonEncode($data), $structure];
+        if ($analyzeStructure) {
+            // structure may be submitted within data in a special record "_structure":
+            if (isset($data["_structure"])) {
+                $this->structure = $data["_structure"];
+                unset($data["_structure"]);
+            } else {
+                $this->structure = $this->analyseStructure($data, $rawData, $fileFormat);
             }
-
+        } else {
+            $this->structure = $this->analyseStructure(false, $rawData, $fileFormat);
         }
         if (!$data) {
             $data = array();
         }
+        $this->data = $data;
+        if ($outputAsJson) {
+            return $this->jsonEncode($data);
+        }
         return $data;
     } // decode
 
+
+
+    protected function analyseStructure($data, &$rawData, $fileFormat = false)
+    {
+        $structure = [
+            'key' => null,
+            'labels' => [],
+            'types' => [],
+        ];
+        if (!$data) {
+            return $structure;
+        }
+        if (!$fileFormat) {
+            $fileFormat = $this->format;
+        }
+
+        if ($fileFormat === 'yaml') {
+            if ($rawData[0] === '-') {
+                $structure['key'] = 'index';
+            } else {
+                $key0 = substr($rawData, 0, strpos($rawData, ':'));
+            }
+        } elseif ($fileFormat === 'json') {
+            if ($rawData[0] === '[') {
+                $structure['key'] = 'index';
+            } else {
+                if (!preg_match('/^{"(.*?)"/', $rawData, $m)) {
+                    exit("Error in json file");
+                }
+                $key0 = $m[1];
+            }
+        } else {    // csv
+            $structure['key'] = 'index';
+        }
+
+        if (!$structure['key']) {
+            if (preg_match('/^ \d{2,4} - \d\d - \d\d/x', $key0)) {
+                $structure['key'] = 'date';
+            } elseif (preg_match('/\D/', $key0)) {
+                $structure['key'] = 'string';
+            } else {
+                $structure['key'] = 'numeric';
+            }
+        }
+
+        $rec0 = reset($data);
+        $structure['labels'] = array_keys($rec0);
+        $structure['types'] = array_fill(0, sizeof($rec0), 'string');
+        // types only makes sense if supplied in '_structure' record within data.
+        $this->structure = $structure;
+        return $structure;
+    } // analyseStructure
 
 
 
@@ -1214,10 +1252,66 @@ EOT;
 
     private function fixRecId($recId)
     {
-        if (is_int($recId) && ($recId < 0)) {
-            $recId = sizeof($this->data) + $recId;
+        $n = sizeof($this->data);
+        if (is_int($recId)) {
+            if (($recId < 0)) {
+               $recId = $n + $recId;
+            } elseif (($recId >= $n)) {
+               $recId = $n;
+            }
         }
         return $recId;
+    }
+
+
+
+
+    protected function createNewTable($tableName)
+    {
+        $sql = "CREATE TABLE IF NOT EXISTS \"$tableName\" (";
+        $sql .= '"id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,';
+        $sql .= '"data" VARCHAR, "meta" VARCHAR, "lastUpdate" REAL, "structure" VARCHAR, "2D" BIT, "origFile" VARCHAR, "modified" INTEGER, "lockedBy" VARCHAR, "lockTime" REAL)';
+        $res = $this->lzyDb->query($sql);
+        if ($res === false) {
+            die("Error: unable to create table in lzyDB: '$tableName'");
+        }
+
+        $origFileName = $this->dataFile;
+        if (PATH_TO_APP_ROOT && (strpos($origFileName, PATH_TO_APP_ROOT) === 0)) {
+            $origFileName = substr($origFileName, strlen(PATH_TO_APP_ROOT));
+        }
+        $is2D = (stripos($origFileName, '.csv') !== false) ? 1 : 0;
+
+        $sql = <<<EOT
+INSERT INTO "$tableName" ("data", "meta", "lastUpdate", "structure", "2D", "origFile", "modified", "lockedBy", "lockTime")
+VALUES ("", "", 0.0, "", $is2D, "$origFileName", 0, "", 0.0);
+EOT;
+        $stmt = $this->lzyDb->prepare($sql);
+        $res = $stmt->execute();
+        if ($res === false) {
+            die("Error: unable to initialize table in lzyDB: '$tableName'");
+        }
+
+        $res = $this->importFromFile(true);
+        if ($res === false) {
+            die("Error: unable to populate table in lzyDB: '$tableName'");
+        }
+        $this->lowLevelWriteStructure();
+    }
+
+
+
+
+    protected function loadFile()
+    {
+        $lines = file($this->dataFile);
+        $rawData = '';
+        foreach ($lines as $line) {
+            if ($line && ($line[0] !== '#') && ($line[0] !== "\n")) { // skip commented and empty lines
+                $rawData .= $line;
+            }
+        }
+        return $rawData;
     }
 
 } // DataStorage
