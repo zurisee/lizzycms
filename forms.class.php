@@ -794,7 +794,7 @@ EOT;
         }
 
         $rec->comment =  (isset($args['comment']))? $args['comment']: '';
-        $rec->replaceQuotes =  (isset($args['replaceQuotes']))? $args['replaceQuotes']: '';
+        $rec->replaceQuotes =  (isset($args['replaceQuotes']))? $args['replaceQuotes']: true;
 
         if (isset($args['path'])) {
 		    $rec->uploadPath = $args['path'];
@@ -977,7 +977,7 @@ EOT;
             }
             $value = urldecode($value); //???
             if ($currFormDescr->replaceQuotes) {
-                $value = str_replace([], [], $value);
+                $value = str_replace(['"', "'"], ['ʺ', 'ʹ'], $value);
             }
 
 			$str .= mb_str_pad($label, 22, '.').": $value\n\n";
@@ -1083,6 +1083,10 @@ EOT;
                     }
                 }
             } else {        // normal value
+                $value = urldecode($value); //???
+                if ($currFormDescr->replaceQuotes) {
+                    $value = str_replace(['"', "'"], ['ʺ', 'ʹ'], $value);
+                }
                 if (isset($formElements[$name])) {
                     $type = $formElements[$name]->type;
                     if (($type === 'email') && $value) {
@@ -1179,6 +1183,10 @@ action:
 
 preventMultipleSubmit:
 : [true|false] Activates prevention of multiple submissions of the form (default: true).
+
+replaceQuotes:
+: [true|false] If false, suppresses substitution of single and double quotes in data received from user (default: true). 
+: (Substitution is done to prevent data corruption in log and data files.)
 
 next:
 : Where to take user after submitting data and receiving a confirmation.
