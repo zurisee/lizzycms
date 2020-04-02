@@ -5,8 +5,9 @@
  * However, shadow data files in yaml, json or cvs format may be maintained:
  *      they are imported at construction and exported at deconstruction time
  *
- * Old:
- *     public function __construct($args, $sid, $lockDB, $format, $lockTimeout, $secure)
+ * "Meta-Data" maintains info about DB-, record- and element-level locking.
+ * It is maintained only with the Lizzy DB - deleting that will reset all locking.
+ *
 */
 
 
@@ -17,9 +18,6 @@ if (!defined('LZY_LOCK_ALL_DURATION_DEFAULT')) {
 }
 if (!defined('LZY_DEFAULT_FILE_TYPE')) {
     define('LZY_DEFAULT_FILE_TYPE', 'json');
-}
-if (!defined('LZY_META')) {
-    define('LZY_META', '_meta');
 }
 
 require_once SYSTEM_PATH.'vendor/autoload.php';
@@ -34,7 +32,7 @@ class DataStorage2
 	protected $tableName;
 	protected $data = null;
 	protected $rawData = null;
-	protected $is2Ddata = false;
+//	protected $is2Ddata = false;
 	protected $sid;
 	protected $format;
 	protected $lockDB = false;
@@ -56,7 +54,10 @@ class DataStorage2
         if ($this->doLockDB) {
             $this->lockDB();
         }
-
+        if ( session_status() === PHP_SESSION_ACTIVE ) {
+            session_start();
+        }
+        $this->sessionId = session_id();
     } // __construct
 
 
@@ -81,17 +82,248 @@ class DataStorage2
 
 
 
-    //---------------------------------------------------------------------------
+    // === DB level operations ==========================
     public function read()
     {
-        $data = $this->getData();
-        if (isset($data[LZY_META])) {
-            unset($data[LZY_META]);
-        }
-        return $data;
+        return $this->getData();
     } // read
 
 
+
+    public function write($data, $replace = true)
+    {
+        if ($this->isLockDB()) {
+            return false;
+        }
+        if ($replace) {
+            return $this->lowLevelWrite($data);
+        } else {
+            return $this->updateDB($data);
+        }
+    } // write
+
+
+
+    public function isLockDB()
+    {
+        $rawData = $this->getRawData();
+        $mySessionID = $this->sessionId;
+        if ($rawData['lockTime'] < (microtime(true) - LZY_LOCK_ALL_DURATION_DEFAULT)) {
+            $rawData['lockedBy'] = '';
+            $rawData['lockTime'] = 0.0;
+            $this->updateRawMetaData($rawData);
+            return false;   // lock timed out
+        }
+        if ($rawData['lockedBy'] !== '') {  // it's locked
+            if ($rawData['lockedBy'] === $mySessionID) { // it's locked by myself
+                return false;
+
+            } else {    // it's locked by other session
+                return true;
+            }
+        }
+        return false;   // it's not locked
+    } // isLockDB
+
+
+
+
+    public function lockDB()
+    {
+        $rawData = $this->getRawData();
+        $mySessionID = $this->sessionId;
+        if ($rawData['lockedBy'] !== '') {
+            if ($rawData['lockedBy'] === $mySessionID) {
+                $rawData['lockTime'] = microtime(true);
+
+            } else {
+                if ($rawData['lockTime'] < (microtime(true) - LZY_LOCK_ALL_DURATION_DEFAULT)) {
+                    $rawData['lockedBy'] = $mySessionID;
+                    $rawData['lockTime'] = microtime(true);
+
+                } else {
+                    return false;
+                }
+            }
+        } else {
+            $rawData['lockedBy'] = $mySessionID;
+            $rawData['lockTime'] = microtime(true);
+        }
+        $this->updateRawMetaData($rawData);
+        return true;
+    } // lockDB
+
+
+
+
+    public function unLockDB($force = false)
+    {
+        $rawData = $this->getRawData();
+        $mySessionID = $this->sessionId;
+        if ($rawData['lockedBy'] !== '') {
+            if ($rawData['lockedBy'] === $mySessionID) {
+                $rawData['lockTime'] = 0.0;
+                $rawData['lockedBy'] = '';
+
+            } elseif ($force) {
+                $rawData['lockTime'] = 0.0;
+                $rawData['lockedBy'] = '';
+
+            } else {
+                return false;
+            }
+            $this->updateRawMetaData($rawData);
+        }
+        return true;
+    } // unLockDB
+
+
+
+    public function awaitChangedData($lastUpdate, $timeout = false, $pollingSleepTime = false)
+    {
+        $timeout = $timeout ? $timeout : $this->defaultTimeout;
+        $pollingSleepTime = $pollingSleepTime ? $pollingSleepTime : $this->defaultPollingSleepTime;
+        $pollingSleepTime = $pollingSleepTime*1000;
+        $json = $this->checkNewData($lastUpdate, true);
+        if ($json !== null) {
+            return $json;
+        }
+        $tEnd = microtime(true) + $timeout - 0.01;
+
+        while ($tEnd > microtime(true)) {
+            $json = $this->checkNewData($lastUpdate, true);
+            if ($json !== null) {
+                return $json;
+            }
+            usleep($pollingSleepTime);
+        }
+        return '';
+    } // awaitChangedData
+
+
+
+
+
+    // === Record level operations ==========================
+    // 'Record' defined as first level of multilevel nested data
+    public function readRecord($recId)
+    {
+        if ($this->isLockDB()) {
+            return false;
+        }
+        $data = $this->getData();
+
+        $recId = $this->fixRecId($recId);
+
+        if (isset($data[$recId])) {
+            return $data[$recId];
+        } else {
+            return null;
+        }
+    } // readRecord
+
+
+
+
+    public function writeRecord($recId, $recData)
+    {
+        if ($this->isLockDB()) {
+            return false;
+        }
+        if (!$this->isRecLocked( $recId )) {
+            return false;
+        }
+        $data = $this->getData();
+
+        if ($recId !== false) {
+            $recId = $this->fixRecId($recId);
+            $data[$recId] = $recData;
+        } else {
+            $data[] = $recData;
+        }
+
+        $this->lowLevelWrite($data);
+    } // writeRecord
+
+
+
+
+    public function deleteRecord($recId)
+    {
+
+    } // deleteRecord
+
+
+    public function lockRec( $recId)
+    {
+        $recId = $this->fixRecId($recId);
+
+        if ($this->isRecLocked( $recId )) { // rec already locked
+            return false;
+        }
+
+        $mySessionID = $this->sessionId;
+        $lockData[$recId] = [
+            'lockTime' => microtime(true),
+            'lockOwner' => $mySessionID
+        ];
+        return $this->updateMetaData('recLocks', $lockData);
+    } // lockRec
+
+
+
+    public function unlockRec( $recId, $force = false)
+    {
+        $recId = $this->fixRecId($recId);
+
+        if (!$force && !$this->isRecLocked( $recId )) { // rec already locked
+            return true;
+        }
+        $meta = $this->getMetaData();
+        if (isset($meta['recLocks'][$recId])) {
+            if (!$force && !$this->isMySessionID( $meta['recLocks'][$recId]['lockOwner'] )) {
+                return false;
+            }
+            unset($meta['recLocks'][$recId]);
+            $this->updateMetaData($meta);
+        }
+        return true;
+    } // unlockRec
+
+
+
+    public function isRecLocked( $recId )
+    {
+        $recId = $this->fixRecId($recId);
+
+        $lockData = $this->getMetaElement('recLocks');
+        if (!$lockData) {
+            return null;
+        }
+        if (isset($lockData[$recId])) {
+            $locRec = $lockData[$recId];
+            $lockDuration = microtime(true) - $locRec['lockTime'];
+            if ($lockDuration > LZY_LOCK_ALL_DURATION_DEFAULT) {
+                $this->unlockRec($recId, true);
+                return false;
+            }
+            // not locked, if it's my own lock:
+            if ($this->isMySessionID( $locRec['lockOwner'] )) {
+                return false;
+            }
+            // it's locked by somebody else:
+            return true;
+        }
+        return false;
+    } // isRecLocked
+
+
+
+
+
+
+    // === Element level operations ==========================
+    // Element applies to any level of nested data:
 
     public function readElement($key)
     {
@@ -127,40 +359,6 @@ class DataStorage2
             return null;
         }
     } // readElement
-
-
-
-
-    public function write($data, $replace = true)
-    {
-        if ($this->isLockDB()) {
-            return false;
-        }
-        if ($replace) {
-            return $this->lowLevelWrite($data);
-        } else {
-            return $this->update($data);
-        }
-    } // write
-
-
-
-
-    public function writeRecord($recId, $recData, $recLocking = false)
-    {
-        if ($this->isLockDB()) {
-            return false;
-        }
-        $data = $this->getData( true );
-
-        if ($recId !== false) {
-            $data[$recId] = $recData;
-        } else {
-            $data[] = $recData;
-        }
-
-        return $this->lowLevelWrite($data);
-    } // writeRecord
 
 
 
@@ -206,6 +404,7 @@ class DataStorage2
 
 
 
+    //Todo: rename
     public function append($key, $value = null)
     {
         if ($this->isLockDB()) {
@@ -227,6 +426,7 @@ class DataStorage2
 
 
 
+    //Todo: rename
     public function delete($key)
     {
         if ($this->isLockDB()) {
@@ -255,7 +455,9 @@ class DataStorage2
 
 
 
+
     //---------------------------------------------------------------------------
+    //Todo: rename
     public function findRec($key, $value, $returnKey = false)
     {
         // find rec for which key AND value match
@@ -280,6 +482,7 @@ class DataStorage2
 
 
 
+    //Todo: rename
     public function getRecStructure()
     {
         $rawData = $this->getRawData();
@@ -290,83 +493,7 @@ class DataStorage2
 
 
 
-    public function isLockDB()
-    {
-        $rawData = $this->getRawData();
-        $mySessionID = $this->getSessionID();
-        if ($rawData['lockTime'] < (microtime(true) - LZY_LOCK_ALL_DURATION_DEFAULT)) {
-            $rawData['lockedBy'] = '';
-            $rawData['lockTime'] = 0.0;
-            $this->updateRawMetaData($rawData);
-            return false;   // lock timed out
-        }
-        if ($rawData['lockedBy'] !== '') {  // it's locked
-            if ($rawData['lockedBy'] === $mySessionID) { // it's locked by myself
-                return false;
-
-            } else {    // it's locked by other session
-                return true;
-            }
-        }
-        return false;   // it's not locked
-    } // isLockDB
-
-
-
-
-    public function lockDB()
-    {
-        $rawData = $this->getRawData();
-        $mySessionID = $this->getSessionID();
-        if ($rawData['lockedBy'] !== '') {
-            if ($rawData['lockedBy'] === $mySessionID) {
-                $rawData['lockTime'] = microtime(true);
-
-            } else {
-                if ($rawData['lockTime'] < (microtime(true) - LZY_LOCK_ALL_DURATION_DEFAULT)) {
-                    $rawData['lockedBy'] = $mySessionID;
-                    $rawData['lockTime'] = microtime(true);
-
-                } else {
-                    return false;
-                }
-            }
-        } else {
-            $rawData['lockedBy'] = $mySessionID;
-            $rawData['lockTime'] = microtime(true);
-        }
-        $this->updateRawMetaData($rawData);
-        return true;
-    } // lockDB
-
-
-
-
-    public function unLockDB($force = false)
-    {
-        $rawData = $this->getRawData();
-        $mySessionID = $this->getSessionID();
-        if ($rawData['lockedBy'] !== '') {
-            if ($rawData['lockedBy'] === $mySessionID) {
-                $rawData['lockTime'] = 0.0;
-                $rawData['lockedBy'] = '';
-
-            } elseif ($force) {
-                $rawData['lockTime'] = 0.0;
-                $rawData['lockedBy'] = '';
-
-            } else {
-                return false;
-            }
-            $this->updateRawMetaData($rawData);
-        }
-        return true;
-    } // unLockDB
-
-
-
-
-    public function getMetaElement($key)
+    protected function getMetaElement($key)
     {
         $meta = $this->getMetaData();
         if (isset($meta[$key])) {
@@ -379,20 +506,11 @@ class DataStorage2
 
 
 
-    public function getMetaData()
+    protected function getMetaData()
     {
-        if ($this->separateMetaData) {
-            $query = "SELECT \"meta\" FROM \"{$this->tableName}\"";
-            $metaData = $this->lzyDb->querySingle($query, true);
-            $meta = $this->jsonDecode($metaData);
-
-        } else {
-            $data = $this->getData( true );
-            $meta = isset($data[LZY_META]) ? $data[LZY_META] : [];
-        }
-        if (!$meta || !is_array($meta)) {
-            $meta = [];
-        }
+        $query = "SELECT \"meta\" FROM \"{$this->tableName}\"";
+        $metaData = $this->lzyDb->querySingle($query, true);
+        $meta = $this->jsonDecode($metaData['meta']);
         return $meta;
     } // getMetaData
 
@@ -429,29 +547,6 @@ class DataStorage2
 
 
     //---------------------------------------------------------------------------
-    public function awaitChangedData($lastUpdate, $timeout = false, $pollingSleepTime = false)
-    {
-        $timeout = $timeout ? $timeout : $this->defaultTimeout;
-        $pollingSleepTime = $pollingSleepTime ? $pollingSleepTime : $this->defaultPollingSleepTime;
-        $pollingSleepTime = $pollingSleepTime*1000;
-        $json = $this->checkNewData($lastUpdate, true);
-        if ($json !== null) {
-            return $json;
-        }
-        $tEnd = microtime(true) + $timeout - 0.01;
-
-        while ($tEnd > microtime(true)) {
-            $json = $this->checkNewData($lastUpdate, true);
-            if ($json !== null) {
-                return $json;
-            }
-            usleep($pollingSleepTime);
-        }
-        return '';
-    } // awaitChangedData
-
-
-
     public function doLockDB()  // alias for compatibility
     {
         return $this->lockDB();
@@ -481,11 +576,11 @@ class DataStorage2
 
 
 
-    public function is2Ddata()
-    {
-        $rawData = $this->getRawData();$res = (bool) $rawData['2D'];
-        return (bool) $rawData['2D'];
-    } // is2Ddata
+//    public function is2Ddata()
+//    {
+//        $rawData = $this->getRawData();$res = (bool) $rawData['2D'];
+//        return (bool) $rawData['2D'];
+//    } // is2Ddata
 
 
 
@@ -497,14 +592,15 @@ class DataStorage2
 
 
 // === protected methods ===============
-    protected function update($newData)
+    //Todo: rename
+    protected function updateDB($newData)
     {
         $data = $this->getData( true );
         if ($data) {
             $newData = array_merge($data, $newData);
         }
         $this->lowLevelWrite($newData);
-    } // update
+    } // updateDB
 
 
 
@@ -520,6 +616,22 @@ class DataStorage2
         $this->lowLevelWrite($data);
     } // updateElement
 
+
+
+
+    // === Low Level Operations ===========================================================
+    protected function lowLevelWriteMeta($metaData)
+    {
+        $metaData = $this->jsonEncode($metaData);
+        $sql = <<<EOT
+UPDATE "{$this->tableName}" SET 
+    'meta' = "$metaData"
+
+EOT;
+
+        $res = $this->lzyDb->query($sql);
+        return $res;
+    } // lowLevelWriteMeta
 
 
 
@@ -572,7 +684,7 @@ EOT;
 
 
 
-
+//Todo: rename more applicable, META used differently!
     protected function updateRawMetaData($rawData)
     {
         $this->openDbReadWrite();
@@ -596,47 +708,27 @@ EOT;
 
 
 
+    protected function writeMetaData( $metaData )
+    {
+        return $this->lowLevelWriteMeta($metaData);
+    } // writeMetaData
+
+
+
     protected function updateMetaData($key, $value = null)
     {
-        if ($this->separateMetaData || $this->rawData["2D"]) {
-            $query = "SELECT \"meta\" FROM \"{$this->tableName}\"";
-            $metaData = $this->lzyDb->querySingle($query, true);
-            $metaData = $this->jsonDecode($metaData['meta']);
-            if (is_array($key)) {
-                if (is_array($metaData)) {
-                    $metaData = array_merge($metaData, $key);
-                } else {
-                    $metaData = $key;
-                }
-            } else {
-                $metaData[$key] = $value;
-            }
-            $metaData = $this->jsonEncode($metaData);
-            $sql = <<<EOT
-UPDATE "{$this->tableName}" SET 
-    'meta' = "$metaData"
-
-EOT;
-
-            $res = $this->lzyDb->query($sql);
-            return $res;
-
-        } else {
-            $data = $this->getData( true );
-            if (!isset($data[LZY_META])) {
-                $data[LZY_META] = [];
-            }
-            $metaData = &$data[LZY_META];
-
-            if (is_array($key) && is_array($metaData)) {
+        $metaData = $this->getMetaData();
+        if (is_array($key)) {
+            if (is_array($metaData)) {
                 $metaData = array_merge($metaData, $key);
             } else {
-                $metaData[$key] = $value;
+                $metaData = $key;
             }
-            return $this->lowLevelWrite($data, false, false);
+        } else {
+            $metaData[$key] = $value;
         }
+        return $this->lowLevelWriteMeta($metaData);
     } // updateMetaData
-
 
 
 
@@ -856,10 +948,6 @@ EOT;
     //--------------------------------------------------------------
     protected function writeToCsvFile($filename, $array, $quote = '"', $delim = ',', $forceQuotes = true)
     {
-        if (isset($array[LZY_META])) {
-            unset($array[LZY_META]);
-        }
-
         $out = '';
         foreach ($array as $row) {
             foreach ($row as $i => $elem) {
@@ -882,16 +970,6 @@ EOT;
         $json = $rawData['data'];
         $json = str_replace('⌑⌇⌑', '"', $json);
         $data = $this->jsonDecode($json);
-        if ($includeMetaData && $this->is2Ddata()) {
-            $meta = $this->jsonDecode($rawData['meta']);
-            if ($meta) {
-                $data = array_merge($data, [LZY_META => $meta]);
-            }
-        }
-
-        if (!$includeMetaData && isset($data[LZY_META])) {
-            unset($data[LZY_META]);
-        }
         $this->data = $data;
         return $data;
     } // getData
@@ -899,14 +977,22 @@ EOT;
 
 
 
-    protected function getRawData()
+    protected function getRawData( $rawElem = false)
     {
         if (!$this->tableName) {
             return null;
         }
         $query = "SELECT * FROM \"{$this->tableName}\"";
-        $this->rawData = $this->lzyDb->querySingle($query, true);
-        return $this->rawData;
+        $rawData = $this->lzyDb->querySingle($query, true);
+        if ($rawElem) {
+            if (isset($rawData[$rawElem])) {
+                return $rawData[$rawElem];
+            } else {
+                return null;
+            }
+        }
+        $this->rawData = $rawData;
+        return $rawData;
     } // getRawData
 
 
@@ -1103,12 +1189,7 @@ EOT;
 
     protected function getSessionID()
     {
-        if (!$sessionId = session_id()) {
-            session_start();
-            $sessionId = session_id();
-            session_abort();
-        }
-        return $sessionId;
+        return $this->sessionId;
     } // getSessionID
 
 
@@ -1116,12 +1197,7 @@ EOT;
 
     protected function isMySessionID( $sid )
     {
-        if (!$sessionId = session_id()) {
-            session_start();
-            $sessionId = session_id();
-            session_abort();
-        }
-        return ($sid === $sessionId);
+        return ($sid === $this->sessionId);
     } // isMySessionID
 
 
@@ -1132,6 +1208,16 @@ EOT;
         $tableName = str_replace(['/', '.'], '_', $this->dataFile);
         $tableName = preg_replace('|^[\./_]*|', '', $tableName);
         return $tableName; // remove leading '../...'
+    }
+
+
+
+    private function fixRecId($recId)
+    {
+        if (is_int($recId) && ($recId < 0)) {
+            $recId = sizeof($this->data) + $recId;
+        }
+        return $recId;
     }
 
 } // DataStorage
