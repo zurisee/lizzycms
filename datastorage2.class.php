@@ -145,6 +145,26 @@ class DataStorage2
 
 
 
+
+    public function writeRecord($recId, $recData, $recLocking = false)
+    {
+        if ($this->isLockDB()) {
+            return false;
+        }
+        $data = $this->getData( true );
+
+        if ($recId !== false) {
+            $data[$recId] = $recData;
+        } else {
+            $data[] = $recData;
+        }
+
+        return $this->lowLevelWrite($data);
+    } // writeRecord
+
+
+
+
     public function writeElement($key, $value)
     {
         if ($this->isLockDB()) {
@@ -448,10 +468,14 @@ class DataStorage2
 
 
 
-    public function dumpDb()
+    public function dumpDb( $raw = false)
     {
-        $d = $this->getRawData();
-        return var_r($d);
+        if ($raw) {
+            $d = $this->getRawData();
+        } else {
+            $d = $this->data;
+        }
+        return var_r($d, 'DB "' . base_name($this->dataFile, false).'"');
     } // dumpDb
 
 
