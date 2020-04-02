@@ -107,7 +107,7 @@ class DataStorage2
         if (strpos($key, ',') !== false) {
             $rec = $data;
             foreach (explode(',', $key) as $k) {
-                $k = trim($k);
+                $k = trim($k, '\'"');
                 $n = intval($k);
                 if ($n || ($k === '0')) {
                     $k = $n;
@@ -145,12 +145,39 @@ class DataStorage2
 
 
 
+
+    public function writeRecord($recId, $recData, $recLocking = false)
+    {
+        if ($this->isLockDB()) {
+            return false;
+        }
+        $data = $this->getData( true );
+
+        if ($recId !== false) {
+            $data[$recId] = $recData;
+        } else {
+            $data[] = $recData;
+        }
+
+        return $this->lowLevelWrite($data);
+    } // writeRecord
+
+
+
+
     public function writeElement($key, $value)
     {
         if ($this->isLockDB()) {
             return false;
         }
         $data = $this->getData( true );
+
+        // syntax variant '[d3][d31][d312]'
+        if (preg_match('/\[(.*)\]/', trim($key), $m)) {
+            $key = str_replace('][', ',', $m[1]);
+        }
+
+        // syntax variant 'd3,d31,d312'
         if (strpos($key, ',') !== false) {
             $keys = explode(',', $key);
             if ($this->format === 'csv') {
@@ -158,7 +185,11 @@ class DataStorage2
             }
             $rec = &$data;
             foreach ($keys as $k) {
-                $k = trim($k);
+                $k = trim($k, '\'"');
+                $n = intval($k);
+                if ($n || ($k === '0')) {
+                    $k = $n;
+                }
                 if (!isset($rec[$k])) {
                     $rec[$k] = null;    // instantiate element if not existing
                 }
@@ -437,10 +468,14 @@ class DataStorage2
 
 
 
-    public function dumpDb()
+    public function dumpDb( $raw = false)
     {
-        $d = $this->getRawData();
-        return var_r($d);
+        if ($raw) {
+            $d = $this->getRawData();
+        } else {
+            $d = $this->data;
+        }
+        return var_r($d, 'DB "' . base_name($this->dataFile, false).'"');
     } // dumpDb
 
 
