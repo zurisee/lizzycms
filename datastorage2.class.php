@@ -107,7 +107,7 @@ class DataStorage2
         if (strpos($key, ',') !== false) {
             $rec = $data;
             foreach (explode(',', $key) as $k) {
-                $k = trim($k);
+                $k = trim($k, '\'"');
                 $n = intval($k);
                 if ($n || ($k === '0')) {
                     $k = $n;
@@ -151,6 +151,13 @@ class DataStorage2
             return false;
         }
         $data = $this->getData( true );
+
+        // syntax variant '[d3][d31][d312]'
+        if (preg_match('/\[(.*)\]/', trim($key), $m)) {
+            $key = str_replace('][', ',', $m[1]);
+        }
+
+        // syntax variant 'd3,d31,d312'
         if (strpos($key, ',') !== false) {
             $keys = explode(',', $key);
             if ($this->format === 'csv') {
@@ -158,7 +165,11 @@ class DataStorage2
             }
             $rec = &$data;
             foreach ($keys as $k) {
-                $k = trim($k);
+                $k = trim($k, '\'"');
+                $n = intval($k);
+                if ($n || ($k === '0')) {
+                    $k = $n;
+                }
                 if (!isset($rec[$k])) {
                     $rec[$k] = null;    // instantiate element if not existing
                 }
