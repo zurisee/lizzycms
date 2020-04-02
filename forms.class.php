@@ -794,6 +794,7 @@ EOT;
         }
 
         $rec->comment =  (isset($args['comment']))? $args['comment']: '';
+        $rec->replaceQuotes =  (isset($args['replaceQuotes']))? $args['replaceQuotes']: '';
 
         if (isset($args['path'])) {
 		    $rec->uploadPath = $args['path'];
@@ -973,6 +974,10 @@ EOT;
                 $value = implode(', ', $value);
             } else {
                 $value = str_replace("\n", "\n\t\t\t", $value);
+            }
+            $value = urldecode($value); //???
+            if ($currFormDescr->replaceQuotes) {
+                $value = str_replace([], [], $value);
             }
 
 			$str .= mb_str_pad($label, 22, '.').": $value\n\n";
