@@ -1,4 +1,5 @@
 <?php
+require_once SYSTEM_PATH.'live-data.class.php';
 
 $page->addModules('~sys/js/live_data.js');
 
@@ -15,6 +16,7 @@ $this->addMacro($macroName, function () {
     $elementName = $this->getArg($macroName, 'elementName', 'Name of the element to be visualized', false);
     $id = $this->getArg($macroName, 'id', '(optional) Id of DOM element.', "lzy-live-data$inx");
     $polltime = $this->getArg($macroName, 'polltime', '(optional) Polling time, i.e. the time server waits for new data before giving up.', false);
+    $mode = $this->getArg($macroName, 'mode', '[manual] Manual mode: invoke live-data fields manually.', false);
 
     if ($file === 'help') {
         return '';
@@ -24,46 +26,15 @@ $this->addMacro($macroName, function () {
         $this->compileMd = true;
         return "**Error**: argument ``file`` not specified.";
     }
-    if (($elementName === false) || ($elementName === '')) {
-        $this->compileMd = true;
-        return "**Error**: argument ``elementName`` not specified.";
-    }
-
-    $file = makePathRelativeToPage($file, true);
-    $db = new DataStorage2([ 'dataFile' => $file ]);
-    $value = $db->readElement( $elementName );
-
-    $tickRec[$inx - 1] = [
-        'file' => $file,
-        'elementName' => $elementName,
-        'id' => $id,
-    ];
-
-    $tick = new Ticketing();
-    if (isset($_SESSION['lizzy']['liveDataTicket'])) {
-        $ticket = $_SESSION['lizzy']['liveDataTicket'];
-        $res = $tick->findTicket($ticket);
-        if ($res) {     // yes, ticket found
-            if (!isset($res[$inx - 1])) {
-                $tick->updateTicket($ticket, $tickRec);
-            }
-        } else {    // it was some stray ticket
-            $ticket = $tick->createTicket($tickRec, 99, 86400);
-            $_SESSION['lizzy']['liveDataTicket'] = $ticket;
+    if (strpos($mode, 'manual') === false) {
+        if (($elementName === false) || ($elementName === '')) {
+            $this->compileMd = true;
+            return "**Error**: argument ``elementName`` not specified.";
         }
-    } else {
-        $ticket = $tick->createTicket($tickRec, 99, 86400);
-        $_SESSION['lizzy']['liveDataTicket'] = $ticket;
     }
 
-    if ($polltime !== false) {
-        $polltime = " data-live-data-polltime='$polltime'";
-    }
-
-    $this->optionAddNoComment = true;
-    $str = <<<EOT
-<span id='$id' class='lzy-live-data' data-live-data-ref="$ticket"$polltime>$value</span>
-EOT;
-
+    $args = $this->getArgsArray($macroName);
+    $ld = new LiveData($this->lzy, $inx, $args);
+    $str = $ld->render();
 	return $str;
 });
