@@ -275,9 +275,9 @@ class DataStorage2
         if (!($recId = $this->fixRecId($recId, false, $supportedArgs))) {
             return false;
         } elseif (is_array($recId)) {
-            list($recId, $recData, $elemName, $value, $locking, $blocking, $append) = $recId;
+            list($recId, $elemName, $value, $locking, $blocking, $append) = $recId;
         }
-        if (!$recId || !$elemName || !$value) {
+        if (($recId === false) || ($elemName === false) || ($value === false)) {
             return false;
         }
 
@@ -291,7 +291,7 @@ class DataStorage2
         }
         $data = $this->getData(true);
         if ($recId !== false) {
-            if ($append) {
+            if ($append && isset($data[$recId][$elemName])) {
                 $data[$recId][$elemName] .= $value;
             } else {
                 $data[$recId][$elemName] = $value;
@@ -362,7 +362,7 @@ class DataStorage2
 
     public function lockRec( $recId)
     {
-        if (!($recId = $this->fixRecId($recId))) {
+        if (($recId = $this->fixRecId($recId)) === false) {
             return false;
         }
 
@@ -384,7 +384,7 @@ class DataStorage2
 
     public function unlockRec( $recId, $force = false)
     {
-        if (!($recId = $this->fixRecId($recId))) {
+        if (($recId = $this->fixRecId($recId)) === false) {
             return false;
         }
 
