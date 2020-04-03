@@ -29,6 +29,17 @@ function initLiveData() {
 
 
 
+function updateDOM(data) {
+    for (var id in data.data) {
+        var val = data.data[id];
+        $('#' + id).text(val);
+        if (debugOutput) {
+            console.log(id + ' -> ' + val);
+        }
+    }
+}
+
+
 
 function updateLiveData() {
     var url = appRoot + "_lizzy/_live_data_service.php";
@@ -44,28 +55,28 @@ function updateLiveData() {
             console.log('No data received');
             return;
         }
-        var data0 = JSON.parse(json);
-        if (typeof data0.lastUpdated !== 'undefined') {
-            lastUpdated = data0.lastUpdated;
+        var data = JSON.parse(json);
+        if (typeof data.lastUpdated !== 'undefined') {
+            lastUpdated = data.lastUpdated;
         }
-        if (typeof data0.result === 'undefined') {
+        if (typeof data.result === 'undefined') {
             console.log('_live_data_service.php reported an error');
             console.log(json);
             return;
         }
 
         // regular response:
-        if (typeof data0.data === 'undefined') {
+        if (typeof data.data === 'undefined') {
             if (debugOutput) {
                 console.log( timeStamp() + ': No new data');
             }
         } else {
-            for (var id in data0.data) {
-                var val = data0.data[id];
-                $('#' + id).text(val);
-                if (debugOutput) {
-                    console.log(id + ' -> ' + val);
-                }
+            var goOn = true;
+            if (typeof liveDataCallback === 'function') {
+                goOn = liveDataCallback( data );
+            }
+            if (goOn) {
+                updateDOM( data );
             }
         }
         $('.live-data-update-time').text( timeStamp() );
