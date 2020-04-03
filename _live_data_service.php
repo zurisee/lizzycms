@@ -28,6 +28,8 @@ if (isset($_POST['polltime'])) {
     $pollingTime = intval($_POST['polltime']);
     $pollingTime = max(2, min(90, $pollingTime));
 }
+$forceUpdate = isset($_GET['forceUpdate']);
+
 $tick = new Ticketing();
 $tickets = explode(',', $ref);
 
@@ -56,8 +58,13 @@ foreach ($ticketList as $ticket) {
 }
 
 $files = openDBs($files);
-$till = time() + $pollingTime;
-$res = awaitDataChange($files, $till);
+
+if ($forceUpdate) {
+    $res = getAllData($files);
+} else {
+    $till = time() + $pollingTime;
+    $res = awaitDataChange($files, $till);
+}
 if (!$res) {
     $rec['result'] = 'None';
 } else {
@@ -82,6 +89,22 @@ function openDBs($files)
 }
 
 
+
+function getAllData($files)
+{
+    $outData = [];
+    foreach ($files as $file => $dbDescr) {
+        $db = $dbDescr['db'];
+        foreach ($dbDescr as $k => $r) {
+            if (!is_int($k)) {
+                continue;
+            }
+            $outRec = getData($db, $dbDescr);
+            $outData = array_merge($outData, $outRec);
+        }
+    }
+    return $outData;
+}
 
 
 function awaitDataChange($files, $till)
