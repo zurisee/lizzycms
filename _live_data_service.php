@@ -21,7 +21,7 @@ if (!isset($_POST['ref'])) {
     exit('Error: "ref" missing in call to _live_data_service.php');
 }
 $ref = $_POST['ref'];
-$lastUpdated = $_POST['last'];
+$lastUpdated = floatval( $_POST['last'] );
 $lastUpdatedStr = date('H:i:s', intval($lastUpdated));
 
 if (isset($_POST['polltime'])) {
@@ -90,18 +90,22 @@ function awaitDataChange($files, $till)
     $interval = POLLING_INTERVAL + 1000;  // -> us
     while ($till > time()) {
         $outData = [];
-        foreach ($files as $file => $rec) {
-            $db = $rec['db'];
-            $lastModif = $db->lastModified();
-            foreach ($rec as $k => $r) {
+        // there may be multiple data sources, so loop over all of them
+        foreach ($files as $file => $dbDescr) {
+            $db = $dbDescr['db'];
+            foreach ($dbDescr as $k => $r) {
                 if (!is_int($k)) {
                     continue;
                 }
+                $lastModif = $db->lastModifiedElement( $k );
                 if ($lastUpdated < $lastModif) {
-                    getData($db, $rec, $outData);
-                    return $outData;
+                    $outRec = getData($db, $dbDescr);
+                    $outData = array_merge($outData, $outRec);
                 }
             }
+        }
+        if ($outData) {
+            return $outData;
         }
         usleep($interval);
     }
@@ -110,18 +114,17 @@ function awaitDataChange($files, $till)
 
 
 
-function getData($db, $rec, &$outData)
+function getData($db, $rec)
 {
-    $data = $db->read();
-    $value = '';
     foreach ($rec as $k => $elem) {
         if (!is_int($k)) {
             continue;
         }
         $id = $rec[$k]['id'];
-        if (isset($data[$rec[$k]["elementName"]])) {
-            $value = $data[$rec[$k]["elementName"]];
-        }
+        $dataKey = $rec[$k]["elementName"];
+        $value = $db->readElement( $dataKey );
         $outData[$id] = $value;
     }
-}
+    return $outData;
+} // getData
+
