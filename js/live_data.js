@@ -24,7 +24,7 @@ function initLiveData() {
 
     debugOutput = ($('.debug').length !== 0);
 
-    updateLiveData(refs);
+    updateLiveData( true );
 } // init
 
 
@@ -41,8 +41,11 @@ function updateDOM(data) {
 
 
 
-function updateLiveData() {
+function updateLiveData( forceUpdate ) {
     var url = appRoot + "_lizzy/_live_data_service.php";
+    if (typeof forceUpdate !== 'undefined') {
+        url = url + '?forceUpdate';
+    }
 
     ajaxHndl = $.ajax({
         url: url,
