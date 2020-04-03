@@ -228,7 +228,10 @@ class DataStorage2
 
     public function writeRecord($recId, $recData, $locking = false, $blocking = false)
     {
-        $recId = $this->fixRecId($recId);
+        if (!($recId = $this->fixRecId($recId, true))) {
+            return false;
+        }
+
         if (!$this->awaitLockEnd($recId, $blocking)) {
             return false;
         }
@@ -255,6 +258,38 @@ class DataStorage2
 
 
 
+    public function writeRecordElement($recId, $elemName, $value, $locking = false, $blocking = false)
+    {
+        // like writeRecord but with separate args recId, elemName and value
+        if (!($recId = $this->fixRecId($recId))) {
+            return false;
+        }
+        if (!$this->awaitLockEnd($recId, $blocking)) {
+            return false;
+        }
+        if ($locking) {
+            if (!$this->lockRec($recId)) {
+                return false;
+            }
+        }
+        $data = $this->getData(true);
+
+        if ($recId !== false) {
+            $data[$recId][$elemName] = $value;
+        } else {
+            $data[][$elemName] = $value;
+        }
+
+        $this->lowLevelWrite($data);
+        if ($locking) {
+            $this->unlockRec($recId);
+        }
+        $this->getData(true);
+        return true;
+    } // writeRecordElement
+
+
+
     private function awaitLockEnd($recId, $timeout)
     {
         $timeout = min(5, $timeout);
@@ -275,7 +310,10 @@ class DataStorage2
 
     public function deleteRecord($recId, $locking = false, $blocking = false)
     {
-        $recId = $this->fixRecId($recId);
+        if (!($recId = $this->fixRecId($recId))) {
+            return false;
+        }
+
         if (!$this->awaitLockEnd($recId, $blocking)) {
             return false;
         }
@@ -304,7 +342,10 @@ class DataStorage2
 
     public function lockRec( $recId)
     {
-        $recId = $this->fixRecId($recId);
+        if (!($recId = $this->fixRecId($recId))) {
+            return false;
+        }
+
 
         if ($this->isRecLocked( $recId )) { // rec already locked
             return false;
@@ -323,7 +364,10 @@ class DataStorage2
 
     public function unlockRec( $recId, $force = false)
     {
-        $recId = $this->fixRecId($recId);
+        if (!($recId = $this->fixRecId($recId))) {
+            return false;
+        }
+
 
         if (!$force && $this->isRecLocked( $recId )) { // rec already locked
             return true;
@@ -343,7 +387,10 @@ class DataStorage2
 
     public function isRecLocked( $recId )
     {
-        $recId = $this->fixRecId($recId);
+        if (!($recId = $this->fixRecId($recId))) {
+            return false;
+        }
+
 
         $lockData = $this->getMetaElement('recLocks');
         if (!$lockData) {
@@ -1250,18 +1297,40 @@ EOT;
 
 
 
-    private function fixRecId($recId)
+    private function fixRecId($recId, $allowNewRec = false)
     {
-        $n = sizeof($this->data);
-        if (is_int($recId)) {
+        if (isset($this->data[$recId])) {
+            return $recId;
+        }
+        if (is_int($recId)) { // in case it was an index:
+            $n = sizeof($this->data);
+            if (!$allowNewRec) {
+                $n -= 1;
+            }
             if (($recId < 0)) {
-               $recId = $n + $recId;
-            } elseif (($recId >= $n)) {
-               $recId = $n;
+                $recId = $n + $recId;
+            }
+            if ($allowNewRec) {
+                $recId = max(0, min($n, $recId));
+            }
+            if (isset($this->data[$recId])) {
+                return $recId;
+            }
+            $keys = array_keys($this->data);
+            if (isset($keys[$recId])) {
+                $recId = $keys[$recId];
+            }
+            if (!$allowNewRec) {
+                if (!isset($this->data[$recId])) {
+                    return false;
+                }
             }
         }
+        if (($this->structure['key'] !== 'index') && !isset($this->data[$recId])) {
+            $recId = false;
+        }
         return $recId;
-    }
+    } // fixRecId
 
 
 
