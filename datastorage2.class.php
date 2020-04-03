@@ -226,14 +226,24 @@ class DataStorage2
 
 
 
-    public function writeRecord($recId, $recData, $locking = false, $blocking = false)
+    public function writeRecord($recId, $recData = null, $locking = false, $blocking = false)
     {
-        if (!($recId = $this->fixRecId($recId, true))) {
+        // supports list of args and arg-array.
+        // $supportedArgs defines the expected args, their default values, where null means required arg.
+        $supportedArgs = ['recId' => null, 'recData' => null, 'locking' => false, 'blocking' => false];
+        if (!($recId = $this->fixRecId($recId, false, $supportedArgs))) {
+            return false;
+        } elseif (is_array($recId)) {
+            list($recId, $recData, $locking, $blocking) = $recId;
+        }
+        if (!$recId || !$recData) {
             return false;
         }
 
         if (!$this->awaitLockEnd($recId, $blocking)) {
             return false;
+        } elseif (is_array($recId)) {
+            list($recId, $recData, $locking, $blocking) = $recId;
         }
         if ($locking) {
             if (!$this->lockRec($recId)) {
@@ -258,12 +268,19 @@ class DataStorage2
 
 
 
-    public function writeRecordElement($recId, $elemName, $value, $locking = false, $blocking = false)
+    public function writeRecordElement($recId, $elemName = null, $value = null, $locking = false, $blocking = false, $append = false)
     {
         // like writeRecord but with separate args recId, elemName and value
-        if (!($recId = $this->fixRecId($recId))) {
+        $supportedArgs = ['recId' => null, 'elemName' => null, 'value' => null, 'locking' => false, 'blocking' => false, 'append' => false];
+        if (!($recId = $this->fixRecId($recId, false, $supportedArgs))) {
+            return false;
+        } elseif (is_array($recId)) {
+            list($recId, $recData, $elemName, $value, $locking, $blocking, $append) = $recId;
+        }
+        if (!$recId || !$elemName || !$value) {
             return false;
         }
+
         if (!$this->awaitLockEnd($recId, $blocking)) {
             return false;
         }
@@ -273,9 +290,12 @@ class DataStorage2
             }
         }
         $data = $this->getData(true);
-
         if ($recId !== false) {
-            $data[$recId][$elemName] = $value;
+            if ($append) {
+                $data[$recId][$elemName] .= $value;
+            } else {
+                $data[$recId][$elemName] = $value;
+            }
         } else {
             $data[][$elemName] = $value;
         }
@@ -1297,8 +1317,12 @@ EOT;
 
 
 
-    private function fixRecId($recId, $allowNewRec = false)
+    private function fixRecId($recId, $allowNewRec = false, $supportedArgs = false)
+//    private function fixRecId($recId, $allowNewRec = false)
     {
+        if (is_array($recId)) {
+            return $this->parseWriteArgs($recId, $supportedArgs);
+        }
         if (isset($this->data[$recId])) {
             return $recId;
         }
@@ -1332,6 +1356,27 @@ EOT;
         return $recId;
     } // fixRecId
 
+
+
+
+    protected function parseWriteArgs($writeArgs, $args)
+    {
+//        $args = ['recId' => null, 'elemName' => null, 'value' => null, 'locking' => false, 'blocking' => false, 'append' => false];
+        $outArgs = [];
+        foreach ($args as $argName => $default) {
+            if (isset($writeArgs[$argName])) {
+                $outArgs[] = $writeArgs[$argName];
+//                $args[$argName] = $writeArgs[$argName];
+            } elseif ($default === null) {
+                return false;
+            } else {
+                $outArgs[] = $default;
+//                $args[$argName] = $default;s
+            }
+        }
+        $outArgs[0] = $this->fixRecId($outArgs[0]);
+        return $outArgs;
+    } // parseWriteArgs
 
 
 
