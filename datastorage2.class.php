@@ -231,12 +231,12 @@ class DataStorage2
         // supports list of args and arg-array.
         // $supportedArgs defines the expected args, their default values, where null means required arg.
         $supportedArgs = ['recId' => null, 'recData' => null, 'locking' => false, 'blocking' => false];
-        if (!($recId = $this->fixRecId($recId, false, $supportedArgs))) {
+        if (($recId = $this->fixRecId($recId, false, $supportedArgs)) === false) {
             return false;
         } elseif (is_array($recId)) {
             list($recId, $recData, $locking, $blocking) = $recId;
         }
-        if (!$recId || !$recData) {
+        if (($recId === false) || !$recData) {
             return false;
         }
 
@@ -261,6 +261,9 @@ class DataStorage2
         $this->lowLevelWrite($data);
         if ($locking) {
             $this->unlockRec($recId);
+        }
+        if ($this->logModifTimes) {
+            $this->updateMetaData('lastRecModif_'.$recId, microtime(true));
         }
         $this->getData(true);
         return true;
@@ -479,6 +482,18 @@ class DataStorage2
 
 
 
+    public function lastModifiedElement($key)
+    {
+        $lastRecModif = $this->getMetaElement('lastRecModif_'.$key);
+        if (!$lastRecModif) {
+            $lastRecModif = $this->lastModified();
+        }
+        return floatval($lastRecModif);
+    } // lastModifiedElement
+
+
+
+
     public function writeElement($key, $value)
     {
         if ($this->isLockDB()) {
@@ -494,6 +509,7 @@ class DataStorage2
         // syntax variant 'd3,d31,d312'
         if (strpos($key, ',') !== false) {
             $keys = explode(',', $key);
+            $key0 = $keys[0];
             if ($this->format === 'csv') {
                 $keys = array_reverse($keys);
             }
@@ -514,6 +530,11 @@ class DataStorage2
         } else {
             $data[$key] = $value;
         }
+
+        if ($this->logModifTimes) {
+            $this->updateMetaData('lastRecModif_'.$key0, microtime(true));
+        }
+
         return $this->lowLevelWrite($data);
     } // writeElement
 
@@ -721,6 +742,10 @@ class DataStorage2
             $data[$key] = $value;
         }
         $this->lowLevelWrite($data);
+
+        if ($this->logModifTimes) {
+            $this->updateMetaData('lastRecModif_'.$key, microtime(true));
+        }
     } // updateElement
 
 
@@ -1128,6 +1153,7 @@ EOT;
         $this->dataFile = isset($args['dataFile']) ? $args['dataFile'] :
             (isset($args['dataSource']) ? $args['dataSource'] : ''); // for compatibility
         $this->dataFile = resolvePath($this->dataFile);
+        $this->logModifTimes = isset($args['logModifTimes']) ? $args['logModifTimes'] : false;
         $this->sid = isset($args['sid']) ? $args['sid'] : '';
         $this->doLockDB = isset($args['lockDB']) ? $args['lockDB'] : false;
         $this->format = isset($args['format']) ? $args['format'] : '';
@@ -1201,6 +1227,7 @@ EOT;
             'types' => [],
         ];
         if (!$data) {
+            $this->structure = $structure;
             return $structure;
         }
         if (!$fileFormat) {
