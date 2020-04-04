@@ -3,6 +3,9 @@
 var ajaxHndl = null;
 var lastUpdated = 0;
 var polltime = 60;
+var paramName = '';
+var paramSource = '';
+var prevParamValue = '';
 var refs = '';
 var debugOutput = false;
 
@@ -17,9 +20,19 @@ function initLiveData() {
 
     // check for polltime argument: (only apply first appearance)
     $('[data-live-data-polltime]').each(function () {
-        polltime = parseInt($( this ).attr('data-live-data-polltime'));
+        polltime = parseInt( $( this ).attr('data-live-data-polltime') );
         console.log('custom polltime: ' + polltime + 's');
-        return;
+        return false;
+    });
+
+    // check for dynamic parameter: (only apply first appearance)
+    $('[data-live-data-param]').each(function () {
+        var paramDef = $( this ).attr('data-live-data-param');
+        paramDef = paramDef.split('=');
+        paramName = paramDef[0];
+        paramSource = paramDef[1];
+        console.log('custom param: ' + paramSource + ' => ' + paramName);
+        return false;
     });
 
     debugOutput = ($('.debug').length !== 0);
@@ -41,12 +54,23 @@ function updateDOM(data) {
 
 
 
-function updateLiveData( forceUpdate ) {
+function updateLiveData( returnImmediately ) {
     var url = appRoot + "_lizzy/_live_data_service.php";
-    if (typeof forceUpdate !== 'undefined') {
-        url = url + '?forceUpdate';
+    if (paramName) {
+        var paramValue = $( paramSource ).text();
+        url = appendToUrl(url, 'dataSelector=' + paramName + ':' + paramValue);
+        if (paramValue !== prevParamValue) {
+            returnImmediately = true;
+            prevParamValue = paramValue;
+        }
+    }
+    if (typeof returnImmediately !== 'undefined') {
+        url = appendToUrl(url, 'returnImmediately');
     }
 
+    if (ajaxHndl !== null){
+        ajaxHndl.abort();
+    }
     ajaxHndl = $.ajax({
         url: url,
         type: 'POST',
@@ -54,11 +78,19 @@ function updateLiveData( forceUpdate ) {
         async: true,
         cache: false,
     }).done(function ( json ) {
+        ajaxHndl = null;
         if (!json) {
             console.log('No data received');
             return;
         }
-        var data = JSON.parse(json);
+        try {
+            var data = JSON.parse(json);
+        } catch (e) {
+            console.log( json );
+            return false;
+        }
+
+        // var data = JSON.parse(json);
         if (typeof data.lastUpdated !== 'undefined') {
             lastUpdated = data.lastUpdated;
         }
@@ -88,13 +120,38 @@ function updateLiveData( forceUpdate ) {
 } // update
 
 
+
 // initialize live data:
 $( document ).ready(function() {
     if ($('[data-live-data-ref]').length) {
-        console.log('starting live-data');
         setTimeout(function () {
+            console.log('starting live-data');
             initLiveData();
-        }, 2);
+        }, 1);
     }
 });
 
+
+
+
+$(window).bind('beforeunload', function(e) {
+    abortAjax();
+});
+
+
+
+function abortAjax()
+{
+    if (ajaxHndl !== null){
+        ajaxHndl.abort();
+        ajaxHndl = null;
+        console.log('live-data: last ajax call aborted');
+    }
+    $.ajax({
+        url: appRoot + "_lizzy/_ajax_server.php?abort=true",
+        type: 'GET',
+        cache: false,
+    }).done(function () {
+        console.log('live-data: server process aborted');
+    });
+}

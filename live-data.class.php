@@ -21,14 +21,90 @@ class LiveData
 
     public function render()
     {
-        $value = $this->db->readElement( $this->elementName );
+        $elementName = $this->elementName;
+        $tickRec = [];
+        $value = '';
+        if (strpos($elementName, '|') === false) {
+            $this->addTicketRec(false, $elementName, $tickRec);
+            $value = $this->db->readElement($elementName);
 
-        $tickRec[$this->inx - 1] = [
+        } else {
+            $elementNames = preg_split('/\s*\|\s*/', $elementName);
+            foreach ($elementNames as $i => $elementName) {
+                $this->addTicketRec($i, $elementName, $tickRec);
+                if ($i === 0) {
+                    $value = $this->db->readElement($elementName);
+                }
+            }
+        }
+
+        $ticket = $this->createOrUpdateTicket($tickRec);
+
+        $dynamicArg = '';
+        if ($this->dynamicArg) {
+            $dynamicArg = " data-live-data-param='$this->dynamicArg'";
+        }
+
+        $polltime = '';
+        if ($this->polltime !== false) {
+            $polltime = " data-live-data-polltime='$this->polltime'";
+        }
+
+        if (!$this->manual) {
+            $str = <<<EOT
+<span id='$this->id' class='lzy-live-data' data-live-data-ref="$ticket"$polltime$dynamicArg>$value</span>
+EOT;
+        } else {
+            $str = <<<EOT
+<span class='lzy-live-data disp-no' data-live-data-ref="$ticket"$polltime$dynamicArg><!-- live-data manual mode --></span>
+EOT;
+        }
+        return $str;
+    } // render
+
+
+
+    private function init($args)
+    {
+        if (!isset($args['file'])) {
+            exit("Error: argument 'file' missing in call to LiveData");
+        }
+        $this->file = makePathRelativeToPage($args['file'], true);
+        $this->elementName = (isset($args['elementName'])) ? $args['elementName'] : false;
+        $this->dynamicArg = (isset($args['dynamicArg'])) ? $args['dynamicArg'] : false;
+        $this->id = (isset($args['id'])) ? $args['id'] : false;
+        $this->polltime = (isset($args['polltime'])) ? $args['polltime'] : false;
+        $this->mode = (isset($args['mode'])) ? $args['mode'] : false;
+        $this->manual = (strpos($this->mode, 'manual') !== false);
+
+        if ($this->manual) {
+            if (($this->elementName === false) || ($this->elementName === '')) {
+                exit( "Error: argument ``elementName`` not specified.");
+            }
+        }
+
+        $this->db = new DataStorage2([ 'dataFile' => $this->file ]);
+    }
+
+
+
+    private function addTicketRec($inx, $elementName, &$tickRec)
+    {
+        $id = $this->id;
+        if ($inx !== false) {
+            $id .= '-'.($inx + 1);
+        }
+        $tickRec[] = [
             'file' => $this->file,
-            'elementName' => $this->elementName,
-            'id' => $this->id,
+            'elementName' => $elementName,
+            'id' => $id,
         ];
+    } // addTicketRec
 
+
+
+    private function createOrUpdateTicket(array $tickRec)
+    {
         $tick = new Ticketing();
         if (isset($_SESSION['lizzy']['liveDataTicket'])) {
             $ticket = $_SESSION['lizzy']['liveDataTicket'];
@@ -45,31 +121,7 @@ class LiveData
             $ticket = $tick->createTicket($tickRec, 99, 86400);
             $_SESSION['lizzy']['liveDataTicket'] = $ticket;
         }
-
-        if ($this->polltime !== false) {
-            $this->polltime = " data-live-data-polltime='$this->polltime'";
-        }
-
-        $this->optionAddNoComment = true;
-        $str = <<<EOT
-<span id='$this->id' class='lzy-live-data' data-live-data-ref="$ticket"$this->polltime>$value</span>
-EOT;
-        return $str;
-    }
-
-
-
-    private function init($args)
-    {
-        if (!isset($args['file'])) {
-            exit("Error: argument 'file' missing in call to LiveData");
-        }
-        $this->file = makePathRelativeToPage($args['file'], true);
-
-        $this->elementName = (isset($args['elementName'])) ? $args['elementName'] : false;
-        $this->id = (isset($args['id'])) ? $args['id'] : false;
-        $this->polltime = (isset($args['polltime'])) ? $args['polltime'] : false;
-        $this->db = new DataStorage2([ 'dataFile' => $this->file ]);
-    }
+        return $ticket;
+    } // createOrUpdateTicket
 }
 

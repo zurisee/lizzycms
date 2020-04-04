@@ -18,6 +18,8 @@ $this->addMacro($macroName, function () {
     $polltime = $this->getArg($macroName, 'polltime', '(optional) Polling time, i.e. the time server waits for new data before giving up.', false);
     $mode = $this->getArg($macroName, 'mode', '[manual] Manual mode: invoke live-data fields manually.', false);
 
+    $manual = (strpos($mode, 'manual') !== false);
+
     if ($file === 'help') {
         return '';
     }
@@ -26,15 +28,12 @@ $this->addMacro($macroName, function () {
         $this->compileMd = true;
         return "**Error**: argument ``file`` not specified.";
     }
-    if (strpos($mode, 'manual') === false) {
-        if (($elementName === false) || ($elementName === '')) {
-            $this->compileMd = true;
-            return "**Error**: argument ``elementName`` not specified.";
-        }
-    }
 
     $args = $this->getArgsArray($macroName);
     $ld = new LiveData($this->lzy, $inx, $args);
+
     $str = $ld->render();
+
+    $this->optionAddNoComment = true;
 	return $str;
 });
