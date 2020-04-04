@@ -62,6 +62,13 @@ require_once 'ticketing.class.php';
 
 use Symfony\Component\Yaml\Yaml;
 
+if (isset($_GET['abort'])) {
+    session_start();
+    $_SESSION['lizzy']['ajaxServerAbort'] = true;
+    session_write_close();
+    exit();
+}
+
 $serv = new AjaxServer;
 
 class AjaxServer
