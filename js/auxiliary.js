@@ -73,6 +73,18 @@ function showMessage( txt )
 
 
 //--------------------------------------------------------------
+function appendToUrl(url, arg) {
+    if (url.match(/\?/)) {
+        url = url + '&' + arg;
+    } else {
+        url = url + '?' + arg;
+    }
+    return url;
+} // appendToUrl
+
+
+
+//--------------------------------------------------------------
 function mylog(txt)
 {
 	console.log(txt);
