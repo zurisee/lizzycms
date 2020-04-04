@@ -204,6 +204,14 @@ class DataStorage2
 
 
 
+    public function getSize()
+    {
+        $size = sizeof($this->getData( true ));
+        return $size;
+    } // getSize
+
+
+
 
     // === Record level operations ==========================
     // 'Record' defined as first level of multilevel nested data
@@ -770,7 +778,7 @@ EOT;
     protected function lowLevelWriteStructure()
     {
         $this->openDbReadWrite();
-        $structureJson = $this->jsonEncode($this->structure);
+        $structureJson = isset($this->structure)? $this->jsonEncode($this->structure): '';
 
         $sql = <<<EOT
 UPDATE "{$this->tableName}" SET 
