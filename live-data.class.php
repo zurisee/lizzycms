@@ -25,13 +25,22 @@ class LiveData
         $tickRec = [];
         $value = '';
         if (strpos($elementName, '|') === false) {
-            $this->addTicketRec(false, $elementName, $tickRec);
+            $this->addTicketRec($this->id, $elementName, $tickRec);
             $value = $this->db->readElement($elementName);
 
         } else {
             $elementNames = preg_split('/\s*\|\s*/', $elementName);
+            $n = sizeof($elementNames);
+            $id = $this->id;
+            if ($id && strpos($id, '|') !== false) {
+                $ids = preg_split('/\s*\|\s*/', $id);
+                for ($i=sizeof($ids); $i<$n; $i++) {
+                    $ids[$i] = "lzy-live-data-$i";
+                }
+            }
             foreach ($elementNames as $i => $elementName) {
-                $this->addTicketRec($i, $elementName, $tickRec);
+                $id = isset($ids[$i])? $ids[$i]: $id;
+                $this->addTicketRec($id, $elementName, $tickRec);
                 if ($i === 0) {
                     $value = $this->db->readElement($elementName);
                 }
@@ -88,11 +97,17 @@ EOT;
 
 
 
-    private function addTicketRec($inx, $elementName, &$tickRec)
+    private function addTicketRec($id, $elementName, &$tickRec)
     {
-        $id = $this->id;
-        if ($inx !== false) {
-            $id .= '-'.($inx + 1);
+        if (!$id) {
+            $id = preg_replace('/\{.*\},/', '', $elementName);
+            $id = 'liv-'.strtolower(str_replace(' ', '-', $id));
+            if ($tickRec) {
+                $existingIds = array_map(function ($e) { return $e['id']; }, $tickRec);
+                if (in_array($id, $existingIds)) {
+                    $id .= "-$this->inx";
+                }
+            }
         }
         $tickRec[] = [
             'file' => $this->file,
