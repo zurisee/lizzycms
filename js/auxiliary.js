@@ -27,6 +27,22 @@ function isValidEmail(email) {
 
 
 //--------------------------------------------------------------
+function scrollToBottom( sel ) {
+    setTimeout(function() {
+        if (typeof sel === 'undefined') {
+            sel = '.lzy-scroll-to-bottom';
+        }
+        var $elem = $( sel );
+        $elem.animate({
+            scrollTop: $elem.get(0).scrollHeight + 10
+        }, 500);
+    }, 100);
+} // scrollToBottom
+
+
+
+
+//--------------------------------------------------------------
 function scrollIntoView( selector, container )
 {
     if (typeof container !== 'undefined') {
