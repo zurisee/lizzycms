@@ -12,13 +12,11 @@ $this->addMacro($macroName, function () {
 	$inx = $this->invocationCounter[$macroName] + 1;
 
 	// how to get access to macro arguments:
-    $file = $this->getArg($macroName, 'file', 'Defines the data-source from which to retrieve the data element', '');
-    $elementName = $this->getArg($macroName, 'elementName', 'Name of the element to be visualized', false);
-    $id = $this->getArg($macroName, 'id', '(optional) Id of DOM element.', "lzy-live-data$inx");
-    $polltime = $this->getArg($macroName, 'polltime', '(optional) Polling time, i.e. the time server waits for new data before giving up.', false);
-    $mode = $this->getArg($macroName, 'mode', '[manual] Manual mode: invoke live-data fields manually.', false);
-
-    $manual = (strpos($mode, 'manual') !== false);
+    $file = $this->getArg($macroName, 'file', 'Defines the data-source from which to retrieve the data element(s)', '');
+    $this->getArg($macroName, 'elementName', 'Name of the element(s) to be visualized. Use format "A|B|C" to specify a list of names.', false);
+    $this->getArg($macroName, 'id', '(optional) Id of DOM element(s). If not specified, id will be derived from elementName.  Use format "A|B|C" to specify a list of ids.', false);
+    $this->getArg($macroName, 'polltime', '(optional) Polling time, i.e. the time the server waits for new data before giving up and responding with "No new data".', false);
+    $this->getArg($macroName, 'mode', '[manual] Manual mode: invoke live-data fields manually. Means, HTML code is created outside of this macro, in particular in case when elementName is specified as a list.', false);
 
     if ($file === 'help') {
         return '';
