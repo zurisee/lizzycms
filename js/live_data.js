@@ -124,10 +124,7 @@ function updateLiveData( returnImmediately ) {
 // initialize live data:
 $( document ).ready(function() {
     if ($('[data-live-data-ref]').length) {
-        setTimeout(function () {
-            console.log('starting live-data');
-            initLiveData();
-        }, 1);
+        initLiveData();
     }
 });
 
