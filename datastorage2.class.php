@@ -1032,7 +1032,7 @@ EOT;
                 $ps->copyFileToRecycleBin($filename);
             }
 
-            $data = $this->getData();
+            $data = $this->getData(true);
             if ($this->format === 'yaml') {
                 $this->writeToYamlFile($filename, $data);
 
