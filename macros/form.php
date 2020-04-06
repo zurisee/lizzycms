@@ -8,19 +8,6 @@ require_once SYSTEM_PATH.'forms.class.php';
 
 $macroName = basename(__FILE__, '.php');
 
-// Evaluate if form data received
-if (isset($_GET['lizzy_form']) || isset($_POST['lizzy_form'])) {	// we received data:
-	$this->form = new Forms($page, $this);
-	$page->formEvalResult = $this->form->evaluate();
-	unset($this->form);
-}
-
-$jsFloatPath = "~sys/third-party/floatlabel/";
-
-$page->addCssFiles( [ "{$jsFloatPath}jquery.FloatLabel.css", "{$jsFloatPath}main.css" ]);
-$page->addJqFiles("{$jsFloatPath}jquery.FloatLabel.js");
-
-
 
 $this->addMacro($macroName, function () {
 	$macroName = basename(__FILE__, '.php');
@@ -30,8 +17,15 @@ $this->addMacro($macroName, function () {
 
 
     if ($inx === 1) {
-        $this->form = new Forms($this->page, $this);
+        $this->form = new Forms($this->lzy);
+
+        // Evaluate if form data received
+        if (isset($_GET['lizzy_form']) || isset($_POST['lizzy_form'])) {	// we received data:
+            $this->form->evaluate();
+        }
     }
+
+
     if (isset($args[0]) && ($args[0] === 'help')) {
         return $this->form->renderHelp();
     }
@@ -42,7 +36,14 @@ $this->addMacro($macroName, function () {
     $legend = $this->getArg($macroName, 'legend', '', '');
 
     // create form head:
-    $str = $this->form->render([ 'type' => 'form-head', 'label' => $label, 'mailto' => $mailto, 'mailfrp,' => $mailfrom, 'file' => $file ]);
+    $str = $this->form->render([
+        'type' => 'form-head',
+        'label' => $label,
+        'mailto' => $mailto,
+        'mailfrp,' => $mailfrom,
+        'file' => $file,
+        'legend' => $legend,
+    ]);
 
     // create form buttons:
     $buttons = [ 'label' => '', 'type' => 'button', 'value' => '' ];
@@ -81,10 +82,6 @@ $this->addMacro($macroName, function () {
     }
 
     $str .= $this->form->render([ 'type' => 'form-tail' ]);
-
-    if ($legend) {
-        $str = "<div class='lzy-form-legend'>$legend</div>$str";
-    }
 
 	return $str;
 });

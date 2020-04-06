@@ -23,8 +23,8 @@ $this->addMacro($macroName, function () {
     }
     $args = $this->getArgsArray($macroName);
 
-    if ($inx == 1) {
-		$this->form = new Forms($this->page, $this);
+    if ($inx === 1) {
+		$this->form = new Forms($this->lzy);
 	}
 	
 	$args1 = ["type" => "form-head",  "label" => "Lzy Upload Form:", "class" => "lzy-form lzy-files-upload-form$inx"];

@@ -29,10 +29,10 @@ class Forms
 	private $currRecData = null;	// shortcut data for current form-element: $formDescr[ <current form> ]->formData[ $currRecIndex ]
 
 //-------------------------------------------------------------
-	public function __construct($page, $transvar)
+	public function __construct($lzy)
 	{
-		$this->transvar = $transvar;
-		$this->page = $page;
+		$this->transvar = $lzy->trans;
+		$this->page = $lzy->page;
 		$this->inx = -1;
         $this->addButtonsActions();
     } // __construct
@@ -55,7 +55,7 @@ class Forms
                 return $this->renderHelp();
 
             case 'form-head':
-                return $this->formHead($args);
+                return $this->renderFormHead($args);
             
             case 'text':
                 $elem = $this->renderTextInput();
@@ -176,7 +176,7 @@ class Forms
     
 
 //-------------------------------------------------------------
-    private function formHead($args)
+    private function renderFormHead($args)
     {
 		$this->currForm->class = $class = (isset($args['class'])) ? $args['class'] : 'lzy-form';
 		if ($this->currForm->formName) {
@@ -206,12 +206,17 @@ class Forms
 		    $this->activatePreventMultipleSubmit();
         }
 
-		$out = "\t<form$_class$_method$_action>\n";
+		$out = '';
+        if (isset($args['legend']) && $args['legend']) {
+            $out = "<div class='lzy-form-legend'>{$args['legend']}</div>\n\n";
+        }
+
+        $out .= "\t<form$_class$_method$_action>\n";
 		$out .= "\t\t<input type='hidden' name='lizzy_form' value='{$this->currForm->formId}' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_time' name='lizzy_time' value='$time' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_next' value='{$this->currForm->next}' />\n";
 		return $out;
-	} // formHead
+	} // renderFormHead
 
 
 //-------------------------------------------------------------
@@ -625,11 +630,10 @@ EOT;
 		$this->saveFormDescr();
 		$out = "\t</form>\n";
 
-        if (isset($this->page->formEvalResult)) {
-			return $out.$this->page->formEvalResult;
-		} else {
-			return $out;
+        if (isset($this->formEvalResult)) {
+			$out .= $this->formEvalResult;
 		}
+        return $out;
 	} // formTail
 
     
@@ -716,6 +720,7 @@ EOT;
                 $this->currForm->preventMultipleSubmit = true;
                 $GLOBALS["globalParams"]['preventMultipleSubmit'] = true;
             }
+            $this->currForm->replaceQuotes =  (isset($args['replaceQuotes']))? $args['replaceQuotes']: true; //ToDo: too late -> in eval needed
 
 		} else {
             $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form-Elem'.($this->inx + 1);
@@ -794,7 +799,6 @@ EOT;
         }
 
         $rec->comment =  (isset($args['comment']))? $args['comment']: '';
-        $rec->replaceQuotes =  (isset($args['replaceQuotes']))? $args['replaceQuotes']: true;
 
         if (isset($args['path'])) {
 		    $rec->uploadPath = $args['path'];
@@ -885,10 +889,13 @@ EOT;
 	} // getUserSuppliedData
 
 
+
+
 //-------------------------------------------------------------
     public function evaluate()
     {
-    	$this->userSuppliedData = $userSuppliedData = (isset($_GET['lizzy_form'])) ? $_GET : $_POST;
+
+        $this->userSuppliedData = $userSuppliedData = (isset($_GET['lizzy_form'])) ? $_GET : $_POST;
 		if (isset($userSuppliedData['lizzy_form'])) {
 			$this->formId = $formId = $userSuppliedData['lizzy_form'];
 		} else {
@@ -929,9 +936,10 @@ EOT;
 
         if ($str) {
             $this->page->addCss(".$formId { display: none; }");
-            $str .= "<div class='lzy-form-continue'><a href='{$next}'>{{ lzy-form-continue }}</a></div>\n<form class='$formId'>";
+            $str .= "<div class='lzy-form-continue'><a href='{$next}'>{{ lzy-form-continue }}</a></div>\n";
             $this->clearCache();
         }
+        $this->formEvalResult = $str;
         return $str;
     } // evaluate
 
@@ -975,13 +983,11 @@ EOT;
             } else {
                 $value = str_replace("\n", "\n\t\t\t", $value);
             }
-            $value = urldecode($value); //???
-            if ($currFormDescr->replaceQuotes) {
+            if (!isset($currFormDescr->replaceQuotes) || $currFormDescr->replaceQuotes) {
                 $value = str_replace(['"', "'"], ['ʺ', 'ʹ'], $value);
             }
 
 			$str .= mb_str_pad($label, 22, '.').": $value\n\n";
-			$value = str_replace("'", '&#39;', $value);
 			$log .= "'$value'; ";
             $labelNames .= "'$name'; ";
 		}
@@ -995,11 +1001,23 @@ EOT;
 		$remoteAddress = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : '';
 		$localCall = (($serverName === 'localhost') || (strpos($remoteAddress, '192.') === 0) || ($remoteAddress === '::1'));
 
+        $out = "\n<div class='lzy-form-response'>\n$out\n</div><!-- /lzy-form-response -->\n";
+
+        // send mail if requested:
 		if ($mailto) {
             if ($localCall) {
                 $str1 = "-------------------------------\n$str\n\n-------------------------------\n(-> would be be sent to $mailto)\n";
-                $out = "<div class='lzy-form-response'>\n<p><em>{{ lzy-form-data-received-ok }}</em></p>\n<div class='lzy-localhost-response'><p>{{ lzy-form-feedback-local }}</p>\n<pre>\n$str1\n</pre>\n</div></div>\n";
-            } elseif ($mailto) {
+                $out .= <<<EOT
+
+<div class='lzy-localhost-response'>
+    <p>{{ lzy-form-feedback-local }}</p>
+    <pre>
+$str1
+    </pre>
+</div> <!-- /lzy-localhost-response -->
+
+EOT;
+            } else {
                 $subject = "[$formName] user data received";
                 $this->sendMail($mailto, $mailfrom, $subject, $str);
             }
@@ -1083,8 +1101,7 @@ EOT;
                     }
                 }
             } else {        // normal value
-                $value = urldecode($value); //???
-                if ($currFormDescr->replaceQuotes) {
+                if (!isset($currFormDescr->replaceQuotes) || $currFormDescr->replaceQuotes) {
                     $value = str_replace(['"', "'"], ['ʺ', 'ʹ'], $value);
                 }
                 if (isset($formElements[$name])) {
