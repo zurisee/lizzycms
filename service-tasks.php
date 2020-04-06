@@ -14,7 +14,6 @@ define('SCHEDULE_FILE',         DATA_PATH.'schedule.yaml');             // sched
 define('SCHEDULE_LAST_RUN',     CACHE_PATH.'/_schedule-last-run.txt');  // time keeping
 
 
-
 //....................................................
 function runServiceTasks($lzy, $run = 1)
 {
