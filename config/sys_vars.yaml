@@ -60,6 +60,14 @@ Continue_:
     de: Weiter...
     en: Continue...
 
+lzy-combined-required-value-missing:
+    de: 'Mindestens eines dieser Felder muss eingegeben werden:'
+    _:  'At least one of these fields must be filled in:'
+
+lzy-form-email-notification-subject:
+    de: 'Neue Daten empfangen'
+    _:  'New data received'
+
 
 #--- File Upload --------------------------
 lzy-fileadmin-button-tooltip:

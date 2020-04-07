@@ -21,6 +21,7 @@ class Forms
 {
 	private $page = false;
 	private $formDescr = [];		// FormDescriptor -> all info about all forms, stored in $_SESSION['lizzy']['formDescr']
+    private $errorDescr = [];
 	private $currFormIndex = null;	// index of current form within array of forms
 	private $currForm = null;		// shortcut to $formDescr[ $currFormIndex ]
 	private $currRecIndex = null;	// index of current element within array of form-elements
@@ -155,7 +156,7 @@ class Forms
 
         // error in supplied data? -> signal to user:
         $error = '';
-        $name = $this->currRec->name;
+        $name = $this->currRec->elemId;
         if (isset($this->errorDescr[$this->formId][$name])) {
             $error = $this->errorDescr[$this->formId][$name];
             $error = "\n\t\t<div class='lzy-form-error-msg'>$error</div>";
@@ -173,7 +174,9 @@ class Forms
         }
         return $out;
     } // render
-    
+
+
+
 
 //-------------------------------------------------------------
     private function renderFormHead($args)
@@ -200,6 +203,7 @@ class Forms
 		$this->currForm->action = (isset($args['action'])) ? $args['action'] : '';
 		$this->currForm->next = (isset($args['next'])) ? $args['next'] : './';
 		$this->currForm->file = (isset($args['file'])) ? $args['file'] : '';
+		$this->currForm->confirmationText = (isset($args['confirmationText'])) ? $args['confirmationText'] : '{{ lzy-form-data-received-ok }}';
 
 		$time = time();
 		if ($this->currForm->preventMultipleSubmit) {
@@ -224,7 +228,8 @@ class Forms
     {
         $out = $this->getLabel();
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $out .= "<input type='text' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
+        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
+        $out .= "<input type='text' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderTextInput
 
@@ -257,8 +262,9 @@ EOT;
     private function renderEMailInput()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='email' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='email' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderEMailInput
 
@@ -278,14 +284,19 @@ EOT;
         if ($this->currRec->name) {
             $groupName = $this->currRec->name;
         }
-        $checkedElem = (isset($this->userSuppliedData[$groupName])) ? $this->userSuppliedData[$groupName] : false;
+        $checkedElem = isset($this->currRec->val)? $this->currRec->val: false;
         $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-radio-label'><div class='lzy-legend'><legend>{$this->currRec->label}</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
         foreach($values as $i => $value) {
-            $val = translateToIdentifier($value);
-            $name = $valueNames[$i];
+            $name = str_replace('!', '', $valueNames[$i]);
             $id = "lzy-radio_{$groupName}_$i";
 
-            $checked = ($checkedElem && ($val === $checkedElem)) ? ' checked' : '';
+            if (strpos($value, '!') !== false) {
+                $value = str_replace('!', '', $value);
+                if ($checkedElem === false) {
+                    $checkedElem = $value;
+                }
+            }
+            $checked = ($checkedElem && ($value === $checkedElem)) ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-radio-elem lzy-form-choice-elem'>\n";
             $out .= "\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked$cls /><label for='$id'>$value</label>\n";
             $out .= "\t\t\t</div>\n";
@@ -299,6 +310,10 @@ EOT;
     private function renderCheckbox()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $presetValues = isset($this->currRec->val)? $this->currRec->val: false;
+        if ($presetValues) {
+            $presetValues = array_map(function($e) { return str_replace('!', '', $e); }, $presetValues);
+        }
         $values = ($this->currRec->value) ? preg_split('/\s*\|\s*/', $this->currRec->value) : [];
         if (isset($this->currRec->valueNames)) {
             $valueNames = preg_split('/\s*\|\s*/', $this->currRec->valueNames);
@@ -308,13 +323,18 @@ EOT;
         $groupName = translateToIdentifier($this->currRec->label);
         $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-checkbox-label'><div class='lzy-legend'><legend>{$this->currRec->label}</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
 
-        $data = isset($this->userSuppliedData[$groupName]) ? $this->userSuppliedData[$groupName] : [];
         foreach($values as $i => $value) {
-            $val = translateToIdentifier($value);
-            $name = $valueNames[$i];
+            $preselectedValue = false;
+            $name = str_replace('!', '', $valueNames[$i]);
             $id = "lzy-chckb_{$groupName}_$i";
+            if (strpos($value, '!') !== false) {
+                $value = str_replace('!', '', $value);
+                if ($presetValues === false) {
+                    $preselectedValue = true;
+                }
+            }
 
-            $checked = ($data && in_array($value, $data)) ? ' checked' : '';
+            $checked = (($presetValues !== false) && in_array($value, $presetValues)) || $preselectedValue ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-checkbox-elem lzy-form-choice-elem'>\n";
             $out .= "\t\t\t\t<input id='$id' type='checkbox' name='{$groupName}[]' value='$name'$checked$cls /><label for='$id'>$value</label>\n";
             $out .= "\t\t\t</div>\n";
@@ -325,12 +345,47 @@ EOT;
 
 
 
+    //-------------------------------------------------------------
+    private function renderDropdown()
+    {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $value = isset($this->currRec->val) && $this->currRec->val? $this->currRec->val: '';
+        $values = ($this->currRec->value) ? preg_split('/\s*\|\s*/', $this->currRec->value) : [];
+        if (isset($this->currRec->valueNames)) {
+            $valueNames = preg_split('/\s*\|\s*/', $this->currRec->valueNames);
+        } else {
+            $valueNames = $values;
+        }
+
+        $out = $this->getLabel();
+        $out .= "<select id='fld_{$this->currRec->elemId}' name='{$this->currRec->name}'$cls>\n";
+        $out .= "\t\t\t\t<option value=''></option>\n";
+
+        foreach ($values as $i => $item) {
+            if ($item) {
+                $val = str_replace('!', '', $valueNames[$i]);
+                $selected = '';
+                if ((!$value && (strpos($item, '!') !== false)) || ($value === $val)){
+                    $selected = ' selected';
+                    $item = str_replace('!', '', $item);
+                }
+                $out .= "\t\t\t\t<option value='$val'$selected>$item</option>\n";
+            }
+        }
+        $out .= "\t\t\t</select>\n";
+
+        return $out;
+    } // renderDropdown
+
+
+
 //-------------------------------------------------------------
     private function renderDate()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='date' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='date' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderDate
 
@@ -339,8 +394,9 @@ EOT;
     private function renderTime()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='time' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='time' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderDate
 
@@ -349,8 +405,9 @@ EOT;
     private function renderMonth()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='month' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='month' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderMonth
 
@@ -358,8 +415,9 @@ EOT;
     private function renderNumber()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='number' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='number' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderNumber
 
@@ -368,8 +426,9 @@ EOT;
     private function renderRange()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='range' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='range' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderRange
 
@@ -378,36 +437,11 @@ EOT;
     private function renderTel()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
         $out = $this->getLabel();
-        $out .= "<input type='tel' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
+        $out .= "<input type='tel' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderTel
-
-
-//-------------------------------------------------------------
-    private function renderDropdown()
-    {
-        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $values = ($this->currRec->value) ? preg_split('/\s*\|\s*/', $this->currRec->value) : [];
-        $out = $this->getLabel();
-        $out .= "<select id='fld_{$this->currRec->elemId}' name='{$this->currRec->name}'$cls>\n";
-        $out .= "\t\t\t\t<option value=''></option>\n";
-
-        foreach ($values as $item) {
-            if ($item) {
-                $selected = '';
-                if (strpos($item, '!') !== false) {
-                    $selected = ' selected';
-                    $item = str_replace('!', '', $item);
-                }
-                $val = translateToIdentifier($item);
-                $out .= "\t\t\t\t<option value='$val'$selected>$item</option>\n";
-            }
-        }
-        $out .= "\t\t\t</select>\n";
-
-        return $out;
-    } // renderDropdown
 
 
 //-------------------------------------------------------------
@@ -636,7 +670,7 @@ EOT;
         return $out;
 	} // formTail
 
-    
+
 //-------------------------------------------------------------
     private function getLabel($id = false)
     {
@@ -668,7 +702,7 @@ EOT;
 //-------------------------------------------------------------
     private function getRequiredMarker()
     {
-		$required = $this->currRec->required;
+		$required = $this->currRec->requiredMarker;
         return ($required) ? "<span class='lzy-form-required-marker' aria-hidden='true'>{$this->currRec->requiredMarker}</span>" : '';
     } // getRequiredMarker
 
@@ -708,8 +742,6 @@ EOT;
 			$this->currForm->formData['names'] = [];
 			$this->userSuppliedData = $this->getUserSuppliedData($formId);
 
-			$this->errorDescr = $this->restoreErrorDescr();
-
             if (!isset($args['warnLeavingPage']) || $args['warnLeavingPage']) {
                 $this->page->addModules('~sys/js/forms-leave-warning.js');
             }
@@ -720,7 +752,7 @@ EOT;
                 $this->currForm->preventMultipleSubmit = true;
                 $GLOBALS["globalParams"]['preventMultipleSubmit'] = true;
             }
-            $this->currForm->replaceQuotes =  (isset($args['replaceQuotes']))? $args['replaceQuotes']: true; //ToDo: too late -> in eval needed
+            $this->currForm->replaceQuotes =  (isset($args['replaceQuotes']))? $args['replaceQuotes']: true;
 
 		} else {
             $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form-Elem'.($this->inx + 1);
@@ -741,8 +773,18 @@ EOT;
 			return;
 		}
 
-		
-		$elemId = translateToIdentifier($label);
+        if (isset($args['id'])) {
+            $elemId = $args['id'];
+        } else {
+            $elemId = translateToIdentifier($label);
+            while (isset($this->currForm->formElements[$elemId])) {
+                if (preg_match('/(.*?)(\d+)$/', $elemId, $m)) {
+                    $elemId = $m[1] . (intval($m[2]) + 1);
+                } else {
+                    $elemId .= '1';
+                }
+            }
+        }
 
         $this->currForm->formElements[$elemId] = new FormElement;
         $this->currRec = &$this->currForm->formElements[$elemId];
@@ -760,33 +802,52 @@ EOT;
 		if (isset($args['name'])) {
             $name = $args['name'];
         } else {
-            $name = translateToIdentifier($label);
-        }
-		if (in_array($name, $this->currForm->formData["names"])) {
-		    $name .= $this->inx;
+            $name = $elemId;
         }
 		$this->name = $name;
+		$rec->name = $name;
         $_name = " name='$name'";
 
 
         if (isset($args['required']) && $args['required']) {
-            $rec->required = true;
-            $rec->requiredMarker = (is_bool($args['required'])) ? '*' : $args['required'];
-            $required = " required aria-required='true'";
+            if (preg_match('/(.*)\s*\[(.*)\]/', $args['required'], $m)) {
+                $rec->required = false;
+                $rec->requiredGroup = explodeTrim(',', $m[2]);
+                $marker = $m[1];
+                $rec->requiredMarker = $marker ? "<span class='lzy-form-combined-required-marker'>$marker</span>" : '';
+                $required = '';
+            } else {
+                $rec->required = true;
+                $rec->requiredMarker = (is_bool($args['required'])) ? '*' : $args['required'];
+                if ($rec->requiredMarker) {
+                    $rec->requiredMarker = "<span class='lzy-form-required-marker'>$rec->requiredMarker</span>";
+                }
+                $required = " required aria-required='true'";
+            }
         } else {
+            $rec->requiredMarker = false;
             $rec->required = false;
             $required = '';
         }
 	
-        if (isset($args['value'])) {
-			$rec->value = $args['value'];
+        if (isset($this->userSuppliedData[$name])) {
+            if (($type === 'checkbox') || ($type === 'dropdown')) {
+                $rec->val = $this->userSuppliedData[$name];
+                $rec->value = isset($args['value'])? $args['value']: '';
+            } elseif ($type === 'radio') {
+                $rec->val = $this->userSuppliedData[$name];
+                $rec->value = isset($args['value'])? $args['value']: '';
+            } else {
+                $rec->value = $this->userSuppliedData[$name];
+            }
 
-		} elseif (isset($this->userSuppliedData[$rec->name])) {
-			$rec->value = $this->userSuppliedData[$rec->name];
+		} elseif (isset($args['value'])) {
+            $rec->value = $args['value'];
 
-		} else {
+        } else {
 			$rec->value = '';
 		}
+
         // announce initial value if not empty -> needed by form-leave-warning.js
         if ($rec->value) {
             $inpAttr .= " data-value='{$rec->value}'";
@@ -809,9 +870,10 @@ EOT;
         if ($type === 'form-head') {
 			$this->currForm->formData['labels'][0] = 'Date';
 			$this->currForm->formData['names'] = [];
+
 		} elseif (($type !== 'button') && ($type !== 'form-tail') && (strpos($type, 'fieldset') === false)) {
 			$rec->shortLabel = (isset($args['shortlabel'])) ? $args['shortlabel'] : $label;
-			if ($type === 'checkbox') {
+			if (($type === 'checkbox') || ($type === 'radio') || ($type === 'dropdown')) {
 				$checkBoxLabels = ($rec->valueNames) ? preg_split('/\s* [\|,] \s*/x', $rec->valueNames) : [];
 				array_unshift($checkBoxLabels, $rec->shortLabel);
 				$this->currForm->formData['labels'][] = $checkBoxLabels;
@@ -826,7 +888,7 @@ EOT;
         
         foreach (['min', 'max', 'pattern', 'value', 'placeholder'] as $attr) {
             if (isset($args[$attr])) {
-                if (($type === 'checkbox') || ($type === 'radio')) {
+                if (($type === 'checkbox') || ($type === 'radio') || ($type === 'dropdown')) {
                     continue;
                 }
                 if (($type === 'textarea') && ($attr === 'value')) {
@@ -858,7 +920,7 @@ EOT;
 		return $args;
 	} // extractArgs
 	
-	
+
 //-------------------------------------------------------------
 	private function saveFormDescr($formId = false, $formDescr = false)
 	{
@@ -934,12 +996,12 @@ EOT;
 			}
         }
 
-        if ($str) {
+        if (!$this->errorDescr) {
             $this->page->addCss(".$formId { display: none; }");
             $str .= "<div class='lzy-form-continue'><a href='{$next}'>{{ lzy-form-continue }}</a></div>\n";
             $this->clearCache();
+            $this->formEvalResult = $str;
         }
-        $this->formEvalResult = $str;
         return $str;
     } // evaluate
 
@@ -955,11 +1017,32 @@ EOT;
 		$labels = &$formData['labels'];
 		$names = &$formData['names'];
 		$userSuppliedData = $this->userSuppliedData;
-		
-		$str = "$formName\n===================\n\n";
+
+		// check required entries:
+        foreach ($currFormDescr->formElements as $name => $rec) {
+            if ($rec->requiredMarker) {
+                if ($g = isset($rec->requiredGroup)? $rec->requiredGroup : []) {
+                    $found = false;
+                    foreach ($g as $n) {
+                        if ($userSuppliedData[$n]) {
+                            $found = true;
+                            break;
+                        }
+                    }
+                    if (!$found) {
+                        $this->errorDescr[$this->formId][$name] = '{{ lzy-combined-required-value-missing }}';
+                    }
+                } elseif (!isset($userSuppliedData[$name]) || !$userSuppliedData[$name]) {
+                    $this->errorDescr[$this->formId][$name] = '{{ lzy-required-value-missing }}';
+                }
+            }
+        }
+
+
+        $str = "$formName\n===================\n\n";
 		$log = '';
 		$labelNames = '';
-		$out = '{{ lzy-form-data-received-ok }}';
+		$out = $currFormDescr->confirmationText;
 		foreach($names as $i => $name) {
 			if (is_array($labels[$i])) {
 				$label = $labels[$i][0];
@@ -967,6 +1050,7 @@ EOT;
 				$label = $labels[$i];
 			}
             $label = html_entity_decode($label);
+
 
             if (@$currFormDescr->formElements[$name]->type === 'bypassed') {
                 $value = $currFormDescr->formElements[$name]->value;
@@ -1005,12 +1089,19 @@ EOT;
 
         // send mail if requested:
 		if ($mailto) {
+            $formName = str_replace(':', '', $formName);
+            $subject = $this->transvar->translateVariable('lzy-form-email-notification-subject');
+            if (!$subject) {
+                $subject = 'user data received';
+            }
+            $subject = "[$formName] ".$subject;
             if ($localCall) {
                 $str1 = "-------------------------------\n$str\n\n-------------------------------\n(-> would be be sent to $mailto)\n";
                 $out .= <<<EOT
 
 <div class='lzy-localhost-response'>
     <p>{{ lzy-form-feedback-local }}</p>
+    <p>Subject: $subject</p>
     <pre>
 $str1
     </pre>
@@ -1018,7 +1109,6 @@ $str1
 
 EOT;
             } else {
-                $subject = "[$formName] user data received";
                 $this->sendMail($mailto, $mailfrom, $subject, $str);
             }
         }
