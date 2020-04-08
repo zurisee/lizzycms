@@ -1,6 +1,7 @@
 <?php
 
-$GLOBALS['lzy']['tableCounter'] = 1;
+$GLOBALS['lzy']['tableCounter'] = 0;
+//$GLOBALS['lzy']['tableCounter'] = 1;
 
 
 class HtmlTable
@@ -9,11 +10,12 @@ class HtmlTable
 
     public function __construct($lzy, $inx, $options)
     {
-        global $tableCounter;
+//        global $tableCounter;
         $this->options      = $options;
         $this->lzy 		    = $lzy;
         $this->page 		= $lzy->page;
         $this->tableCounter = &$GLOBALS['lzy']['tableCounter'];
+        $this->tableCounter++;
         $this->helpText = false;
         if ($options === 'help') {
             $this->helpText = [];
@@ -59,7 +61,8 @@ class HtmlTable
         $this->checkArguments($inx);
         
         $this->handleDatatableOption($this->page);
-        $tableCounter = $this->handleCaption($tableCounter);
+        $this->handleCaption();
+//        $tableCounter = $this->handleCaption($tableCounter);
     } // __construct
 
 
@@ -687,11 +690,12 @@ EOT;
 
 
 
-    private function handleCaption($tableCounter)
+    private function handleCaption()
+//    private function handleCaption($tableCounter)
     {
         if ($this->caption) {
-            $tableCounter++;
-            $this->tableCounter = $tableCounter;
+//            $tableCounter++;
+//            $this->tableCounter = $tableCounter;
             if ($this->captionIndex) {
                 $this->tableCounter = $this->captionIndex;
             }
@@ -707,7 +711,7 @@ EOT;
                 $this->caption = "\t\t<caption>$this->caption</caption>\n";
             }
         }
-        return $tableCounter;
+//        return $tableCounter;
     } // handleCaption
 
 
@@ -738,10 +742,12 @@ EOT;
                 $pageLength = " pageLength: {$this->initialPageLength},";
             }
             $jq = <<<EOT
-lzyTable{$this->tableCounter} = $('.lzy-datatable').DataTable({
+
+lzyTable{$this->tableCounter} = $('#lzy-table{$this->tableCounter}').DataTable({
     'language':{'search':'{{QuickSearch}}:', 'info': '_TOTAL_ {{Records}}'},
     $order$paging$pageLength
 });
+
 EOT;
 
             $page->addJq($jq);
