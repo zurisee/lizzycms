@@ -675,7 +675,8 @@ EOT;
     private function getLabel($id = false)
     {
 		$id = ($id) ? $id : "fld_{$this->currRec->elemId}";
-        $requiredMarker = $this->getRequiredMarker();
+        $requiredMarker =  $this->currRec->requiredMarker;
+//        $requiredMarker = $this->getRequiredMarker();
 		$label = $this->currRec->label;
 		if ($this->translateLabel) {
 		    $hasColon = (strpos($label, ':') !== false);
@@ -699,12 +700,12 @@ EOT;
     } // getLabel
 
 
-//-------------------------------------------------------------
-    private function getRequiredMarker()
-    {
-		$required = $this->currRec->requiredMarker;
-        return ($required) ? "<span class='lzy-form-required-marker' aria-hidden='true'>{$this->currRec->requiredMarker}</span>" : '';
-    } // getRequiredMarker
+////-------------------------------------------------------------
+//    private function getRequiredMarker()
+//    {
+//		$required = $this->currRec->requiredMarker;
+//        return ($required) ? "<span class='lzy-form-required-marker' aria-hidden='true'>{$this->currRec->requiredMarker}</span>" : '';
+//    } // getRequiredMarker
 
 
 
@@ -814,13 +815,13 @@ EOT;
                 $rec->required = false;
                 $rec->requiredGroup = explodeTrim(',', $m[2]);
                 $marker = $m[1];
-                $rec->requiredMarker = $marker ? "<span class='lzy-form-combined-required-marker'>$marker</span>" : '';
+                $rec->requiredMarker = $marker ? "<span class='lzy-form-combined-required-marker' aria-hidden='true'>$marker</span>" : '';
                 $required = '';
             } else {
                 $rec->required = true;
                 $rec->requiredMarker = (is_bool($args['required'])) ? '*' : $args['required'];
                 if ($rec->requiredMarker) {
-                    $rec->requiredMarker = "<span class='lzy-form-required-marker'>$rec->requiredMarker</span>";
+                    $rec->requiredMarker = "<span class='lzy-form-required-marker' aria-hidden='true'>$rec->requiredMarker</span>";
                 }
                 $required = " required aria-required='true'";
             }
