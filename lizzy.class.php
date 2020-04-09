@@ -573,6 +573,7 @@ $html .= "\n<!-- test modif -->\n";
         $this->config->pathToRoot = $pathToRoot;
 
         $globalParams['host'] = $requestScheme.$_SERVER['HTTP_HOST'].'/';
+        $this->appRootUrl = $requestScheme.$_SERVER['HTTP_HOST'] . $appRoot;
         $this->pageUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestedPath;
         $globalParams['pageUrl'] = $this->pageUrl;
 
@@ -800,6 +801,7 @@ EOT;
             $this->trans->addVariable('lzy-fileadmin-button', "", false);
         }
 
+        $this->trans->addVariable('appRootUrl', $this->appRootUrl);
         $this->trans->addVariable('pageUrl', $this->pageUrl);
         $this->trans->addVariable('appRoot', $this->pathToRoot);			// e.g. '../'
         $this->trans->addVariable('systemPath', $this->systemPath);		// -> file access path
