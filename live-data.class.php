@@ -1,39 +1,36 @@
 <?php
 
-$GLOBALS['liveDataInx'] = 1;
+$GLOBALS['liveDataInx'][ $GLOBALS["globalParams"]["pagePath"] ] = 0;
 
 class LiveData
 {
     public function __construct($lzy, $inx = false, $args = false)
     {
         $this->lzy = $lzy;
-        if ($inx !== false) {
-            $this->inx = $inx;
-            $GLOBALS['liveDataInx'] = $inx;
-        } else {
-            $this->inx = $GLOBALS['liveDataInx']++;
-        }
-        $this->inx = ($inx !== false) ? $inx: $GLOBALS['liveDataInx']++;
+        $this->inx = &$GLOBALS['liveDataInx'][ $GLOBALS["globalParams"]["pagePath"] ];
+        $this->inx++;
         $this->init($args);
-    }
+    } // __construct
 
 
 
     public function render()
     {
         $elementName = $this->elementName;
+        $elementNames = explodeTrim('|', $elementName);
         $tickRec = [];
         $value = '';
-        if (strpos($elementName, '|') === false) {
+
+        // elementName can be scalar or array:
+        if (sizeof($elementNames) === 1) {                  // scalar value:
             $this->addTicketRec($this->id, $elementName, $tickRec);
             $value = $this->db->readElement($elementName);
 
-        } else {
-            $elementNames = preg_split('/\s*\|\s*/', $elementName);
+        } else {                                            // array value:
             $n = sizeof($elementNames);
             $id = $this->id;
-            if ($id && strpos($id, '|') !== false) {
-                $ids = preg_split('/\s*\|\s*/', $id);
+            $ids = explodeTrim('|', $id);
+            if (sizeof($ids) > 1) {
                 for ($i=sizeof($ids); $i<$n; $i++) {
                     $ids[$i] = "lzy-live-data-$i";
                 }
@@ -41,10 +38,11 @@ class LiveData
             foreach ($elementNames as $i => $elementName) {
                 $id = isset($ids[$i])? $ids[$i]: $id;
                 $this->addTicketRec($id, $elementName, $tickRec);
-                if ($i === 0) {
+                if ($i === 0) {     // only render first value, further values must be manually inserted into page:
                     $value = $this->db->readElement($elementName);
                 }
             }
+            $this->inx += sizeof($elementNames) - 1;
         }
 
         $ticket = $this->createOrUpdateTicket($tickRec);
@@ -59,13 +57,17 @@ class LiveData
             $polltime = " data-live-data-polltime='$this->polltime'";
         }
 
-        if (!$this->manual) {
-            $str = <<<EOT
-<span id='$this->id' class='lzy-live-data' data-live-data-ref="$ticket"$polltime$dynamicArg>$value</span>
-EOT;
-        } else {
+        // normally, this macro renders visible output directly.
+        // 'mode: manual' overrides this -> just renders infrastructure, you place the visible code manually into your page
+        // e.g. <span id="my-id""></span>
+        if ($this->manual) {
             $str = <<<EOT
 <span class='lzy-live-data disp-no' data-live-data-ref="$ticket"$polltime$dynamicArg><!-- live-data manual mode --></span>
+EOT;
+
+        } else {
+            $str = <<<EOT
+<span id='$this->id' class='lzy-live-data' data-live-data-ref="$ticket"$polltime$dynamicArg>$value</span>
 EOT;
         }
         return $str;
@@ -93,22 +95,14 @@ EOT;
         }
 
         $this->db = new DataStorage2([ 'dataFile' => $this->file ]);
-    }
+    } // init
 
 
 
     private function addTicketRec($id, $elementName, &$tickRec)
     {
-        if (!$id) {
-            $id = preg_replace('/\{.*\},/', '', $elementName);
-            $id = 'liv-'.strtolower(str_replace(' ', '-', $id));
-            if ($tickRec) {
-                $existingIds = array_map(function ($e) { return $e['id']; }, $tickRec);
-                if (in_array($id, $existingIds)) {
-                    $id .= "-$this->inx";
-                }
-            }
-        }
+        $id = $this->deriveId($id, $elementName, $tickRec);
+        $this->id = $id;
         $tickRec[] = [
             'file' => $this->file,
             'elementName' => $elementName,
@@ -138,5 +132,24 @@ EOT;
         }
         return $ticket;
     } // createOrUpdateTicket
-}
+
+
+
+    private function deriveId($id, $elementName, $tickRec)
+    {
+        if (!$id) {
+            $id = preg_replace('/\{.*\},/', '', $elementName);
+            $id = str_replace([',','][', '[', ']'], ['-','-','',''], $id);
+            $id = 'liv-'.strtolower(str_replace(' ', '-', $id));
+            if ($tickRec) {
+                $existingIds = array_map(function ($e) { return $e['id']; }, $tickRec);
+                if (in_array($id, $existingIds)) {
+                    $id .= "-$this->inx";
+                }
+            }
+        }
+        return $id;
+    } // deriveId
+
+} // class
 
