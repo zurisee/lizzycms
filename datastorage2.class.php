@@ -458,9 +458,7 @@ class DataStorage2
         $data = $this->getData(true);
 
         // syntax variant '[d3][d31][d312]'
-        if (preg_match('/\[(.*)\]/', trim($key), $m)) {
-            $key = str_replace('][', ',', $m[1]);
-        }
+        $key = $this->parseElementSelector($key);
 
         // syntax variant 'd3,d31,d312'
         if (strpos($key, ',') !== false) {
@@ -510,9 +508,7 @@ class DataStorage2
         $data = $this->getData(true);
 
         // syntax variant '[d3][d31][d312]'
-        if (preg_match('/\[(.*)\]/', trim($key), $m)) {
-            $key = str_replace('][', ',', $m[1]);
-        }
+        $key = $this->parseElementSelector($key);
 
         // syntax variant 'd3,d31,d312'
         if (strpos($key, ',') !== false) {
@@ -713,7 +709,7 @@ class DataStorage2
         if ($raw) {
             $d = $this->getRawData();
         } else {
-            $d = $this->data;
+            $d = $this->getData( true );
         }
         return var_r($d, 'DB "' . base_name($this->dataFile, false).'"');
     } // dumpDb
@@ -1272,7 +1268,7 @@ EOT;
         }
 
         $rec0 = reset($data);
-        $structure['labels'] = array_keys($rec0);
+        $structure['labels'] = is_array($rec0) ? array_keys($rec0): [];
         $structure['types'] = array_fill(0, sizeof($rec0), 'string');
         // types only makes sense if supplied in '_structure' record within data.
         $this->structure = $structure;
@@ -1353,7 +1349,6 @@ EOT;
 
 
     private function fixRecId($recId, $allowNewRec = false, $supportedArgs = false)
-//    private function fixRecId($recId, $allowNewRec = false)
     {
         if (is_array($recId)) {
             return $this->parseWriteArgs($recId, $supportedArgs);
@@ -1396,17 +1391,14 @@ EOT;
 
     protected function parseWriteArgs($writeArgs, $args)
     {
-//        $args = ['recId' => null, 'elemName' => null, 'value' => null, 'locking' => false, 'blocking' => false, 'append' => false];
         $outArgs = [];
         foreach ($args as $argName => $default) {
             if (isset($writeArgs[$argName])) {
                 $outArgs[] = $writeArgs[$argName];
-//                $args[$argName] = $writeArgs[$argName];
             } elseif ($default === null) {
                 return false;
             } else {
                 $outArgs[] = $default;
-//                $args[$argName] = $default;s
             }
         }
         $outArgs[0] = $this->fixRecId($outArgs[0]);
@@ -1461,6 +1453,19 @@ EOT;
             }
         }
         return $rawData;
+    }
+
+
+
+
+    private function parseElementSelector($key)
+    {
+        // syntax variant '[d3][d31][d312]' or ['d3']['d31']['d312']
+        if (preg_match('/\[(.*)\]/', trim($key), $m)) {
+            $key = str_replace('][', ',', $m[1]);
+            $key = str_replace(['"', "'"], '', $key);
+        }
+        return $key;
     }
 
 } // DataStorage
