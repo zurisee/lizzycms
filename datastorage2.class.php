@@ -109,7 +109,8 @@ class DataStorage2
     {
         $rawData = $this->getRawData();
         $mySessionID = $this->sessionId;
-        if ($rawData['lockTime'] < (microtime(true) - LZY_LOCK_ALL_DURATION_DEFAULT)) {
+        $lockTime = $rawData['lockTime'];
+        if ($lockTime < (microtime(true) - LZY_LOCK_ALL_DURATION_DEFAULT)) {
             $rawData['lockedBy'] = '';
             $rawData['lockTime'] = 0.0;
             $this->updateRawMetaData($rawData);
@@ -711,7 +712,8 @@ class DataStorage2
         } else {
             $d = $this->getData( true );
         }
-        return var_r($d, 'DB "' . base_name($this->dataFile, false).'"');
+        return var_r($d, 'DB "' . basename($this->dataFile).'"');
+//        return var_r($d, 'DB "' . base_name($this->dataFile, false).'"');
     } // dumpDb
 
 
