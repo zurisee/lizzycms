@@ -29,16 +29,17 @@ if (!isset($_POST['ref'])) {
 $ref = $_POST['ref'];
 $lastUpdated = floatval( $_POST['last'] );
 
-if (isset($_POST['polltime'])) {
-    $pollingTime = intval($_POST['polltime']);
-    $pollingTime = max(2, min(MAX_POLLING_TIME, $pollingTime));
-}
+//if (isset($_POST['polltime'])) {
+//    $pollingTime = intval($_POST['polltime']);
+//    $pollingTime = max(2, min(MAX_POLLING_TIME, $pollingTime));
+//}
 
-$dataSel = isset($_GET['dataSelector']) ? $_GET['dataSelector'] : false;
-$dataSelector = [];
-if ($dataSel && preg_match('/(.*):(.*)/', $dataSel, $m)) {
-    $dataSelector[ 'name' ] = $m[1];
-    $dataSelector[ 'value' ] = $m[2];
+$dynDataSel = isset($_GET['dynDataSel']) ? $_GET['dynDataSel'] : false;
+//$dataSel = isset($_GET['dataSelector']) ? $_GET['dataSelector'] : false;
+$dynDataSel = [];
+if ($dynDataSel && preg_match('/(.*):(.*)/', $dynDataSel, $m)) {
+    $dynDataSel[ 'name' ] = $m[1];
+    $dynDataSel[ 'value' ] = $m[2];
 }
 
 $returnImmediately = isset($_GET['returnImmediately']);
@@ -61,11 +62,14 @@ foreach ($ticketList as $ticket) {
         continue;
     }
     foreach ($recs as $rec) {
-        $file = $rec['file'];
+        $file = $rec['dataSource'];
         if (!isset($files[$file])) {
             $files[$file] = [$rec];
         } else {
             array_push($files[$file], $rec);
+        }
+        if (isset($rec['pollingTime']) && ($rec['pollingTime'] > 2)) {
+            $pollingTime = $rec['pollingTime'];
         }
     }
 }
@@ -75,8 +79,7 @@ openDBs($files);
 if ($returnImmediately) {
     $res = getAllData($files);
 } else {
-    $till = time() + $pollingTime;
-    $res = awaitDataChange($files, $till);
+    $res = awaitDataChange($files, $pollingTime);
 }
 if (!$res) {
     $rec['result'] = 'None';
@@ -98,7 +101,7 @@ function openDBs( &$files )
     foreach ($files as $file => $elems) {
         $files[$file]['db'] = new DataStorage2(PATH_TO_APP_ROOT . $file);
     }
-}
+} // openDBs
 
 
 
@@ -116,14 +119,14 @@ function getAllData( &$files )
         }
     }
     return $outData;
-}
+} // getAllData
 
 
 
-function awaitDataChange( &$files, $till )
+function awaitDataChange( &$files, $pollingTime )
 {
     global $lastUpdated, $lastModif;
-    $till = min($till, time() + 100);   // for savety
+    $till = time() + min($pollingTime,100); // s
     while (time() < $till) {
         $outData = [];
         // there may be multiple data sources, so loop over all of them
@@ -166,20 +169,21 @@ function checkAbort()
 
 
 
+
 function getData( &$db, $rec)
 {
-    global $dataSelector;
+    global $dynDataSel;
     foreach ($rec as $k => $elem) {
         if (!is_int($k)) {
             continue;
         }
-        $id = $rec[$k]['id'];
-        $dataKey = $rec[$k]["elementName"];
-        if ((strpos($dataKey, '{') !== false) && $dataSelector) {
-            $dataKey = preg_replace('/\{'.$dataSelector['name'].'\}/', $dataSelector['value'], $dataKey);
+        $targetSelector = $rec[$k]['targetSelector'];
+        $dataKey = $rec[$k]["dataSelector"];
+        if ((strpos($dataKey, '{') !== false) && $dynDataSel) {
+            $dataKey = preg_replace('/\{'.$dynDataSel['name'].'\}/', $dynDataSel['value'], $dataKey);
         }
         $value = $db->readElement( $dataKey );
-        $outData[$id] = $value;
+        $outData[$targetSelector] = $value;
     }
     return $outData;
 } // getData

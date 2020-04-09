@@ -18,12 +18,12 @@ function initLiveData() {
     });
     refs = refs.replace(/,+$/, '');
 
-    // check for polltime argument: (only apply first appearance)
-    $('[data-live-data-polltime]').each(function () {
-        polltime = parseInt( $( this ).attr('data-live-data-polltime') );
-        console.log('custom polltime: ' + polltime + 's');
-        return false;
-    });
+    // // check for polltime argument: (only apply first appearance)
+    // $('[data-live-data-polltime]').each(function () {
+    //     polltime = parseInt( $( this ).attr('data-live-data-polltime') );
+    //     console.log('custom polltime: ' + polltime + 's');
+    //     return false;
+    // });
 
     // check for dynamic parameter: (only apply first appearance)
     $('[data-live-data-param]').each(function () {
@@ -43,11 +43,12 @@ function initLiveData() {
 
 
 function updateDOM(data) {
-    for (var id in data.data) {
-        var val = data.data[id];
-        $('#' + id).text(val);
+    for (var targSel in data.data) {
+        var val = data.data[targSel];
+        $(targSel).text(val);
+        // $('#' + id).text(val);
         if (debugOutput) {
-            console.log(id + ' -> ' + val);
+            console.log(targSel + ' -> ' + val);
         }
     }
 }
@@ -58,7 +59,8 @@ function updateLiveData( returnImmediately ) {
     var url = appRoot + "_lizzy/_live_data_service.php";
     if (paramName) {
         var paramValue = $( paramSource ).text();
-        url = appendToUrl(url, 'dataSelector=' + paramName + ':' + paramValue);
+        url = appendToUrl(url, 'dynDataSel=' + paramName + ':' + paramValue);
+        // url = appendToUrl(url, 'dataSelector=' + paramName + ':' + paramValue);
         if (paramValue !== prevParamValue) {
             returnImmediately = true;
             prevParamValue = paramValue;
