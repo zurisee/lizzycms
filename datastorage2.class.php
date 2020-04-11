@@ -654,6 +654,54 @@ class DataStorage2
 
 
 
+    public function isElementLocked( $elemKey )
+    {
+        if ($this->_isDbLocked( false )) {
+            return true;
+        }
+//        if (($recId = $this->fixRecId($recId)) === false) {
+//            return false;
+//        }
+        $elemKey = $this->parseElementSelector( $elemKey );
+        $recId = $this->recIdFromElementKey( $elemKey );
+//        $recLocked = $this->_isRecLocked( $recId );
+        if ($this->isRecLocked( $recId )) {
+            return true;
+        }
+//        // lock found, now check timed out?
+//        $lockData = $this->getMetaElement('recLocks');
+//        if (!$lockData) {
+//            return null;
+//        }
+//        if (isset($lockData[$recId])) {
+//            $locRec = $lockData[$recId];
+//            $lockDuration = microtime(true) - $locRec['lockTime'];
+//            if ($lockDuration > LZY_LOCK_ALL_DURATION_DEFAULT) {
+//                $this->unlockRec($recId, true);
+//                return false;
+//            }
+//            // not locked, if it's my own lock:
+//            if ($this->isMySessionID( $locRec['lockOwner'] )) {
+//                return false; // not locked
+//            }
+//            // it's locked by somebody else:
+//            return true; // locked
+//        }
+        return false;
+    } // isElementLocked
+
+
+    private function recIdFromElementKey( $key )
+    {
+        $key = $this->parseElementSelector($key);
+        if (strpos($key, ',') !== false) {
+            $a = explode(',', $key);
+            $key = $a[0];
+        }
+        return $key;
+    }
+
+
 
     //---------------------------------------------------------------------------
     //Todo: rename
@@ -1658,10 +1706,13 @@ EOT;
                     return false;
                 }
             }
+        } elseif (is_string($recId) &&  (strpbrk($recId, ',]')) !== false) {
+            $recId = preg_replace('/,.*/', '', $recId);
         }
-        if (($this->structure['key'] !== 'index') && !isset($this->data[$recId])) {
-            $recId = false;
-        }
+//ToDo: what was that for?
+//        if (($this->structure['key'] !== 'index') && !isset($this->data[$recId])) {
+//            $recId = false;
+//        }
         return $recId;
     } // fixRecId
 
