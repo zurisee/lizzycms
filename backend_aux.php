@@ -107,6 +107,13 @@ function resolvePath($path)
 //---------------------------------------------------------------------------
 function mylog($str, $user = false)
 {
+    writeLog($str, $user);
+} // mylog
+
+
+//---------------------------------------------------------------------------
+function writeLog($str, $user = false)
+{
     if (!$user) {
         $user = isset($_SESSION['lizzy']['user']) && $_SESSION['lizzy']['user'] ? $_SESSION['lizzy']['user'] : 'anonymous';
     }
@@ -115,7 +122,7 @@ function mylog($str, $user = false)
         mkdir($path, MKDIR_MASK, true);
     }
     file_put_contents(SERVICE_LOG, timestamp()." user $user:  $str\n", FILE_APPEND);
-} // mylog
+} // writeLog
 
 
 
