@@ -788,7 +788,7 @@ EOT;
             $this->ds = $ds;
             $this->data = $ds->read();
             if ($this->headers === true) {
-                $structure = $this->ds->getRecStructure();
+                $structure = $this->ds->getDbRecStructure();
                 $this->headerElems = $structure['labels'];
             }
 

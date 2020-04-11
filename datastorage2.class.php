@@ -16,9 +16,6 @@ define('LIZZY_DB',  PATH_TO_APP_ROOT.'data/_lzy_db.sqlite');
 if (!defined('LZY_LOCK_ALL_DURATION_DEFAULT')) {
     define('LZY_LOCK_ALL_DURATION_DEFAULT', 900.0); // 15 minutes
 }
-//if (!defined('LZY_MAX_AWAIT_LOCK_END_TIME')) {
-//    define('LZY_MAX_AWAIT_LOCK_END_TIME', 10); // 10 sec
-//}
 if (!defined('LZY_MAX_AWAIT_LOCK_END_TIME')) {
     define('LZY_MAX_AWAIT_LOCK_END_TIME', 333000); // 1/3 sec
 }
@@ -34,15 +31,15 @@ use Symfony\Component\Yaml\Yaml;
 class DataStorage2
 {
     private   $lzyDb = null;
-	protected $dataFile;
-	protected $tableName;
-	protected $data = null;
-	protected $rawData = null;
-	protected $sid;
-	protected $format;
-	protected $lockDB = false;
-	protected $defaultTimeout = 30; // [s]
-	protected $defaultPollingSleepTime = LZY_MAX_AWAIT_LOCK_END_TIME; // [us]
+	private $dataFile;
+	private $tableName;
+	private $data = null;
+	private $rawData = null;
+	private $sid;
+	private $format;
+	private $lockDB = false;
+	private $defaultTimeout = 30; // [s]
+	private $defaultPollingSleepTime = LZY_MAX_AWAIT_LOCK_END_TIME; // [us]
 
 
     //--------------------------------------------------------------
@@ -103,20 +100,13 @@ class DataStorage2
         if ($replace) {
             $res = $this->lowLevelWrite($data);
         } else {
-            $res = $this->updateDB($data);
+            $res = $this->_updateDB($data);
         }
         $this->getData(true);
         return $res;
     } // write
 
 
-
-    public function isLockDB( $checkOnLockedRecords = true )
-    {
-        // to be depricated!
-//        die("Method isLockDB() has been depricated");
-        return $this->isDbLocked();
-    }
 
     public function isDbLocked( $checkOnLockedRecords = true )
     {
@@ -128,6 +118,14 @@ class DataStorage2
         return false;
     } // isDbLocked
 
+    public function isLockDB( $checkOnLockedRecords = true )
+    {
+        // to be depricated!
+//        die("Method isLockDB() has been depricated, use isLockDB() instead");
+        return $this->isDbLocked();
+    }
+
+
 
 
 
@@ -137,27 +135,6 @@ class DataStorage2
             return false;
         }
         return $this->_lockDB();
-//        $rawData = $this->getRawData();
-//        $mySessionID = $this->sessionId;
-//        if ($rawData['lockedBy'] !== '') {
-//            if ($rawData['lockedBy'] === $mySessionID) {
-//                $rawData['lockTime'] = microtime(true);
-//
-//            } else {
-//                if ($rawData['lockTime'] < (microtime(true) - LZY_LOCK_ALL_DURATION_DEFAULT)) {
-//                    $rawData['lockedBy'] = $mySessionID;
-//                    $rawData['lockTime'] = microtime(true);
-//
-//                } else {
-//                    return false;
-//                }
-//            }
-//        } else {
-//            $rawData['lockedBy'] = $mySessionID;
-//            $rawData['lockTime'] = microtime(true);
-//        }
-//        $this->updateRawMetaData($rawData);
-//        return true;
     } // lockDB
 
 
@@ -166,31 +143,12 @@ class DataStorage2
     public function unlockDB($force = false)
     {
         if (!$force && $this->isDbLocked()) {
-//        if ($this->isDbLocked()) {
             return false;
         }
         if ($force) {
             $this->_unlockAllRecs( $force );
         }
         return $this->_unlockDB( $force );
-
-//        $rawData = $this->getRawData();
-//        $mySessionID = $this->sessionId;
-//        if ($rawData['lockedBy'] !== '') {
-//            if ($rawData['lockedBy'] === $mySessionID) {
-//                $rawData['lockTime'] = 0.0;
-//                $rawData['lockedBy'] = '';
-//
-//            } elseif ($force) {
-//                $rawData['lockTime'] = 0.0;
-//                $rawData['lockedBy'] = '';
-//
-//            } else {
-//                return false;
-//            }
-//            $this->updateRawMetaData($rawData);
-//        }
-//        return true;
     } // unlockDB
 
 
@@ -198,7 +156,6 @@ class DataStorage2
     public function awaitChangedData($lastUpdate, $timeout = false, $pollingSleepTime = false /*us*/)
     {
         $timeout = $timeout ? $timeout : LZY_MAX_AWAIT_LOCK_END_TIME;
-//        $timeout = $timeout ? $timeout : $this->defaultTimeout;
         $pollingSleepTime = $pollingSleepTime ? $pollingSleepTime : $this->defaultPollingSleepTime;
         $json = $this->checkNewData($lastUpdate, true);
         if ($json !== null) {
@@ -215,13 +172,6 @@ class DataStorage2
         }
         return '';
     } // awaitChangedData
-
-
-
-    public function getSize()
-    {
-        return sizeof($this->getData( true ));
-    } // getSize
 
 
 
@@ -246,11 +196,6 @@ class DataStorage2
 
     public function writeRecord($recId, $recData = null, $locking = false, $blocking = false)
     {
-        // supports arguments as array (in $recId)
-//        if ($this->_isDbLocked( false )) {
-//            return false;
-//        }
-
         // $supportedArgs defines the expected args, their default values, where null means required arg.
         $supportedArgs = ['recId' => null, 'recData' => null, 'locking' => false, 'blocking' => false];
         if (($recId = $this->fixRecId($recId, false, $supportedArgs)) === false) {
@@ -293,12 +238,9 @@ class DataStorage2
 
 
 
+
     public function writeRecordElement($recId, $elemName = null, $value = null, $locking = false, $blocking = false, $append = false)
     {
-        // supports arguments as array (in $recId)
-//        if ($this->_isDbLocked()) {
-//            return false;
-//        }
         // like writeRecord but with separate args recId, elemName and value
         $supportedArgs = ['recId' => null, 'elemName' => null, 'value' => null, 'locking' => false, 'blocking' => false, 'append' => false];
         if (($recId = $this->fixRecId($recId, false, $supportedArgs)) === false) {
@@ -318,11 +260,6 @@ class DataStorage2
         if ($locking && !$this->_lockRec($recId)) {
             return false;
         }
-//        if ($locking) {
-//            if (!$this->lockRec($recId)) {
-//                return false;
-//            }
-//        }
 
         $data = $this->getData(true);
         if ($recId !== false) {
@@ -336,6 +273,11 @@ class DataStorage2
         }
 
         $this->lowLevelWrite($data);
+
+        if ($this->logModifTimes) {
+            $this->updateMetaData('lastRecModif_'.$recId, microtime(true));
+        }
+
         if ($locking) {
             $this->_unlockRec($recId);
         }
@@ -347,9 +289,6 @@ class DataStorage2
 
     public function deleteRecord($recId, $locking = false, $blocking = false)
     {
-//        if ($this->isDbLocked()) {
-//            return false;
-//        }
         if (($recId = $this->fixRecId($recId)) === false) {
             return false;
         }
@@ -392,20 +331,10 @@ class DataStorage2
             return false;
         }
 
-
         if ($this->isRecLocked( $recId )) { // rec already locked
             return false;
         }
-
         return $this->_lockRec( $recId);
-
-//        $mySessionID = $this->sessionId;
-//        $lockData[$recId] = [
-//            'lockTime' => microtime(true),
-//            'lockOwner' => $mySessionID
-//        ];
-//        $this->updateMetaData('recLocks', $lockData);
-//        return true;
     } // lockRec
 
 
@@ -419,21 +348,11 @@ class DataStorage2
             return false;
         }
 
-        $locked = $this->_isRecLocked( $recId );
+        $locked = $this->isRecLocked( $recId );
         if ($locked && !$force) { // rec already locked
             return false;
         }
-
         return $this->_unlockRec( $recId, $force );
-//        $meta = $this->getMetaData();
-//        if (isset($meta['recLocks'][$recId])) {
-//            if (!$force && !$this->isMySessionID( $meta['recLocks'][$recId]['lockOwner'] )) {
-//                return false;
-//            }
-//            unset($meta['recLocks'][$recId]);
-//            $this->updateMetaData($meta);
-//        }
-//        return true;
     } // unlockRec
 
 
@@ -446,9 +365,8 @@ class DataStorage2
         if (($recId = $this->fixRecId($recId)) === false) {
             return false;
         }
-//        $recLocked = $this->_isRecLocked( $recId );
-        if ($this->_isRecLocked( $recId )) {
-            return true;
+        if (!$this->_isRecLocked( $recId )) {
+            return false;
         }
         // lock found, now check timed out?
         $lockData = $this->getMetaElement('recLocks');
@@ -462,11 +380,6 @@ class DataStorage2
                 $this->unlockRec($recId, true);
                 return false;
             }
-            // not locked, if it's my own lock:
-            if ($this->isMySessionID( $locRec['lockOwner'] )) {
-                return false; // not locked
-            }
-            // it's locked by somebody else:
             return true; // locked
         }
         return false;
@@ -474,7 +387,8 @@ class DataStorage2
 
 
 
-    public function hasLockedRecords( $checkDBlevel = true)
+
+    public function hasDbLockedRecords( $checkDBlevel = true)
     {
         if ($checkDBlevel && $this->isDbLocked()) {
             return true;
@@ -485,30 +399,27 @@ class DataStorage2
         }
         $locked = false;
         foreach ($lockData as $recId => $lockRec) {
-//            $locRec = $lockData[$recId];
-            $lockDuration = microtime(true) - $lockRec['lockTime'];
-            if ($lockDuration > LZY_LOCK_ALL_DURATION_DEFAULT) {
-                if ($checkDBlevel) {
-                    $this->unlockRec($recId, true);
-                }
-                continue;
+            $locked = $this->isRecLocked( $recId );
+            if ($locked) {
+                break;
             }
-            // not locked, if it's my own lock:
-            if ($this->isMySessionID( $lockRec['lockOwner'] )) {
-                continue;
-            }
-            // it's locked by somebody else:
-            $locked = true; // locked
-            break;
         }
         return $locked;
-    } // hasLockedRecords
+    } // hasDbLockedRecords
+
+
+
+
+    public function getNoOfRecords()
+    {
+        return sizeof($this->getData( true ));
+    } // getNoOfRecords
 
 
 
 
     // === Element level operations ==========================
-    // Element applies to any level of nested data:
+    // Element applies to any level of nested data, in particular below top level (i.e. records):
 
     public function readElement($key)
     {
@@ -550,7 +461,7 @@ class DataStorage2
     {
         $lastRecModif = $this->getMetaElement('lastRecModif_'.$key);
         if (!$lastRecModif) {
-            $lastRecModif = $this->lastModified();
+            $lastRecModif = $this->lastDbModified();
         }
         return floatval($lastRecModif);
     } // lastModifiedElement
@@ -603,53 +514,18 @@ class DataStorage2
 
 
 
-    //Todo: rename
-    public function append($key, $value = null)
+    public function deleteElement($key)
     {
         if ($this->isDbLocked()) {
             return false;
         }
         $data = $this->getData(true);
-
-        if (is_array($key)) {
-            if ($data) {
-                $data = array_merge($data, $key);
-            } else {
-                $data = $key;
-            }
-        } else {
-            $data[$key] = $value;
-        }
-        return $this->lowLevelWrite($data);
-    } // append
-
-
-
-    //Todo: rename
-    public function delete($key)
-    {
-        if ($this->isDbLocked()) {
-            return false;
-        }
-        $modified = false;
-        $data = $this->getData(true);
-        if (is_array($key)) {
-            foreach ($key as $k) {
-                if (isset($data[$k])) {
-                    unset($data[$k]);
-                    $modified = true;
-                }
-            }
-
-        } else {
-            if (isset($data[$key])) {
-                unset($data[$key]);
-                $modified = true;
-            }
-        }
-        if ($modified) {
+        if (isset($data[$key])) {
+            unset($data[$key]);
             $this->lowLevelWrite($data);
+            return true;
         }
+        return false;
     } // delete
 
 
@@ -659,57 +535,22 @@ class DataStorage2
         if ($this->_isDbLocked( false )) {
             return true;
         }
-//        if (($recId = $this->fixRecId($recId)) === false) {
-//            return false;
-//        }
         $elemKey = $this->parseElementSelector( $elemKey );
-        $recId = $this->recIdFromElementKey( $elemKey );
-//        $recLocked = $this->_isRecLocked( $recId );
+        $recId = $this->_recIdFromElementKey( $elemKey );
         if ($this->isRecLocked( $recId )) {
             return true;
         }
-//        // lock found, now check timed out?
-//        $lockData = $this->getMetaElement('recLocks');
-//        if (!$lockData) {
-//            return null;
-//        }
-//        if (isset($lockData[$recId])) {
-//            $locRec = $lockData[$recId];
-//            $lockDuration = microtime(true) - $locRec['lockTime'];
-//            if ($lockDuration > LZY_LOCK_ALL_DURATION_DEFAULT) {
-//                $this->unlockRec($recId, true);
-//                return false;
-//            }
-//            // not locked, if it's my own lock:
-//            if ($this->isMySessionID( $locRec['lockOwner'] )) {
-//                return false; // not locked
-//            }
-//            // it's locked by somebody else:
-//            return true; // locked
-//        }
         return false;
     } // isElementLocked
 
 
-    private function recIdFromElementKey( $key )
-    {
-        $key = $this->parseElementSelector($key);
-        if (strpos($key, ',') !== false) {
-            $a = explode(',', $key);
-            $key = $a[0];
-        }
-        return $key;
-    }
-
 
 
     //---------------------------------------------------------------------------
-    //Todo: rename
-    public function findRec($key, $value, $returnKey = false)
+    public function findRecByContent($key, $value, $returnKey = false)
     {
         // find rec for which key AND value match
         // returns the record unless $returnKey is true, then it returns the key
-        //TODO: extend for 2D data
         $data = $this->getData();
 
         foreach ($data as $datakey => $rec) {
@@ -724,24 +565,23 @@ class DataStorage2
             }
         }
         return false;
-    } // findRec
+    } // findRecByContent
 
 
 
 
-    //Todo: rename
-    public function getRecStructure()
+    public function getDbRecStructure()
     {
         $rawData = $this->getRawData();
         $structure = $this->jsonDecode($rawData['structure']);
         return $structure;
-    }
+    } // getDbRecStructure
 
 
 
 
     //---------------------------------------------------------------------------
-    public function lastModified()
+    public function lastDbModified()
     {
         $rawData = $this->getRawData();
         return $rawData['lastUpdate'];
@@ -753,6 +593,7 @@ class DataStorage2
     //---------------------------------------------------------------------------
     public function checkNewData($lastUpdate, $returnJson = false)
     {
+        // checks whether new data has been saved since the given time:
         $rawData = $this->getRawData();
         if ($rawData['lastUpdate'] > $lastUpdate) {
             $data = $this->getData(true);
@@ -797,6 +638,7 @@ class DataStorage2
         return $this->lzyDb;
     } // getDbRef
 
+    
 
 
 // === aux methods ======================
@@ -808,11 +650,11 @@ class DataStorage2
             $d = $this->getData( true );
         }
         return var_r($d, 'DB "' . basename($this->dataFile).'"');
-//        return var_r($d, 'DB "' . base_name($this->dataFile, false).'"');
     } // dumpDb
 
 
 
+    
     public function getSourceFormat() {
         return $this->format;
     } // getSourceFormat
@@ -820,7 +662,44 @@ class DataStorage2
 
 
 
-// === protected methods ===============
+// === private methods ===============
+    private function getData( $force = false )
+    {
+        if ($this->data && !$force) {
+            return $this->data;
+        }
+        $rawData = $this->getRawData();
+        $json = $rawData['data'];
+        $json = str_replace('⌑⌇⌑', '"', $json);
+        $data = $this->jsonDecode($json);
+        $this->data = $data;
+        return $data;
+    } // getData
+
+
+
+
+    private function getRawData( $rawElem = false)
+    {
+        if (!$this->tableName) {
+            return null;
+        }
+        $query = "SELECT * FROM \"{$this->tableName}\"";
+        $rawData = $this->lzyDb->querySingle($query, true);
+        if ($rawElem) {
+            if (isset($rawData[$rawElem])) {
+                return $rawData[$rawElem];
+            } else {
+                return null;
+            }
+        }
+        $this->rawData = $rawData;
+        return $rawData;
+    } // getRawData
+
+
+
+
     private function _awaitDbLockEnd($timeout, $checkOnLockedRecords = true)
     {
         if (!$timeout) {
@@ -868,7 +747,7 @@ class DataStorage2
         $rawData = $this->getRawData();
         $rawData['lockedBy'] = $this->sessionId;
         $rawData['lockTime'] = microtime(true);
-        $this->updateRawMetaData($rawData);
+        $this->updateRawDbMetaData($rawData);
         return true;
     } // _lockDB
 
@@ -880,7 +759,7 @@ class DataStorage2
         $rawData = $this->getRawData();
         $rawData['lockedBy'] = '';
         $rawData['lockTime'] = 0.0;
-        $this->updateRawMetaData($rawData);
+        $this->updateRawDbMetaData($rawData);
         return true;
     } // _unlockDB
 
@@ -896,28 +775,13 @@ class DataStorage2
         if (!$this->_awaitDbLockEnd($timeout, $checkOnLockedRecords)) {
             return false;
         }
-//        $timeout = min(LZY_MAX_AWAIT_LOCK_END_TIME, $timeout);
-//        $till = microtime(true) + $timeout;
-//        while (($locked = $this->_isDbLocked( false )) && $timeout && (microtime(true) < $till)) {
-//            usleep($this->defaultPollingSleepTime);
-//        }
-//        if ($locked) {
-//            return false;
-//        }
-
-        // wait for Rec to be unlocked:
-//        $locked = $this->_isRecLocked($recId);
         $till = microtime(true) + $timeout;
-//        while ($locked && $timeout && (microtime(true) < $till)) {
-//            usleep($this->defaultPollingSleepTime);
-//            $locked = $this->_isRecLocked($recId);
-//            $now = microtime(true);
-//        }
         while (($locked = $this->_isRecLocked($recId)) && (microtime(true) < $till)) {
             usleep($this->defaultPollingSleepTime);
         }
         return !$locked;
     } // _awaitRecLockEnd
+
 
 
 
@@ -949,6 +813,7 @@ class DataStorage2
 
 
 
+
     private function _hasLockedRecords()
     {
         $lockData = $this->getMetaElement('recLocks');
@@ -976,21 +841,12 @@ class DataStorage2
 
 
 
-    public function _lockRec( $recId )
+    private function _lockRec( $recId )
     {
-//        if ($this->isDbLocked()) {
-//            return false;
-//        }
-//        if (($recId = $this->fixRecId($recId)) === false) {
-//            return false;
-//        }
-//
-//
+
         if ($this->isRecLocked( $recId )) { // rec already locked
             return false;
         }
-//
-//        $mySessionID = $this->sessionId;
         $meta = $this->getMetaData();
         $lockData = $meta['recLocks'];
         $lockData[$recId] = [
@@ -1004,7 +860,7 @@ class DataStorage2
 
 
 
-    public function _unlockRec( $recId, $force = false )
+    private function _unlockRec( $recId, $force = false )
     {
         $meta = $this->getMetaData();
         if (isset($meta['recLocks'][$recId])) {
@@ -1019,7 +875,7 @@ class DataStorage2
 
 
 
-    public function _unlockAllRecs( $force )
+    private function _unlockAllRecs( $force )
     {
         $meta = $this->getMetaData();
         $recLocs = $meta['recLocks'];
@@ -1038,38 +894,108 @@ class DataStorage2
 
 
     // merge with new data:
-    protected function updateDB($newData)
+    private function _updateDB($newData)
     {
         $data = $this->getData(true);
         if ($data) {
             $newData = array_merge($data, $newData);
         }
         $this->lowLevelWrite($newData);
-    } // updateDB
+    } // _updateDB
 
 
 
 
-    protected function updateElement($key, $value)
+    private function fixRecId($recId, $allowNewRec = false, $supportedArgs = false)
     {
-        $data = $this->getData(true);
-        if (preg_match('/^(\d+),(\d+)/', $key, $m)) {
-            $data[$m[2]][$m[1]] = $value;
-        } else {
-            $data[$key] = $value;
+        if (is_array($recId)) {
+            return $this->parseRecModifArgs($recId, $supportedArgs);
         }
-        $this->lowLevelWrite($data);
-
-        if ($this->logModifTimes) {
-            $this->updateMetaData('lastRecModif_'.$key, microtime(true));
+        if (isset($this->data[$recId])) {
+            return $recId;
         }
-    } // updateElement
+        if (is_int($recId)) { // in case it was an index:
+            $n = sizeof($this->data);
+            if (!$allowNewRec) {
+                $n -= 1;
+            }
+            if (($recId < 0)) {
+                $recId = $n + $recId;
+            }
+            if ($allowNewRec) {
+                $recId = max(0, min($n, $recId));
+            }
+            if (isset($this->data[$recId])) {
+                return $recId;
+            }
+            $keys = array_keys($this->data);
+            if (isset($keys[$recId])) {
+                $recId = $keys[$recId];
+            }
+            if (!$allowNewRec) {
+                if (!isset($this->data[$recId])) {
+                    return false;
+                }
+            }
+        } elseif (is_string($recId) &&  (strpbrk($recId, ',]')) !== false) {
+            $recId = preg_replace('/,.*/', '', $recId);
+        }
+//ToDo: what was that for?
+//        if (($this->structure['key'] !== 'index') && !isset($this->data[$recId])) {
+//            $recId = false;
+//        }
+        return $recId;
+    } // fixRecId
 
+
+
+
+    private function parseRecModifArgs($writeArgs, $args)
+    {
+        $outArgs = [];
+        foreach ($args as $argName => $default) {
+            if (isset($writeArgs[$argName])) {
+                $outArgs[] = $writeArgs[$argName];
+            } elseif ($default === null) {
+                return false;
+            } else {
+                $outArgs[] = $default;
+            }
+        }
+        $outArgs[0] = $this->fixRecId($outArgs[0]);
+        return $outArgs;
+    } // parseWriteArgs
+
+
+
+
+    private function parseElementSelector($key)
+    {
+        // syntax variant '[d3][d31][d312]' or ['d3']['d31']['d312']
+        if (preg_match('/\[(.*)\]/', trim($key), $m)) {
+            $key = str_replace('][', ',', $m[1]);
+            $key = str_replace(['"', "'"], '', $key);
+        }
+        return $key;
+    } // parseElementSelector
+
+
+
+
+    private function _recIdFromElementKey($key )
+    {
+        $key = $this->parseElementSelector($key);
+        if (strpos($key, ',') !== false) {
+            $a = explode(',', $key);
+            $key = $a[0];
+        }
+        return $key;
+    } // _recIdFromElementKey
 
 
 
     // === Low Level Operations ===========================================================
-    protected function getMetaElement($key)
+    private function getMetaElement($key)
     {
         $meta = $this->getMetaData();
         if (isset($meta[$key])) {
@@ -1082,7 +1008,7 @@ class DataStorage2
 
 
 
-    protected function getMetaData()
+    private function getMetaData()
     {
         $query = "SELECT \"meta\" FROM \"{$this->tableName}\"";
         $metaData = $this->lzyDb->querySingle($query, true);
@@ -1093,7 +1019,7 @@ class DataStorage2
 
 
 
-    protected function lowLevelWriteMeta($metaData)
+    private function lowLevelWriteMeta($metaData)
     {
         $metaData = $this->jsonEncode($metaData);
         $sql = <<<EOT
@@ -1108,7 +1034,7 @@ EOT;
 
 
 
-    protected function lowLevelWriteStructure()
+    private function lowLevelWriteStructure()
     {
         $this->openDbReadWrite();
         $structureJson = isset($this->structure)? $this->jsonEncode($this->structure): '';
@@ -1130,7 +1056,7 @@ EOT;
 
 
 
-    protected function lowLevelWrite($newData, $isJson = false, $markModified = true)
+    private function lowLevelWrite($newData, $isJson = false, $markModified = true)
     {
         $this->openDbReadWrite();
 
@@ -1170,8 +1096,8 @@ EOT;
 
 
 
-//Todo: rename more applicable, META used differently!
-    protected function updateRawMetaData($rawData)
+
+    private function updateRawDbMetaData($rawData)
     {
         $this->openDbReadWrite();
         $sql = <<<EOT
@@ -1189,19 +1115,19 @@ EOT;
             fatalError($e->getMessage());
         }
         $this->rawData = $this->getRawData();
-    } // updateRawMetaData
+    } // updateRawDbMetaData
 
 
 
 
-    protected function writeMetaData( $metaData )
+    private function writeMetaData( $metaData )
     {
         return $this->lowLevelWriteMeta($metaData);
     } // writeMetaData
 
 
 
-    protected function updateMetaData($key, $value = null)
+    private function updateMetaData($key, $value = null)
     {
         $metaData = $this->getMetaData();
         if (is_array($key)) {
@@ -1219,7 +1145,7 @@ EOT;
 
 
     //---------------------------------------------------------------------------
-    protected function initLizzyDB()
+    private function initLizzyDB()
     {
         if (!file_exists(LIZZY_DB)) {
             preparePath(LIZZY_DB);
@@ -1230,7 +1156,7 @@ EOT;
 
 
 
-    protected function openDbReadWrite()
+    private function openDbReadWrite()
     {
         if ($this->lzyDb) {
             return;
@@ -1245,7 +1171,7 @@ EOT;
 
 
     //---------------------------------------------------------------------------
-    protected function initDbTable()
+    private function initDbTable()
     {
         // 'dataFile' refers to a yaml or csv file that contains the original data source
         // each dataFile is copied into a table within the lizzyDB
@@ -1323,7 +1249,7 @@ EOT;
 
 
     //--------------------------------------------------------------
-    protected function importFromFile($initial = false)
+    private function importFromFile($initial = false)
     {
         $rawData = $this->loadFile();
         $json = $this->decode($rawData, false, true, $initial);
@@ -1334,7 +1260,7 @@ EOT;
 
 
     //--------------------------------------------------------------
-    protected function exportToFile()
+    private function exportToFile()
     {
         $rawData = $this->getRawData();
         if ($rawData['modified']) {
@@ -1373,7 +1299,7 @@ EOT;
 
 
     //--------------------------------------------------------------
-    protected function writeToYamlFile($filename, $data)
+    private function writeToYamlFile($filename, $data)
     {
         $yaml = Yaml::dump($data, 3);
 
@@ -1393,7 +1319,7 @@ EOT;
 
 
     //--------------------------------------------------------------
-    protected function writeToCsvFile($filename, $array, $quote = '"', $delim = ',', $forceQuotes = true)
+    private function writeToCsvFile($filename, $array, $quote = '"', $delim = ',', $forceQuotes = true)
     {
         $out = '';
         foreach ($array as $row) {
@@ -1411,44 +1337,7 @@ EOT;
 
 
 
-    protected function getData( $force = false )
-    {
-        if ($this->data && !$force) {
-            return $this->data;
-        }
-        $rawData = $this->getRawData();
-        $json = $rawData['data'];
-        $json = str_replace('⌑⌇⌑', '"', $json);
-        $data = $this->jsonDecode($json);
-        $this->data = $data;
-        return $data;
-    } // getData
-
-
-
-
-    protected function getRawData( $rawElem = false)
-    {
-        if (!$this->tableName) {
-            return null;
-        }
-        $query = "SELECT * FROM \"{$this->tableName}\"";
-        $rawData = $this->lzyDb->querySingle($query, true);
-        if ($rawElem) {
-            if (isset($rawData[$rawElem])) {
-                return $rawData[$rawElem];
-            } else {
-                return null;
-            }
-        }
-        $this->rawData = $rawData;
-        return $rawData;
-    } // getRawData
-
-
-
-
-    protected function jsonEncode($data, $isAlreadyJson = false)
+    private function jsonEncode($data, $isAlreadyJson = false)
     {
         if ($isAlreadyJson && is_string($data)) {
             $json = $data;
@@ -1462,7 +1351,7 @@ EOT;
 
 
 
-    protected function jsonDecode($json)
+    private function jsonDecode($json)
     {
         if (!is_string($json)) {
             return null;
@@ -1476,7 +1365,7 @@ EOT;
 
 
     //---------------------------------------------------------------------------
-    protected function parseArguments($args)
+    private function parseArguments($args)
     {
         if (is_string($args)) {
             $args = ['dataFile' => $args];
@@ -1505,7 +1394,7 @@ EOT;
 
 
     //---------------------------------------------------------------------------
-    protected function decode($rawData, $fileFormat = false, $outputAsJson = false, $analyzeStructure = false)
+    private function decode($rawData, $fileFormat = false, $outputAsJson = false, $analyzeStructure = false)
     {
         if (!$rawData) {
             return null;
@@ -1550,7 +1439,7 @@ EOT;
 
 
 
-    protected function analyseStructure($data, &$rawData, $fileFormat = false)
+    private function analyseStructure($data, &$rawData, $fileFormat = false)
     {
         $structure = [
             'key' => null,
@@ -1605,7 +1494,7 @@ EOT;
 
 
     //--------------------------------------------------------------
-    protected function convertYaml($str)
+    private function convertYaml($str)
     {
         $data = null;
         if ($str) {
@@ -1624,7 +1513,7 @@ EOT;
 
 
     //--------------------------------------------------------------
-    protected function parseCsv($str, $delim = false, $enclos = false) {
+    private function parseCsv($str, $delim = false, $enclos = false) {
 
         if (!$delim) {
             $delim = (substr_count($str, ',') > substr_count($str, ';')) ? ',' : ';';
@@ -1650,7 +1539,7 @@ EOT;
 
 
 
-    protected function getSessionID()
+    private function getSessionID()
     {
         return $this->sessionId;
     } // getSessionID
@@ -1658,7 +1547,7 @@ EOT;
 
 
 
-    protected function isMySessionID( $sid )
+    private function isMySessionID( $sid )
     {
         return ($sid === $this->sessionId);
     } // isMySessionID
@@ -1666,78 +1555,16 @@ EOT;
 
 
 
-    protected function deriveTableName()
+    private function deriveTableName()
     {
         $tableName = str_replace(['/', '.'], '_', $this->dataFile);
         $tableName = preg_replace('|^[\./_]*|', '', $tableName);
         return $tableName; // remove leading '../...'
-    }
+    } // deriveTableName
 
 
 
-    private function fixRecId($recId, $allowNewRec = false, $supportedArgs = false)
-    {
-        if (is_array($recId)) {
-            return $this->parseWriteArgs($recId, $supportedArgs);
-        }
-        if (isset($this->data[$recId])) {
-            return $recId;
-        }
-        if (is_int($recId)) { // in case it was an index:
-            $n = sizeof($this->data);
-            if (!$allowNewRec) {
-                $n -= 1;
-            }
-            if (($recId < 0)) {
-                $recId = $n + $recId;
-            }
-            if ($allowNewRec) {
-                $recId = max(0, min($n, $recId));
-            }
-            if (isset($this->data[$recId])) {
-                return $recId;
-            }
-            $keys = array_keys($this->data);
-            if (isset($keys[$recId])) {
-                $recId = $keys[$recId];
-            }
-            if (!$allowNewRec) {
-                if (!isset($this->data[$recId])) {
-                    return false;
-                }
-            }
-        } elseif (is_string($recId) &&  (strpbrk($recId, ',]')) !== false) {
-            $recId = preg_replace('/,.*/', '', $recId);
-        }
-//ToDo: what was that for?
-//        if (($this->structure['key'] !== 'index') && !isset($this->data[$recId])) {
-//            $recId = false;
-//        }
-        return $recId;
-    } // fixRecId
-
-
-
-
-    protected function parseWriteArgs($writeArgs, $args)
-    {
-        $outArgs = [];
-        foreach ($args as $argName => $default) {
-            if (isset($writeArgs[$argName])) {
-                $outArgs[] = $writeArgs[$argName];
-            } elseif ($default === null) {
-                return false;
-            } else {
-                $outArgs[] = $default;
-            }
-        }
-        $outArgs[0] = $this->fixRecId($outArgs[0]);
-        return $outArgs;
-    } // parseWriteArgs
-
-
-
-    protected function createNewTable($tableName)
+    private function createNewTable($tableName)
     {
         $sql = "CREATE TABLE IF NOT EXISTS \"$tableName\" (";
         $sql .= '"id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,';
@@ -1768,12 +1595,12 @@ EOT;
             die("Error: unable to populate table in lzyDB: '$tableName'");
         }
         $this->lowLevelWriteStructure();
-    }
+    } // createNewTable
 
 
 
 
-    protected function loadFile()
+    private function loadFile()
     {
         $lines = file($this->dataFile);
         $rawData = '';
@@ -1783,20 +1610,7 @@ EOT;
             }
         }
         return $rawData;
-    }
-
-
-
-
-    private function parseElementSelector($key)
-    {
-        // syntax variant '[d3][d31][d312]' or ['d3']['d31']['d312']
-        if (preg_match('/\[(.*)\]/', trim($key), $m)) {
-            $key = str_replace('][', ',', $m[1]);
-            $key = str_replace(['"', "'"], '', $key);
-        }
-        return $key;
-    }
+    } // loadFile
 
 } // DataStorage
 
