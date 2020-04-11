@@ -67,7 +67,7 @@ require_once SYSTEM_PATH.'sitestructure.class.php';
 require_once SYSTEM_PATH.'authentication.class.php';
 require_once SYSTEM_PATH.'image-resizer.class.php';
 require_once SYSTEM_PATH.'datastorage2.class.php';
-require_once SYSTEM_PATH.'datastorage.class.php';
+//require_once SYSTEM_PATH.'datastorage.class.php';
 require_once SYSTEM_PATH.'sandbox.class.php';
 require_once SYSTEM_PATH.'uadetector.class.php';
 require_once SYSTEM_PATH.'user-account-form.class.php';
