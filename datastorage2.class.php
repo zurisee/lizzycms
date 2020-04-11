@@ -16,6 +16,12 @@ define('LIZZY_DB',  PATH_TO_APP_ROOT.'data/_lzy_db.sqlite');
 if (!defined('LZY_LOCK_ALL_DURATION_DEFAULT')) {
     define('LZY_LOCK_ALL_DURATION_DEFAULT', 900.0); // 15 minutes
 }
+//if (!defined('LZY_MAX_AWAIT_LOCK_END_TIME')) {
+//    define('LZY_MAX_AWAIT_LOCK_END_TIME', 10); // 10 sec
+//}
+if (!defined('LZY_MAX_AWAIT_LOCK_END_TIME')) {
+    define('LZY_MAX_AWAIT_LOCK_END_TIME', 333000); // 1/3 sec
+}
 if (!defined('LZY_DEFAULT_FILE_TYPE')) {
     define('LZY_DEFAULT_FILE_TYPE', 'json');
 }
@@ -27,7 +33,7 @@ use Symfony\Component\Yaml\Yaml;
 
 class DataStorage2
 {
-    private $lzyDb = null;
+    private   $lzyDb = null;
 	protected $dataFile;
 	protected $tableName;
 	protected $data = null;
@@ -36,7 +42,7 @@ class DataStorage2
 	protected $format;
 	protected $lockDB = false;
 	protected $defaultTimeout = 30; // [s]
-	protected $defaultPollingSleepTime = 500; // [ms]
+	protected $defaultPollingSleepTime = LZY_MAX_AWAIT_LOCK_END_TIME; // [us]
 
 
     //--------------------------------------------------------------
@@ -91,7 +97,7 @@ class DataStorage2
 
     public function write($data, $replace = true)
     {
-        if ($this->isLockDB()) {
+        if ($this->_isDbLocked()) {
             return false;
         }
         if ($replace) {
@@ -105,87 +111,95 @@ class DataStorage2
 
 
 
-    public function isLockDB()
+    public function isLockDB( $checkOnLockedRecords = true )
     {
-        $rawData = $this->getRawData();
-        $mySessionID = $this->sessionId;
-        $lockTime = $rawData['lockTime'];
-        if ($lockTime < (microtime(true) - LZY_LOCK_ALL_DURATION_DEFAULT)) {
-            $rawData['lockedBy'] = '';
-            $rawData['lockTime'] = 0.0;
-            $this->updateRawMetaData($rawData);
-            return false;   // lock timed out
-        }
-        if ($rawData['lockedBy'] !== '') {  // it's locked
-            if ($rawData['lockedBy'] === $mySessionID) { // it's locked by myself
-                return false;
+        // to be depricated!
+//        die("Method isLockDB() has been depricated");
+        return $this->isDbLocked();
+    }
 
-            } else {    // it's locked by other session
-                return true;
-            }
+    public function isDbLocked( $checkOnLockedRecords = true )
+    {
+        if ($this->_isDbLocked( $checkOnLockedRecords )) {
+            return true;
+        } elseif ($checkOnLockedRecords) {
+            return $this->_hasLockedRecords( false );
         }
-        return false;   // it's not locked
-    } // isLockDB
+        return false;
+    } // isDbLocked
 
 
 
 
     public function lockDB()
     {
-        $rawData = $this->getRawData();
-        $mySessionID = $this->sessionId;
-        if ($rawData['lockedBy'] !== '') {
-            if ($rawData['lockedBy'] === $mySessionID) {
-                $rawData['lockTime'] = microtime(true);
-
-            } else {
-                if ($rawData['lockTime'] < (microtime(true) - LZY_LOCK_ALL_DURATION_DEFAULT)) {
-                    $rawData['lockedBy'] = $mySessionID;
-                    $rawData['lockTime'] = microtime(true);
-
-                } else {
-                    return false;
-                }
-            }
-        } else {
-            $rawData['lockedBy'] = $mySessionID;
-            $rawData['lockTime'] = microtime(true);
+        if ($this->_isDbLocked()) {
+            return false;
         }
-        $this->updateRawMetaData($rawData);
-        return true;
+        return $this->_lockDB();
+//        $rawData = $this->getRawData();
+//        $mySessionID = $this->sessionId;
+//        if ($rawData['lockedBy'] !== '') {
+//            if ($rawData['lockedBy'] === $mySessionID) {
+//                $rawData['lockTime'] = microtime(true);
+//
+//            } else {
+//                if ($rawData['lockTime'] < (microtime(true) - LZY_LOCK_ALL_DURATION_DEFAULT)) {
+//                    $rawData['lockedBy'] = $mySessionID;
+//                    $rawData['lockTime'] = microtime(true);
+//
+//                } else {
+//                    return false;
+//                }
+//            }
+//        } else {
+//            $rawData['lockedBy'] = $mySessionID;
+//            $rawData['lockTime'] = microtime(true);
+//        }
+//        $this->updateRawMetaData($rawData);
+//        return true;
     } // lockDB
 
 
 
 
-    public function unLockDB($force = false)
+    public function unlockDB($force = false)
     {
-        $rawData = $this->getRawData();
-        $mySessionID = $this->sessionId;
-        if ($rawData['lockedBy'] !== '') {
-            if ($rawData['lockedBy'] === $mySessionID) {
-                $rawData['lockTime'] = 0.0;
-                $rawData['lockedBy'] = '';
-
-            } elseif ($force) {
-                $rawData['lockTime'] = 0.0;
-                $rawData['lockedBy'] = '';
-
-            } else {
-                return false;
-            }
-            $this->updateRawMetaData($rawData);
+        if (!$force && $this->isDbLocked()) {
+//        if ($this->isDbLocked()) {
+            return false;
         }
-        return true;
-    } // unLockDB
+        if ($force) {
+            $this->_unlockAllRecs( $force );
+        }
+        return $this->_unlockDB( $force );
+
+//        $rawData = $this->getRawData();
+//        $mySessionID = $this->sessionId;
+//        if ($rawData['lockedBy'] !== '') {
+//            if ($rawData['lockedBy'] === $mySessionID) {
+//                $rawData['lockTime'] = 0.0;
+//                $rawData['lockedBy'] = '';
+//
+//            } elseif ($force) {
+//                $rawData['lockTime'] = 0.0;
+//                $rawData['lockedBy'] = '';
+//
+//            } else {
+//                return false;
+//            }
+//            $this->updateRawMetaData($rawData);
+//        }
+//        return true;
+    } // unlockDB
 
 
 
-    public function awaitChangedData($lastUpdate, $timeout = false, $pollingSleepTime = false)
+    public function awaitChangedData($lastUpdate, $timeout = false, $pollingSleepTime = false /*us*/)
     {
-        $timeout = $timeout ? $timeout : $this->defaultTimeout;
+        $timeout = $timeout ? $timeout : LZY_MAX_AWAIT_LOCK_END_TIME;
+//        $timeout = $timeout ? $timeout : $this->defaultTimeout;
         $pollingSleepTime = $pollingSleepTime ? $pollingSleepTime : $this->defaultPollingSleepTime;
-        $pollingSleepTime = $pollingSleepTime*1000;
         $json = $this->checkNewData($lastUpdate, true);
         if ($json !== null) {
             return $json;
@@ -204,11 +218,9 @@ class DataStorage2
 
 
 
-
     public function getSize()
     {
-        $size = sizeof($this->getData( true ));
-        return $size;
+        return sizeof($this->getData( true ));
     } // getSize
 
 
@@ -216,11 +228,9 @@ class DataStorage2
 
     // === Record level operations ==========================
     // 'Record' defined as first level of multilevel nested data
+
     public function readRecord($recId)
     {
-        if ($this->isLockDB()) {
-            return false;
-        }
         $data = $this->getData(true);
 
         $recId = $this->fixRecId($recId);
@@ -234,10 +244,13 @@ class DataStorage2
 
 
 
-
     public function writeRecord($recId, $recData = null, $locking = false, $blocking = false)
     {
-        // supports list of args and arg-array.
+        // supports arguments as array (in $recId)
+//        if ($this->_isDbLocked( false )) {
+//            return false;
+//        }
+
         // $supportedArgs defines the expected args, their default values, where null means required arg.
         $supportedArgs = ['recId' => null, 'recData' => null, 'locking' => false, 'blocking' => false];
         if (($recId = $this->fixRecId($recId, false, $supportedArgs)) === false) {
@@ -247,17 +260,17 @@ class DataStorage2
         }
         if (($recId === false) || !$recData) {
             return false;
-        }
-
-        if (!$this->awaitLockEnd($recId, $blocking)) {
-            return false;
         } elseif (is_array($recId)) {
             list($recId, $recData, $locking, $blocking) = $recId;
         }
-        if ($locking) {
-            if (!$this->lockRec($recId)) {
-                return false;
-            }
+
+        // if $blocking=false, _awaitRecLockEnd() performs isRecLocked():
+        if (!$this->_awaitRecLockEnd($recId, $blocking, false)) {
+            return false;
+        }
+
+        if ($locking && !$this->lockRec($recId)) {
+            return false;
         }
         $data = $this->getData(true);
 
@@ -271,7 +284,7 @@ class DataStorage2
         if ($locking) {
             $this->unlockRec($recId);
         }
-        if ($this->logModifTimes) {
+        if ($this->logModifTimes || $locking) {
             $this->updateMetaData('lastRecModif_'.$recId, microtime(true));
         }
         $this->getData(true);
@@ -282,9 +295,13 @@ class DataStorage2
 
     public function writeRecordElement($recId, $elemName = null, $value = null, $locking = false, $blocking = false, $append = false)
     {
+        // supports arguments as array (in $recId)
+//        if ($this->_isDbLocked()) {
+//            return false;
+//        }
         // like writeRecord but with separate args recId, elemName and value
         $supportedArgs = ['recId' => null, 'elemName' => null, 'value' => null, 'locking' => false, 'blocking' => false, 'append' => false];
-        if (!($recId = $this->fixRecId($recId, false, $supportedArgs))) {
+        if (($recId = $this->fixRecId($recId, false, $supportedArgs)) === false) {
             return false;
         } elseif (is_array($recId)) {
             list($recId, $elemName, $value, $locking, $blocking, $append) = $recId;
@@ -293,14 +310,20 @@ class DataStorage2
             return false;
         }
 
-        if (!$this->awaitLockEnd($recId, $blocking)) {
+        // if $blocking=false, _awaitRecLockEnd() performs isRecLocked():
+        if (!$this->_awaitRecLockEnd($recId, $blocking, true)) {
             return false;
         }
-        if ($locking) {
-            if (!$this->lockRec($recId)) {
-                return false;
-            }
+
+        if ($locking && !$this->_lockRec($recId)) {
+            return false;
         }
+//        if ($locking) {
+//            if (!$this->lockRec($recId)) {
+//                return false;
+//            }
+//        }
+
         $data = $this->getData(true);
         if ($recId !== false) {
             if ($append && isset($data[$recId][$elemName])) {
@@ -314,7 +337,7 @@ class DataStorage2
 
         $this->lowLevelWrite($data);
         if ($locking) {
-            $this->unlockRec($recId);
+            $this->_unlockRec($recId);
         }
         $this->getData(true);
         return true;
@@ -322,35 +345,23 @@ class DataStorage2
 
 
 
-    private function awaitLockEnd($recId, $timeout)
-    {
-        $timeout = min(5, $timeout);
-        $till = microtime(true) + $timeout;
-        while (($locked = $this->isLockDB()) && $timeout && (microtime(true) < $till)) {
-            sleep(1);
-        }
-        if ($locked) {
-            return false;
-        }
-        while (($locked = $this->isRecLocked($recId)) && $timeout && (microtime(true) < $till)) {
-            sleep($this->defaultPollingSleepTime);
-        }
-        return !$locked;
-    } // awaitLockEnd
-
-
-
     public function deleteRecord($recId, $locking = false, $blocking = false)
     {
-        if (!($recId = $this->fixRecId($recId))) {
+//        if ($this->isDbLocked()) {
+//            return false;
+//        }
+        if (($recId = $this->fixRecId($recId)) === false) {
+            return false;
+        }
+        if ($this->isRecLocked( $recId )) {
             return false;
         }
 
-        if (!$this->awaitLockEnd($recId, $blocking)) {
+        if (!$this->_awaitRecLockEnd($recId, $blocking)) {
             return false;
         }
         if ($locking) {
-            if (!$this->lockRec($recId)) {
+            if (!$this->_lockRec($recId)) {
                 return false;
             }
         }
@@ -365,15 +376,18 @@ class DataStorage2
         }
 
         if ($locking) {
-            $this->unlockRec($recId);
+            $this->_unlockRec($recId);
         }
         return $res;
     } // deleteRecord
 
 
 
-    public function lockRec( $recId)
+    public function lockRec( $recId )
     {
+        if ($this->isDbLocked( false )) {
+            return false;
+        }
         if (($recId = $this->fixRecId($recId)) === false) {
             return false;
         }
@@ -383,47 +397,60 @@ class DataStorage2
             return false;
         }
 
-        $mySessionID = $this->sessionId;
-        $lockData[$recId] = [
-            'lockTime' => microtime(true),
-            'lockOwner' => $mySessionID
-        ];
-        $this->updateMetaData('recLocks', $lockData);
-        return true;
+        return $this->_lockRec( $recId);
+
+//        $mySessionID = $this->sessionId;
+//        $lockData[$recId] = [
+//            'lockTime' => microtime(true),
+//            'lockOwner' => $mySessionID
+//        ];
+//        $this->updateMetaData('recLocks', $lockData);
+//        return true;
     } // lockRec
 
 
 
-    public function unlockRec( $recId, $force = false)
+    public function unlockRec( $recId, $force = false )
     {
+        if (!$force && $this->isDbLocked( false )) {
+            return false;
+        }
         if (($recId = $this->fixRecId($recId)) === false) {
             return false;
         }
 
+        $locked = $this->_isRecLocked( $recId );
+        if ($locked && !$force) { // rec already locked
+            return false;
+        }
 
-        if (!$force && $this->isRecLocked( $recId )) { // rec already locked
-            return true;
-        }
-        $meta = $this->getMetaData();
-        if (isset($meta['recLocks'][$recId])) {
-            if (!$force && !$this->isMySessionID( $meta['recLocks'][$recId]['lockOwner'] )) {
-                return false;
-            }
-            unset($meta['recLocks'][$recId]);
-            $this->updateMetaData($meta);
-        }
-        return true;
+        return $this->_unlockRec( $recId, $force );
+//        $meta = $this->getMetaData();
+//        if (isset($meta['recLocks'][$recId])) {
+//            if (!$force && !$this->isMySessionID( $meta['recLocks'][$recId]['lockOwner'] )) {
+//                return false;
+//            }
+//            unset($meta['recLocks'][$recId]);
+//            $this->updateMetaData($meta);
+//        }
+//        return true;
     } // unlockRec
 
 
 
     public function isRecLocked( $recId )
     {
-        if (!($recId = $this->fixRecId($recId))) {
+        if ($this->_isDbLocked( false )) {
+            return true;
+        }
+        if (($recId = $this->fixRecId($recId)) === false) {
             return false;
         }
-
-
+//        $recLocked = $this->_isRecLocked( $recId );
+        if ($this->_isRecLocked( $recId )) {
+            return true;
+        }
+        // lock found, now check timed out?
         $lockData = $this->getMetaElement('recLocks');
         if (!$lockData) {
             return null;
@@ -437,15 +464,45 @@ class DataStorage2
             }
             // not locked, if it's my own lock:
             if ($this->isMySessionID( $locRec['lockOwner'] )) {
-                return false;
+                return false; // not locked
             }
             // it's locked by somebody else:
-            return true;
+            return true; // locked
         }
         return false;
     } // isRecLocked
 
 
+
+    public function hasLockedRecords( $checkDBlevel = true)
+    {
+        if ($checkDBlevel && $this->isDbLocked()) {
+            return true;
+        }
+        $lockData = $this->getMetaElement('recLocks');
+        if (!$lockData) {
+            return null;
+        }
+        $locked = false;
+        foreach ($lockData as $recId => $lockRec) {
+//            $locRec = $lockData[$recId];
+            $lockDuration = microtime(true) - $lockRec['lockTime'];
+            if ($lockDuration > LZY_LOCK_ALL_DURATION_DEFAULT) {
+                if ($checkDBlevel) {
+                    $this->unlockRec($recId, true);
+                }
+                continue;
+            }
+            // not locked, if it's my own lock:
+            if ($this->isMySessionID( $lockRec['lockOwner'] )) {
+                continue;
+            }
+            // it's locked by somebody else:
+            $locked = true; // locked
+            break;
+        }
+        return $locked;
+    } // hasLockedRecords
 
 
 
@@ -503,7 +560,7 @@ class DataStorage2
 
     public function writeElement($key, $value)
     {
-        if ($this->isLockDB()) {
+        if ($this->isDbLocked()) {
             return false;
         }
         $data = $this->getData(true);
@@ -549,7 +606,7 @@ class DataStorage2
     //Todo: rename
     public function append($key, $value = null)
     {
-        if ($this->isLockDB()) {
+        if ($this->isDbLocked()) {
             return false;
         }
         $data = $this->getData(true);
@@ -571,7 +628,7 @@ class DataStorage2
     //Todo: rename
     public function delete($key)
     {
-        if ($this->isLockDB()) {
+        if ($this->isDbLocked()) {
             return false;
         }
         $modified = false;
@@ -635,30 +692,6 @@ class DataStorage2
 
 
 
-    protected function getMetaElement($key)
-    {
-        $meta = $this->getMetaData();
-        if (isset($meta[$key])) {
-            return $meta[$key];
-        } else {
-            return null;
-        }
-    } // getMetaElement
-
-
-
-
-    protected function getMetaData()
-    {
-        $query = "SELECT \"meta\" FROM \"{$this->tableName}\"";
-        $metaData = $this->lzyDb->querySingle($query, true);
-        $meta = $this->jsonDecode($metaData['meta']);
-        return $meta;
-    } // getMetaData
-
-
-
-
     //---------------------------------------------------------------------------
     public function lastModified()
     {
@@ -688,9 +721,11 @@ class DataStorage2
 
 
 
+// === depricated ======================
     //---------------------------------------------------------------------------
     public function doLockDB()  // alias for compatibility
     {
+        die("Method lockDB() has been depricated - use lockDB() instead");
         return $this->lockDB();
     } // doLockDB
 
@@ -699,12 +734,24 @@ class DataStorage2
 
     public function doUnlockDB()  // alias for compatibility
     {
-        return $this->unLockDB();
+        die("Method doUnlockDB() has been depricated - use unlockDB() instead");
+        return $this->unlockDB();
     } // doUnlockDB
 
 
 
+    public function getDbRef()
+    {
+        die("Method getDbRef() has been depricated");
+        if (!$this->lzyDb) {
+            $this->openDbReadWrite();
+        }
+        return $this->lzyDb;
+    } // getDbRef
 
+
+
+// === aux methods ======================
     public function dumpDb( $raw = false)
     {
         if ($raw) {
@@ -726,7 +773,223 @@ class DataStorage2
 
 
 // === protected methods ===============
-    //Todo: rename
+    private function _awaitDbLockEnd($timeout, $checkOnLockedRecords = true)
+    {
+        if (!$timeout) {
+            return !_isDbLocked($checkOnLockedRecords);
+        }
+
+        // wait for DB to be unlocked:
+        $timeout = min(LZY_MAX_AWAIT_LOCK_END_TIME, $timeout);
+        $till = microtime(true) + $timeout;
+        while (($locked = $this->_isDbLocked( $checkOnLockedRecords )) && $timeout && (microtime(true) < $till)) {
+            usleep($this->defaultPollingSleepTime);
+        }
+        return !$locked;
+    } // _awaitDbLockEnd
+
+
+
+
+    private function _isDbLocked( $checkOnLockedRecords = true )
+    {
+        $rawData = $this->getRawData();
+        $lockTime = $rawData['lockTime'];
+        if ($lockTime && ($lockTime < (microtime(true) - LZY_LOCK_ALL_DURATION_DEFAULT))) {
+            // lock too old - force it open:
+            $this->_unlockDB();
+
+        } elseif ($rawData['lockedBy'] &&
+            ($rawData['lockedBy'] !== $this->sessionId)) {
+            // locked by someone else:
+            return true;
+        }
+
+        if ($checkOnLockedRecords) {
+            return $this->_hasLockedRecords();
+        } else {
+            return false;
+        }
+    } // _isDbLocked
+
+
+
+
+    private function _lockDB()
+    {
+        $rawData = $this->getRawData();
+        $rawData['lockedBy'] = $this->sessionId;
+        $rawData['lockTime'] = microtime(true);
+        $this->updateRawMetaData($rawData);
+        return true;
+    } // _lockDB
+
+
+
+
+    private function _unlockDB()
+    {
+        $rawData = $this->getRawData();
+        $rawData['lockedBy'] = '';
+        $rawData['lockTime'] = 0.0;
+        $this->updateRawMetaData($rawData);
+        return true;
+    } // _unlockDB
+
+
+
+    private function _awaitRecLockEnd($recId, $timeout, $checkOnLockedRecords = true)
+    {
+        if (!$timeout) {
+            return !$this->isRecLocked($recId);
+        }
+
+        // wait for DB to be unlocked:
+        if (!$this->_awaitDbLockEnd($timeout, $checkOnLockedRecords)) {
+            return false;
+        }
+//        $timeout = min(LZY_MAX_AWAIT_LOCK_END_TIME, $timeout);
+//        $till = microtime(true) + $timeout;
+//        while (($locked = $this->_isDbLocked( false )) && $timeout && (microtime(true) < $till)) {
+//            usleep($this->defaultPollingSleepTime);
+//        }
+//        if ($locked) {
+//            return false;
+//        }
+
+        // wait for Rec to be unlocked:
+//        $locked = $this->_isRecLocked($recId);
+        $till = microtime(true) + $timeout;
+//        while ($locked && $timeout && (microtime(true) < $till)) {
+//            usleep($this->defaultPollingSleepTime);
+//            $locked = $this->_isRecLocked($recId);
+//            $now = microtime(true);
+//        }
+        while (($locked = $this->_isRecLocked($recId)) && (microtime(true) < $till)) {
+            usleep($this->defaultPollingSleepTime);
+        }
+        return !$locked;
+    } // _awaitRecLockEnd
+
+
+
+    private function _isRecLocked( $recId )
+    {
+        $lockData = $this->getMetaElement('recLocks');
+        if (!$lockData) {
+            return null;
+        }
+        if (isset($lockData[$recId])) {
+            $lockRec = $lockData[$recId];
+            // not locked, if it's my own lock:
+            if ($this->isMySessionID( $lockRec['lockOwner'] )) {
+                return false; // not locked
+            }
+
+            // check whether lock timed out:
+            $lockDuration = microtime(true) - $lockRec['lockTime'];
+            if ($lockDuration > LZY_LOCK_ALL_DURATION_DEFAULT) {
+                $this->_unlockRec($recId, true);
+                writeLog("DataStorage: recLoc on $this->dataFile => $recId timed out -> forced open");
+                return false;
+            }
+            // it's locked by somebody else:
+            return true; // locked
+        }
+        return false;
+    } // isRecLocked
+
+
+
+    private function _hasLockedRecords()
+    {
+        $lockData = $this->getMetaElement('recLocks');
+        if (!$lockData) {
+            return null;
+        }
+        $locked = false;
+        foreach ($lockData as $recId => $lockRec) {
+            $lockDuration = microtime(true) - $lockRec['lockTime'];
+            if ($lockDuration > LZY_LOCK_ALL_DURATION_DEFAULT) {
+                // rec-lock too old, force it open:
+                $this->_unlockRec($recId);
+                continue;
+            }
+            // not locked, if it's my own lock:
+            if ($this->isMySessionID( $lockRec['lockOwner'] )) {
+                continue;
+            }
+            // it's locked by somebody else:
+            $locked = true; // locked
+            break;
+        }
+        return $locked;
+    } // hasLockedRecords
+
+
+
+    public function _lockRec( $recId )
+    {
+//        if ($this->isDbLocked()) {
+//            return false;
+//        }
+//        if (($recId = $this->fixRecId($recId)) === false) {
+//            return false;
+//        }
+//
+//
+        if ($this->isRecLocked( $recId )) { // rec already locked
+            return false;
+        }
+//
+//        $mySessionID = $this->sessionId;
+        $meta = $this->getMetaData();
+        $lockData = $meta['recLocks'];
+        $lockData[$recId] = [
+            'lockTime' => microtime(true),
+            'lockOwner' => $this->sessionId
+        ];
+        $this->updateMetaData('recLocks', $lockData);
+        return true;
+    } // _lockRec
+
+
+
+
+    public function _unlockRec( $recId, $force = false )
+    {
+        $meta = $this->getMetaData();
+        if (isset($meta['recLocks'][$recId])) {
+            if (!$force && !$this->isMySessionID( $meta['recLocks'][$recId]['lockOwner'] )) {
+                return false;
+            }
+            unset($meta['recLocks'][$recId]);
+            $this->updateMetaData($meta);
+        }
+        return true;
+    } // _unlockRec
+
+
+
+    public function _unlockAllRecs( $force )
+    {
+        $meta = $this->getMetaData();
+        $recLocs = $meta['recLocks'];
+        foreach ($recLocs as $recId => $recLoc) {
+            if (!$force && !$this->isMySessionID( $meta['recLocks'][$recId]['lockOwner'] )) {
+                continue;
+            }
+            unset($meta['recLocks'][$recId]);
+        }
+        $this->updateMetaData($meta);
+        return true;
+    } // _unlockAllRecs
+
+
+
+
+
+    // merge with new data:
     protected function updateDB($newData)
     {
         $data = $this->getData(true);
@@ -758,6 +1021,30 @@ class DataStorage2
 
 
     // === Low Level Operations ===========================================================
+    protected function getMetaElement($key)
+    {
+        $meta = $this->getMetaData();
+        if (isset($meta[$key])) {
+            return $meta[$key];
+        } else {
+            return null;
+        }
+    } // getMetaElement
+
+
+
+
+    protected function getMetaData()
+    {
+        $query = "SELECT \"meta\" FROM \"{$this->tableName}\"";
+        $metaData = $this->lzyDb->querySingle($query, true);
+        $meta = $this->jsonDecode($metaData['meta']);
+        return $meta;
+    } // getMetaData
+
+
+
+
     protected function lowLevelWriteMeta($metaData)
     {
         $metaData = $this->jsonEncode($metaData);
@@ -892,16 +1179,6 @@ EOT;
         }
     } // initLizzyDB
 
-
-
-
-    public function getDbRef()
-    {
-        if (!$this->lzyDb) {
-            $this->openDbReadWrite();
-        }
-        return $this->lzyDb;
-    }
 
 
 
