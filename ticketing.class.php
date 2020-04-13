@@ -112,7 +112,7 @@ class Ticketing
             $this->lastError = 'ticket was of wrong type';
 
         } elseif (isset($ticketRec['lzy_ticketValidTill']) && ($ticketRec['lzy_ticketValidTill'] < time())) {      // ticket expired
-            $this->ds->delete($ticketHash);
+            $this->ds->deleteElement($ticketHash);
             $ticketRec = false;
             $this->lastError = 'code timed out';
 
@@ -122,7 +122,7 @@ class Ticketing
                 $ticketRec['lzy_maxConsumptionCount'] = $n - 1;
                 $this->ds->writeElement($ticketHash, $ticketRec);
             } else {
-                $this->ds->delete($ticketHash);
+                $this->ds->deleteElement($ticketHash);
             }
 
             $lzy_ticketType = $ticketRec['lzy_ticketType'];

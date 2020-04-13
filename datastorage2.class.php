@@ -35,6 +35,7 @@ class DataStorage2
 	private $tableName;
 	private $data = null;
 	private $rawData = null;
+	private $exportRequired = false;
 	private $sid;
 	private $format;
 	private $lockDB = false;
@@ -45,21 +46,26 @@ class DataStorage2
     //--------------------------------------------------------------
     public function __construct($args)
     {
-        $this->parseArguments($args);
-        if (!$this->dataFile) {
-            die("Error: DataStorage2 invoked without dataFile being specified.");
-        }
-        $this->initLizzyDB();
-        $this->initDbTable();
-        $this->appPath = getcwd();
-
-        if ($this->doLockDB) {
-            $this->lockDB();
-        }
         if ( session_status() !== PHP_SESSION_ACTIVE ) {
             session_start();
         }
         $this->sessionId = session_id();
+
+        $this->parseArguments($args);
+        if (!$this->dataFile) {
+            die("Error: DataStorage2 invoked without dataFile being specified.");
+        }
+
+        $this->initLizzyDB();
+
+        if ($this->mode === 'readwrite') {
+            $this->openDbReadWrite();
+        } else {
+            $this->openDbReadOnly();
+        }
+
+        $this->initDbTable();
+        $this->appPath = getcwd();
     } // __construct
 
 
@@ -74,13 +80,9 @@ class DataStorage2
 
         $this->exportToFile(); // saves data if modified
         if ($this->lzyDb) {
-            if ($this->doLockDB) {
-                $this->unlockDB();
-            }
             $this->lzyDb->close();
         }
     } // __destruct
-
 
 
 
@@ -121,7 +123,7 @@ class DataStorage2
     public function isLockDB( $checkOnLockedRecords = true )
     {
         // to be depricated!
-//        die("Method isLockDB() has been depricated, use isLockDB() instead");
+        // die("Method isLockDB() has been depricated, use isLockDB() instead");
         return $this->isDbLocked();
     }
 
@@ -230,7 +232,7 @@ class DataStorage2
             $this->unlockRec($recId);
         }
         if ($this->logModifTimes || $locking) {
-            $this->updateMetaData('lastRecModif_'.$recId, microtime(true));
+            $this->updateRecLastUpdate( $recId );
         }
         $this->getData(true);
         return true;
@@ -252,7 +254,6 @@ class DataStorage2
             return false;
         }
 
-        // if $blocking=false, _awaitRecLockEnd() performs isRecLocked():
         if (!$this->_awaitRecLockEnd($recId, $blocking, true)) {
             return false;
         }
@@ -274,8 +275,8 @@ class DataStorage2
 
         $this->lowLevelWrite($data);
 
-        if ($this->logModifTimes) {
-            $this->updateMetaData('lastRecModif_'.$recId, microtime(true));
+        if ($this->logModifTimes || $locking) {
+            $this->updateRecLastUpdate( $recId );
         }
 
         if ($locking) {
@@ -322,6 +323,7 @@ class DataStorage2
 
 
 
+
     public function lockRec( $recId )
     {
         if ($this->isDbLocked( false )) {
@@ -336,6 +338,7 @@ class DataStorage2
         }
         return $this->_lockRec( $recId);
     } // lockRec
+
 
 
 
@@ -357,9 +360,10 @@ class DataStorage2
 
 
 
-    public function isRecLocked( $recId )
+
+    public function isRecLocked( $recId, $skipDbLockCheck = false )
     {
-        if ($this->_isDbLocked( false )) {
+        if (!$skipDbLockCheck && $this->_isDbLocked( false )) {
             return true;
         }
         if (($recId = $this->fixRecId($recId)) === false) {
@@ -369,12 +373,12 @@ class DataStorage2
             return false;
         }
         // lock found, now check timed out?
-        $lockData = $this->getMetaElement('recLocks');
-        if (!$lockData) {
+        $recLocks = $this->lowlevelReadRecLocks();
+        if (!$recLocks) {
             return null;
         }
-        if (isset($lockData[$recId])) {
-            $locRec = $lockData[$recId];
+        if (isset($recLocks[$recId])) {
+            $locRec = $recLocks[$recId];
             $lockDuration = microtime(true) - $locRec['lockTime'];
             if ($lockDuration > LZY_LOCK_ALL_DURATION_DEFAULT) {
                 $this->unlockRec($recId, true);
@@ -393,12 +397,12 @@ class DataStorage2
         if ($checkDBlevel && $this->isDbLocked()) {
             return true;
         }
-        $lockData = $this->getMetaElement('recLocks');
-        if (!$lockData) {
+        $recLocks = $this->lowlevelReadRecLocks();
+        if (!$recLocks) {
             return null;
         }
         $locked = false;
-        foreach ($lockData as $recId => $lockRec) {
+        foreach ($recLocks as $recId => $lockRec) {
             $locked = $this->isRecLocked( $recId );
             if ($locked) {
                 break;
@@ -459,7 +463,7 @@ class DataStorage2
 
     public function lastModifiedElement($key)
     {
-        $lastRecModif = $this->getMetaElement('lastRecModif_'.$key);
+        $lastRecModif = $this->lowlevelReadMetaElement('lastRecModif_'.$key);
         if (!$lastRecModif) {
             $lastRecModif = $this->lastDbModified();
         }
@@ -505,7 +509,7 @@ class DataStorage2
         }
 
         if ($this->logModifTimes) {
-            $this->updateMetaData('lastRecModif_'.$key0, microtime(true));
+            $this->updateRecLastUpdate( $key0 );
         }
 
         return $this->lowLevelWrite($data);
@@ -572,7 +576,7 @@ class DataStorage2
 
     public function getDbRecStructure()
     {
-        $rawData = $this->getRawData();
+        $rawData = $this->lowlevelReadRawData();
         $structure = $this->jsonDecode($rawData['structure']);
         return $structure;
     } // getDbRecStructure
@@ -583,7 +587,7 @@ class DataStorage2
     //---------------------------------------------------------------------------
     public function lastDbModified()
     {
-        $rawData = $this->getRawData();
+        $rawData = $this->lowlevelReadRawData();
         return $rawData['lastUpdate'];
     } // lastModified
 
@@ -594,7 +598,7 @@ class DataStorage2
     public function checkNewData($lastUpdate, $returnJson = false)
     {
         // checks whether new data has been saved since the given time:
-        $rawData = $this->getRawData();
+        $rawData = $this->lowlevelReadRawData();
         if ($rawData['lastUpdate'] > $lastUpdate) {
             $data = $this->getData(true);
             if ($returnJson) {
@@ -632,10 +636,10 @@ class DataStorage2
     public function getDbRef()
     {
         die("Method getDbRef() has been depricated");
-        if (!$this->lzyDb) {
-            $this->openDbReadWrite();
-        }
-        return $this->lzyDb;
+//        if (!$this->lzyDb) {
+//            $this->openDbReadWrite();
+//        }
+//        return $this->lzyDb;
     } // getDbRef
 
     
@@ -645,7 +649,7 @@ class DataStorage2
     public function dumpDb( $raw = false)
     {
         if ($raw) {
-            $d = $this->getRawData();
+            $d = $this->lowlevelReadRawData();
         } else {
             $d = $this->getData( true );
         }
@@ -668,34 +672,13 @@ class DataStorage2
         if ($this->data && !$force) {
             return $this->data;
         }
-        $rawData = $this->getRawData();
+        $rawData = $this->lowlevelReadRawData();
         $json = $rawData['data'];
         $json = str_replace('⌑⌇⌑', '"', $json);
         $data = $this->jsonDecode($json);
         $this->data = $data;
         return $data;
     } // getData
-
-
-
-
-    private function getRawData( $rawElem = false)
-    {
-        if (!$this->tableName) {
-            return null;
-        }
-        $query = "SELECT * FROM \"{$this->tableName}\"";
-        $rawData = $this->lzyDb->querySingle($query, true);
-        if ($rawElem) {
-            if (isset($rawData[$rawElem])) {
-                return $rawData[$rawElem];
-            } else {
-                return null;
-            }
-        }
-        $this->rawData = $rawData;
-        return $rawData;
-    } // getRawData
 
 
 
@@ -720,7 +703,7 @@ class DataStorage2
 
     private function _isDbLocked( $checkOnLockedRecords = true )
     {
-        $rawData = $this->getRawData();
+        $rawData = $this->lowlevelReadRawData();
         $lockTime = $rawData['lockTime'];
         if ($lockTime && ($lockTime < (microtime(true) - LZY_LOCK_ALL_DURATION_DEFAULT))) {
             // lock too old - force it open:
@@ -744,7 +727,7 @@ class DataStorage2
 
     private function _lockDB()
     {
-        $rawData = $this->getRawData();
+        $rawData = $this->lowlevelReadRawData();
         $rawData['lockedBy'] = $this->sessionId;
         $rawData['lockTime'] = microtime(true);
         $this->updateRawDbMetaData($rawData);
@@ -756,7 +739,7 @@ class DataStorage2
 
     private function _unlockDB()
     {
-        $rawData = $this->getRawData();
+        $rawData = $this->lowlevelReadRawData();
         $rawData['lockedBy'] = '';
         $rawData['lockTime'] = 0.0;
         $this->updateRawDbMetaData($rawData);
@@ -787,12 +770,12 @@ class DataStorage2
 
     private function _isRecLocked( $recId )
     {
-        $lockData = $this->getMetaElement('recLocks');
-        if (!$lockData) {
+        $recLocks = $this->lowlevelReadRecLocks();
+        if (!$recLocks) {
             return null;
         }
-        if (isset($lockData[$recId])) {
-            $lockRec = $lockData[$recId];
+        if (isset($recLocks[$recId])) {
+            $lockRec = $recLocks[$recId];
             // not locked, if it's my own lock:
             if ($this->isMySessionID( $lockRec['lockOwner'] )) {
                 return false; // not locked
@@ -816,12 +799,12 @@ class DataStorage2
 
     private function _hasLockedRecords()
     {
-        $lockData = $this->getMetaElement('recLocks');
-        if (!$lockData) {
+        $recLocks = $this->lowlevelReadRecLocks();
+        if (!$recLocks) {
             return null;
         }
         $locked = false;
-        foreach ($lockData as $recId => $lockRec) {
+        foreach ($recLocks as $recId => $lockRec) {
             $lockDuration = microtime(true) - $lockRec['lockTime'];
             if ($lockDuration > LZY_LOCK_ALL_DURATION_DEFAULT) {
                 // rec-lock too old, force it open:
@@ -847,13 +830,12 @@ class DataStorage2
         if ($this->isRecLocked( $recId )) { // rec already locked
             return false;
         }
-        $meta = $this->getMetaData();
-        $lockData = $meta['recLocks'];
-        $lockData[$recId] = [
+        $recLocks = $this->lowlevelReadRecLocks();
+        $recLocks[$recId] = [
             'lockTime' => microtime(true),
             'lockOwner' => $this->sessionId
         ];
-        $this->updateMetaData('recLocks', $lockData);
+        $this->lowLevelWriteRecLocks($recLocks);
         return true;
     } // _lockRec
 
@@ -862,13 +844,13 @@ class DataStorage2
 
     private function _unlockRec( $recId, $force = false )
     {
-        $meta = $this->getMetaData();
-        if (isset($meta['recLocks'][$recId])) {
-            if (!$force && !$this->isMySessionID( $meta['recLocks'][$recId]['lockOwner'] )) {
+        $recLocks = $this->lowlevelReadRecLocks();
+        if (isset($recLocks[$recId])) {
+            if (!$force && !$this->isMySessionID( $recLocks[$recId]['lockOwner'] )) {
                 return false;
             }
-            unset($meta['recLocks'][$recId]);
-            $this->updateMetaData($meta);
+            unset($recLocks[$recId]);
+            $this->lowLevelWriteRecLocks($recLocks);
         }
         return true;
     } // _unlockRec
@@ -877,15 +859,18 @@ class DataStorage2
 
     private function _unlockAllRecs( $force )
     {
-        $meta = $this->getMetaData();
-        $recLocs = $meta['recLocks'];
-        foreach ($recLocs as $recId => $recLoc) {
-            if (!$force && !$this->isMySessionID( $meta['recLocks'][$recId]['lockOwner'] )) {
-                continue;
+        if ( $force ) {
+            $this->lowLevelWriteRecLocks( [] );
+        } else {
+            $recLocks = $this->lowlevelReadRecLocks();
+            foreach ($recLocks as $recId => $recLock) {
+                if (!$this->isMySessionID($recLocks[$recId]['lockOwner'])) {
+                    continue;
+                }
+                unset($recLocks[$recId]);
             }
-            unset($meta['recLocks'][$recId]);
+            $this->lowLevelWriteRecLocks($recLocks);
         }
-        $this->updateMetaData($meta);
         return true;
     } // _unlockAllRecs
 
@@ -940,10 +925,6 @@ class DataStorage2
         } elseif (is_string($recId) &&  (strpbrk($recId, ',]')) !== false) {
             $recId = preg_replace('/,.*/', '', $recId);
         }
-//ToDo: what was that for?
-//        if (($this->structure['key'] !== 'index') && !isset($this->data[$recId])) {
-//            $recId = false;
-//        }
         return $recId;
     } // fixRecId
 
@@ -995,36 +976,100 @@ class DataStorage2
 
 
     // === Low Level Operations ===========================================================
-    private function getMetaElement($key)
+    private function lowlevelReadMetaElement($key)
     {
-        $meta = $this->getMetaData();
+        $meta = $this->lowlevelReadRecLocks();
         if (isset($meta[$key])) {
             return $meta[$key];
         } else {
             return null;
         }
-    } // getMetaElement
+    } // lowlevelReadMetaElement
 
 
 
 
-    private function getMetaData()
+    private function lowlevelReadRecLocks()
     {
-        $query = "SELECT \"meta\" FROM \"{$this->tableName}\"";
-        $metaData = $this->lzyDb->querySingle($query, true);
-        $meta = $this->jsonDecode($metaData['meta']);
-        return $meta;
-    } // getMetaData
+        $query = "SELECT \"recLocks\" FROM \"{$this->tableName}\"";
+        $rawData = $this->lzyDb->querySingle($query, true);
+        return $this->jsonDecode($rawData['recLocks']);
+    } // lowlevelReadMetaData
 
 
 
 
-    private function lowLevelWriteMeta($metaData)
+    private function lowlevelReadRecLastUpdates()
     {
-        $metaData = $this->jsonEncode($metaData);
+        $query = "SELECT \"recLastUpdates\" FROM \"{$this->tableName}\"";
+        $rawData = $this->lzyDb->querySingle($query, true);
+        return $this->jsonDecode($rawData['recLastUpdates']);
+    } // lowlevelReadRecLastUpdates
+
+
+
+
+    private function lowlevelReadRawData($rawElem = false)
+    {
+        if (!$this->tableName) {
+            return null;
+        }
+        $query = "SELECT * FROM \"{$this->tableName}\"";
+        $rawData = $this->lzyDb->querySingle($query, true);
+        if ($rawElem) {
+            if (isset($rawData[$rawElem])) {
+                return $rawData[$rawElem];
+            } else {
+                return null;
+            }
+        }
+        $this->rawData = $rawData;
+        return $rawData;
+    } // lowlevelReadRawData
+
+
+
+
+    private function lowLevelWrite($newData, $isJson = false)
+    {
+        $this->openDbReadWrite();
+
+        $json = $this->jsonEncode($newData, $isJson);
+        if (is_string($json)) {
+            $json = SQLite3::escapeString($json);
+        }
+        $modifTime = microtime(true);
+
         $sql = <<<EOT
 UPDATE "{$this->tableName}" SET 
-    'meta' = "$metaData";
+    "data" = "$json", 
+    "lastUpdate" = $modifTime;
+
+EOT;
+
+        try {
+            $res = $this->lzyDb->query($sql);
+        }
+        catch (exception $e) {
+            fatalError($e->getMessage());
+        }
+        $this->rawData = $this->lowlevelReadRawData();
+
+        $this->exportRequired = true;
+        return $res;
+    } // lowLevelWrite
+
+
+
+
+    private function lowLevelWriteRecLocks( $recLocks )
+    {
+        $this->openDbReadWrite();
+
+        $recLocksJson = $this->jsonEncode( $recLocks );
+        $sql = <<<EOT
+UPDATE "{$this->tableName}" SET 
+    "recLocks" = "$recLocksJson";
 
 EOT;
 
@@ -1037,6 +1082,7 @@ EOT;
     private function lowLevelWriteStructure()
     {
         $this->openDbReadWrite();
+
         $structureJson = isset($this->structure)? $this->jsonEncode($this->structure): '';
 
         $sql = <<<EOT
@@ -1056,91 +1102,63 @@ EOT;
 
 
 
-    private function lowLevelWrite($newData, $isJson = false, $markModified = true)
-    {
-        $this->openDbReadWrite();
-
-        $json = $this->jsonEncode($newData, $isJson);
-        if (is_string($json)) {
-            $json = SQLite3::escapeString($json);
-        }
-        $ftime = microtime(true);
-        $modified = $markModified ? 1 : 0;
-
-        if ($markModified) {
-            $sql = <<<EOT
-UPDATE "{$this->tableName}" SET 
-    "data" = "$json", 
-    "lastUpdate" = $ftime, 
-    'modified' = $modified;
-
-EOT;
-        } else {
-            $sql = <<<EOT
-UPDATE "{$this->tableName}" SET 
-    "data" = "$json";
-
-EOT;
-        }
-
-        try {
-            $res = $this->lzyDb->query($sql);
-        }
-        catch (exception $e) {
-            fatalError($e->getMessage());
-        }
-        $this->rawData = $this->getRawData();
-
-        return $res;
-    } // lowLevelWrite
-
-
-
-
     private function updateRawDbMetaData($rawData)
     {
         $this->openDbReadWrite();
+
+        $modifTime = microtime(true);
         $sql = <<<EOT
 UPDATE "{$this->tableName}" SET 
-    'modified' = 1,
-    'lockedBy' = '{$rawData['lockedBy']}',
-    'lockTime' = '{$rawData['lockTime']}'
+    "lockedBy" = "{$rawData['lockedBy']}",
+    "lockTime" = "{$rawData['lockTime']}",
+    "lastUpdate" = $modifTime;
 
 EOT;
-
         try {
             $res = $this->lzyDb->query($sql);
         }
         catch (exception $e) {
             fatalError($e->getMessage());
         }
-        $this->rawData = $this->getRawData();
+        $this->rawData = $this->lowlevelReadRawData();
     } // updateRawDbMetaData
 
 
 
 
-    private function writeMetaData( $metaData )
+    private function updateRecLastUpdate( $recId )
     {
-        return $this->lowLevelWriteMeta($metaData);
-    } // writeMetaData
+        $query = "SELECT \"recLastUpdates\" FROM \"{$this->tableName}\"";
+        $rawData = $this->lzyDb->querySingle($query, true);
+        $recLastUpdates = $this->jsonDecode($rawData['recLastUpdates']);
+
+        $recLastUpdates[ $recId ] = microtime(true);
+
+        $this->lowlevelWriteRecLastUpdates( $recLastUpdates );
+        return true;
+    } // updateRecLastUpdate
 
 
 
-    private function updateMetaData($key, $value = null)
+
+    private function lowlevelWriteRecLastUpdates( $lastRecUpdates )
     {
-        $metaData = $this->getMetaData();
-        if (is_array($key)) {
-            if (is_array($metaData)) {
-                $metaData = array_merge($metaData, $key);
-            } else {
-                $metaData = $key;
-            }
-        } else {
-            $metaData[$key] = $value;
+        $this->openDbReadWrite();
+
+        $json = $this->jsonEncode( $lastRecUpdates );
+        $sql = <<<EOT
+UPDATE "{$this->tableName}" SET 
+    "recLastUpdates" = "$json";
+
+EOT;
+        try {
+            $this->lzyDb->query($sql);
         }
-        return $this->lowLevelWriteMeta($metaData);
-    } // updateMetaData
+        catch (exception $e) {
+            fatalError($e->getMessage());
+        }
+    } // lowlevelWriteRecLastUpdates
+
 
 
 
@@ -1159,11 +1177,23 @@ EOT;
     private function openDbReadWrite()
     {
         if ($this->lzyDb) {
-            return;
+            $this->lzyDb->close();
         }
         $this->lzyDb = new SQLite3(LIZZY_DB, SQLITE3_OPEN_READWRITE);
         $this->lzyDb->busyTimeout(5000);
         $this->lzyDb->exec('PRAGMA journal_mode = wal;'); // https://www.php.net/manual/de/sqlite3.exec.php
+    } // openDbReadWrite
+
+
+
+
+
+    private function openDbReadOnly()
+    {
+        if ($this->lzyDb) {
+            return;
+        }
+        $this->lzyDb = new SQLite3(LIZZY_DB, SQLITE3_OPEN_READONLY);
     } // openDbReadWrite
 
 
@@ -1200,8 +1230,6 @@ EOT;
             touch($dataFile);
         }
 
-        $this->openDbReadWrite();
-
         // check whether dataFile-table exists:
         if ($this->tableName) {
             $tableName = $this->tableName;
@@ -1220,11 +1248,11 @@ EOT;
         $table = $res->fetchArray(SQLITE3_ASSOC);
         if (!$table) {  // if table does not exist: create it and populate it with data from origFile
             $this->createNewTable($tableName);
-            $rawData = $this->getRawData();
+            $rawData = $this->lowlevelReadRawData();
 
         } else { // if table exists, check whether update necessary:
             $ftime = floatval(filemtime($dataFile));
-            $rawData = $this->getRawData();
+            $rawData = $this->lowlevelReadRawData();
             if ($ftime > $rawData['lastUpdate']) {
                 $res = $this->importFromFile();
                 if ($res === false) {
@@ -1253,7 +1281,20 @@ EOT;
     {
         $rawData = $this->loadFile();
         $json = $this->decode($rawData, false, true, $initial);
-        $this->lowLevelWrite($json, true, false);
+        $json = $this->jsonEncode($json, true);
+        $json = SQLite3::escapeString($json);
+        $sql = <<<EOT
+UPDATE "{$this->tableName}" SET 
+    "data" = "$json";
+
+EOT;
+        try {
+            $this->lzyDb->query($sql);
+        }
+        catch (exception $e) {
+            fatalError($e->getMessage());
+        }
+        $this->rawData = $this->lowlevelReadRawData();
     } // importFromFile
 
 
@@ -1262,8 +1303,8 @@ EOT;
     //--------------------------------------------------------------
     private function exportToFile()
     {
-        $rawData = $this->getRawData();
-        if ($rawData['modified']) {
+        $rawData = $this->lowlevelReadRawData();
+        if ($this->exportRequired) {
             if (isset($GLOBALS["appRoot"])) {
                 $filename = $GLOBALS["appRoot"] . $rawData['origFile'];
 
@@ -1357,8 +1398,7 @@ EOT;
             return null;
         }
         $json = str_replace('⌑⌇⌑', '"', $json);
-        $data = json_decode($json, true);
-        return $data;
+        return json_decode($json, true);
     } // jsonDecode
 
 
@@ -1375,7 +1415,8 @@ EOT;
         $this->dataFile = resolvePath($this->dataFile);
         $this->logModifTimes = isset($args['logModifTimes']) ? $args['logModifTimes'] : false;
         $this->sid = isset($args['sid']) ? $args['sid'] : '';
-        $this->doLockDB = isset($args['lockDB']) ? $args['lockDB'] : false;
+//        $this->doLockDB = isset($args['lockDB']) ? $args['lockDB'] : false;
+        $this->mode = isset($args['mode']) ? $args['mode'] : 'readonly';
         $this->format = isset($args['format']) ? $args['format'] : '';
         $this->secure = isset($args['secure']) ? $args['secure'] : true;
         $this->useRecycleBin = isset($args['useRecycleBin']) ? $args['useRecycleBin'] : false;
@@ -1383,7 +1424,7 @@ EOT;
         $this->format = ($this->format) ? $this->format : pathinfo($this->dataFile, PATHINFO_EXTENSION) ;
         $this->tableName = isset($args['tableName']) ? $args['tableName'] : '';
         if ($this->tableName && !$this->dataFile) {
-            $rawData = $this->getRawData();
+            $rawData = $this->lowlevelReadRawData();
             $this->dataFile = PATH_TO_APP_ROOT.$rawData["origFile"];
         }
         $this->resetCache = isset($args['resetCache']) ? $args['resetCache'] : false;
@@ -1484,8 +1525,9 @@ EOT;
         }
 
         $rec0 = reset($data);
+        $l = is_array($rec0) ? sizeof($rec0) : 0;
         $structure['labels'] = is_array($rec0) ? array_keys($rec0): [];
-        $structure['types'] = array_fill(0, sizeof($rec0), 'string');
+        $structure['types'] = array_fill(0, $l, 'string');
         // types only makes sense if supplied in '_structure' record within data.
         $this->structure = $structure;
         return $structure;
@@ -1564,11 +1606,14 @@ EOT;
 
 
 
+
     private function createNewTable($tableName)
     {
+        $this->openDbReadWrite();
+
         $sql = "CREATE TABLE IF NOT EXISTS \"$tableName\" (";
         $sql .= '"id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,';
-        $sql .= '"data" VARCHAR, "meta" VARCHAR, "lastUpdate" REAL, "structure" VARCHAR, "2D" BIT, "origFile" VARCHAR, "modified" INTEGER, "lockedBy" VARCHAR, "lockTime" REAL)';
+        $sql .= '"data" VARCHAR, "structure" VARCHAR, "origFile" VARCHAR, "recLastUpdates" VARCHAR, "recLocks" VARCHAR, "lockedBy" VARCHAR, "lockTime" REAL, "lastUpdate" REAL)';
         $res = $this->lzyDb->query($sql);
         if ($res === false) {
             die("Error: unable to create table in lzyDB: '$tableName'");
@@ -1578,11 +1623,11 @@ EOT;
         if (PATH_TO_APP_ROOT && (strpos($origFileName, PATH_TO_APP_ROOT) === 0)) {
             $origFileName = substr($origFileName, strlen(PATH_TO_APP_ROOT));
         }
-        $is2D = (stripos($origFileName, '.csv') !== false) ? 1 : 0;
+        $modifTime = microtime(true);
 
         $sql = <<<EOT
-INSERT INTO "$tableName" ("data", "meta", "lastUpdate", "structure", "2D", "origFile", "modified", "lockedBy", "lockTime")
-VALUES ("", "", 0.0, "", $is2D, "$origFileName", 0, "", 0.0);
+INSERT INTO "$tableName" ("data", "structure", "origFile", "recLastUpdates", "recLocks", "lockedBy", "lockTime", "lastUpdate")
+VALUES ("", "", "$origFileName", "[]", "[]", "", 0.0, $modifTime);
 EOT;
         $stmt = $this->lzyDb->prepare($sql);
         $res = $stmt->execute();
@@ -1596,7 +1641,6 @@ EOT;
         }
         $this->lowLevelWriteStructure();
     } // createNewTable
-
 
 
 
