@@ -18,7 +18,7 @@ $this->addMacro($macroName, function () {
 
     $str = '';
     if ($return === 'size') {
-        $str = $db->getSize();
+        $str = $db->getNoOfRecords();
     }
 
     $this->optionAddNoComment = true;
