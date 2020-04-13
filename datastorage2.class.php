@@ -94,6 +94,7 @@ class DataStorage2
 
 
 
+
     public function write($data, $replace = true)
     {
         if ($this->_isDbLocked()) {
@@ -107,6 +108,7 @@ class DataStorage2
         $this->getData(true);
         return $res;
     } // write
+
 
 
 
@@ -310,7 +312,6 @@ class DataStorage2
         $res = false;
         if (isset($data[$recId])) {
             unset($data[$recId]);
-            $data = array_values($data);
             $this->lowLevelWrite($data);
             $res = true;
         }
@@ -1415,12 +1416,10 @@ EOT;
         $this->dataFile = resolvePath($this->dataFile);
         $this->logModifTimes = isset($args['logModifTimes']) ? $args['logModifTimes'] : false;
         $this->sid = isset($args['sid']) ? $args['sid'] : '';
-//        $this->doLockDB = isset($args['lockDB']) ? $args['lockDB'] : false;
         $this->mode = isset($args['mode']) ? $args['mode'] : 'readonly';
         $this->format = isset($args['format']) ? $args['format'] : '';
         $this->secure = isset($args['secure']) ? $args['secure'] : true;
         $this->useRecycleBin = isset($args['useRecycleBin']) ? $args['useRecycleBin'] : false;
-        $this->separateMetaData = isset($args['separateMetaData']) ? $args['separateMetaData'] : false;
         $this->format = ($this->format) ? $this->format : pathinfo($this->dataFile, PATHINFO_EXTENSION) ;
         $this->tableName = isset($args['tableName']) ? $args['tableName'] : '';
         if ($this->tableName && !$this->dataFile) {
