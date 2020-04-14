@@ -2,7 +2,6 @@
 
 var ajaxHndl = null;
 var lastUpdated = 0;
-var polltime = 60;
 var paramName = '';
 var paramSource = '';
 var prevParamValue = '';
@@ -18,12 +17,6 @@ function initLiveData() {
     });
     refs = refs.replace(/,+$/, '');
 
-    // // check for polltime argument: (only apply first appearance)
-    // $('[data-live-data-polltime]').each(function () {
-    //     polltime = parseInt( $( this ).attr('data-live-data-polltime') );
-    //     console.log('custom polltime: ' + polltime + 's');
-    //     return false;
-    // });
 
     // check for dynamic parameter: (only apply first appearance)
     $('[data-live-data-param]').each(function () {
@@ -42,16 +35,102 @@ function initLiveData() {
 
 
 
+
+function markLockedFields(lockedElements) {
+    console.log('updating locked states ' + lockedElements);
+    $('.lzy-live-data').removeClass('lzy-live-data-locked');
+
+    for (var i in lockedElements) {
+        var targSel = lockedElements[ i ];
+        if (targSel === '*') {
+            $('.lzy-live-data').addClass('lzy-live-data-locked');
+        } else {
+            $( targSel ).addClass('lzy-live-data-locked');
+        }
+    }
+} // markLockedFields
+
+
+
+
 function updateDOM(data) {
+    if (typeof data.locked !== 'undefined') {
+        markLockedFields(data.locked);
+    }
+
     for (var targSel in data.data) {
         var val = data.data[targSel];
-        $(targSel).text(val);
-        // $('#' + id).text(val);
+        $( targSel ).each(function() {
+            var $targ = $( this );
+
+            var goOn = true;
+            var callback = $targ.attr('data-live-callback');
+            if (typeof window[callback] === 'function') {
+                goOn = window[callback]( targSel, val );
+            }
+            if (goOn) {
+                var tag = $targ.prop('tagName');
+                var valTags = 'INPUT,SELECT,TEXTAREA';
+                if (valTags.includes(tag)) {
+                    $targ.val(val);
+                } else {
+                    $targ.text(val);
+                }
+            }
+        });
         if (debugOutput) {
             console.log(targSel + ' -> ' + val);
         }
     }
-}
+} // updateDOM
+
+
+
+
+function handleAjaxResponse(json) {
+    ajaxHndl = null;
+    console.log('ajax: ' + json);
+    if (!json) {
+        console.log('No data received - terminating live-data');
+        return;
+    }
+    try {
+        var data = JSON.parse(json);
+    } catch (e) {
+        console.log('Error condition detected - terminating live-data');
+        console.log(json);
+        return false;
+    }
+
+    // var data = JSON.parse(json);
+    if (typeof data.lastUpdated !== 'undefined') {
+        lastUpdated = data.lastUpdated;
+    }
+    if (typeof data.result === 'undefined') {
+        console.log('_live_data_service.php reported an error');
+        console.log(json);
+        return;
+    }
+
+    // regular response:
+    if (typeof data.data === 'undefined') {
+        if (debugOutput) {
+            console.log(timeStamp() + ': No new data');
+        }
+
+    } else {
+        var goOn = true;
+        if (typeof liveDataCallback === 'function') {
+            goOn = liveDataCallback(data);
+        }
+        if (goOn) {
+            updateDOM(data);
+        }
+    }
+    $('.live-data-update-time').text(timeStamp());
+    updateLiveData();
+} // handleAjaxResponse
+
 
 
 
@@ -60,7 +139,6 @@ function updateLiveData( returnImmediately ) {
     if (paramName) {
         var paramValue = $( paramSource ).text();
         url = appendToUrl(url, 'dynDataSel=' + paramName + ':' + paramValue);
-        // url = appendToUrl(url, 'dataSelector=' + paramName + ':' + paramValue);
         if (paramValue !== prevParamValue) {
             returnImmediately = true;
             prevParamValue = paramValue;
@@ -76,48 +154,11 @@ function updateLiveData( returnImmediately ) {
     ajaxHndl = $.ajax({
         url: url,
         type: 'POST',
-        data: { ref: refs, last: lastUpdated, polltime: polltime },
+        data: { ref: refs, last: lastUpdated },
         async: true,
         cache: false,
     }).done(function ( json ) {
-        ajaxHndl = null;
-        if (!json) {
-            console.log('No data received');
-            return;
-        }
-        try {
-            var data = JSON.parse(json);
-        } catch (e) {
-            console.log( json );
-            return false;
-        }
-
-        // var data = JSON.parse(json);
-        if (typeof data.lastUpdated !== 'undefined') {
-            lastUpdated = data.lastUpdated;
-        }
-        if (typeof data.result === 'undefined') {
-            console.log('_live_data_service.php reported an error');
-            console.log(json);
-            return;
-        }
-
-        // regular response:
-        if (typeof data.data === 'undefined') {
-            if (debugOutput) {
-                console.log( timeStamp() + ': No new data');
-            }
-        } else {
-            var goOn = true;
-            if (typeof liveDataCallback === 'function') {
-                goOn = liveDataCallback( data );
-            }
-            if (goOn) {
-                updateDOM( data );
-            }
-        }
-        $('.live-data-update-time').text( timeStamp() );
-        updateLiveData();
+        return handleAjaxResponse(json);
     });
 } // update
 

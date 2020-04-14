@@ -17,8 +17,9 @@ $this->addMacro($macroName, function () {
     $this->getArg($macroName, 'dynamicArg', '[r=#recId] If defined, permits to let an element in the page select dynamically select data. '.
         'In this case elementName would be defined as "{r},status", "r" being the placeholder of a value retrieved from "#recId"', false);
     $this->getArg($macroName, 'targetSelector', '(optional) Id of DOM element(s). If not specified, id will be derived from elementName.  Use format "A|B|C" to specify a list of ids.', false);
-    $this->getArg($macroName, 'polltime', '(optional) Polling time, i.e. the time the server waits for new data before giving up and responding with "No new data".', false);
+    $this->getArg($macroName, 'pollingTime', '(optional) Polling time, i.e. the time the server waits for new data before giving up and responding with "No new data".', false);
     $this->getArg($macroName, 'mode', '[manual] Manual mode: invoke live-data fields manually. Means, HTML code is created outside of this macro, in particular in case when elementName is specified as a list.', false);
+    $this->getArg($macroName, 'callback', '(optional) If defined, the js function will be called before updating the correspondint target value.', false);
 
     if ($file === 'help') {
         return '';
