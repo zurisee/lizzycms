@@ -1067,9 +1067,11 @@ EOT;
     {
         $this->openDbReadWrite();
 
+        $modifTime = microtime(true);
         $recLocksJson = $this->jsonEncode( $recLocks );
         $sql = <<<EOT
 UPDATE "{$this->tableName}" SET 
+    "lastUpdate" = $modifTime,
     "recLocks" = "$recLocksJson";
 
 EOT;
@@ -1280,6 +1282,7 @@ EOT;
     //--------------------------------------------------------------
     private function importFromFile($initial = false)
     {
+        $this->openDbReadWrite();
         $rawData = $this->loadFile();
         $json = $this->decode($rawData, false, true, $initial);
         $json = $this->jsonEncode($json, true);
