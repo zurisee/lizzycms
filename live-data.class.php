@@ -27,7 +27,7 @@ class LiveData
         // dataSelector can be scalar or array:
         if (sizeof($dataSelectors) === 1) {                  // scalar value:
             $this->addTicketRec($this->targetSelector, $dataSelector, $this->polltime, $tickRec);
-            $values[] = $this->db->readElement($dataSelector);
+            $values = $this->db->readElement($dataSelector);
 
         } else {                                            // array value:
             $n = sizeof($dataSelectors);

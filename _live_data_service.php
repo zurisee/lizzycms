@@ -196,7 +196,14 @@ class LiveDataService
                 $lockedElements[] = $targetSelector;
             }
             $value = $db->readElement( $dataKey );
-            $outData['data'][$targetSelector] = $value;
+            if (is_array($value)) {
+                foreach ($value as $i => $v) {
+                    $t = str_replace('*', ($i + 1), $targetSelector);
+                    $outData['data'][$t] = $v;
+                }
+            } else {
+                $outData['data'][$targetSelector] = $value;
+            }
         }
 
         if (session_status() === PHP_SESSION_NONE) {

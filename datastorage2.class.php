@@ -427,17 +427,21 @@ class DataStorage2
     // Element applies to any level of nested data, in particular below top level (i.e. records):
 
     public function readElement($key)
-    {
-        // supports scalar values and arrays
-        $data = $this->getData(true);
+    {// supports scalar values and arrays
 
         // syntax variant '[d3][d31][d312]'
         $key = $this->parseElementSelector($key);
 
+        if (strpos($key, '*') !== false) {
+            return $this->_readElementGroup( $key );
+        }
+
+        $data = $this->getData(true);
+
         // syntax variant 'd3,d31,d312'
         if (strpos($key, ',') !== false) {
             $rec = $data;
-            foreach (explode(',', $key) as $k) {
+            foreach (explodeTrim(',', $key) as $k) {
                 $k = trim($k, '\'"');
                 $n = intval($k);
                 if ($n || ($k === '0')) {
@@ -698,6 +702,54 @@ class DataStorage2
         }
         return !$locked;
     } // _awaitDbLockEnd
+
+
+
+
+
+    private function _readElementGroup( $key )
+    {
+        $data = $this->getData(true);
+
+        // syntax variant 'd3,d31,d312'
+        if (strpos($key, ',') !== false) {
+            $rec = $data;
+            $keys = explodeTrim(',', $key);
+            foreach ($keys as $k) {
+                array_shift($keys);
+                $k = trim($k, '\'"');
+                if ($k === '*') {
+                    $outRecs = [];
+                    foreach ($rec as $k0 => $subRec) {
+                        foreach ($keys as $k1) {
+                            $n = intval($k1);
+                            if ($n || ($k1 === '0')) {
+                                $k1 = $n;
+                            }
+                            if (isset($subRec[$k1])) {
+                                $outRecs[$k0] = $subRec[$k1];
+                            } else {
+                                return null;
+                            }
+                        }
+                    }
+                    return $outRecs;
+                } else {
+                    $n = intval($k);
+                    if ($n || ($k === '0')) {
+                        $k = $n;
+                    }
+                    if (isset($rec[$k])) {
+                        $rec = $rec[$k];
+                    } else {
+                        return null;
+                    }
+                }
+            }
+            return $rec;
+        }
+
+    } // _readElementGroup
 
 
 
