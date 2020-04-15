@@ -1,7 +1,6 @@
 <?php
 
-$GLOBALS['lzy']['tableCounter'] = 0;
-//$GLOBALS['lzy']['tableCounter'] = 1;
+$GLOBALS["globalParams"]['tableCounter'][ $GLOBALS["globalParams"]["pagePath"] ] = 0;
 
 
 class HtmlTable
@@ -10,11 +9,10 @@ class HtmlTable
 
     public function __construct($lzy, $inx, $options)
     {
-//        global $tableCounter;
         $this->options      = $options;
         $this->lzy 		    = $lzy;
         $this->page 		= $lzy->page;
-        $this->tableCounter = &$GLOBALS['lzy']['tableCounter'];
+        $this->tableCounter = &$GLOBALS["globalParams"]['tableCounter'][ $GLOBALS["globalParams"]["pagePath"] ];
         $this->tableCounter++;
         $this->helpText = false;
         if ($options === 'help') {
@@ -62,7 +60,6 @@ class HtmlTable
         
         $this->handleDatatableOption($this->page);
         $this->handleCaption();
-//        $tableCounter = $this->handleCaption($tableCounter);
     } // __construct
 
 
@@ -137,7 +134,7 @@ class HtmlTable
 
         for ($r = 0; $r < $nRows; $r++) {
             if ($header && ($r == 0)) {
-                $thead = "\t<thead>\n\t\t<tr>\n";
+                $thead = "\t<thead>\n\t\t<tr class='lzy-row-$r'>\n";
                 if ($this->showRowNumbers) {
                     $thead .= "\t\t\t<th class='lzy-table-row-nr'></th>\n";
                 }
@@ -147,7 +144,7 @@ class HtmlTable
                 }
                 $thead .= "\t\t</tr>\n\t</thead>\n";
             } else {
-                $tbody .= "\t\t<tr>\n";
+                $tbody .= "\t\t<tr class='lzy-row-$r'>\n";
                 if ($this->showRowNumbers) {
                     if ($this->headers) {
                         $n = $r;
@@ -691,11 +688,8 @@ EOT;
 
 
     private function handleCaption()
-//    private function handleCaption($tableCounter)
     {
         if ($this->caption) {
-//            $tableCounter++;
-//            $this->tableCounter = $tableCounter;
             if ($this->captionIndex) {
                 $this->tableCounter = $this->captionIndex;
             }
@@ -711,7 +705,6 @@ EOT;
                 $this->caption = "\t\t<caption>$this->caption</caption>\n";
             }
         }
-//        return $tableCounter;
     } // handleCaption
 
 
@@ -795,18 +788,20 @@ EOT;
             //ToDo: workaround!
             foreach ($this->data as $r => $rec) {
                 foreach ($rec as $c => $item) {
+                    if (is_array($item)) {
+                        $item = '<span class="lzy-array-elem">' . implode('</span><span class="lzy-array-elem">', $item) . '</span>';
+                    }
                     $this->data[$r][$c] = trim($item, '"\'');
                 }
             }
-
-            if ($ds->getSourceFormat() !== 'csv') {
-                $this->convertTo2D( true );
-//                $this->convertTo2D();
-
-            } elseif ($this->headers === true) {
+//ToDo: Check case 2D data coming from csv source:
+//            if ($ds->getSourceFormat() !== 'csv') {
+//                $this->convertTo2D( true );
+//
+//            } else
+            if ($this->headers === true) {
                 array_shift($this->data);
             }
-//            $this->arrangeData();???????
         }
 
         $this->adjustTableSize();
