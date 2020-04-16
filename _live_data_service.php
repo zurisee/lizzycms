@@ -44,6 +44,8 @@ class LiveDataService
             $dynDataSelectors[ 'name' ] = $m[1];
             $dynDataSelectors[ 'value' ] = $m[2];
         }
+        $this->dynDataSelectors = $dynDataSelectors;
+        $this->dynDataSel = $dynDataSel;
 
         $this->openDataSrcs();
 
@@ -189,8 +191,8 @@ class LiveDataService
             }
             $targetSelector = $dbDescr[$k]['targetSelector'];
             $dataKey = $dbDescr[$k]["dataSelector"];
-            if ((strpos($dataKey, '{') !== false) && $this->dynDataSel) {
-                $dataKey = preg_replace('/\{'.$this->dynDataSel['name'].'\}/', $this->dynDataSel['value'], $dataKey);
+            if ((strpos($dataKey, '{') !== false) && $this->dynDataSelectors) {
+                $dataKey = preg_replace('/\{'.$this->dynDataSelectors['name'].'\}/', $this->dynDataSelectors['value'], $dataKey);
             }
             if ($dbIsLocked || $db->isRecLocked( $dataKey )) {
                 $lockedElements[] = $targetSelector;
@@ -226,10 +228,13 @@ class LiveDataService
             session_start();
         }
         if (isset($_SESSION['lizzy']['ajaxServerAbort'])) {
+            $abortRequest = $_SESSION['lizzy']['ajaxServerAbort'];
             unset($_SESSION['lizzy']['ajaxServerAbort']);
             session_abort();
-            writeLog("live-data ajax-server aborting (\$_SESSION['lizzy']['ajaxServerAbort'] is set)");
-            exit();
+            if ($abortRequest < (time() - 2)) {
+                writeLog("live-data ajax-server aborting (\$_SESSION['lizzy']['ajaxServerAbort'] is set)");
+                exit();
+            }
         }
         session_abort();
     } // checkAbort
