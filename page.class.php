@@ -838,6 +838,10 @@ EOT;
                 $item = resolvePath($item, true, true);
                 $out .= "\t<link href='$item' rel='stylesheet'$mediaType />\n";
             }
+            $pageCss = $GLOBALS["globalParams"]["pathToPage"] . "styles.css";
+            if ( file_exists( $pageCss )) {
+                $out .= "\t<link href='~/{$GLOBALS["globalParams"]["pathToPage"]}styles.css' rel='stylesheet'$mediaType />\n";
+            }
 
         } else {
             foreach ($this->jsModules as $item) {
