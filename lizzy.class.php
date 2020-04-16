@@ -1040,6 +1040,12 @@ EOT;
 					continue;
 				}
 			}
+
+			// exclude file-names starting with '-':
+            if (basename($f)[0] === '-') {
+                continue;
+            }
+
             $globalParams['lastLoadedFile'] = $f;
 			$ext = fileExt($f);
 
@@ -1062,7 +1068,7 @@ EOT;
                 $this->trans->addVariables($variables);
             }
 
-            if ($ext == 'md') {             // it's an MD file, convert it
+            if ($ext === 'md') {             // it's an MD file, convert it
 
                 $eop = strpos($mdStr, '__EOP__');           // check for 'end of page' marker, if found exclude all following (also following mdFiles)
                 if (($eop !== false) && ($mdStr[$eop-1] != '\\')) {
@@ -1071,8 +1077,8 @@ EOT;
                 }
 
                 $md->parse($mdStr, $newPage);
-            } elseif ($mdStr && $this->config->feature_renderTxtFiles) {   // it's a TXT file, wrap it in <pre>
-                $newPage->addContent("<pre>$mdStr\n</pre>\n");
+            } elseif ($mdStr && $this->config->feature_renderTxtFiles) {   // it's a TXT file
+                $newPage->addContent("<div class='lzy-pre'>$mdStr\n</div>\n");
             } else {
                 continue;
             }
