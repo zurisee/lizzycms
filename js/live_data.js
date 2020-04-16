@@ -64,7 +64,7 @@ function updateDOM(data) {
             var $targ = $( this );
 
             var goOn = true;
-            var callback = $targ.attr('data-live-callback');
+            var callback = $('.lzy-live-data').attr('data-live-callback');
             if (typeof window[callback] === 'function') {
                 goOn = window[callback]( targSel, val );
             }
