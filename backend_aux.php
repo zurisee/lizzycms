@@ -13,6 +13,26 @@ if (!defined('MKDIR_MASK')) {
 
 $appRoot = preg_replace('/_lizzy\/.*$/', '', getcwd().'/');
 
+//------------------------------------------------------------------------------
+function explodeTrim($sep, $str)
+{
+    if (!$str) {
+        return [];
+    }
+    if (strpos($str, $sep) === false) {
+        return [ $str ];
+    }
+    if (strlen($sep) > 1) {
+        $sep = preg_quote($sep);
+        $out = array_map('trim', preg_split("/[$sep]/", $str));
+        return $out;
+    } else {
+        return array_map('trim', explode($sep, $str));
+    }
+} // explodeTrim
+
+
+
 //---------------------------------------------------------------------------
 function array2DKey(&$key)
 {
