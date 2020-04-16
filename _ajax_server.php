@@ -64,7 +64,7 @@ use Symfony\Component\Yaml\Yaml;
 
 if (isset($_GET['abort'])) {
     session_start();
-    $_SESSION['lizzy']['ajaxServerAbort'] = true;
+    $_SESSION['lizzy']['ajaxServerAbort'] = time();
     session_write_close();
     exit();
 }
