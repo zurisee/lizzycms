@@ -41,6 +41,9 @@ class CreateLink
             }
         }
 
+        // work-around: MD compiler replaces _x_ with <em>x</em> -- which is no good in URLs -> reverse:
+        $this->href = str_replace(['<em>', '</em>'], '_',$this->href);
+
         $ext = fileExt($this->href);
         if (strtolower($ext) === 'pdf') {
             $this->proto = 'pdf';
