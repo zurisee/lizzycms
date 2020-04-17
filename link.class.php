@@ -105,13 +105,14 @@ class CreateLink
             $this->text = basename($this->text);
             $hiddenText = '';
         }
-        $this->class = ($this->class) ? " class='lzy-link {$this->class}'" : '';
+        $class = trim("lzy-link $this->class");
+        $class = " class='$class'";
         if (preg_match('/^ ([^\?&]*) (.*)/x', $this->href, $m)) {     // remove blanks from href
             $this->href = str_replace(' ', '', $m[1]).str_replace(' ', '%20', $m[2]);
         }
 
         // now assemble code:
-        $str = "<a href='{$this->href}' {$this->id}{$this->class}{$this->title}{$this->target}>{$this->text}$hiddenText</a>";
+        $str = "<a href='{$this->href}' {$this->id}{$class}{$this->title}{$this->target}>{$this->text}$hiddenText</a>";
 
         return $str;
     } // render
@@ -127,7 +128,7 @@ class CreateLink
 
     private function renderMailLink()
     {
-        $this->class = ($this->class) ? "{$this->class} lzy-mail_link mail_link" : 'lzy-mail_link mail_link';
+        $this->class = "lzy-mail_link mail_link $this->class";
         $this->title = ($this->title) ? $this->title : " title='{{ opens mail app }}'";
         $this->body = str_replace(' ', '%20', $this->body);
         $this->body = str_replace(['\n', "\n"], '%0A', $this->body);
@@ -156,7 +157,7 @@ class CreateLink
 
     private function renderSmsLink()
     {
-        $this->class = ($this->class) ? "$this->class lzy-sms_link sms_link" : 'lzy-sms_link sms_link';
+        $this->class = "lzy-ssm_link $this->class";
         $this->title = ($this->title) ? $this->title : " title='{{ opens messaging app }}'";
         if (!$this->text) {
             $this->text = preg_replace('|^.*:/?/? ([^\?\&]*) .*|x', "$1", $this->href);
@@ -177,9 +178,10 @@ class CreateLink
     private function renderTelLink()
     {
         if (stripos($this->type, 'gsm') !== false) {
-            $this->class = ($this->class) ? "$this->class lzy-gsm_link" : 'lzy-gsm_link';
+            $this->class = "lzy-gsm_link $this->class";
+
         } else {
-            $this->class = ($this->class) ? "$this->class lzy-tel_link tel_link" : 'lzy-tel_link tel_link';
+            $this->class = "lzy-tel_link $this->class";
         }
         $this->title = ($this->title) ? $this->title : " title='{{ opens telephone app }}'";
         if (!$this->text) {
@@ -197,7 +199,7 @@ class CreateLink
 
     private function renderGeoLink()
     {
-        $this->class = ($this->class) ? "$this->class lzy-geo_link geo_link" : 'lzy-geo_link geo_link';
+        $this->class = "lzy-geo_link $this->class";
         $this->title = ($this->title) ? $this->title : " title='{{ opens map app }}'";
         if (!$this->text) {
             $this->text = preg_replace('|^.*:/?/? ([^\?\&]*) .*|x', "$1", $this->href);
@@ -211,7 +213,7 @@ class CreateLink
 
     private function renderSlackLink()
     {
-        $this->class = ($this->class) ? "$this->class lzy-slack_link slack_link" : 'lzy-slack_link slack_link';
+        $this->class = "lzy-slack_link $this->class";
         $this->title = ($this->title) ? $this->title : " title='{{ opens slack app }}'";
         if (!$this->text) {
             $this->text = preg_replace('|^.*:/?/? ([^\?\&]*) .*|x', "$1", $this->href);
@@ -225,7 +227,7 @@ class CreateLink
 
     private function renderPdfLink()
     {
-        $this->class = ($this->class) ? "$this->class lzy-pdf_link pdf_link" : 'lzy-pdf_link pdf_link';
+        $this->class = "lzy-pdf_link pdf_link $this->class";
         $this->title = ($this->title) ? $this->title : " title='{{ opens PDF in new window }}'";
         if (!$this->text) {
             $this->text = preg_replace('|^[./~]* ([^\?\&]*) .*|x', "$1", $this->href);
@@ -281,6 +283,7 @@ class CreateLink
 
     private function renderRegularLink()
     {
+        $this->class = "lzy-page-link $this->class";
         $c1 = $this->href[0];
         $rec = false;
 
