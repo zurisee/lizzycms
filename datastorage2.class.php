@@ -1566,6 +1566,8 @@ EOT;
             }
         } else {    // csv
             $structure['key'] = 'index';
+            $rec0 = reset($data);
+            $structure['labels'] = is_array($rec0) ? $rec0: [];
         }
 
         if (!$structure['key']) {
@@ -1580,7 +1582,9 @@ EOT;
 
         $rec0 = reset($data);
         $l = is_array($rec0) ? sizeof($rec0) : 0;
-        $structure['labels'] = is_array($rec0) ? array_keys($rec0): [];
+        if (!$structure['labels']) {
+            $structure['labels'] = is_array($rec0) ? array_keys($rec0) : [];
+        }
         $structure['types'] = array_fill(0, $l, 'string');
         // types only makes sense if supplied in '_structure' record within data.
         $this->structure = $structure;
