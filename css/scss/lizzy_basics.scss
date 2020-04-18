@@ -279,9 +279,21 @@ figure a {
 	flex-wrap: wrap;
 }
 
-.lzy-datatable th {
-	cursor: pointer;
+.lzy-datatable {
+	.sorting {
+		cursor: pointer;
+		background-repeat: no-repeat;
+		background-position: center right;
+		background-image: url("../rsc/sort_both.png");
+	}
+	.sorting.sorting_asc {
+		background-image: url("../rsc/sort_asc.png");
+	}
+	.sorting.sorting_desc {
+		background-image: url("../rsc/sort_desc.png");
+	}
 }
+
 
 
 /* === Definition Lists in table layout ======== */
