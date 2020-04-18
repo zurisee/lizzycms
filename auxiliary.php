@@ -207,7 +207,10 @@ function parseInlineBlockArguments($str, $returnElements = false)
 
     if (preg_match_all('/\.([\w-]+)/x', $str, $m)) {            // .class
         $class = implode(' ', $m[1]);
-        $str = str_replace($m[0], '', $str);
+        foreach ($m[0] as $pat) {
+            $p = strpos($str, $pat);
+            $str = substr($str, 0, $p).substr($str, $p + strlen($pat));
+        }
         $comment .= '.'.str_replace(' ', '.', $class);
     }
     if (!$returnElements && $class) {
