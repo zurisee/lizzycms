@@ -29,7 +29,7 @@ function initializePanel( widgetSelector, preOpen )
 
         var panels = [];
         i = 0;
-        $('> *', $(this)).each(function () {
+        $('> *', $this).each(function () {
             var $this = $( this );
             var hdrText = $('> *:first-child', $this).text();
             var body = '';
@@ -411,4 +411,4 @@ function initLzyPanel( widgetSelector, preOpen )
 
 
 // auto-initialize widgets marked by '.lzy-panels-widget':
-initLzyPanel( '.lzy-panels-widget', false );
+// initLzyPanel( '.lzy-panels-widget', false );
