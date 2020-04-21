@@ -314,6 +314,7 @@ class Page
 
         if ($replace === 'append') {
             $this->addToProperty('jqEnd', $str);
+
         } else {
             $this->addToProperty('jq', $str, $replace);
         }
@@ -417,7 +418,8 @@ class Page
             $this->overlay['text'] .= $args['text'];
             $this->overlay['mdCompile'] |= $args['mdCompile'];
             $this->overlay['closable'] |= $args['closable'];
-
+            $this->overlay['id'] = $args['id'];
+            $this->overlay['trigger'] = $args['trigger'];
         }
     } // addOverlay
 
@@ -442,7 +444,9 @@ class Page
     //-----------------------------------------------------------------------
     protected function addToProperty($key, $var, $replace = false)
     {
-        if ($replace) {
+        if ($replace === 'prepend') {
+            $this->$key = $var . $this->$key;
+        } elseif ($replace) {
             $this->$key = $var;
         } else {
             $this->$key .= $var;
@@ -534,11 +538,12 @@ class Page
         $text = $jq = '';
         $overlay = $this->overlay;
         if (is_string($overlay)) {
-            $overlay = ['text' => $overlay, 'mdCompile' => true, 'closable' => true];
+            $overlay = ['text' => $overlay, 'mdCompile' => true, 'closable' => true, 'id' => 'lzy-overlay', 'trigger' => 'auto'];
         }
 
         if (isset($overlay['contentFrom']) && $overlay['contentFrom']) {
-            $jq = "$('#lzy-overlay').append( $( '{$overlay['contentFrom']}' ).html() )\n";
+            $jq = "$('#{$overlay['id']}').append( $( '{$overlay['contentFrom']}' ).html() )\n";
+//            $jq = "$('#lzy-overlay').append( $( '{$overlay['contentFrom']}' ).html() )\n";
 
         } elseif (isset($overlay['fromFile']) && $overlay['fromFile']) {
             $file = resolvePath($overlay['fromFile'], true);
@@ -564,15 +569,26 @@ class Page
             $text = "<button id='lzy-close-overlay' class='lzy-close-overlay'>✕</button>\n".$text;
             // set ESC to close overlay:
             $jq .="\n$('body').keydown( function (e) { if (e.which == 27) { $('.lzy-overlay').hide(); } });\n".
-                "$('#lzy-close-overlay').click(function(e) { lzyReload(); });\n";
+                "$('.lzy-overlay .lzy-close-overlay').click(function(e) { lzyReload(); });\n";
+//                "$('#lzy-close-overlay').click(function(e) { lzyReload(); });\n";
         } else {
             $text = "<button id='lzy-close-overlay' class='lzy-close-overlay'>✕</button>\n".$text;
             // set ESC to close overlay:
             $jq .="\n$('body').keydown( function (e) { if (e.which == 27) { $('.lzy-overlay').hide(); } });\n".
-                "$('#lzy-close-overlay').click(function() { $('.lzy-overlay').hide(); });\n";
+                "$('.lzy-overlay .lzy-close-overlay').click(function() { $('.lzy-overlay').hide(); });\n";
+//                "$('#lzy-close-overlay').click(function() { $('.lzy-overlay').hide(); });\n";
         }
+
+        $style = '';
+        if ($overlay['trigger'] === 'none') {
+            $style = " style='display: none'";
+        } elseif ($overlay['trigger'] !== 'auto') {
+            $style = " style='display: none'";
+            $jq .= "$('{$overlay['trigger']}').click(function(){ $('#{$overlay['id']}').show(); });";
+        }
+        $id = "id='{$overlay['id']}'";
         $this->addJq($jq);
-        $this->addBody("<div id='lzy-overlay' class='lzy-overlay'>$text</div>\n");
+        $this->addBody("<div $id class='lzy-overlay'$style>$text</div>\n");
         $this->removeModule('jqFiles', 'PAGE_SWITCHER');
         $this->overlay = false;
         return true;
