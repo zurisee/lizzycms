@@ -133,6 +133,7 @@ function parseInlineBlockArguments($str, $returnElements = false)
     $literal = false;
     $mdCompile = true;
     $elems = [];
+    $str = preg_replace('|//.*|', '', $str);    // ignore //-style comments
 
     if (preg_match('/(.*) !(\S+) (.*)/x', $str, $m)) {      // !arg
         $str = $m[1].$m[3];
