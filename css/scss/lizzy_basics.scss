@@ -279,7 +279,8 @@ figure a {
 	flex-wrap: wrap;
 }
 
-.lzy-datatable {
+.dataTable,
+.lzy-dataTable {
 	.sorting {
 		cursor: pointer;
 		background-repeat: no-repeat;
@@ -848,6 +849,9 @@ nav li {
 
 
 /* === Lzy-Buttons ========================= */
+button {
+	cursor: pointer;
+}
 #lzy .lzy-encapsulated .lzy-button,
 .lzy-button {
 	color: #666;
