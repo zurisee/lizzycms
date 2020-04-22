@@ -18,7 +18,9 @@ $(window).bind('beforeunload', function(e){
         }
     });
     $('.lzy-form textarea').each(function() {
-        if ( $(this).text() != '') {
+        var presetVal = $(this).attr('data-value');
+        presetVal = (typeof presetVal !== 'undefined')? presetVal: '';
+        if ($(this).val() !== presetVal) {
             formEmpty = false;
         }
     });
