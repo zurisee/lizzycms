@@ -337,6 +337,62 @@ EOT;
 
 
 	//---------------------------------------------------------------------------
+	private function getDataRec()
+    {
+        if (!$this->openDB( )) {
+            exit('failed#save');
+        }
+        $recId = $this->get_request_data('recId');
+        $dataRec = $this->db->readRecord( $recId );
+        $outData = [];
+        foreach ($this->config["recDef"] as $key => $rec) {
+            $outData["#fld_".$rec[0]] = $dataRec[$key];
+        }
+        $json = json_encode(['res' => 'Ok', 'data' =>$outData]);
+        exit( $json );
+    } // getDataRec
+
+
+
+
+	//---------------------------------------------------------------------------
+	private function saveDataRec()
+    {
+        if (!$this->openDB( )) {
+            exit('failed#save');
+        }
+        $json = $this->get_request_data('lzy_data_input_form');
+        if ($json) {
+            $dataRec = json_decode($json, true);
+            $recId = $dataRec["rec-id"];
+            unset($dataRec['lizzy_form']);
+            unset($dataRec['lizzy_time']);
+            unset($dataRec['data-ref']);
+            unset($dataRec['rec-id']);
+
+            $keys = array_keys($this->config["recDef"]);
+            $dataRec = array_combine($keys, $dataRec);
+            if (isset($recId) && ($recId !== '')) {
+                $res = $this->db->writeRecord( intval($recId), $dataRec);
+//                $res = $this->db->writeRecord($recId, $dataRec);
+            } else {
+                $res = 'Error: rec-id missing';
+            }
+        } else {
+            $res = 'Error: no data received';
+        }
+//        $outData = [];
+//        foreach ($this->config["recDef"] as $key => $rec) {
+//            $outData["#fld_".$rec[0]] = $dataRec[$key];
+//        }
+        $json = json_encode(['res' => $res, 'data' => [] ]);
+        exit( $json );
+    } // saveDataRec
+
+
+
+
+	//---------------------------------------------------------------------------
 	private function saveData() {
         $rawData = $this->get_request_data('data');
 		if ($rawData == 'undefined') {
@@ -691,6 +747,12 @@ EOT;
         }
         if ($this->get_request_data('get-all') !== null) {    // respond with info-msg
             $this->getAllData();
+        }
+        if ($this->get_request_data('get-rec') !== null) {    // respond with info-msg
+            $this->getDataRec();
+        }
+        if ($this->get_request_data('save-rec') !== null) {    // respond with info-msg
+            $this->saveDataRec();
         }
     } // handleGenericRequests
 
