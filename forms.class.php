@@ -95,6 +95,10 @@ class Forms
                 $elem = $this->renderTime();
                 break;
 
+            case 'datetime':
+                $elem = $this->renderDateTime();
+                break;
+
             case 'month':
                 $elem = $this->renderMonth();
                 break;
@@ -209,13 +213,17 @@ class Forms
 		if ($this->currForm->preventMultipleSubmit) {
 		    $this->activatePreventMultipleSubmit();
         }
+		$id = '';
+		if ($this->currForm->formElemId) {
+		    $id = " id='{$this->currForm->formElemId}'";
+        }
 
 		$out = '';
         if (isset($args['legend']) && $args['legend']) {
             $out = "<div class='lzy-form-legend'>{$args['legend']}</div>\n\n";
         }
 
-        $out .= "\t<form$_class$_method$_action>\n";
+        $out .= "\t<form$id$_class$_method$_action>\n";
 		$out .= "\t\t<input type='hidden' name='lizzy_form' value='{$this->currForm->formId}' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_time' name='lizzy_time' value='$time' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_next' value='{$this->currForm->next}' />\n";
@@ -398,7 +406,18 @@ EOT;
         $out = $this->getLabel();
         $out .= "<input type='time' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
-    } // renderDate
+    } // renderTime
+
+
+//-------------------------------------------------------------
+    private function renderDateTime()
+    {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
+        $out = $this->getLabel();
+        $out .= "<input type='datetime-local' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        return $out;
+    } // renderDateTime
 
 
 //-------------------------------------------------------------
@@ -729,15 +748,22 @@ EOT;
                 fatalError("Error: syntax error \nor form field definition encountered without previous element of type 'form-head'", 'File: '.__FILE__.' Line: '.__LINE__);
 			}
             $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form'.($this->inx + 1);
-	        $formId = (isset($args['class'])) ? $args['class'] : translateToIdentifier($label);
-	        $formId = str_replace('_', '-', $formId);
+	        $formId = (isset($args['id'])) ? $args['id'] : false;
+	        if (!$formId) {
+                $formElemId =  '';
+                $formId = (isset($args['class'])) ? $args['class'] : translateToIdentifier($label);
+                $formId = str_replace('_', '-', $formId);
+            } else {
+                $formElemId = $formId;
+            }
 
 	        $this->formId = $formId;
 			$this->formDescr[ $formId ] = new FormDescriptor;
 			$this->currForm = &$this->formDescr[ $formId ];
 			$this->currForm->formId = $formId;
-			
-			$this->currForm->formName = $label;
+            $this->currForm->formElemId = $formElemId;
+
+            $this->currForm->formName = $label;
 
 			$this->currForm->formData['labels'] = [];
 			$this->currForm->formData['names'] = [];
