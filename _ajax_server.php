@@ -41,24 +41,15 @@ getfile
 */
 
 define('SYSTEM_PATH', 		'');		                            // same directory
-//define('EXTENSIONS_PATH', 	'extensions/');		                            // same directory
 define('PATH_TO_APP_ROOT', 	'../');		                            // root folder of web app
-//define('DATA_PATH', 		PATH_TO_APP_ROOT.'data/');		        // must correspond to lizzy app
-//define('CACHE_PATH',        PATH_TO_APP_ROOT.'.#cache/');           // required by Ticketing class
-//define('SERVICE_LOG',       PATH_TO_APP_ROOT.'.#logs/log.txt');	    //
-//define('ERROR_LOG',         PATH_TO_APP_ROOT.'.#logs/errlog.txt');	//
 define('LOCK_TIMEOUT', 		120);	                                // max time till field is automatically unlocked
 define('MAX_URL_ARG_SIZE',  255);
-//define('MKDIR_MASK',        0700);                                  // remember to modify _lizzy/_install/install.sh as well
-//define('RECYCLE_BIN',           '.#recycleBin/');
-//define('RECYCLE_BIN_PATH',      '~page/'.RECYCLE_BIN);
 
 require_once 'vendor/autoload.php';
 require_once 'backend_aux.php';
 require_once 'datastorage2.class.php';
 require_once 'ticketing.class.php';
 
-//define('DEFAULT_EDITABLE_DATA_FILE', 'editable.'.LZY_DEFAULT_FILE_TYPE);
 
 use Symfony\Component\Yaml\Yaml;
 
@@ -374,17 +365,12 @@ EOT;
             $dataRec = array_combine($keys, $dataRec);
             if (isset($recId) && ($recId !== '')) {
                 $res = $this->db->writeRecord( intval($recId), $dataRec);
-//                $res = $this->db->writeRecord($recId, $dataRec);
             } else {
                 $res = 'Error: rec-id missing';
             }
         } else {
             $res = 'Error: no data received';
         }
-//        $outData = [];
-//        foreach ($this->config["recDef"] as $key => $rec) {
-//            $outData["#fld_".$rec[0]] = $dataRec[$key];
-//        }
         $json = json_encode(['res' => $res, 'data' => [] ]);
         exit( $json );
     } // saveDataRec
