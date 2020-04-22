@@ -420,6 +420,8 @@ class Page
             $this->overlay['closable'] |= $args['closable'];
             $this->overlay['id'] = $args['id'];
             $this->overlay['trigger'] = $args['trigger'];
+            $this->overlay['onOpen'] = $args['onOpen'];
+            $this->overlay['onClose'] = $args['onClose'];
         }
     } // addOverlay
 
@@ -579,12 +581,17 @@ class Page
 //                "$('#lzy-close-overlay').click(function() { $('.lzy-overlay').hide(); });\n";
         }
 
+        $onOpen = '';
+        if ($overlay['onOpen']) {
+            $onOpen = " {$overlay['onOpen']}( {$overlay['id']} );";
+        }
+
         $style = '';
         if ($overlay['trigger'] === 'none') {
             $style = " style='display: none'";
         } elseif ($overlay['trigger'] !== 'auto') {
             $style = " style='display: none'";
-            $jq .= "$('{$overlay['trigger']}').click(function(){ $('#{$overlay['id']}').show(); });";
+            $jq .= "$('{$overlay['trigger']}').click(function(){ $onOpen$('#{$overlay['id']}').show(); });";
         }
         $id = "id='{$overlay['id']}'";
         $this->addJq($jq);
