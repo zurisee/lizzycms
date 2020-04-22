@@ -977,6 +977,9 @@ class DataStorage2
             }
         } elseif (is_string($recId) &&  (strpbrk($recId, ',]')) !== false) {
             $recId = preg_replace('/,.*/', '', $recId);
+
+        } elseif (isset($this->data[ intval($recId) ])) {
+            $recId = intval($recId);
         }
         return $recId;
     } // fixRecId
