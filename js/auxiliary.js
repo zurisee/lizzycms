@@ -27,6 +27,25 @@ function isValidEmail(email) {
 
 
 //--------------------------------------------------------------
+function execAjax(data, cmd, doneFun, url) {
+
+    if (typeof url === 'undefined') {
+        url = appRoot + '_lizzy/_ajax_server.php';
+    }
+    url = appendToUrl(url, cmd);
+    ajaxHndl = $.ajax({
+        url: url,
+        type: 'POST',
+        data: data,
+    }).done(function ( json ) {
+        if (typeof doneFun === 'function') {
+            doneFun( json );
+        }
+    });
+} // execAjax
+
+
+//--------------------------------------------------------------
 function scrollToBottom( sel ) {
     setTimeout(function() {
         if (typeof sel === 'undefined') {
@@ -90,6 +109,9 @@ function showMessage( txt )
 
 //--------------------------------------------------------------
 function appendToUrl(url, arg) {
+    if (!arg) {
+        return url;
+    }
     if (url.match(/\?/)) {
         url = url + '&' + arg;
     } else {
