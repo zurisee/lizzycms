@@ -11,6 +11,8 @@ $this->addMacro($macroName, function () {
         $this->getArg($macroName, 'contentFrom', 'Text to be optained from the selected element (e.g. \'#box\')', '');
         $this->getArg($macroName, 'fromFile', 'Text to be optained from given file', '');
         $this->getArg($macroName, 'closable', 'Defines whether the Popup can be closed.', '');
+        $this->getArg($macroName, 'id', '(optional) Defines the ID applied to the element containing the overlay.', '');
+        $this->getArg($macroName, 'trigger', '[auto|none|identifier] Defines what will open the overlay.', '');
         $this->getArg($macroName, 'mdCompile', 'Defines whether the provided text shall be md-compiled', '');
 
         return '';
