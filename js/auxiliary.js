@@ -112,6 +112,7 @@ function appendToUrl(url, arg) {
     if (!arg) {
         return url;
     }
+    arg = arg.replace(/^[\?&]/, '');
     if (url.match(/\?/)) {
         url = url + '&' + arg;
     } else {
@@ -177,7 +178,7 @@ function lzyReload( arg, url )
         call = url.trim();
     }
     if (typeof arg != 'undefined') {
-        call = call + arg;
+        call = appendToUrl(call, arg);
     }
     console.log('initiating page reload: "' + call + '"');
     window.location.replace(call);
