@@ -55,6 +55,7 @@ class HtmlTable
         $this->process	            = $this->getOption('process', '(optional) Provide name of a frontmatter variable to activate this feature. In the frontmatter area define an array containing instructions for manipulating table data. See <a href="https://getlizzy.net/macros/extensions/table/" target="_blank">Doc</a> for further details.');
         $this->processInstructionsFile	= $this->getOption('processInstructionsFile', 'The same as \'process\' except that instructions are retrieved from a .yaml file');
         $this->suppressError        = $this->getOption('suppressError', '(optional) Suppresses the error message in case dataSource is not available.');
+        $this->enableTooltips       = $this->getOption('enableTooltips', '(optional) Enables tooltips, e.g. for cells containing too much text. To use, apply a class-name containing "tooltip" to the targeted cell, e.g. "tooltip1".');
 
         $this->checkArguments($inx);
         
@@ -675,13 +676,21 @@ EOT;
         if ($this->cellMask && $this->cellMask[$row][$col]) {
             $tdClass = $this->cellMaskedClass;
         }
+
+        $title = '';
+        if ($this->enableTooltips && (strpos($tdClass, 'tooltip') !== false)) {
+            $title = $cell;
+            $title = preg_replace('|<br/?>|', "\n", $title);
+            $title = strip_tags($title);
+            $title = " title='$title'";
+        }
         $tdClass = trim(str_replace('  ', ' ', "$tdClass lzy-col-$col1"));
         $tdClass = " class='$tdClass'";
         $cell = str_replace("\n", '<br />', $cell);
         if ($this->headersAsVars && $hdrElem) {
             $cell = "{{ $cell }}";
         }
-        return "<$tag$tdId$tdClass$ref><div>$cell</div></$tag>";
+        return "<$tag$tdId$tdClass$ref$title><div>$cell</div></$tag>";
     } // getDataElem
 
 
@@ -736,7 +745,7 @@ EOT;
             }
             $jq = <<<EOT
 
-lzyTable{$this->tableCounter} = $('#lzy-table{$this->tableCounter}').DataTable({
+var lzyTable{$this->tableCounter} = $('#lzy-table{$this->tableCounter}').DataTable({
     'language':{'search':'{{QuickSearch}}:', 'info': '_TOTAL_ {{Records}}'},
     $order$paging$pageLength
 });
