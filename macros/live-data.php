@@ -35,7 +35,7 @@ $this->addMacro($macroName, function () {
 
     $str = $ld->render();
 
-    unset($_SESSION['lizzy']['ajaxServerAbort']);
+    $_SESSION['lizzy']['ajaxServerAbort'] = false;
     $this->optionAddNoComment = true;
 	return $str;
 });

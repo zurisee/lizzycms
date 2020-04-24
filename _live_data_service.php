@@ -229,10 +229,10 @@ class LiveDataService
         }
         if (isset($_SESSION['lizzy']['ajaxServerAbort'])) {
             $abortRequest = $_SESSION['lizzy']['ajaxServerAbort'];
-            unset($_SESSION['lizzy']['ajaxServerAbort']);
+            $_SESSION['lizzy']['ajaxServerAbort'] = false;
             session_abort();
-            if ($abortRequest < (time() - 2)) {
-                writeLog("live-data ajax-server aborting (\$_SESSION['lizzy']['ajaxServerAbort'] is set)");
+            if (($abortRequest !== false) && ($abortRequest < (time() - 2))) {
+                writeLog("live-data ajax-server aborting (\$_SESSION['lizzy']['ajaxServerAbort'] = {$_SESSION['lizzy']['ajaxServerAbort']})");
                 exit();
             }
         }
