@@ -582,7 +582,7 @@ class Page
         }
 
         $onOpen = '';
-        if ($overlay['onOpen']) {
+        if (isset($overlay['onOpen']) && $overlay['onOpen']) {
             $onOpen = " {$overlay['onOpen']}( {$overlay['id']} );";
         }
 
