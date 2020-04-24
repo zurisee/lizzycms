@@ -227,14 +227,20 @@ class LiveDataService
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
-        if (isset($_SESSION['lizzy']['ajaxServerAbort'])) {
-            $abortRequest = $_SESSION['lizzy']['ajaxServerAbort'];
+        if (!isset($_SESSION['lizzy']['ajaxServerAbort'])) {
             $_SESSION['lizzy']['ajaxServerAbort'] = false;
-            session_abort();
-            if (($abortRequest !== false) && ($abortRequest < (time() - 2))) {
-                writeLog("live-data ajax-server aborting (\$_SESSION['lizzy']['ajaxServerAbort'] = {$_SESSION['lizzy']['ajaxServerAbort']})");
-                exit();
-            }
+            session_write_close();
+            return;
+        }
+        $abortRequest = $_SESSION['lizzy']['ajaxServerAbort'];
+        if ($abortRequest !== false) {
+            writeLog("live-data ajax-server aborting (\$_SESSION['lizzy']['ajaxServerAbort'] = {$_SESSION['lizzy']['ajaxServerAbort']})");
+            $_SESSION['lizzy']['ajaxServerAbort'] = false;
+            session_write_close();
+            $returnData['result'] = 'None';
+            $returnData['lastUpdated'] = microtime(true) + 0.000001;
+            $json = json_encode($returnData);
+            exit($json);
         }
         session_abort();
     } // checkAbort
