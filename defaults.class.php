@@ -48,6 +48,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'feature_autoConvertLinks'          => [false, 'If true, automatically converts text that looks like links to HTML-links (i.e. &lt;a> tags).', 1 ],
     'feature_autoLoadClassBasedModules' => [true, 'If true, automatically loads modules that are invoked by applying classes, e.g. .editable', 3 ],
     'feature_autoLoadJQuery'            => [true, 'If true, jQuery will be loaded automatically (even if not initiated explicitly by macros)', 3 ],
+    'feature_enableScssInPageFolder'    => [false, 'If true, Lizzy checks for .scss files in page folder and compiles them to .css. Alternatively use "enableScssInPageFolder" in Frontmatter of specific pages.', 3 ],
     'feature_enableAllowOrigin'         => ['false', 'Set to "*" or explicitly to a domain to allow other websites to include pages of this site.', 1 ],
     'feature_enableIFrameResizing'      => [false, 'If true, includes js code required by other pages to iFrame-embed this site', 1 ],
     'feature_filterRequestString'       => [false, 'If true, permits only regular text in requests. Special characters will be discarded.', 3 ],

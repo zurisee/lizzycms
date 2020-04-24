@@ -47,13 +47,21 @@ class SCssCompiler
         $mustCompile = $this->checkUpToDate($this->fromFiles, $files, $compiledFilename);
         if ($mustCompile) {
             foreach ($files as $file) {
-                $namesOfCompiledFiles .= $this->doCompile($this->fromFiles, $file, $compiledFilename);
+                $namesOfCompiledFiles .= $this->doCompile($this->fromFiles, $file);
             }
             file_put_contents($compiledFilename, $this->aggregatedCss);
 
             // create minified version:
             //            $this->minify($compiledFilename);
         }
+
+
+        // optional style sheet in page folder:
+        if ($this->config->feature_enableScssInPageFolder) {
+            $this->compilePageFolderStylesheet($forceUpdate, $namesOfCompiledFiles);
+        }
+
+
 
         // system styles:
         $compiledFilename = $this->sysCssFiles.$this->compiledSysStylesFilename;
@@ -73,7 +81,7 @@ class SCssCompiler
 
             $this->aggregatedCss = '';
             foreach ($files as $file) {
-                $namesOfCompiledFiles .= $this->doCompile($this->sysCssFiles, $file, $compiledFilename);
+                $namesOfCompiledFiles .= $this->doCompile($this->sysCssFiles, $file);
             }
             file_put_contents($compiledFilename, $this->aggregatedCss);
             // for compatibility, create copy under old name:
@@ -165,7 +173,7 @@ class SCssCompiler
 
 
 
-    private function doCompile($toPath, $file, $compiledFilename)
+    private function doCompile($toPath, $file, $targetFile = false)
     {
         if (!$this->scss) {
             $this->scss = new Compiler;
@@ -176,7 +184,9 @@ class SCssCompiler
             $fname = substr($fname,1);
             $includeFile = false;
         }
-        $targetFile = $toPath . "_$fname.css";
+        if (!$targetFile) {
+            $targetFile = $toPath . "_$fname.css";
+        }
         $t0 = filemtime($file);
         $scssStr = $this->getFile($file);
         $cssStr = '';
@@ -193,7 +203,6 @@ class SCssCompiler
         $cssStr = "/**** auto-created from '$file' - do not modify! ****/\n\n$cssStr";
 
         file_put_contents($targetFile, $cssStr);
-        touchFile($targetFile, $t0);
 
         if ($includeFile) {                 // assemble all generated CSS, unless its filename started with non-alpha char
             $this->aggregatedCss .= $cssStr . "\n\n\n";
@@ -202,6 +211,18 @@ class SCssCompiler
         return basename($file).", ";
     } // doCompile
 
+
+
+    private function compilePageFolderStylesheet($forceUpdate, $namesOfCompiledFiles)
+    {
+        $files = getDirDeep('pages/*.scss');
+        foreach ($files as $file) {
+            $cssFile = dirname($file) . '/' . base_name($file, false) . '.css';
+            if ($forceUpdate || !file_exists($cssFile) || (filemtime($cssFile) < filemtime($file))) {
+                $namesOfCompiledFiles .= $this->doCompile($this->fromFiles, $file, $cssFile);
+            }
+        }
+    } // compilePageFolderStylesheet
 
 
 

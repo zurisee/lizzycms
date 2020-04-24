@@ -189,7 +189,6 @@ class Lizzy
         $this->handleUrlArgs();
 
         $this->scss = new SCssCompiler($this);
-        $this->scss->compile( $this->config->debug_forceBrowserCacheUpdate );
 
         // Future: optionally enable Auto-Attribute mechanism
         //        $this->loadAutoAttrDefinition();
@@ -237,6 +236,9 @@ class Lizzy
 
             $this->loadFile();        // get content file
         }
+
+        $this->scss->compile( $this->config->debug_forceBrowserCacheUpdate );
+
         $this->injectPageSwitcher();
 
         $this->warnOnErrors();
@@ -1220,6 +1222,9 @@ EOT;
 			}
             if (isset($hdr['screenSizeBreakpoint'])) {  // special case: screenSizeBreakpoint -> propagate immediately
                 $this->config->feature_screenSizeBreakpoint = $hdr['screenSizeBreakpoint'];
+            }
+            if (isset($hdr['enableScssInPageFolder'])) {  // special case: enableScssInPageFolder -> propagate immediately
+                $this->config->feature_enableScssInPageFolder = $hdr['enableScssInPageFolder'];
             }
             if (isset($hdr['dataPath'])) {  // special case: dataPath -> propagate immediately
                 $_SESSION['lizzy']['dataPath'] = $hdr['dataPath'];
