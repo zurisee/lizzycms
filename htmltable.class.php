@@ -745,7 +745,7 @@ EOT;
             }
             $jq = <<<EOT
 
-var lzyTable{$this->tableCounter} = $('#lzy-table{$this->tableCounter}').DataTable({
+lzyTable{$this->tableCounter} = $('#lzy-table{$this->tableCounter}').DataTable({
     'language':{'search':'{{QuickSearch}}:', 'info': '_TOTAL_ {{Records}}'},
     $order$paging$pageLength
 });
