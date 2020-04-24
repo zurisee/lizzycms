@@ -40,6 +40,9 @@ $this->addMacro($macroName, function () {
             setStaticVariable('lastCounterAccess', $lastAccess);
         }
         writeToYamlFile($filename, $counters);
+
+    } elseif (!isset($counters[$counterName])) {
+        $counters[$counterName] = 1;
     }
 
     $cnt = $counters[$counterName];
