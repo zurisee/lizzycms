@@ -74,7 +74,7 @@ function updateDOM(data) {
                 if (valTags.includes(tag)) {
                     $targ.val(val);
                 } else {
-                    $targ.text(val);
+                    $targ.html(val);
                 }
             }
         });
