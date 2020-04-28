@@ -15,63 +15,90 @@ panelsInitialized = [];
 function initializePanel( widgetSelector, preOpen )
 {
     var $widgets = $( widgetSelector );
+
+    // loop over panels:
     $widgets.each(function () {
-        var $this = $( this );
-        if ($this.attr('data-lzy-panels')) {
+        var $thisWidget = $( this ); // this panel div
+        if ($thisWidget.attr('data-lzy-panels')) {
             return;
         }
         if (widgetSelector.substr(0,1) !== '#') {
-            $this.attr('id', 'lzy-panels-widget' + panelWidgetInstance);
+            $thisWidget.attr('id', 'lzy-panels-widget' + panelWidgetInstance);
         } else {
-            $this.addClass('lzy-panels-widget');
+            $thisWidget.addClass('lzy-panels-widget');
         }
-        $this.addClass('lzy-panels-widget lzy-panels-widget' + panelWidgetInstance);
+        $thisWidget.addClass('lzy-panels-widget lzy-panels-widget' + panelWidgetInstance);
 
         var panels = [];
         i = 0;
-        $('> *', $this).each(function () {
-            var $this = $( this );
-            var hdrText = $('> *:first-child', $this).text();
-            var body = '';
-            $('> *:not(:first-child)', $this).each(function () {
-                body += $(this)[0].outerHTML;
-            });
-            panels[i] = {hdrText: hdrText, body: body};
+
+        // loop over panel content:
+        $('> *', $thisWidget).each(function () {
+            var $thisPanel = $( this );
+            var _i = (panelWidgetInstance*100 + i + 1).toString();
+
+            // 1st elem -> Tab header -> save and remove from DOM
+            var $hdr = $('> *:first-child', $thisPanel);
+            panels[i] = $hdr.html();
+            $hdr.remove();
+
+            var origPanelClass = $thisPanel.attr('class');
+            $('<!-- === panel page '+ (i+1) + ': ' + origPanelClass + ' ==== -->').insertBefore( $thisPanel );
+            // convert original div into panel-pale elem:
+            $thisPanel
+                .attr('id', 'lzy-panel-id' + _i)
+                .addClass('lzy-panel-page')
+                .attr('role', 'tabpanel')
+                .attr('tabindex', '-1')
+                .attr('aria-hidden', 'true')
+                .attr('aria-selected', 'false')
+                .attr('aria-expanded', 'false')
+                .attr('aria-labelledby', 'lzy-tabs-mode-panel-header-panel-id' + _i)
+            ;
+
+            // wrap content in lzy-panel-body-wrapper:
+            var id = 'lzy-panel-body-wrapper' + _i;
+            $thisPanel
+                .wrapInner('<div class="lzy-panel-inner-wrapper" style="margin-top: -100vh;">')
+                .wrapInner('<div id="'+id+'" class="lzy-panel-body-wrapper" aria-labelledby="lzy-panel-controller' + _i+'" role="region">')
+            ;
+
+            // insert accordion header:
+            $thisPanel.prepend('<div class="lzy-accordion-mode-panel-header"><a id="lzy-panel-controller' + _i+'" href="#lzy-panel-id' + _i+'" class="lzy-panel-link" aria-controls="lzy-panel-body-wrapper' + _i+'" aria-expanded="false">'+panels[i]+'</a></div>')
             i++;
         });
-        $this.attr('data-lzy-panels', panels.length);
+        $thisWidget.attr('data-lzy-panels', panels.length);
 
         var header = '';
         var body = '';
 
-        for (i = 1; i <= panels.length; ++i) {
-            var panel = panels[i-1];
-            var i1 = panelWidgetInstance*100 + i;
-            var tabindex = (i === 1) ? '0' : '-1';
-            var aria = ' aria-setsize="' + panels.length + '" aria-posinset="' + i + '" aria-selected="false" aria-controls="lzy-panel-id' + i1 + '"';
+        // create tabs header row:
+        for (i = 0; i < panels.length; ++i) {
+            var hdrText = panels[i];
+            var _i = (panelWidgetInstance*100 + i + 1).toString();
+            var tabindex = (i === 0) ? '0' : '-1';
+            var aria = ' aria-setsize="' + panels.length + '" aria-posinset="' + (i+1) + '" aria-selected="false" aria-controls="lzy-panel-id' + _i + '"';
 
-            header += '\t\t<li id="lzy-tabs-mode-panel-header-id' + i1 + '" class="lzy-tabs-mode-panel-header" role="tab" tabindex="'+ tabindex +'"' + aria + '>' + panel.hdrText + '</li>\n';
+            header += '\t\t<li id="lzy-tabs-mode-panel-header-id' + _i +
+                '" class="lzy-tabs-mode-panel-header" role="tab" tabindex="'+ tabindex +'"' + aria + '><div>' + hdrText + '</div></li>\n';
 
-            body += '\n\n\t<!-- === panel page ==== -->\n\t<div id="lzy-panel-id' + i1 + '" class="lzy-panel-page" role="tabpanel" tabindex="-1" aria-labelledby="lzy-tabs-mode-panel-header-panel-id' + i1 + '" aria-hidden="true">\n' +
-                '\t\t<div class="lzy-accordion-mode-panel-header"><a id="#lzy-panel-controller' + i1 + '" href="#lzy-panel-id' + i1 + '" class="lzy-panel-link" aria-controls="lzy-panel-body-wrapper' + i1 + '" aria-expanded="false">' + panel.hdrText + '</a></div>\n' +
-                '\t\t<div id="lzy-panel-body-wrapper' + i1 + '" class="lzy-panel-body-wrapper" aria-labelledby="lzy-panel-controller' + i1 + '" role="region">\n' +
-                '\t\t\t<div class="lzy-panel-inner-wrapper">\n' +
-                panel.body +
-                '\t\t\t</div><!-- /lzy-panel-inner-wrapper -->\n' +
-                '\t\t</div><!-- /lzy-panel-body-wrapper -->\n' +
-                '\t</div><!-- /lzy-panel-page -->\n';
+            // body += '\n\n\t<!-- === panel page ==== -->\n\t<div id="lzy-panel-id' + i1 + '" class="lzy-panel-page" role="tabpanel" tabindex="-1" aria-labelledby="lzy-tabs-mode-panel-header-panel-id' + i1 + '" aria-hidden="true">\n' +
+            //     '\t\t<div class="lzy-accordion-mode-panel-header"><a id="#lzy-panel-controller' + i1 + '" href="#lzy-panel-id' + i1 + '" class="lzy-panel-link" aria-controls="lzy-panel-body-wrapper' + i1 + '" aria-expanded="false">' + panel.hdrText + '</a></div>\n' +
+            //     '\t\t<div id="lzy-panel-body-wrapper' + i1 + '" class="lzy-panel-body-wrapper" aria-labelledby="lzy-panel-controller' + i1 + '" role="region">\n' +
+            //     '\t\t\t<div class="lzy-panel-inner-wrapper">\n' +
+            //     panel.body +
+            //     '\t\t\t</div><!-- /lzy-panel-inner-wrapper -->\n' +
+            //     '\t\t</div><!-- /lzy-panel-body-wrapper -->\n' +
+            //     '\t</div><!-- /lzy-panel-page -->\n';
         }
         header = '\n\n<!-- === lzy-tabs-mode headers ==== -->\n\t<ul class="lzy-tabs-mode-panels-header-list" role="tablist">\n' + header + '\t</ul>\n\n';
 
-        $this.html(header + body);
-        $('.lzy-panel-page', $(this)).first().attr('aria-hidden', 'false');
-        $('.lzy-tabs-mode-panel-header:first-child', $(this)).attr('aria-selected', 'true');
-        $this.show();
+        $thisWidget.prepend(header);
         if (preOpen) {
             openPanel( '#lzy-panel-id' + (panelWidgetInstance*100 + parseInt(preOpen)));
         }
-        if ($this.hasClass('lzy-accordion')) {
-            $('.lzy-panel-inner-wrapper', $this).css('transition-duration', '0.4s');
+        if ($thisWidget.hasClass('lzy-accordion')) {
+            $('.lzy-panel-inner-wrapper', $thisWidget).css('transition-duration', '0.4s');
         }
         panelWidgetInstance++;
     });
