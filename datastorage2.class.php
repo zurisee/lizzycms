@@ -203,7 +203,8 @@ class DataStorage2
         // $supportedArgs defines the expected args, their default values, where null means required arg.
         $supportedArgs = ['recId' => null, 'recData' => null, 'locking' => false, 'blocking' => false];
         if (($recId = $this->fixRecId($recId, false, $supportedArgs)) === false) {
-            return false;
+            $recId = $this->createNewRecId(); // recId -> append rec
+
         } elseif (is_array($recId)) {
             list($recId, $recData, $locking, $blocking) = $recId;
         }
@@ -684,6 +685,22 @@ class DataStorage2
         $this->data = $data;
         return $data;
     } // getData
+
+
+
+    private function createNewRecId()
+    {
+        if ($this->structure["key"] === 'index') {
+            $recId = sizeof($this->getData(true));
+        } elseif ($this->structure["key"] === 'date') {
+            $recId = date('Y-m-d');
+        } elseif ($this->structure["key"] === 'datetime') {
+            $recId = date('Y-m-d H:i:s');
+        } else {
+            $recId = time();
+        }
+        return $recId;
+    } // createNewRecId
 
 
 
