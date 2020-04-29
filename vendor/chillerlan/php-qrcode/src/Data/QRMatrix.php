@@ -13,6 +13,7 @@
 namespace chillerlan\QRCode\Data;
 
 use chillerlan\QRCode\QRCode;
+use Closure;
 
 /**
  * @link http://www.thonky.com/qr-code-tutorial/format-version-information
@@ -149,10 +150,27 @@ class QRMatrix{
 	}
 
 	/**
-	 * @return array
+	 * Returns the data matrix, returns a pure boolean representation if $boolean is set to true
+	 *
+	 * @return int[][]|bool[][]
 	 */
-	public function matrix():array {
-		return $this->matrix;
+	public function matrix(bool $boolean = false):array{
+
+		if(!$boolean){
+			return $this->matrix;
+		}
+
+		$matrix = [];
+
+		foreach($this->matrix as $y => $row){
+			$matrix[$y] = [];
+
+			foreach($row as $x => $val){
+				$matrix[$y][$x] = ($val >> 8) > 0;
+			}
+		}
+
+		return $matrix;
 	}
 
 	/**
@@ -479,6 +497,7 @@ class QRMatrix{
 		$this->maskPattern = $maskPattern;
 		$byteCount         = count($data);
 		$size              = $this->moduleCount - 1;
+		$mask              = $this->getMask($this->maskPattern);
 
 		for($i = $size, $y = $size, $inc = -1, $byteIndex = 0, $bitIndex  = 7; $i > 0; $i -= 2){
 
@@ -497,7 +516,7 @@ class QRMatrix{
 							$v = (($data[$byteIndex] >> $bitIndex) & 1) === 1;
 						}
 
-						if($this->getMask($x, $y, $maskPattern) === 0){
+						if($mask($x, $y) === 0){
 							$v = !$v;
 						}
 
@@ -528,36 +547,36 @@ class QRMatrix{
 	}
 
 	/**
+	 *  ISO/IEC 18004:2000 Section 8.8.1
+	 *
+	 * Note that some versions of the QR code standard have had errors in the section about mask patterns.
+	 * The information below has been corrected. (https://www.thonky.com/qr-code-tutorial/mask-patterns)
+	 *
 	 * @see \chillerlan\QRCode\QRMatrix::mapData()
 	 *
 	 * @internal
 	 *
-	 * @param int $x
-	 * @param int $y
 	 * @param int $maskPattern
 	 *
-	 * @return int
+	 * @return \Closure
 	 * @throws \chillerlan\QRCode\Data\QRCodeDataException
 	 */
-	protected function getMask(int $x, int $y, int $maskPattern):int {
-		$a = $y + $x;
-		$m = $y * $x;
+	protected function getMask(int $maskPattern):Closure{
 
-		if($maskPattern >= 0 && $maskPattern < 8){
-			// this is literally the same as the stupid switch...
-			return [
-				$a % 2,
-				$y % 2,
-				$x % 3,
-				$a % 3,
-				(floor($y / 2) + floor($x / 3)) % 2,
-				$m % 2 + $m % 3,
-				($m % 2 + $m % 3) % 2,
-				($m % 3 + $a % 2) % 2
-			][$maskPattern];
+		if((0b111 & $maskPattern) !== $maskPattern){
+			throw new QRCodeDataException('invalid mask pattern'); // @codeCoverageIgnore
 		}
 
-		throw new QRCodeDataException('invalid mask pattern'); // @codeCoverageIgnore
+		return [
+			0b000 => function($x, $y):int{ return ($x + $y) % 2; },
+			0b001 => function($x, $y):int{ return $y % 2; },
+			0b010 => function($x, $y):int{ return $x % 3; },
+			0b011 => function($x, $y):int{ return ($x + $y) % 3; },
+			0b100 => function($x, $y):int{ return ((int)($y / 2) + (int)($x / 3)) % 2; },
+			0b101 => function($x, $y):int{ return (($x * $y) % 2) + (($x * $y) % 3); },
+			0b110 => function($x, $y):int{ return ((($x * $y) % 2) + (($x * $y) % 3)) % 2; },
+			0b111 => function($x, $y):int{ return ((($x * $y) % 3) + (($x + $y) % 2)) % 2; },
+		][$maskPattern];
 	}
 
 }

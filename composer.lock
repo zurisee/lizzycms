@@ -68,16 +68,16 @@
         },
         {
             "name": "chillerlan/php-qrcode",
-            "version": "2.0.6",
+            "version": "2.0.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/chillerlan/php-qrcode.git",
-                "reference": "45577426ab8e2199aa60e00f9bd7c242c1484c97"
+                "reference": "bf0382aaf2f79fa41c2dcb0f216675f74d633fe7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/chillerlan/php-qrcode/zipball/45577426ab8e2199aa60e00f9bd7c242c1484c97",
-                "reference": "45577426ab8e2199aa60e00f9bd7c242c1484c97",
+                "url": "https://api.github.com/repos/chillerlan/php-qrcode/zipball/bf0382aaf2f79fa41c2dcb0f216675f74d633fe7",
+                "reference": "bf0382aaf2f79fa41c2dcb0f216675f74d633fe7",
                 "shasum": ""
             },
             "require": {
@@ -89,11 +89,6 @@
                 "phpunit/phpunit": "^6.5"
             },
             "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-v2.0.x-php5": "1.0.8-dev"
-                }
-            },
             "autoload": {
                 "psr-4": {
                     "chillerlan\\QRCode\\": "src/"
@@ -109,7 +104,7 @@
                     "homepage": "https://github.com/kazuhikoarase"
                 },
                 {
-                    "name": "smiley",
+                    "name": "Smiley",
                     "email": "smiley@chillerlan.net",
                     "homepage": "https://github.com/codemasher"
                 }
@@ -119,7 +114,7 @@
             "keywords": [
                 "qr code"
             ],
-            "time": "2018-03-28T18:07:10+00:00"
+            "time": "2020-04-12T07:38:35+00:00"
         },
         {
             "name": "chillerlan/php-traits",
@@ -262,16 +257,16 @@
         },
         {
             "name": "scssphp/scssphp",
-            "version": "1.0.9",
+            "version": "1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/scssphp/scssphp.git",
-                "reference": "c6626eebae7b123321d5ea803998487d835c260d"
+                "reference": "4363ddce8d750f055c436833dd77d83517946532"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/scssphp/scssphp/zipball/c6626eebae7b123321d5ea803998487d835c260d",
-                "reference": "c6626eebae7b123321d5ea803998487d835c260d",
+                "url": "https://api.github.com/repos/scssphp/scssphp/zipball/4363ddce8d750f055c436833dd77d83517946532",
+                "reference": "4363ddce8d750f055c436833dd77d83517946532",
                 "shasum": ""
             },
             "require": {
@@ -281,7 +276,7 @@
             },
             "require-dev": {
                 "phpunit/phpunit": "^5.7 || ^6.5 || ^7.5 || ^8.3",
-                "squizlabs/php_codesniffer": "~2.5",
+                "squizlabs/php_codesniffer": "~3.5",
                 "twbs/bootstrap": "~4.3",
                 "zurb/foundation": "~6.5"
             },
@@ -319,11 +314,11 @@
                 "scss",
                 "stylesheet"
             ],
-            "time": "2020-04-01T15:23:18+00:00"
+            "time": "2020-04-21T15:53:32+00:00"
         },
         {
             "name": "symfony/css-selector",
-            "version": "v4.4.7",
+            "version": "v4.4.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/css-selector.git",
@@ -376,7 +371,7 @@
         },
         {
             "name": "symfony/dom-crawler",
-            "version": "v4.4.7",
+            "version": "v4.4.8",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/dom-crawler.git",
@@ -554,16 +549,16 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v3.4.39",
+            "version": "v3.4.40",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "e701b47e11749970f63803879c4febb520f07b6c"
+                "reference": "8fef49ac1357f4e05c997a1f139467ccb186bffa"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/e701b47e11749970f63803879c4febb520f07b6c",
-                "reference": "e701b47e11749970f63803879c4febb520f07b6c",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/8fef49ac1357f4e05c997a1f139467ccb186bffa",
+                "reference": "8fef49ac1357f4e05c997a1f139467ccb186bffa",
                 "shasum": ""
             },
             "require": {
@@ -609,7 +604,7 @@
             ],
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
-            "time": "2020-03-25T12:02:26+00:00"
+            "time": "2020-04-24T10:16:04+00:00"
         }
     ],
     "packages-dev": [],

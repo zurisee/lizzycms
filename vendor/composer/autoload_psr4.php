@@ -15,6 +15,5 @@ return array(
     'Symfony\\Component\\DomCrawler\\' => array($vendorDir . '/symfony/dom-crawler'),
     'Symfony\\Component\\CssSelector\\' => array($vendorDir . '/symfony/css-selector'),
     'ScssPhp\\ScssPhp\\' => array($vendorDir . '/scssphp/scssphp/src'),
-    'PhpImap\\' => array($vendorDir . '/php-imap/php-imap/src/PhpImap'),
     'Eluceo\\iCal\\' => array($vendorDir . '/eluceo/ical/src'),
 );
