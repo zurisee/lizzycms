@@ -12,6 +12,35 @@ panelWidgetInstance = 1;    // instance number
 panelsInitialized = [];
 
 
+function setupCloseButtonHandler()
+{
+    if (closeButton) {
+        $('.lzy-panel-close-btn').unbind('click');
+        $('.lzy-panel-close-btn').click(function () {
+            var $thisLi = $(this).closest('li');
+            var $next = $thisLi.next();
+            if (!$next.length) {
+                var $next = $thisLi.prev();
+            }
+            if (!$next.length) {
+                return;
+            }
+            var thisInx = ($thisLi.attr('id').match(/\d+/))[0];
+            var nextInx = ($next.attr('id').match(/\d+/))[0];
+
+            setTimeout(function () {
+                openPanel('#lzy-panel-id' + nextInx);
+                $thisLi.remove();
+                $('#lzy-panel-id' + thisInx).remove();
+                updateAriaPosInfo();
+            }, 10);
+        });
+    }
+} // setupCloseButtonHandler
+
+
+
+
 function initializePanel( widgetSelector, preOpen )
 {
     var $widgets = $( widgetSelector );
@@ -71,6 +100,9 @@ function initializePanel( widgetSelector, preOpen )
 
         var header = '';
         var body = '';
+        if (typeof closeButton === 'undefined') {
+            closeButton = '';
+        }
 
         // create tabs header row:
         for (i = 0; i < panels.length; ++i) {
@@ -80,16 +112,8 @@ function initializePanel( widgetSelector, preOpen )
             var aria = ' aria-setsize="' + panels.length + '" aria-posinset="' + (i+1) + '" aria-selected="false" aria-controls="lzy-panel-id' + _i + '"';
 
             header += '\t\t<li id="lzy-tabs-mode-panel-header-id' + _i +
-                '" class="lzy-tabs-mode-panel-header" role="tab" tabindex="'+ tabindex +'"' + aria + '><div>' + hdrText + '</div></li>\n';
-
-            // body += '\n\n\t<!-- === panel page ==== -->\n\t<div id="lzy-panel-id' + i1 + '" class="lzy-panel-page" role="tabpanel" tabindex="-1" aria-labelledby="lzy-tabs-mode-panel-header-panel-id' + i1 + '" aria-hidden="true">\n' +
-            //     '\t\t<div class="lzy-accordion-mode-panel-header"><a id="#lzy-panel-controller' + i1 + '" href="#lzy-panel-id' + i1 + '" class="lzy-panel-link" aria-controls="lzy-panel-body-wrapper' + i1 + '" aria-expanded="false">' + panel.hdrText + '</a></div>\n' +
-            //     '\t\t<div id="lzy-panel-body-wrapper' + i1 + '" class="lzy-panel-body-wrapper" aria-labelledby="lzy-panel-controller' + i1 + '" role="region">\n' +
-            //     '\t\t\t<div class="lzy-panel-inner-wrapper">\n' +
-            //     panel.body +
-            //     '\t\t\t</div><!-- /lzy-panel-inner-wrapper -->\n' +
-            //     '\t\t</div><!-- /lzy-panel-body-wrapper -->\n' +
-            //     '\t</div><!-- /lzy-panel-page -->\n';
+                '" class="lzy-tabs-mode-panel-header" role="tab" tabindex="'+ tabindex +'"' + aria + '><div>' + hdrText +
+                '</div>' + closeButton + '</li>\n';
         }
         header = '\n\n<!-- === lzy-tabs-mode headers ==== -->\n\t<ul class="lzy-tabs-mode-panels-header-list" role="tablist">\n' + header + '\t</ul>\n\n';
 
@@ -102,8 +126,75 @@ function initializePanel( widgetSelector, preOpen )
         }
         panelWidgetInstance++;
     });
+    setupCloseButtonHandler();
 } // initializePanel
 
+
+
+function updateAriaPosInfo() {
+    var nPanels = $('.lzy-panel-page').length;
+    var j = 1;
+    $('.lzy-tabs-mode-panels-header-list li').each(function () {
+        $(this)
+            .attr('aria-posinset', j++)
+            .attr('aria-setsize', nPanels);
+    });
+    return nPanels;
+} // updateAriaPosInfo
+
+
+
+function cloneTab( id ) {
+    var oldN = extractIdNumber(id);
+    var id1 = '#lzy-panel-id' + extractIdNumber(id);
+    var newN = 0;
+    $('.lzy-panel-page').each(function () {
+        var id2 = $( this ).attr('id');
+        var n2 = extractIdNumber( id2 );
+        newN = Math.max(newN, n2);
+    });
+
+    newN = parseInt( newN ) + 1;
+    var newId = 'lzy-panel-id' + newN;
+    var $thisWidget = $( id1 ).closest('.lzy-panels-widget');
+    var $newPanel = $( id1 ).clone();
+    $newPanel.attr('id', newId)
+        .attr('aria-hidden', 'true')
+        .attr('aria-selected', 'false')
+        .attr('aria-labelledby', 'lzy-tabs-mode-panel-header-panel-id' + newN)
+        .removeClass('lzy-panel-page-open')
+    ;
+    $('.lzy-panel-link', $newPanel)
+        .attr('id', 'lzy-panel-controller' + newN)
+        .attr('href', '#lzy-panel-id' + newN)
+        .attr('aria-controls', 'lzy-panel-body-wrapper101' + newN)
+    ;
+
+    $('.lzy-panel-body-wrapper', $newPanel)
+        .attr('id', 'lzy-panel-body-wrapper' + newN)
+        .attr('aria-labelledby', 'lzy-panel-controller' + newN)
+    $thisWidget.append( $newPanel );
+
+
+    var $newH = $('#lzy-tabs-mode-panel-header-id' + oldN).clone();
+    $newH
+        .attr('id', 'lzy-tabs-mode-panel-header-id' + newN)
+        .attr('aria-controls', 'lzy-panel-id' + newN)
+        .attr('aria-selected', 'false')
+        // .attr('aria-posinset', nPanels)
+    ;
+    $('.lzy-tabs-mode-panels-header-list', $thisWidget).append( $newH );
+
+    updateAriaPosInfo();
+    setupTabsHeaderEvents();
+    setupCloseButtonHandler();
+    setupAccordionHeaderEvents();
+
+    setPanelHeights();
+
+    operatePanel('#lzy-panel-id' + newN);
+    // openPanel('#lzy-panel-id' + newN);
+} // cloneTab
 
 
 
@@ -112,18 +203,27 @@ function setupEvents() {
     setupTabsHeaderEvents();
     setupAccordionHeaderEvents();
     setupKeyboardEvents();
-}
+} // setupEvents
 
 
 
 function setupTabsHeaderEvents()
 {
+    // click on tab header -> open tab:
+    $('.lzy-tabs-mode-panel-header').unbind('click');
     $('.lzy-tabs-mode-panel-header').click(function() {
         var id = '#' + $( this ).attr('aria-controls');
-        // console.log('tabs event: '+id);
         operatePanel( id, true);
     });
-}
+
+    // show close button upon leaving tab header:
+    $('.lzy-tabs-mode-panel-header').unbind('mouseleave');
+    $('.lzy-tabs-mode-panel-header').mouseleave( function () {
+        if (($( this ).attr('aria-selected') === 'true') && ($('.lzy-tabs-mode-panel-header').length > 1)) {
+            $('.lzy-panel-close-btn', $( this )).show();
+        }
+    });
+} // setupTabsHeaderEvents
 
 
 
@@ -131,25 +231,27 @@ function setupAccordionHeaderEvents()
 {
     var mousedown = false;
     var $accordionHeaders = $('.lzy-accordion-mode-panel-header');
+    $accordionHeaders.unbind('mousedown');
     $accordionHeaders.on('mousedown', function () {
         mousedown = true;
     });
+    $accordionHeaders.unbind('focusin');
     $accordionHeaders.on('focusin', function () {
         if(!mousedown) {
             var id = $('a', $( this )).attr('href');
-            // console.log('acc keyb event: '+id);
             operatePanel( id, false);
             return;
         }
         mousedown = false;
     });
+    $accordionHeaders.unbind('click');
     $accordionHeaders.click(function(e) {
         e.preventDefault();
         mousedown = false;
         var id = $('a', $( this )).attr('href');
         operatePanel( id, false);
     });
-}
+} // setupAccordionHeaderEvents
 
 
 
@@ -161,7 +263,7 @@ function operatePanel( id, tabClicked)
     if (tabClicked) {                   // Click/focus on Tab
         // close all, open id
         var tabsHdrId = id.replace(/panel-/, 'lzy-tabs-mode-panel-header-');
-        var wasOpen = ($(tabsHdrId).attr('aria-selected') == 'true');
+        var wasOpen = ($(tabsHdrId).attr('aria-selected') === 'true');
         if (!wasOpen) {
             closeAllPanels( id );
             openPanel( id );
@@ -180,7 +282,8 @@ function operatePanel( id, tabClicked)
             }
         }
     }
-}
+} // operatePanel
+
 
 
 function closeAllPanels( id ) {
@@ -190,7 +293,9 @@ function closeAllPanels( id ) {
     var $panelHdrs = $('.lzy-panel-page', $thisWidget);
     $panelHdrs.attr({ 'aria-hidden': 'true', 'aria-expanded': 'false', 'aria-selected':'false'});
     $panelHdrs.removeClass('lzy-panel-page-open');
-}
+} // closeAllPanels
+
+
 
 
 function closeAllTabs( id )
@@ -201,28 +306,33 @@ function closeAllTabs( id )
 
     var $panelHdrs = $('.lzy-panel-page', $thisWidget);
     $panelHdrs.attr({ 'aria-hidden': 'true', 'aria-selected':'false'});
-}
+} // closeAllTabs
+
+
 
 
 function openPanel( id )
-{
+{   // id=#lzy-panel-id101
     closeAllTabs( id );
     openTab( id );
 
     var $panelHdr = $( id );
     $panelHdr.attr({ 'aria-hidden': 'false', 'aria-expanded': 'true', 'aria-selected':'true'});
     $panelHdr.addClass('lzy-panel-page-open');
-}
+} // openPanel
+
 
 
 function openTab( id )
 {
-    var tabsHdrId = id.replace(/lzy-panel-/, 'lzy-tabs-mode-panel-header-');
-    $(tabsHdrId).attr({'aria-selected': 'true', 'tabindex': 0});
+    // var tabsHdr = id.replace(/lzy-panel-/, 'lzy-tabs-mode-panel-header-');
+    var $tabsHdr = $( id.replace(/lzy-panel-/, 'lzy-tabs-mode-panel-header-') );
+    $tabsHdr.attr({'aria-selected': 'true', 'tabindex': 0});
+    $('.lzy-panel-close-btn').hide();
 
     var $panelHdr = $( id );
     $panelHdr.attr({ 'aria-hidden': 'false', 'aria-selected':'true'});
-}
+} // openTab
 
 
 
@@ -233,7 +343,7 @@ function closeTab( id )
 
     var $panelHdr = $( id );
     $panelHdr.attr({ 'aria-hidden': 'true', 'aria-selected':'false'});
-}
+} // closeTab
 
 
 
@@ -252,7 +362,7 @@ function closePanel( id )
         id = id.substr(0,10) + '01';     // open first panel
         openTab( id );
     }
-}
+} // closePanel
 
 
 
@@ -262,6 +372,7 @@ function onResize( withoutDelay ) {
 
     setPanelHeights();
 } // onResize
+
 
 
 var to = null;
@@ -368,7 +479,6 @@ function setupKeyboardEvents()
             event.preventDefault();
             $last = $('.lzy-tabs-mode-panel-header:last-child', $(this).parent());
             var id1 = '#' + $last.attr('id').replace(/lzy-tabs-mode-panel-header-/, 'lzy-panel-');
-            // console.log( id1 );
             openPanel( id1 );
             $( id1.replace(/lzy-panel-/, 'lzy-tabs-mode-panel-header-')).focus();
 
@@ -418,6 +528,16 @@ function openRequestedPanel() {
 
 
 
+function extractIdNumber( id )
+{
+    var n = false;
+    var m = id.match(/\d+$/);
+    if (m.length > 0) { // it was an index
+        n = m[0];
+    }
+    return n;
+} // extractIdNumber
+
 
 function initLzyPanel( widgetSelector, preOpen )
 {
@@ -439,3 +559,4 @@ function initLzyPanel( widgetSelector, preOpen )
 
 // auto-initialize widgets marked by '.lzy-panels-widget':
 // initLzyPanel( '.lzy-panels-widget', false );
+

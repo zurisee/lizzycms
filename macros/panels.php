@@ -24,6 +24,7 @@ $this->addMacro($macroName, function () {
     $oneOpenOnly = $this->getArg($macroName, 'oneOpenOnly', 'If true, makes sure that only one panel is open at the time (in accordion mode)', '');
     $tilted = $this->getArg($macroName, 'tilted', 'Activates tilted sides on tabs, providing an improved visual effect', false);
     $preOpen = $this->getArg($macroName, 'preOpen', '[false | number] If set, defines which panel should initially appear opened (numbers starting at 1)', true);
+    $closeButton = $this->getArg($macroName, 'closeButton', '[false | false] If set, adds a close button to tab headers', false);
     $omitScript = $this->getArg($macroName, 'omitScript', '[false | number] If set, skips generation of init-script (thus you may invoke it manually before other scripts)', false);
 //    $threshold = $this->getArg($macroName, 'threshold', 'defines the width threshold used for switching between tabs- and accordion-mode (default is 480px)', '');
 //??? TBD
@@ -77,8 +78,12 @@ $this->addMacro($macroName, function () {
         $preOpen = 'false';
     }
 
+    if ($closeButton) {
+        $this->page->addJs("var closeButton = '<button class=\"lzy-panel-close-btn\" aria-label=\"{{ lzy-close-panel }}\">×</button>';\n");
+    }
     if (!$omitScript) {
-        $this->page->addJq("initLzyPanel( '$widgetSelector', $preOpen );\n");
+        $jq = "initLzyPanel( '$widgetSelector', $preOpen );\n";
+        $this->page->addJq( $jq );
     }
 
 
