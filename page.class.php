@@ -869,6 +869,9 @@ EOT;
         } else {
             foreach ($this->jsModules as $item) {
                 $item = resolvePath($item, true, true);
+                if ($this->config->isLocalhost && (strpos($item, 'jquery-') !== false)) {
+                    $item = str_replace('.min.', '.', $item);
+                }
                 $out .= "\t<script src='$item'></script>\n";
             }
 
