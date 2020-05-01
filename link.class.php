@@ -300,7 +300,9 @@ class CreateLink
             $rec = $this->lzy->siteStructure->findSiteElem($href, true, true);
             if ($rec) {
                 $this->href = '~/'.$rec['folder'].$hash;
-                $this->text = $rec['name'];
+                if (!$this->text) {
+                    $this->text = $rec['name'];
+                }
             }
         }
 
