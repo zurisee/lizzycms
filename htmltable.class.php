@@ -24,6 +24,7 @@ class HtmlTable
         $this->id 			        = $this->getOption('id', '(optional) Id applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
         $this->tableClass 	        = $this->getOption('tableClass', '(optional) Class applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
         $this->cellClass 	        = $this->getOption('cellClass', '(optional) Class applied to each table cell');
+        $this->rowClass 	        = $this->getOption('rowClass', '(optional) Class applied to each table row', 'lzy-row-*');
         $this->cellIds 	            = $this->getOption('cellIds', '(optional) If true, each cell gets an ID which is derived from the cellClass');
         $this->nRows 		        = $this->getOption('nRows', '(optional) Number of rows: if set the table is forced to this number of rows');
         $this->nCols 		        = $this->getOption('nCols', '(optional) Number of columns: if set the table is forced to this number of columns');
@@ -132,10 +133,13 @@ class HtmlTable
         $tbody = '';
         $nRows = sizeof($data);
         $nCols = sizeof($data[0]);
+        $rowClass0 = $this->rowClass;
 
         for ($r = 0; $r < $nRows; $r++) {
+            $rowClass = str_replace('*', $r, $rowClass0);
+
             if ($header && ($r == 0)) {
-                $thead = "\t<thead>\n\t\t<tr class='lzy-row-$r'>\n";
+                $thead = "\t<thead>\n\t\t<tr class='$rowClass'>\n";
                 if ($this->showRowNumbers) {
                     $thead .= "\t\t\t<th class='lzy-table-row-nr'></th>\n";
                 }
@@ -145,7 +149,7 @@ class HtmlTable
                 }
                 $thead .= "\t\t</tr>\n\t</thead>\n";
             } else {
-                $tbody .= "\t\t<tr class='lzy-row-$r'>\n";
+                $tbody .= "\t\t<tr class='$rowClass'>\n";
                 if ($this->showRowNumbers) {
                     if ($this->headers) {
                         $n = $r;
