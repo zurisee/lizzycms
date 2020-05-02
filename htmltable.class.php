@@ -23,6 +23,7 @@ class HtmlTable
         $this->dataSource	        = $this->getOption('dataSource', '(optional if nCols is set) Name of file containing data. Format may be .cvs or .yaml and is expected be local to page folder.');
         $this->id 			        = $this->getOption('id', '(optional) Id applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
         $this->tableClass 	        = $this->getOption('tableClass', '(optional) Class applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
+        $this->tableClass 	            = $this->getOption('class', 'Synonyme for tableClass', $this->tableClass);
         $this->cellClass 	        = $this->getOption('cellClass', '(optional) Class applied to each table cell');
         $this->rowClass 	        = $this->getOption('rowClass', '(optional) Class applied to each table row', 'lzy-row-*');
         $this->cellIds 	            = $this->getOption('cellIds', '(optional) If true, each cell gets an ID which is derived from the cellClass');
@@ -113,9 +114,28 @@ class HtmlTable
 
         if ($this->headersLeft) {
             $headers = $this->extractList($this->headersLeft, true);
-            array_pad($headers, $this->nRows, '');
-            for ($r = 0; $r < $this->nRows; $r++) {
-                array_unshift($data[$r], $headers[$r]);
+            if ($this->headers) {
+                array_splice($data[0], 0, 0, ['']);
+            }
+            if ($this->headers === true) {
+                $r = 1;
+                $r1 = 0;
+                $rEnd = $this->nRows + 1;
+            } elseif (!$this->headers) {
+                $r = 0;
+                $r1 = 0;
+                $rEnd = $this->nRows;
+            } else {
+                $r = 1;
+                $r1 = 0;
+                $rEnd = $this->nRows;
+            }
+            for (; $r < $rEnd; $r++) {
+                if ($this->headersLeft === true) {
+                    array_splice($data[$r], 0, 0, [$r1++ + 1]);
+                } else {
+                    array_splice($data[$r], 0, 0, [$headers[$r1++]]);
+                }
             }
         }
         return;
@@ -159,7 +179,8 @@ class HtmlTable
                     $tbody .= "\t\t\t<td class='lzy-table-row-nr'>$n</td>\n";
                 }
                 for ($c = 0; $c < $nCols; $c++) {
-                    $cell = $this->getDataElem($r, $c);
+                    $tag = (($c === 0) && $this->headersLeft)? 'th': 'td';
+                    $cell = $this->getDataElem($r, $c, $tag);
                     $tbody .= "\t\t\t$cell\n";
                 }
                 $tbody .= "\t\t</tr>\n";
@@ -657,6 +678,7 @@ EOT;
     private function getDataElem($row, $col, $tag = 'td', $hdrElem = false)
     {
         $cell = $this->data[$row][$col];
+
         $col1 = $col + 1;
         if ($hdrElem) {
             $tdClass = $this->cellClass ? $this->cellClass.'-hdr' : 'lzy-div-table-hdr';
@@ -755,7 +777,6 @@ lzyTable{$this->tableCounter} = $('#lzy-table{$this->tableCounter}').DataTable({
 });
 
 EOT;
-
             $page->addJq($jq);
             if (!$this->headers) {
                 $this->headers = true;
@@ -794,27 +815,31 @@ EOT;
             $this->ds = $ds;
             $this->data = $ds->read();
             if ($this->headers === true) {
-                $structure = $this->ds->getDbRecStructure();
-                $this->headerElems = $structure['labels'];
+                if ($ds->getSourceFormat() === 'csv') {
+                    $this->headerElems = array_shift($this->data);
+                } else {
+                    $structure = $this->ds->getDbRecStructure();
+                    if (isset($structure['labels'][0]) && is_int($structure['labels'][0])) {
+                        $this->headerElems = array_shift($this->data);
+                    } else {
+                        $this->headerElems = $structure['labels'];
+                    }
+                }
             }
 
-            //ToDo: workaround!
+            $data = [];
+            $ir = 0;
             foreach ($this->data as $r => $rec) {
+                $ic = 0;
                 foreach ($rec as $c => $item) {
                     if (is_array($item)) {
                         $item = '<span class="lzy-array-elem">' . implode('</span><span class="lzy-array-elem">', $item) . '</span>';
                     }
-                    $this->data[$r][$c] = trim($item, '"\'');
+                    $data[$ir][$ic++] = trim($item, '"\'');
                 }
+                $ir++;
             }
-//ToDo: Check case 2D data coming from csv source:
-//            if ($ds->getSourceFormat() !== 'csv') {
-//                $this->convertTo2D( true );
-//
-//            } else
-            if ($this->headers === true) {
-                array_shift($this->data);
-            }
+            $this->data = $data;
         }
 
         $this->adjustTableSize();
