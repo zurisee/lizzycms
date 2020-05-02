@@ -189,10 +189,15 @@ class LiveDataService
             if (!is_int($k)) {
                 continue;
             }
-            $targetSelector = $dbDescr[$k]['targetSelector'];
+
             $dataKey = $dbDescr[$k]["dataSelector"];
             if ((strpos($dataKey, '{') !== false) && $this->dynDataSelectors) {
                 $dataKey = preg_replace('/\{'.$this->dynDataSelectors['name'].'\}/', $this->dynDataSelectors['value'], $dataKey);
+            }
+
+            $targetSelector = $dbDescr[$k]['targetSelector'];
+            if ((strpos($targetSelector, '{') !== false) && $this->dynDataSelectors) {
+                $targetSelector = preg_replace('/\{'.$this->dynDataSelectors['name'].'\}/', $this->dynDataSelectors['value'], $targetSelector);
             }
             if ($dbIsLocked || $db->isRecLocked( $dataKey )) {
                 $lockedElements[] = $targetSelector;
