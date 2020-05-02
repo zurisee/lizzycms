@@ -746,7 +746,7 @@ class DataStorage2
                             if (isset($subRec[$k1])) {
                                 $outRecs[$k0] = $subRec[$k1];
                             } else {
-                                return null;
+                                $outRecs[$k0] = '';
                             }
                         }
                     }
