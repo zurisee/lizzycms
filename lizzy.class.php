@@ -485,6 +485,8 @@ $html .= "\n<!-- test modif -->\n";
         } elseif (!$accessGranted) {
             $loginForm = $this->renderLoginForm( false );
             $this->page->addContent($loginForm);
+            $jq = "initLzyPanel('.lzy-panels-widget', 1);";
+            $this->page->addJq( $jq );
         }
     } // appendLoginForm
 
