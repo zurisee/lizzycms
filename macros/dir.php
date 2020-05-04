@@ -15,6 +15,7 @@ $this->addMacro($macroName, function () {
     $this->getArg($macroName, 'class', 'class to be applied to the enclosing li-tag.', '');
     $this->getArg($macroName, 'target', '"target" attribute to be applied to the a-tag.', '');
     $this->getArg($macroName, 'maxAge', '[integer] Maximum age of file (in number of days).', '');
+    $this->getArg($macroName, 'orderedList', 'If true, renders found objects as an ordered list (&lt;ol>).', '');
 
     if ($path === 'help') {
         return '';
@@ -47,6 +48,7 @@ class DirRenderer
         $this->target = $this->getArg('target');
         $this->exclude = $this->getArg('exclude');
         $this->maxAge = $this->getArg('maxAge');
+        $this->orderedList = $this->getArg('orderedList');
         if ($this->getArg('hierarchical')) {
             $this->deep = true;
         }
@@ -162,11 +164,12 @@ class DirRenderer
                 $str .= "\t\t<li class='lzy-dir-file'><a href='$url'{$this->targetAttr}{$this->linkClass}>$name</a></li>\n";
             }
         }
+        $tag = $this->orderedList? 'ol': 'ul';
         $str = <<<EOT
 
-    <ul{$this->class}>
+    <$tag{$this->class}>
 $str   
-    </ul>
+    </$tag>
 EOT;
         return $str;
     } // straightList
@@ -225,11 +228,12 @@ EOT;
                 $str .= "\t\t$indent  <li class='lzy-dir-file'><a href='$href'{$this->targetAttr}{$this->linkClass}>$name</a></li>\n";
             }
         }
+        $tag = $this->orderedList? 'ol': 'ul';
         $str = <<<EOT
 
-\t\t$indent<ul{$this->class}>
+\t\t$indent<$tag{$this->class}>
 $str   
-\t\t$indent</ul>
+\t\t$indent</$tag>
 
 EOT;
 
