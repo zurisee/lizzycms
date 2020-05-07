@@ -191,15 +191,20 @@ function timeStamp( long )
 {
 	var now = new Date();
 	var time = [ now.getHours(), now.getMinutes(), now.getSeconds() ];
-	for ( var i = 1; i < 3; i++ ) {
+	for ( var i = 0; i < 3; i++ ) {
 		if ( time[i] < 10 ) {
-			time[i] = "0" + time[i];
+			time[i] = '0' + time[i];
 		}
 	}
-	var out = time.join(":");
+	var out = time.join(':');
 	if (typeof long !== 'undefined') {
-        var day = [ now.getFullYear(), now.getMonth(), now.getDay() ];
-        out = day.join(".") + ' ' + out;
+        var day = [ now.getFullYear(), now.getMonth() + 1, now.getDate() ];
+        for ( i = 1; i < 3; i++ ) {
+            if ( day[i] < 10 ) {
+                day[i] = '0' + day[i];
+            }
+        }
+        out = day.join('.') + ' ' + out;
     }
 	return out;
 } // timeStamp
