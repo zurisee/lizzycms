@@ -169,12 +169,12 @@ li.lzy-tabs-mode-panel-header {
 /* === Widget Defaults ================================================== */
 /* Tabs: */
         /* non-selected tabs: */
-        .lzy-panels-widget.lzy-tab-mode .lzy-tabs-mode-panel-header {
+        .lzy-panels-widget.lzy-tab-mode .lzy-tabs-mode-panel-header div {
             color: var(--lzy-panels-label-color-non-selected);
         }
 
         /* selected tab: */
-        .lzy-panels-widget .lzy-tabs-mode-panel-header[aria-selected=true] {
+        .lzy-panels-widget .lzy-tabs-mode-panel-header[aria-selected=true] div {
             color: var(--lzy-panels-label-color);
         }
 

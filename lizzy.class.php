@@ -477,6 +477,8 @@ $html .= "\n<!-- test modif -->\n";
                 $jq = "$('.lzy-login-username').val('$user');\nsetTimeout(function() { $('.lzy-login-email').val('$user').focus(); },500);";
                 $this->page->addJq($jq, 'append');
             }
+            $jq = "initLzyPanel('.lzy-panels-widget', 1);";
+            $this->page->addJq( $jq );
 
         } elseif ($this->config->feature_preloadLoginForm) {    // preload login form if configured
             $this->page->addPopup(['contentFrom' => '#lzy-login-form', 'triggerSource' => '.lzy-login-link']);
