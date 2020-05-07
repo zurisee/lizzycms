@@ -929,7 +929,14 @@ EOT;
                     $primaryModules[] = [$str, $rank];
                 }
             } else {
-                $modules[] = $module;
+                // check whether source contains rank like {xy}:
+                if (preg_match('/\{(\d+)\}/', $module, $m)) {
+                    $rank = intval($m[1]);
+                    $module = str_replace($m[0], '', $module);
+                    $primaryModules[] = [$module, $rank];
+                } else {
+                    $modules[] = $module;
+                }
             }
         }
 
