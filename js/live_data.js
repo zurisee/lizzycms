@@ -126,6 +126,9 @@ function handleAjaxResponse(json) {
         if (goOn) {
             updateDOM(data);
         }
+        if (typeof liveDataPostUpdateCallback === 'function') {
+            goOn = liveDataPostUpdateCallback();
+        }
     }
     $('.live-data-update-time').text(timeStamp());
     updateLiveData();
