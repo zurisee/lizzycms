@@ -185,6 +185,7 @@ class LiveDataService
         $db = $dbDescr['db'];
         $dbIsLocked = $db->isDbLocked( false );
         $lockedElements = [];
+        $tmp = [];
         foreach ($dbDescr as $k => $elem) {
             if (!is_int($k)) {
                 continue;
@@ -206,12 +207,15 @@ class LiveDataService
             if (is_array($value)) {
                 foreach ($value as $i => $v) {
                     $t = str_replace('*', ($i + 1), $targetSelector);
-                    $outData['data'][$t] = $v;
+                    $tmp[$t] = $v;
                 }
             } else {
-                $outData['data'][$targetSelector] = $value;
+                $tmp[$targetSelector] = $value;
             }
         }
+        ksort($tmp);
+        $outData['data'] = $tmp;
+
 
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
