@@ -87,6 +87,10 @@ class Forms
                 $wrapperClass = '';
                 break;
 
+            case 'url':
+                $elem = $this->renderUrl();
+                break;
+
             case 'date':
                 $elem = $this->renderDate();
                 break;
@@ -236,7 +240,8 @@ class Forms
     {
         $out = $this->getLabel();
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
+        $value = $this->getValueAttr();
+
         $out .= "<input type='text' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderTextInput
@@ -270,7 +275,7 @@ EOT;
     private function renderEMailInput()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
+        $value = $this->getValueAttr('email');
         $out = $this->getLabel();
         $out .= "<input type='email' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
@@ -388,10 +393,22 @@ EOT;
 
 
 //-------------------------------------------------------------
+    private function renderUrl()
+    {
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $value = $this->getValueAttr('url');
+        $out = $this->getLabel();
+        $out .= "<input type='url' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        return $out;
+    } // renderUrl
+
+
+
+//-------------------------------------------------------------
     private function renderDate()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
+        $value = $this->getValueAttr('date');
         $out = $this->getLabel();
         $out .= "<input type='date' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
@@ -402,7 +419,7 @@ EOT;
     private function renderTime()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
+        $value = $this->getValueAttr('time');
         $out = $this->getLabel();
         $out .= "<input type='time' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
@@ -413,7 +430,7 @@ EOT;
     private function renderDateTime()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
+        $value = $this->getValueAttr('datetime');
         $out = $this->getLabel();
         $out .= "<input type='datetime-local' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
@@ -424,7 +441,7 @@ EOT;
     private function renderMonth()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
+        $value = $this->getValueAttr('month');
         $out = $this->getLabel();
         $out .= "<input type='month' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
@@ -434,7 +451,7 @@ EOT;
     private function renderNumber()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
+        $value = $this->getValueAttr('number');
         $out = $this->getLabel();
         $out .= "<input type='number' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
@@ -445,7 +462,7 @@ EOT;
     private function renderRange()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
+        $value = $this->getValueAttr('number');
         $out = $this->getLabel();
         $out .= "<input type='range' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
@@ -456,7 +473,7 @@ EOT;
     private function renderTel()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $value = $this->currRec->value? " value='{$this->currRec->value}'": '';
+        $value = $this->getValueAttr('tel');
         $out = $this->getLabel();
         $out .= "<input type='tel' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
@@ -670,8 +687,11 @@ EOT;
 //-------------------------------------------------------------
     private function renderHidden()
     {
-        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $out = "<input type='hidden' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls />\n";
+        $value = $this->getValueAttr();
+        $name = " name='{$this->currRec->name}'";
+        $value = " value='{$this->currRec->value}'";
+
+        $out = "<input type='hidden' id='fld_{$this->currRec->elemId}'$name$value />\n";
         return $out;
     } // renderHidden
 
@@ -695,7 +715,6 @@ EOT;
     {
 		$id = ($id) ? $id : "fld_{$this->currRec->elemId}";
         $requiredMarker =  $this->currRec->requiredMarker;
-//        $requiredMarker = $this->getRequiredMarker();
 		$label = $this->currRec->label;
 		if ($this->translateLabel) {
 		    $hasColon = (strpos($label, ':') !== false);
@@ -718,13 +737,6 @@ EOT;
         return "\t\t\t<label for='$id'>$label</label>";
     } // getLabel
 
-
-////-------------------------------------------------------------
-//    private function getRequiredMarker()
-//    {
-//		$required = $this->currRec->requiredMarker;
-//        return ($required) ? "<span class='lzy-form-required-marker' aria-hidden='true'>{$this->currRec->requiredMarker}</span>" : '';
-//    } // getRequiredMarker
 
 
 
@@ -875,11 +887,6 @@ EOT;
 			$rec->value = '';
 		}
 
-        // announce initial value if not empty -> needed by form-leave-warning.js
-        if ($rec->value) {
-            $inpAttr .= " data-value='{$rec->value}'";
-        }
-
         if (isset($args['valueNames'])) {
             $rec->valueNames = $args['valueNames'];
         } else {
@@ -913,12 +920,12 @@ EOT;
         $rec->placeholder = (isset($args['placeholder'])) ? $args['placeholder'] : '';
         $rec->class = (isset($args['class'])) ? $args['class'] : '';
         
-        foreach (['min', 'max', 'pattern', 'value', 'placeholder'] as $attr) {
+        foreach (['min', 'max', 'pattern', 'placeholder'] as $attr) {
             if (isset($args[$attr])) {
                 if (($type === 'checkbox') || ($type === 'radio') || ($type === 'dropdown')) {
                     continue;
                 }
-                if (($type === 'textarea') && ($attr === 'value')) {
+                if ($type === 'textarea') {
                     continue;
                 }
                 $inpAttr .= " $attr='{$args[$attr]}'";
@@ -964,11 +971,13 @@ EOT;
 	} // restoreFormDescr
 
 
+
 //-------------------------------------------------------------
 	private function saveUserSuppliedData($formId, $userSuppliedData)
 	{
 		$_SESSION['lizzy']['formData'][$formId] = serialize($userSuppliedData);
 	} // saveUserSuppliedData
+
 
 
 //-------------------------------------------------------------
@@ -1402,7 +1411,7 @@ form-tail:
 
 EOT;
         return compileMarkdownStr($help);
-    }
+    } // renderHelp
 
 
 
@@ -1478,6 +1487,44 @@ EOT;
         }
         file_put_contents($logFile, "$log$timeStamp\n", FILE_APPEND);
     } // writeLog
+
+
+
+
+    private function getValueAttr($type = false)
+    {
+        $value = $this->currRec->value;
+        if ($type === 'tel') {
+            $value = preg_replace('/\w/g', '', $value);
+        } elseif ($type === 'number') {
+            $value = preg_replace('/[^\d\.\-+]/g', '', $value);
+        } elseif ($type === 'url') {
+            if (!preg_match('/[^@]+ @ [^@]+ \. [^@]{2,10}/x', $value)) {
+                $value = '';
+            }
+        } elseif ($type === 'month') {
+            if (!preg_match('/\d{4}-\d{2}/', $value)) {
+                $value = '';
+            }
+        } elseif ($type === 'time') {
+            if (!preg_match('/\d{2}:\d{2}(:\d{2})?/', $value)) {
+                $value = '';
+            }
+        } elseif ($type === 'date') {
+            if (!preg_match('/\d{4}-\d{2}-\d{2}/', $value)) {
+                $value = '';
+            }
+        } elseif ($type === 'datetime') {
+            if (!preg_match('/\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}(:\d{2})?/', $value)) {
+                $value = '';
+            }
+        }
+        if ($value) {
+            $this->currRec->inpAttr .= " data-value='$value'";
+            $value = $value ? " value='$value'" : '';
+        }
+        return $value;
+    } // getValueAttr
 
 } // Forms
 
