@@ -10,6 +10,7 @@ define('RECYCLE_BIN_PATH',      '~page/'.RECYCLE_BIN);
 if (!defined('MKDIR_MASK')) {
     define('MKDIR_MASK', 0700);
 }
+define('DEFAULT_EDITABLE_DATA_FILE', 'editable.yaml');
 
 $appRoot = preg_replace('/_lizzy\/.*$/', '', getcwd().'/');
 

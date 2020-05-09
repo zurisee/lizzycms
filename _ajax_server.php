@@ -173,9 +173,13 @@ class AjaxServer
         if (!$this->openDB( )) {
             exit('failed#save');
         }
-        $recId = $this->get_request_data('recId');
-        $dataRec = $this->db->readRecord( $recId );
+        $recKey = $this->get_request_data('recKey');
+        $dataRec = $this->db->readRecord( $recKey );
         $outData = [];
+        if (!$dataRec || !isset($this->config["recDef"])) {
+            $json = json_encode(['res' => 'Error: getDataRec() no data found', 'data' => '']);
+            exit( $json );
+        }
         foreach ($this->config["recDef"] as $key => $rec) {
             $outData["#fld_".$rec[0]] = $dataRec[$key];
         }
@@ -195,29 +199,33 @@ class AjaxServer
         $json = $this->get_request_data('lzy_data_input_form');
         if ($json) {
             $dataRec = json_decode($json, true);
-            $recId = $dataRec["rec-id"];
+            $recKey = $dataRec["rec-key"];
             unset($dataRec['lizzy_form']);
             unset($dataRec['lizzy_time']);
             unset($dataRec['data-ref']);
-            unset($dataRec['rec-id']);
+            unset($dataRec['rec-key']);
 
-            if (isset($recId) && ($recId !== '')) {
-                $recId = intval( $recId );
+            if (isset($recKey) && ($recKey !== '')) {
+                $recKey = intval( $recKey );
 
                 $dataRec1 = $dataRec;
                 $dataRec = [];
+                if (!isset($this->config["recDef"])) {
+                    $json = json_encode(['res' => 'Error: saveDataRec() config data missing', 'data' => '' ]);
+                    exit( $json );
+                }
                 foreach ($this->config["recDef"] as $k => $rec) {
                     if (isset($dataRec1[ $rec[0] ])) {
                         $dataRec[$k] = $dataRec1[$rec[0]];
                     }
                 }
 
-                $dataRec0 = $this->db->readRecord( $recId );
+                $dataRec0 = $this->db->readRecord( $recKey );
                 if (!$dataRec0) {
                     $res = 'Error: rec not found';
                 } else {
                     $dataRec = array_merge($dataRec0, $dataRec);
-                    $res = $this->db->writeRecord(intval($recId), $dataRec);
+                    $res = $this->db->writeRecord(intval($recKey), $dataRec);
                 }
             } else {
                 $res = 'Error: rec-id missing';

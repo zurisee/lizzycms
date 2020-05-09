@@ -801,7 +801,7 @@ EOT;
                 } else {
                     $this->headerElems = $this->data[0];
                 }
-                $this->nCols = sizeof($this->data[0]);
+                $this->nCols = isset($this->data[0])? sizeof($this->data[0]): 0;
                 $this->nRows = sizeof($this->data);
                 return;
             }
