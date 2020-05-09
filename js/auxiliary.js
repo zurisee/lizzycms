@@ -174,10 +174,10 @@ function isServerErrMsg(json)
 function lzyReload( arg, url )
 {
     var call = window.location.pathname.replace(/\?.*/, '');
-    if (typeof url != 'undefined') {
+    if (typeof url !== 'undefined') {
         call = url.trim();
     }
-    if (typeof arg != 'undefined') {
+    if (typeof arg !== 'undefined') {
         call = appendToUrl(call, arg);
     }
     console.log('initiating page reload: "' + call + '"');
