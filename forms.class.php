@@ -242,7 +242,7 @@ class Forms
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $value = $this->getValueAttr();
 
-        $out .= "<input type='text' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        $out .= "<input type='text' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderTextInput
 
@@ -251,7 +251,7 @@ class Forms
     private function renderPassword()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $input = "<input type='password' class='lzy-form-password' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr} aria-invalid='false' aria-describedby='password-hint'$cls />\n";
+        $input = "<input type='password' class='lzy-form-password' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr} aria-invalid='false' aria-describedby='password-hint'$cls />\n";
         $hint = <<<EOT
             <label class='lzy-form-pw-toggle' for="showPassword"><input type="checkbox" id="lzy-form-showPassword{$this->inx}" class="lzy-form-showPassword"><img src="~sys/rsc/show.png" class="lzy-form-login-form-icon" alt="{{ show password }}" title="{{ show password }}" /></label>
 EOT;
@@ -266,7 +266,7 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $out = $this->getLabel();
-        $out .= "<textarea id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls>{$this->currRec->value}</textarea>\n";
+        $out .= "<textarea id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls>{$this->currRec->value}</textarea>\n";
         return $out;
     } // renderTextarea
 
@@ -277,7 +277,7 @@ EOT;
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $value = $this->getValueAttr('email');
         $out = $this->getLabel();
-        $out .= "<input type='email' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        $out .= "<input type='email' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderEMailInput
 
@@ -371,7 +371,7 @@ EOT;
         }
 
         $out = $this->getLabel();
-        $out .= "<select id='fld_{$this->currRec->elemId}' name='{$this->currRec->name}'$cls>\n";
+        $out .= "<select id='{$this->currRec->fldPrefix}{$this->currRec->elemId}' name='{$this->currRec->name}'$cls>\n";
         $out .= "\t\t\t\t<option value=''></option>\n";
 
         foreach ($values as $i => $item) {
@@ -398,7 +398,7 @@ EOT;
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $value = $this->getValueAttr('url');
         $out = $this->getLabel();
-        $out .= "<input type='url' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        $out .= "<input type='url' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderUrl
 
@@ -410,7 +410,7 @@ EOT;
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $value = $this->getValueAttr('date');
         $out = $this->getLabel();
-        $out .= "<input type='date' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        $out .= "<input type='date' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderDate
 
@@ -421,7 +421,7 @@ EOT;
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $value = $this->getValueAttr('time');
         $out = $this->getLabel();
-        $out .= "<input type='time' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        $out .= "<input type='time' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderTime
 
@@ -432,7 +432,7 @@ EOT;
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $value = $this->getValueAttr('datetime');
         $out = $this->getLabel();
-        $out .= "<input type='datetime-local' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        $out .= "<input type='datetime-local' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderDateTime
 
@@ -443,7 +443,7 @@ EOT;
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $value = $this->getValueAttr('month');
         $out = $this->getLabel();
-        $out .= "<input type='month' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        $out .= "<input type='month' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderMonth
 
@@ -453,7 +453,7 @@ EOT;
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $value = $this->getValueAttr('number');
         $out = $this->getLabel();
-        $out .= "<input type='number' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        $out .= "<input type='number' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderNumber
 
@@ -464,7 +464,7 @@ EOT;
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $value = $this->getValueAttr('number');
         $out = $this->getLabel();
-        $out .= "<input type='range' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        $out .= "<input type='range' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderRange
 
@@ -475,7 +475,7 @@ EOT;
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $value = $this->getValueAttr('tel');
         $out = $this->getLabel();
-        $out .= "<input type='tel' id='fld_{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        $out .= "<input type='tel' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderTel
 
@@ -691,7 +691,7 @@ EOT;
         $name = " name='{$this->currRec->name}'";
         $value = " value='{$this->currRec->value}'";
 
-        $out = "<input type='hidden' id='fld_{$this->currRec->elemId}'$name$value />\n";
+        $out = "<input type='hidden' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'$name$value />\n";
         return $out;
     } // renderHidden
 
@@ -713,7 +713,7 @@ EOT;
 //-------------------------------------------------------------
     private function getLabel($id = false)
     {
-		$id = ($id) ? $id : "fld_{$this->currRec->elemId}";
+		$id = ($id) ? $id : "{$this->currRec->fldPrefix}{$this->currRec->elemId}";
         $requiredMarker =  $this->currRec->requiredMarker;
 		$label = $this->currRec->label;
 		if ($this->translateLabel) {
@@ -894,6 +894,7 @@ EOT;
         }
 
         $rec->comment =  (isset($args['comment']))? $args['comment']: '';
+        $rec->fldPrefix =  (isset($args['elemPrefix']) && ($args['elemPrefix'] !== false))? $args['elemPrefix']: 'fld_';
 
         if (isset($args['path'])) {
 		    $rec->uploadPath = $args['path'];
@@ -1397,6 +1398,9 @@ min:
 max:
 : Range element only: max value
 
+elemPrefix:
+: Prefix applied to input field IDs (default: 'fld_')
+
 comment:
 : (optional) Comment added just after the input element (class: 'lzy-form-elem-comment')
 
@@ -1495,9 +1499,9 @@ EOT;
     {
         $value = $this->currRec->value;
         if ($type === 'tel') {
-            $value = preg_replace('/\w/g', '', $value);
+            $value = preg_replace('/\w/', '', $value);
         } elseif ($type === 'number') {
-            $value = preg_replace('/[^\d\.\-+]/g', '', $value);
+            $value = preg_replace('/[^\d\.\-+]/', '', $value);
         } elseif ($type === 'url') {
             if (!preg_match('/[^@]+ @ [^@]+ \. [^@]{2,10}/x', $value)) {
                 $value = '';
