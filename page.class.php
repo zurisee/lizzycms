@@ -415,13 +415,12 @@ class Page
             $this->overlay = $args;
 
         } else {
-            $this->overlay['text'] .= $args['text'];
-            $this->overlay['mdCompile'] |= $args['mdCompile'];
-            $this->overlay['closable'] |= $args['closable'];
-            $this->overlay['id'] = $args['id'];
-            $this->overlay['trigger'] = $args['trigger'];
-            $this->overlay['onOpen'] = $args['onOpen'];
-            $this->overlay['onClose'] = $args['onClose'];
+            if (!isset($this->overlay[0])) {
+                $overlay = $this->overlay;
+                $this->overlay = [];
+                $this->overlay[0] = $overlay;
+            }
+            $this->overlay[] = $args;
         }
     } // addOverlay
 
@@ -537,65 +536,69 @@ class Page
             return false;
         }
 
-        $text = $jq = '';
-        $overlay = $this->overlay;
-        if (is_string($overlay)) {
-            $overlay = ['text' => $overlay, 'mdCompile' => true, 'closable' => true, 'id' => 'lzy-overlay', 'trigger' => 'auto'];
+        if (is_string($this->overlay)) {
+            $overlays = ['text' => $this->overlay, 'mdCompile' => true, 'closable' => true, 'id' => 'lzy-overlay', 'trigger' => 'auto'];
+        } else {
+            $overlays = $this->overlay;
+        }
+        if (!isset($overlays[0])) {
+            $overlays = [ $overlays ];
         }
 
-        if (isset($overlay['contentFrom']) && $overlay['contentFrom']) {
-            $jq = "$('#{$overlay['id']}').append( $( '{$overlay['contentFrom']}' ).html() )\n";
-//            $jq = "$('#lzy-overlay').append( $( '{$overlay['contentFrom']}' ).html() )\n";
+        foreach ($overlays as $overlay) {
+            $text = $jq = '';
+            if (isset($overlay['contentFrom']) && $overlay['contentFrom']) {
+                $jq = "$('#{$overlay['id']}').append( $( '{$overlay['contentFrom']}' ).html() )\n";
 
-        } elseif (isset($overlay['fromFile']) && $overlay['fromFile']) {
-            $file = resolvePath($overlay['fromFile'], true);
-            if (file_exists($file)) {
-                $text = getFile($file);
+            } elseif (isset($overlay['fromFile']) && $overlay['fromFile']) {
+                $file = resolvePath($overlay['fromFile'], true);
+                if (file_exists($file)) {
+                    $text = getFile($file);
+                    if ((isset($overlay['mdCompile']) && $overlay['mdCompile']) || $this->mdCompileModifiedContent) {
+                        $text = compileMarkdownStr($text);
+                    }
+                }
+
+            } elseif (isset($overlay['text'])) {
+                $text = $overlay['text'];
+
                 if ((isset($overlay['mdCompile']) && $overlay['mdCompile']) || $this->mdCompileModifiedContent) {
                     $text = compileMarkdownStr($text);
                 }
             }
 
-        } elseif (isset($overlay['text'])) {
-            $text = $overlay['text'];
-
-            if ((isset($overlay['mdCompile']) && $overlay['mdCompile']) || $this->mdCompileModifiedContent) {
-                $text = compileMarkdownStr($text);
+            if (!isset($overlay['closable'])) {
+                $overlay['closable'] = true;
             }
+            if ($overlay['closable'] === 'reload') {
+                $text = "<button id='lzy-close-overlay' class='lzy-close-overlay'>✕</button>\n".$text;
+                // set ESC to close overlay:
+                $jq .="\n$('body').keydown( function (e) { if (e.which == 27) { $('.lzy-overlay').hide(); } });\n".
+                    "$('.lzy-overlay .lzy-close-overlay').click(function(e) { lzyReload(); });\n";
+            } else {
+                $text = "<button id='lzy-close-overlay' class='lzy-close-overlay'>✕</button>\n".$text;
+                // set ESC to close overlay:
+                $jq .="\n$('body').keydown( function (e) { if (e.which == 27) { $('.lzy-overlay').hide(); } });\n".
+                    "$('.lzy-overlay .lzy-close-overlay').click(function() { $('.lzy-overlay').hide(); });\n";
+            }
+
+            $onOpen = '';
+            if (isset($overlay['onOpen']) && $overlay['onOpen']) {
+                $onOpen = " {$overlay['onOpen']}( {$overlay['id']} );";
+            }
+
+            $style = '';
+            if ($overlay['trigger'] === 'none') {
+                $style = " style='display: none'";
+            } elseif ($overlay['trigger'] !== 'auto') {
+                $style = " style='display: none'";
+                $jq .= "$('{$overlay['trigger']}').click(function(){ $onOpen$('#{$overlay['id']}').show(); });";
+            }
+            $id = "id='{$overlay['id']}'";
+            $this->addJq($jq);
+            $this->addBody("<div $id class='lzy-overlay'$style>$text</div>\n");
         }
 
-        if (!isset($overlay['closable'])) {
-            $overlay['closable'] = true;
-        }
-        if ($overlay['closable'] === 'reload') {
-            $text = "<button id='lzy-close-overlay' class='lzy-close-overlay'>✕</button>\n".$text;
-            // set ESC to close overlay:
-            $jq .="\n$('body').keydown( function (e) { if (e.which == 27) { $('.lzy-overlay').hide(); } });\n".
-                "$('.lzy-overlay .lzy-close-overlay').click(function(e) { lzyReload(); });\n";
-//                "$('#lzy-close-overlay').click(function(e) { lzyReload(); });\n";
-        } else {
-            $text = "<button id='lzy-close-overlay' class='lzy-close-overlay'>✕</button>\n".$text;
-            // set ESC to close overlay:
-            $jq .="\n$('body').keydown( function (e) { if (e.which == 27) { $('.lzy-overlay').hide(); } });\n".
-                "$('.lzy-overlay .lzy-close-overlay').click(function() { $('.lzy-overlay').hide(); });\n";
-//                "$('#lzy-close-overlay').click(function() { $('.lzy-overlay').hide(); });\n";
-        }
-
-        $onOpen = '';
-        if (isset($overlay['onOpen']) && $overlay['onOpen']) {
-            $onOpen = " {$overlay['onOpen']}( {$overlay['id']} );";
-        }
-
-        $style = '';
-        if ($overlay['trigger'] === 'none') {
-            $style = " style='display: none'";
-        } elseif ($overlay['trigger'] !== 'auto') {
-            $style = " style='display: none'";
-            $jq .= "$('{$overlay['trigger']}').click(function(){ $onOpen$('#{$overlay['id']}').show(); });";
-        }
-        $id = "id='{$overlay['id']}'";
-        $this->addJq($jq);
-        $this->addBody("<div $id class='lzy-overlay'$style>$text</div>\n");
         $this->removeModule('jqFiles', 'PAGE_SWITCHER');
         $this->overlay = false;
         return true;
