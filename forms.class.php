@@ -1499,7 +1499,9 @@ EOT;
     {
         $value = $this->currRec->value;
         if ($type === 'tel') {
-            $value = preg_replace('/\w/', '', $value);
+            if (preg_match('/\D/', $value)) {
+                $value = '';
+            }
         } elseif ($type === 'number') {
             $value = preg_replace('/[^\d\.\-+]/', '', $value);
         } elseif ($type === 'url') {
@@ -1522,8 +1524,7 @@ EOT;
             if (!preg_match('/\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}(:\d{2})?/', $value)) {
                 $value = '';
             }
-        }
-        if ($value) {
+        } if ($value) {
             $this->currRec->inpAttr .= " data-value='$value'";
             $value = $value ? " value='$value'" : '';
         }
