@@ -39,6 +39,7 @@ class Page
     private $bodyTagClasses = '';
     private $bodyTagInjections = '';
     private $bodyTopInjections = '';
+    private $bodyLateInjections = '';
     private $bodyEndInjections = '';
     private $message = '';
     private $popup = false;
@@ -323,6 +324,14 @@ class Page
 
 
     //-----------------------------------------------------------------------
+    public function addBodyLateInjections($str, $replace = false)
+    {
+        $this->addToProperty('bodyLateInjections', $str, $replace);
+    } // addBodyLateInjections
+
+
+
+    //-----------------------------------------------------------------------
     public function addBodyEndInjections($str, $replace = false)
     {
         $this->addToProperty('bodyEndInjections', $str, $replace);
@@ -596,7 +605,7 @@ class Page
             }
             $id = "id='{$overlay['id']}'";
             $this->addJq($jq);
-            $this->addBody("<div $id class='lzy-overlay'$style>$text</div>\n");
+            $this->addBodyLateInjections("<div $id class='lzy-overlay'$style>$text</div>\n");
         }
 
         $this->removeModule('jqFiles', 'PAGE_SWITCHER');
@@ -649,7 +658,7 @@ EOT;
             $debugMsg = compileMarkdownStr($debugMsg);
             $debugMsg = createDebugOutput($debugMsg);
             $debugMsg = "<div id='lzy-log-placeholder'></div>\n".$debugMsg;
-            $this->addBodyEndInjections($debugMsg);
+            $this->addBodyLateInjections($debugMsg);
             $this->debugMsg = false;
             return true;
         }
@@ -816,6 +825,7 @@ EOT;
         if ($rootJs.$this->assembledJs) {
             $assembledJs = "\t\t".preg_replace("/\n/", "\n\t\t", $this->assembledJs);
             $bodyEndInjections = <<<EOT
+{$this->bodyLateInjections}
     <script>
 $rootJs$assembledJs
     </script>
@@ -986,6 +996,7 @@ EOT;
             $modified |= $this->trans->supervisedTranslate($this, $this->assembledJs, $processShieldedElements);
             $modified |= $this->trans->supervisedTranslate($this, $this->assembledJq, $processShieldedElements);
             $modified |= $this->trans->supervisedTranslate($this, $this->bodyTopInjections, $processShieldedElements);
+            $modified |= $this->trans->supervisedTranslate($this, $this->bodyLateInjections, $processShieldedElements);
             $modified |= $this->trans->supervisedTranslate($this, $this->bodyEndInjections, $processShieldedElements);
 
             // pageSubstitution replaces everything, including template. I.e. no elements of original page shall remain
