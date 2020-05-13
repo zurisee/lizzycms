@@ -1018,14 +1018,14 @@ EOT;
         $folder = $this->config->path_pagesPath.resolvePath($folder);
 		$this->handleMissingFolder($folder);
 
-		$mdFiles = getDir($folder.'*.{md,txt}');
+		$mdFiles = getDir($folder.'*.{md,html,txt}');
         registerFileDateDependencies($mdFiles);
 
 		// Case: no .md file available, but page has sub-pages -> show first sub-page instead
 		if (!$mdFiles && isset($currRec[0])) {
 			$folder = $currRec[0]['folder'];
 			$this->siteStructure->currPageRec['folder'] = $folder;
-			$mdFiles = getDir($this->config->path_pagesPath.$folder.'*.{md,txt}');
+			$mdFiles = getDir($this->config->path_pagesPath.$folder.'*.{md,html,txt}');
             registerFileDateDependencies($mdFiles);
 		}
 		
@@ -1083,6 +1083,9 @@ EOT;
                 }
 
                 $md->parse($mdStr, $newPage);
+            } elseif ($ext === 'html') {   // it's a HTML file
+                $newPage->addContent("{{ include( '~/$f' ) }}\n");
+
             } elseif ($mdStr && $this->config->feature_renderTxtFiles) {   // it's a TXT file
                 $newPage->addContent("<div class='lzy-pre'>$mdStr\n</div>\n");
             } else {
