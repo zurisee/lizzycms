@@ -46,7 +46,7 @@ class Page
     private $popupInx = false;
     private $pageSubstitution = false;
     private $override = false;   // if set, will replace the page content
-    private $overlay = false;    // if set, will add an overlay while the original page gets fully rendered
+    private $overlay = [];    // if set, will add an overlay while the original page gets fully rendered
     private $debugMsg = false;
     private $redirect = false;
 
@@ -420,17 +420,8 @@ class Page
             }
         }
         $args['closable'] = isset($args['closable']) ? $args['closable'] : false;
-        if (!$this->overlay) {
-            $this->overlay = $args;
-
-        } else {
-            if (!isset($this->overlay[0])) {
-                $overlay = $this->overlay;
-                $this->overlay = [];
-                $this->overlay[0] = $overlay;
-            }
-            $this->overlay[] = $args;
-        }
+        $args['trigger'] = isset($args['trigger']) ? $args['trigger'] : 'auto';
+        $this->overlay[] = $args;
     } // addOverlay
 
 
@@ -546,12 +537,9 @@ class Page
         }
 
         if (is_string($this->overlay)) {
-            $overlays = ['text' => $this->overlay, 'mdCompile' => true, 'closable' => true, 'id' => 'lzy-overlay', 'trigger' => 'auto'];
+            $overlays[0] = ['text' => $this->overlay, 'mdCompile' => true, 'closable' => true, 'id' => 'lzy-overlay', 'trigger' => 'auto'];
         } else {
             $overlays = $this->overlay;
-        }
-        if (!isset($overlays[0])) {
-            $overlays = [ $overlays ];
         }
 
         foreach ($overlays as $overlay) {
@@ -1173,6 +1161,8 @@ EOT;
         }
 
         $debugInfo .= "<div id='lzy-log'></div>";
+        $debugInfo .= "<div id='lzy-php' style='margin-top: 2em;'>PHP-Version: ".phpversion()."</div>";
+
         $debugInfo = "\n<div id='debugInfo'><p><strong>DebugInfo:</strong></p>$debugInfo</div>\n";
         $debugInfo = str_replace('{', '&#123;', $debugInfo);
         return $debugInfo;
