@@ -727,6 +727,9 @@ class DataStorage2
     private function _readElementGroup( $key )
     {
         $data = $this->getData(true);
+        if (!$data) {
+            return null;
+        }
 
         // syntax variant 'd3,d31,d312'
         if (strpos($key, ',') !== false) {
