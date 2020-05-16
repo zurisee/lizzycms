@@ -34,6 +34,7 @@ class Page
     private $js = '';
     private $jqFiles = '';
     private $jq = '';
+    private $jqStart = '';
     private $jqEnd = '';
     private $autoAttrFiles = '';
     private $bodyTagClasses = '';
@@ -316,6 +317,9 @@ class Page
         if ($replace === 'append') {
             $this->addToProperty('jqEnd', $str);
 
+        } elseif ($replace === 'prepend') {
+            $this->addToProperty('jqStart', $str);
+
         } else {
             $this->addToProperty('jq', $str, $replace);
         }
@@ -545,7 +549,7 @@ class Page
         foreach ($overlays as $overlay) {
             $text = $jq = '';
             if (isset($overlay['contentFrom']) && $overlay['contentFrom']) {
-                $jq = "$('#{$overlay['id']}').append( $( '{$overlay['contentFrom']}' ).html() )\n";
+                $jq = "$('#{$overlay['id']}').append( $( '{$overlay['contentFrom']}' ).html() );\n$('{$overlay['contentFrom']}' ).remove();";
 
             } elseif (isset($overlay['fromFile']) && $overlay['fromFile']) {
                 $file = resolvePath($overlay['fromFile'], true);
@@ -592,7 +596,7 @@ class Page
                 $jq .= "$('{$overlay['trigger']}').click(function(){ $onOpen$('#{$overlay['id']}').show(); });";
             }
             $id = "id='{$overlay['id']}'";
-            $this->addJq($jq);
+            $this->addJq($jq, 'prepend');
             $this->addBodyLateInjections("<div $id class='lzy-overlay'$style>$text</div>\n");
         }
 
@@ -821,6 +825,9 @@ $bodyEndInjections
 EOT;
         }
 
+        if ($this->jqStart) {
+            $this->assembledJq = $this->jqStart . $this->assembledJq;
+        }
         if ($this->jqEnd) {
             $this->assembledJq .= $this->jqEnd;
         }
