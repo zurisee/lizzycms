@@ -82,6 +82,10 @@ function updateDOM(data) {
             console.log(targSel + ' -> ' + val);
         }
     }
+    var postCallback = $('.lzy-live-data').attr('data-live-post-update-callback');
+    if (typeof window[postCallback] === 'function') {
+        window[postCallback]( $(this) );
+    }
 } // updateDOM
 
 

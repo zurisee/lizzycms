@@ -92,6 +92,7 @@ class LiveData
         $this->mode = (isset($args['mode'])) ? $args['mode'] : false;
         $this->manual = (strpos($this->mode, 'manual') !== false);
         $this->callback = (isset($args['callback'])) ? $args['callback'] : false;
+        $this->postUpdateCallback = (isset($args['postUpdateCallback'])) ? $args['postUpdateCallback'] : false;
 
         if ($this->manual) {
             if (($this->dataSelector === false) || ($this->dataSelector === '')) {
@@ -178,13 +179,17 @@ class LiveData
         if ($this->callback) {
             $callback = " data-live-callback='$this->callback'";
         }
+        $postUpdateCallback = '';
+        if ($this->postUpdateCallback) {
+            $postUpdateCallback = " data-live-post-update-callback='$this->postUpdateCallback'";
+        }
 
         // normally, this macro renders visible output directly.
         // 'mode: manual' overrides this -> just renders infrastructure, you place the visible code manually into your page
         // e.g. <span id="my-id""></span>
         if ($this->manual) {
             $str = <<<EOT
-<span class='lzy-live-data disp-no' data-live-data-ref="$ticket"$dynamicArg$callback><!-- live-data manual mode --></span>
+<span class='lzy-live-data disp-no' data-live-data-ref="$ticket"$dynamicArg$callback$postUpdateCallback><!-- live-data manual mode --></span>
 EOT;
 
         } else {
@@ -198,7 +203,7 @@ EOT;
                     $selector = "id='$targetSelector' class='lzy-live-data'";
                 }
                 $str .= <<<EOT
-<span $selector data-live-data-ref="$ticket"$dynamicArg$callback>{$values[$i]}</span>
+<span $selector data-live-data-ref="$ticket"$dynamicArg$callback$postUpdateCallback>{$values[$i]}</span>
 
 EOT;
             }
