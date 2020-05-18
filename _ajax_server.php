@@ -181,7 +181,7 @@ class AjaxServer
             exit( $json );
         }
         foreach ($this->config["recDef"] as $key => $rec) {
-            $outData["#fld_".$rec[0]] = $dataRec[$key];
+            $outData["#fld_".$rec[0]] = isset($dataRec[$key]) ? $dataRec[$key] : '';
         }
         $json = json_encode(['res' => 'Ok', 'data' =>$outData]);
         exit( $json );
