@@ -1227,18 +1227,8 @@ EOT;
 			} catch(Exception $e) {
                 fatalError("Error in Yaml-Code: <pre>\n$yaml\n</pre>\n".$e->getMessage(), 'File: '.__FILE__.' Line: '.__LINE__);
 			}
-            if (isset($hdr['screenSizeBreakpoint'])) {  // special case: screenSizeBreakpoint -> propagate immediately
-                $this->config->feature_screenSizeBreakpoint = $hdr['screenSizeBreakpoint'];
-            }
-            if (isset($hdr['enableScssInPageFolder'])) {  // special case: enableScssInPageFolder -> propagate immediately
-                $this->config->feature_enableScssInPageFolder = $hdr['enableScssInPageFolder'];
-            }
-            if (isset($hdr['dataPath'])) {  // special case: dataPath -> propagate immediately
-                $_SESSION['lizzy']['dataPath'] = $hdr['dataPath'];
-                $GLOBALS['globalParams']['dataPath'] = $hdr['dataPath'];
-                unset($hdr['dataPath']);
-            }
 			if (is_array($hdr)) {
+			    $this->extractSettings($hdr);
 			    if ($hdr) {
                     $page->merge($hdr);
                     $frontmatter =  $this->page->get('frontmatter');
@@ -1256,6 +1246,26 @@ EOT;
 
 		return $str;
 	} // extractFrontmatter
+
+
+
+    private function extractSettings( &$hdr )
+    {
+        foreach ($this->config as $key => $value) {
+            if (strpos($key, 'feature') !== 0) {
+                continue;
+            }
+            $k = substr($key, 8);
+            if (isset($hdr[ $k ])) {
+                $this->config->$key = $hdr[ $k ];
+            }
+        }
+        if (isset($hdr['dataPath'])) {  // special case: dataPath -> propagate immediately
+            $_SESSION['lizzy']['dataPath'] = $hdr['dataPath'];
+            $GLOBALS['globalParams']['dataPath'] = $hdr['dataPath'];
+            unset($hdr['dataPath']);
+        }
+    } // extractSettings
 
 
 
