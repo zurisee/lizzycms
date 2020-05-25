@@ -906,6 +906,9 @@ a.lzy-button {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
+.lzy-page-link {
+	padding-left: 0;
+}
 .lzy-mail_link:before {
 	content:'Z';
 }
@@ -942,8 +945,6 @@ a.lzy-button {
 	font-size: 90%;
 	top: 0.18em;
 }
-
-
 
 /* === Forms =================================== */
 ::-webkit-input-placeholder { /* Chrome/Opera/Safari */
