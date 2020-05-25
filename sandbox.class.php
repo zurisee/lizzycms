@@ -72,12 +72,12 @@ class MySandbox
         $this->sandbox->define_func('preg_replace', function ($pattern, $replacement, $subject, $limit = -1, &$count = null) {
             if (is_array($pattern)) {
                 foreach ($pattern as $_pattern) {
-                    if (strtolower(substr($_pattern, -1)) == 'e') {
+                    if (strtolower(substr($_pattern, -1)) === 'e') {
                         throw new Exception("Can not use PREG_REPLACE_EVAL!");
                     }
                 }
             } else {
-                if (strtolower(substr($pattern, -1)) == 'e') {
+                if (strtolower(substr($pattern, -1)) === 'e') {
                     throw new Exception("Can not use PREG_REPLACE_EVAL!");
                 }
             }

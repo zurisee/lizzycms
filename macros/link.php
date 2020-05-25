@@ -22,7 +22,7 @@ $this->addMacro($macroName, function () {
     $this->getArg($macroName, 'body', 'In case of "mail": mail body to be preset.', '');
     $option = $this->getArg($macroName, 'option', '[download,abs,src,url] Modifies the output. "download" forces a download action. "abs" renders absolute paths/urls. "src" renders the source code. "url" renders the resulting address (without HTML wrapper)', '');
 
-    if ($href == 'help') {
+    if ($href === 'help') {
         return 'Supported link-types: mail, pdf, sms, tel, geo, gsm, slack';
     }
 

@@ -574,12 +574,12 @@ class Page
             if ($overlay['closable'] === 'reload') {
                 $text = "<button id='lzy-close-overlay' class='lzy-close-overlay'>✕</button>\n".$text;
                 // set ESC to close overlay:
-                $jq .="\n$('body').keydown( function (e) { if (e.which == 27) { $('.lzy-overlay').hide(); } });\n".
+                $jq .="\n$('body').keydown( function (e) { if (e.which === 27) { $('.lzy-overlay').hide(); } });\n".
                     "$('.lzy-overlay .lzy-close-overlay').click(function(e) { lzyReload(); });\n";
             } else {
                 $text = "<button id='lzy-close-overlay' class='lzy-close-overlay'>✕</button>\n".$text;
                 // set ESC to close overlay:
-                $jq .="\n$('body').keydown( function (e) { if (e.which == 27) { $('.lzy-overlay').hide(); } });\n".
+                $jq .="\n$('body').keydown( function (e) { if (e.which === 27) { $('.lzy-overlay').hide(); } });\n".
                     "$('.lzy-overlay .lzy-close-overlay').click(function() { $('.lzy-overlay').hide(); });\n";
             }
 
@@ -901,7 +901,7 @@ EOT;
                 $str = str_replace('JQUERY,', '', $str);
             }
 
-        } elseif ($this->config->feature_autoLoadJQuery != false) {
+        } elseif ($this->config->feature_autoLoadJQuery !== false) {
             $str = ','.$this->config->feature_jQueryModule . ','.$str;
         }
 

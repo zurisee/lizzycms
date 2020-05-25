@@ -54,7 +54,7 @@ function array2DKey(&$key)
 //-----------------------------------------------------------------------------
 function trunkPath($path, $n = 1)
 {
-    $path = ($path[strlen($path)-1] == '/') ? rtrim($path, '/') : dirname($path);
+    $path = ($path[strlen($path)-1] === '/') ? rtrim($path, '/') : dirname($path);
     return implode('/', explode('/', $path, -$n)).'/';
 } // trunkPath
 

@@ -25,7 +25,7 @@ $this->addMacro($macroName, function () {
 	$inx = $this->invocationCounter[$macroName] + 1;
 
     $galleryPath = $this->getArg($macroName, 'galleryPath', 'Path to folder where images reside.', '');
-    if ($galleryPath == 'help') {
+    if ($galleryPath === 'help') {
         return '';
     }
     $galleryPath = makePathDefaultToPage($galleryPath);

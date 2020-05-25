@@ -147,7 +147,7 @@ class HtmlTable
     private function renderHtmlTable()
     {
         $data = &$this->data;
-        $header = ($this->headers != false);
+        $header = ($this->headers !== false);
         $tableClass = trim('lzy-table '.$this->tableClass);
         $thead = '';
         $tbody = '';
@@ -158,7 +158,7 @@ class HtmlTable
         for ($r = 0; $r < $nRows; $r++) {
             $rowClass = str_replace('*', $r, $rowClass0);
 
-            if ($header && ($r == 0)) {
+            if ($header && ($r === 0)) {
                 $thead = "\t<thead>\n\t\t<tr class='$rowClass'>\n";
                 if ($this->showRowNumbers) {
                     $thead .= "\t\t\t<th class='lzy-table-row-nr'></th>\n";
@@ -210,7 +210,7 @@ EOT;
     private function renderDiv()
     {
         $data = &$this->data;
-        $header = ($this->headers != false);
+        $header = ($this->headers !== false);
         $body = '';
         $nRows = sizeof($data);
         $nCols = sizeof($data[0]);
@@ -224,7 +224,7 @@ EOT;
             if ($this->renderDivRows) {
                 $body .= "\t\t<div class='lzy-div-table-row'>\n";
             }
-            if ($header && ($r == 0)) {
+            if ($header && ($r === 0)) {
                 for ($c = 0; $c < $nCols; $c++) {
                     $cell = $this->getDataElem($r, $c, 'div', true);
                     $body .= "\t\t\t$cell\n";
@@ -486,7 +486,7 @@ EOT;
         $class = $class ? " @@$class@@" : '';
 
         foreach ($data as $r => $row) {
-            if (!$inclHead && ($r == 0)) {
+            if (!$inclHead && ($r === 0)) {
                 continue;
             }
             $data[$r][$c] .= $class;
@@ -501,7 +501,7 @@ EOT;
         $data = &$this->data;
 
         foreach ($data as $r => $row) {
-            if (!$inclHead && ($r == 0)) {
+            if (!$inclHead && ($r === 0)) {
                 continue;
             }
             if (is_array($content)) {
@@ -531,7 +531,7 @@ EOT;
 
         // iterate over rows and apply cell-instructions:
         foreach ($data as $r => $row) {
-            if (!$inclHead && ($r == 0)) {
+            if (!$inclHead && ($r === 0)) {
                 continue;
             }
             try {
@@ -561,9 +561,9 @@ EOT;
                 $cellRef0 = $cellRef;
                 $cellRef = trim(str_replace(['[[', ']]'], '', $cellRef));
                 $cellVal = false;
-                $ch1 = ($cellRef != '') ? $cellRef[0] : false;
+                $ch1 = ($cellRef !== '') ? $cellRef[0] : false;
 
-                if (($ch1 == '"') || ($ch1 == "'")) {
+                if (($ch1 === '"') || ($ch1 === "'")) {
                     $cellRef = preg_replace('/^ [\'"]? (.*) [\'"]? $/x', "$1", $cellRef);
                     if (($i = array_search($cellRef, $headers)) !== false) { // column name
                         $c = $i;
@@ -571,10 +571,10 @@ EOT;
                     } else {
                         $cellVal = $cellRef;    // literal content
                     }
-                } elseif (($cellRef == '') || ($cellRef === '0')) { // this cell
+                } elseif (($cellRef === '') || ($cellRef === '0')) { // this cell
                     $c = '$c';
 
-                } elseif (($ch1 == '-') || ($ch1 == '+')) { // relative index
+                } elseif (($ch1 === '-') || ($ch1 === '+')) { // relative index
                     $c = '$c + ' . $cellRef;
 
                 } elseif (($i = array_search($cellRef, $headers)) !== false) { // column name
@@ -894,13 +894,13 @@ EOT;
         if (!$value || is_array($value)) {
             return $value;
         }
-        if (is_string($value) && ($bracketsOptional && ($value[0] != '['))) {
+        if (is_string($value) && ($bracketsOptional && ($value[0] !== '['))) {
             $value = "[$value]";
         }
         if (is_string($value) && preg_match('/^(?<!\\\) \[ (?!\[) (.*) \] $/x', "$value", $m)) {
             $value = $m[1];
             $ch1 = isset($value[1]) ? $value[1] : '';
-            if (!($ch1 == ',') && !($ch1 == '|')) {
+            if (!($ch1 === ',') && !($ch1 === '|')) {
                 $ch1  = false;
                 $comma = substr_count($value, ',');
                 $bar = substr_count($value, '|');

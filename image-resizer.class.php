@@ -230,7 +230,7 @@ class ImageResizer
         $new = imagecreatetruecolor($width, $height);
         
         // preserve transparency
-        if ($type == "gif" or $type == "png") {
+        if ($type === "gif" or $type === "png") {
             imagecolortransparent($new, imagecolorallocatealpha($new, 0, 0, 0, 127));
             imagealphablending($new, false);
             imagesavealpha($new, true);

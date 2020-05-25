@@ -14,7 +14,7 @@ class UaDetector
         $this->browserName = $this->ua->getName();
         $this->browserVersion = $this->ua->getVersion();
         $this->osName = $this->ua->getPlatform();
-        if ($this->osName == 'iOS') {
+        if ($this->osName === 'iOS') {
             if (strpos($this->uaStr, 'iPhone') !== false) {
                 $this->osName .= '/iPhone';
             } elseif (strpos($this->uaStr, 'iPad') !== false) {
@@ -22,10 +22,10 @@ class UaDetector
             }
             $this->osVersion = $this->ua->getPlatformVersion(true);
 
-        } elseif (($this->osName == 'Macintosh') && (preg_match('/Mac OS X ([\w\.]*)/', $this->uaStr, $m))) {
+        } elseif (($this->osName === 'Macintosh') && (preg_match('/Mac OS X ([\w\.]*)/', $this->uaStr, $m))) {
             $this->osVersion = str_replace('_', '.',$m[1]);
 
-        } elseif (($this->osName == 'Windows') && (preg_match('/Windows\s+NT\s+([\w\.]*)/', $this->uaStr, $m))) {
+        } elseif (($this->osName === 'Windows') && (preg_match('/Windows\s+NT\s+([\w\.]*)/', $this->uaStr, $m))) {
             $this->osVersion = str_replace('_', '.',$m[1]);
 
         } else {
@@ -77,7 +77,7 @@ class UaDetector
 
     private function isOlderOSThan($product, $version)
     {
-        if ($this->osName != $product) {
+        if ($this->osName !== $product) {
             return false;
         }
         $thisVer = explode('.', $this->osVersion.'.0.0.0.0');

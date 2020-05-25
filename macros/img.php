@@ -14,7 +14,7 @@ $this->addMacro($macroName, function () {
 
     $src = $this->getArg($macroName, 'src', 'Name of image-file. By default Lizzy assumes to find it in the page folder. Use "&#126;/path-to-file" if the image is stored somewhere else.');
 
-    if ($src == 'help') {
+    if ($src === 'help') {
         $this->getArg($macroName, 'alt', 'Alt-text for image, i.e. a short text that describes the image.');
         $this->getArg($macroName, 'id', 'Id that will be applied to the image.');
         $this->getArg($macroName, 'class', 'Class-name that will be applied to the image.');

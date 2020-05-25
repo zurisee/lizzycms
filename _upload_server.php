@@ -18,7 +18,7 @@ session_start();
 
 $activityRestrectedTo = $_SESSION['lizzy']['isRestrictedPage'];
 $loggedInUser = $_SESSION['lizzy']['user'];
-if ($activityRestrectedTo && ($loggedInUser != $activityRestrectedTo)) {   // check whether upload initiated by logged in user
+if ($activityRestrectedTo && ($loggedInUser !== $activityRestrectedTo)) {   // check whether upload initiated by logged in user
     mylog("Upload-Server: unauthorized user tried to upload a file.");
     exit('Error: not logged in');
 }

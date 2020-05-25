@@ -81,7 +81,7 @@ function copyFolder( $source, $target ) {
     @mkdir( $target );
     $d = dir( $source );
     while ( FALSE !== ( $entry = $d->read() ) ) {
-        if ( $entry == '.' || $entry == '..' ) {
+        if ( $entry === '.' || $entry === '..' ) {
             continue;
         }
         $Entry = $source . '/' . $entry;

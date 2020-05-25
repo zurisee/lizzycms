@@ -61,7 +61,7 @@ class ImageGallery
         $imagesPath = '~/'.$this->galleryPath.$this->imagePath;
         $thumbsPath = '~/'.$this->galleryPath.$this->thumbsPath;
         
-        if (sizeof($this->sourceFiles) == 0) {
+        if (sizeof($this->sourceFiles) === 0) {
             return "\t<!-- Empty Album: no images found in '$imagesPath' -->\n";
         }
         $metaData = $this->getMetaData();

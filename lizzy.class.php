@@ -539,7 +539,7 @@ class Lizzy
         $requestedPath  = dir_name($requestUri);
         $ru = preg_replace('/\?.*/', '', $requestUri); // remove opt. '?arg'
         $requestedpageHttpPath = dir_name(substr($ru, strlen($appRoot)));
-        if ($requestedpageHttpPath == '.') {
+        if ($requestedpageHttpPath === '.') {
             $requestedpageHttpPath = '';
         }
 
@@ -1077,7 +1077,7 @@ EOT;
             if ($ext === 'md') {             // it's an MD file, convert it
 
                 $eop = strpos($mdStr, '__EOP__');           // check for 'end of page' marker, if found exclude all following (also following mdFiles)
-                if (($eop !== false) && ($mdStr[$eop-1] != '\\')) {
+                if (($eop !== false) && ($mdStr[$eop-1] !== '\\')) {
                     $mdStr = preg_replace('/__EOP__.*/sm', '', $mdStr);
                     $eop = true;
                 }
@@ -1141,7 +1141,7 @@ EOT;
 
 		$html = $page->get('content');
 		if ((isset($this->siteStructure->currPageRec['backTickVariables'])) &&
-			($this->siteStructure->currPageRec['backTickVariables'] == 'no')) {
+			($this->siteStructure->currPageRec['backTickVariables'] === 'no')) {
 			$html = str_replace('`', '&#96;', $html);
 			$html = $this->extractHtmlBody($html);
 		}
@@ -1216,7 +1216,7 @@ EOT;
 			$i++;
 			$l = $lines[$i];
 		}
-		if ($i == sizeof($lines)-1) {   // case '---' in first line, but no second instance
+		if ($i === sizeof($lines)-1) {   // case '---' in first line, but no second instance
 		    return $str;
         }
 
@@ -1272,7 +1272,7 @@ EOT;
 	//....................................................
     private function extractHtmlBody($html)
     {
-		if (((($p1 = strpos($html, "---")) !== false) && (($p1 == 0) || (substr($html,$p1-1,1) == "\n")))) {
+		if (((($p1 = strpos($html, "---")) !== false) && (($p1 === 0) || (substr($html,$p1-1,1) === "\n")))) {
 			$p1 = strpos($html, "\n", $p1+3);
 			if ($p2 = strpos($html, "\n---", $p1+3)) {
 				$head = substr($html, $p1+1, $p2-$p1-1);
@@ -1357,7 +1357,7 @@ EOT;
                 reloadAgent();
             }
 
-            if (getUrlArg('lang', true) == 'none') {                  // force language
+            if (getUrlArg('lang', true) === 'none') {                  // force language
                 $this->config->debug_showVariablesUnreplaced = true;
                 unset($_GET['lang']);
             }
@@ -2003,7 +2003,7 @@ EOT;
         } else {
             $systemTimeZone = $systemTimeZone[0];
         }
-        if ($systemTimeZone == 'CEST') {    // workaround: CEST not supported
+        if ($systemTimeZone === 'CEST') {    // workaround: CEST not supported
             $systemTimeZone = 'CET';
         }
         date_default_timezone_set($systemTimeZone);

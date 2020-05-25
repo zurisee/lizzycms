@@ -603,7 +603,7 @@ EOT;
 				lzyT0 = lzyT1;
 				$('#lzy-form-progressPercent$inx').text( progress + '%' );
 			}
-			if (progress == 100) {
+			if (progress === 100) {
 				$('#lzy-form-progressPercent$inx').text( progress + '%' );
 			}
 		},
@@ -1439,7 +1439,7 @@ EOT;
         e.preventDefault();
 		var $form = $(this).closest('form');
 		var $pw = $('.lzy-form-password', $form);
-        if ($pw.attr('type') == 'text') {
+        if ($pw.attr('type') === 'text') {
             $pw.attr('type', 'password');
             $('.lzy-form-login-form-icon', $form).attr('src', systemPath+'rsc/show.png');
         } else {

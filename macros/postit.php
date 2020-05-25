@@ -72,7 +72,7 @@ EOT;
 
 	if ($left) {
 		if (preg_match('/^(\-?)(\d+)(\w*)/', $left, $m)) {
-			if ($m[1] == '-') {
+			if ($m[1] === '-') {
                 $edge = 'right';
 			} else {
                 $edge = 'left';
@@ -87,7 +87,7 @@ EOT;
 		$style .= "$edge:$val;";
 	} elseif ($right) {
 		if (preg_match('/^(\-?)(\d+)(\w*)/', $right, $m)) {
-			if ($m[1] == '-') {
+			if ($m[1] === '-') {
 				$edge = 'left';
 			} else {
 				$edge = 'right';
@@ -142,7 +142,7 @@ function darken($hexColor, $decr)
     if (!$decr) {
         $decr = 1;
     }
-    if (strlen($m[1]) == 2) {
+    if (strlen($m[1]) === 2) {
         $decr *= 16;
     }
     $r = dechex(hexdec($m[1]) - $decr);

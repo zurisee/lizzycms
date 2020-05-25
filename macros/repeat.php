@@ -26,12 +26,12 @@ $this->addMacro($macroName, function ($args) {
     $mdCompile = $this->getArg($macroName, 'mdCompile', 'Runs the output through the MD-compiler', true);
     $execMacros = $this->getArg($macroName, 'execMacros', 'Runs the output through Variable/Macro translation');
 
-    if ($count == 'help') {
+    if ($count === 'help') {
         return '';
     }
 
     $c = $wrapperClass[0];
-    if (($c != '.') && ($c != '#')) {
+    if (($c !== '.') && ($c !== '#')) {
         $wrapperClass = '.'.$wrapperClass;
     }
 

@@ -513,7 +513,7 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
                 $input = "\t$indentStr  <input type='checkbox' class='lzy-checklist-input lzy-checklist-input-$cnt' name='cb_{$inx}_{$cnt}_$inpName'$checked disabled />";
                 $elem = "\t$indentStr  <span>$elem</span>";
 
-                if ($indent0 == $indent) {                  // same level -> add elem
+                if ($indent0 === $indent) {                  // same level -> add elem
                     $out .= "\t$indentStr<li class='lzy-checklist-elem $cls'>\n$input\n$elem\n\t$indentStr</li>\n";
                     $cnt++;
 
@@ -975,7 +975,7 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
 
     private function isCssProperty($str)
     {
-        $res = array_filter($this->cssAttrNames, function($attr) use ($str) {return (substr_compare($attr, $str, 0, strlen($attr)) == 0); });
+        $res = array_filter($this->cssAttrNames, function($attr) use ($str) {return (substr_compare($attr, $str, 0, strlen($attr)) === 0); });
         return (sizeof($res) > 0);
     }
 

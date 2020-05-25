@@ -372,7 +372,7 @@ class LizzyMarkdown
 			}
 			$p = 0;
 			while (($p = strpos($l, '$' . $sym, $p)) !== false) {
-				if (($p > 0) && (substr($l, $p-1, 1) == '\\') && (substr($l, $p-2, 1) !== '\\')) { // symbol shielded with \
+				if (($p > 0) && (substr($l, $p-1, 1) === '\\') && (substr($l, $p-2, 1) !== '\\')) { // symbol shielded with \
 					$l = substr($l, 0, $p - 1) . substr($l, $p);
 					continue;
 				}

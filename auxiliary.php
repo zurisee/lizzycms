@@ -570,7 +570,7 @@ function getHashCommentedHeader($fileName)
 	foreach ($lines as $i => $l) {
 		if (isset($l[0]) ) {
 		    $c1 = $l[0];
-		    if (($c1 != '#') && ($c1 != ' ')) {
+		    if (($c1 !== '#') && ($c1 !== ' ')) {
 		        break;
             }
 		}
@@ -866,7 +866,7 @@ function commonSubstr($str1, $str2, $delim = '')
     }
 
     foreach($a1 as $i => $p) {
-        if (!isset($a2[$i]) || ($p != $a2[$i])) {
+        if (!isset($a2[$i]) || ($p !== $a2[$i])) {
             break;
         }
         $res .= $p.$delim;
@@ -885,7 +885,7 @@ function makePathDefaultToPage($path)
 	}
 	$path = rtrim($path, '/').'/';
 	
-	if ((($ch1=$path[0]) != '/') && ($ch1 != '~') && ($ch1 != '.') && ($ch1 != '_')) {	//default to path local to page ???always ok?
+	if ((($ch1=$path[0]) !== '/') && ($ch1 !== '~') && ($ch1 !== '.') && ($ch1 !== '_')) {	//default to path local to page ???always ok?
 		$path = '~page/'.$path;
 	}
 	return $path;
@@ -897,7 +897,7 @@ function makePathDefaultToPage($path)
 function convertFsToHttpPath($path)
 {
     $pagesPath = $GLOBALS['globalParams']['pathToPage'];
-    if ($path && ($path[0] != '~') && (strpos($path, $pagesPath) === 0)) {
+    if ($path && ($path[0] !== '~') && (strpos($path, $pagesPath) === 0)) {
         $path = '~page/'.substr($path, strlen($pagesPath));
     }
     return $path;
@@ -928,7 +928,7 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
             $path = makePathRelativeToPage($path);
 
         } else {
-            if (($ch1 != '/') && ($ch1 != '~')) {    //default to path local to page ???always ok?
+            if (($ch1 !== '/') && ($ch1 !== '~')) {    //default to path local to page ???always ok?
                 $path = '~/' . $path;
             }
         }
@@ -1078,7 +1078,7 @@ function makePathRelativeToPage($path, $resolvePath = false)
         return $path;
     }
 
-    if ((($ch1=$path[0]) != '/') && ($ch1 != '~')) {	//default to path local to page
+    if ((($ch1=$path[0]) !== '/') && ($ch1 !== '~')) {	//default to path local to page
             $path = '~page/' . $path;
     }
     if ($resolvePath) {
@@ -1296,7 +1296,7 @@ function getUrlArg($tag, $stringMode = false, $unset = false)
 
         } else {    // boolean mode
             $arg = $_GET[$tag];
-            $out = (($arg !== 'false') && ($arg != '0') && ($arg != 'off') && ($arg != 'no'));
+            $out = (($arg !== 'false') && ($arg !== '0') && ($arg !== 'off') && ($arg !== 'no'));
         }
 		if ($unset) {
 			unset($_GET[$tag]);
@@ -1901,7 +1901,7 @@ function checkNesting($str, $pat1, $pat2)
 function findNextPattern($str, $pat, $p1 = 0)
 {
 	while (($p1 = strpos($str, $pat, $p1)) !== false) {
-		if (($p1 === 0) || (substr($str, $p1-1, 1) != '\\')) {
+		if (($p1 === 0) || (substr($str, $p1-1, 1) !== '\\')) {
 			break;
 		}
 		$p1 += strlen($pat);
@@ -1958,7 +1958,7 @@ function rrmdir($src)
     $src = rtrim($src, '/');
     $dir = opendir($src);
     while(false !== ( $file = readdir($dir)) ) {
-        if (( $file != '.' ) && ( $file != '..' )) {
+        if (( $file !== '.' ) && ( $file !== '..' )) {
             $full = $src . '/' . $file;
             if ( is_dir($full) ) {
                 rrmdir($full);

@@ -216,7 +216,7 @@ function evalOp($arg, $op, $val) {
     } elseif (($op === 'ge') || ($op === '>=')) {
         $res = ($val >= $arg);
     } elseif (($op === 'ne') || ($op === '!=')) {
-        $res = ($val != $arg);
+        $res = ($val !== $arg);
     }
     return $res;
 }

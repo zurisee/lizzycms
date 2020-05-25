@@ -24,11 +24,11 @@ $this->addMacro($macroName, function () {
     $width = $this->getArg($macroName, 'width', '(optional) width of display (height will be automatically derived', '');
     $class = $this->getArg($macroName, 'class', '(optional) class applied to DIV around the player', '');
 
-    if ($src == 'help') {
+    if ($src === 'help') {
         return '';
     }
 
-	if ($src == '') {
+	if ($src === '') {
 		return '';
 	}
 	if (!$class) {

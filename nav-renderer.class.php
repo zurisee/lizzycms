@@ -28,7 +28,7 @@ class NavRenderer
 
     public function render($options)
     {
-        if ($this->tree == false) {     // it's a "one-pager", don't render any navigation
+        if ($this->tree === false) {     // it's a "one-pager", don't render any navigation
             return '';
         }
         $type =  trim($options['type']);
@@ -65,35 +65,35 @@ class NavRenderer
         }
 //ToDo: check/rename 'editable'
         // no specific php-file, so render standard output of predefined types:
-        if ($type == 'top') {
+        if ($type === 'top') {
             $options['navClass'] = trim($options['navClass'].' lzy-nav-top-horizontal lzy-nav-indented lzy-nav-accordion lzy-nav-collapsed lzy-nav-animated lzy-nav-hoveropen lzy-encapsulated');
             $options['options'] .= " editable $primaryClass";
 
-        } elseif ($type == 'side') {
+        } elseif ($type === 'side') {
             $options['navClass'] = trim($options['navClass'].' lzy-nav-indented lzy-nav-collapsible lzy-nav-open-current lzy-nav-animated lzy-encapsulated');
             $options['options'] .= " editable $primaryClass";
 
-        } elseif ($type == 'side-accordion') {
+        } elseif ($type === 'side-accordion') {
             $options['navClass'] = trim($options['navClass'].' lzy-nav-indented lzy-nav-animated lzy-nav-accordion lzy-nav-collapsed lzy-nav-open-current lzy-encapsulated');
             $options['options'] .= " editable $primaryClass";
 
-        } elseif ($type == 'sitemap') {
+        } elseif ($type === 'sitemap') {
             $options['navClass'] = trim($options['navClass'].' lzy-nav-indented lzy-encapsulated');
 
-        } elseif ($type == 'sitemap-accordion') {
+        } elseif ($type === 'sitemap-accordion') {
             $options['navClass'] = trim($options['navClass'].'  lzy-nav-indented lzy-nav-animated lzy-nav-collapsed lzy-encapsulated');
 
-        } elseif ($type == 'breadcrumb') {
+        } elseif ($type === 'breadcrumb') {
             return $this->renderBreadcrumb($options);
 
-        } elseif ($type != '') {
+        } elseif ($type !== '') {
             return "<div style='background-color: yellow;'>Warning: <br />Nav-Renderer: unknown type '$type'.<br />Please chose one of [top, top-dropdown, side, sitemap-accordion, sitemap, breadcrumb, in-page]</div>";
 
         } else {
             $layout = $options['layout'] ? $options['layout'] : '';
-            if ($layout == 'vertical') {
+            if ($layout === 'vertical') {
                 $layoutClass = '';
-            } elseif ($layout == 'horizontal') { // horizontal
+            } elseif ($layout === 'horizontal') { // horizontal
                 $layoutClass = 'lzy-nav-top-horizontal';
             }
 
@@ -111,7 +111,7 @@ class NavRenderer
         if (strpos($options['options'],'showTransition') !== false) {
             $options['navClass'] = trim($options['navClass'].' lzy-nav-animated');
         }
-        if (($options['animation'] == 'slidedown') && (strpos($options['navClass'],'lzy-nav-hoveropen') === false)) {
+        if (($options['animation'] === 'slidedown') && (strpos($options['navClass'],'lzy-nav-hoveropen') === false)) {
             $options['navClass'] .= ' lzy-nav-hoveropen';
         }
         if (strpos($options['navClass'], 'lzy-nav-hoveropen') === false) {
@@ -230,7 +230,7 @@ EOT;
     {
         $level++;
         $indent = str_replace('\t', "\t", $indent);
-        if ($indent == '') {
+        if ($indent === '') {
             $indent = "\t";
         }
         $indent1 = "$indent   ";
@@ -256,7 +256,7 @@ EOT;
         if ($mutliLang = $this->config->site_multiLanguageSupport) {
             $currLang = $this->config->lang;
         }
-        if ($this->listTag == 'div') {
+        if ($this->listTag === 'div') {
             $li = 'div';
         } else {
             $li = 'li';
@@ -285,7 +285,7 @@ EOT;
             } else {
                 $path = (isset($elem['folder'])) ? $elem['folder'] : '';
             }
-            if ($path == '') {
+            if ($path === '') {
                 $path = $GLOBALS['globalParams']['host'].substr($GLOBALS['globalParams']['appRoot'],1);
 
             } elseif ((($r=strpos($path, '~/')) !== 0) && ($r !== false)) {
@@ -296,7 +296,7 @@ EOT;
                 // case path starts with '/', -> assume app-root, turn it into '~/':
                 $path = '~'.$path;
 
-            } elseif ((substr($path, 0, 2) != '~/') &&
+            } elseif ((substr($path, 0, 2) !== '~/') &&
                 (stripos($path, 'http') !== 0)) {
                 // case path starts without indicator, where it's rooted -> assume app-root:
                 $path = '~/'.$path;
@@ -436,7 +436,7 @@ EOT;
         $list = $this->lzy->siteStructure->getSiteList();
         $elems = [];
         while ($elem) {
-            if ($elem['inx'] == 0) {
+            if ($elem['inx'] === 0) {
                 break;
             }
             $elems[] = $elem;

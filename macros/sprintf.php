@@ -11,7 +11,7 @@ $this->addMacro($macroName, function () {
 	$this->invocationCounter[$macroName] = (!isset($this->invocationCounter[$macroName])) ? 0 : ($this->invocationCounter[$macroName]+1);
 
     $args = $this->getArgsArray($macroName);
-    if (isset($args[0]) && ($args[0] == 'help')) {
+    if (isset($args[0]) && ($args[0] === 'help')) {
         return '';
     }
 

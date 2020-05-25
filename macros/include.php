@@ -39,7 +39,7 @@ $this->addMacro($macroName, function () {
     }
 
     if ($file) {
-        if (strtolower(fileExt($file)) != 'md') {
+        if (strtolower(fileExt($file)) !== 'md') {
             $allMD = false;
         }
         $file = resolvePath($file, true);
@@ -53,7 +53,7 @@ $this->addMacro($macroName, function () {
 
     if ($contentFrom) {
         // . or # -> jq, else .load
-        if (($contentFrom[0] == '.') || ($contentFrom[0] == '#')) {     // selector for a local element
+        if (($contentFrom[0] === '.') || ($contentFrom[0] === '#')) {     // selector for a local element
             $jq = "$('#$id').html( $('$contentFrom').html() );\n";
             $this->page->addJq($jq);
             $str = "\t\t<div id='$id'></div>\n";
@@ -83,7 +83,7 @@ $this->addMacro($macroName, function () {
             rsort($files);
         }
         foreach ($files as $file) {
-            if (strtolower(fileExt($file)) != 'md') {
+            if (strtolower(fileExt($file)) !== 'md') {
                 $allMD = false;
             }
             $s = getFile($file, true);

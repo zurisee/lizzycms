@@ -38,18 +38,18 @@ $this->addMacro($macroName, function () {
     $this->getArg($macroName, 'smallScreenHeaderText', 'Text in small-screen-header, typically the app name', '');
     $this->getArg($macroName, 'inPageSizeThreshold', 'If less that this number of H-tags are found, the tag containing in-page nav is hidden', 0);
 
-    if ($type == 'help') {
+    if ($type === 'help') {
         return '';
     }
 
     $options = $this->getArgsArray($macroName);
 
     // -------- in-page
-    if (($type == 'in-page') || ($type == 'inpage')) {
+    if (($type === 'in-page') || ($type === 'inpage')) {
         return inPageNav($this->page, $options, $inx, $options["inPageSizeThreshold"]);
 
     // -------- small-screen-header
-    } elseif ($type == 'small-screen-header') {
+    } elseif ($type === 'small-screen-header') {
         return renderSmallScreenHeader($this, $options);
     }
 
@@ -105,7 +105,7 @@ function inPageNav($page, $options, $inx, $inPageSizeThreshold)
         $title = "<h1>$title</h1>";
     }
 
-    $listElemTag = ($listTag == 'div') ? 'div' : 'li';
+    $listElemTag = ($listTag === 'div') ? 'div' : 'li';
     renderInPageNav($page, $inx, $targetElem, $depth, $listElemTag, $inPageSizeThreshold);
 
     $out = "\t<nav class='lzy-in-page-nav' aria-label='{{ InPage TOC }}'>$title<$listTag id='lzy-in-page-nav$inx' class='lzy-in-page-nav'></$listTag></nav>\n";

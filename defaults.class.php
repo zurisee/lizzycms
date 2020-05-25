@@ -247,7 +247,7 @@ private $userConfigurableSettingsAndDefaults      = [
 
         // fix some values:
 
-        if ($this->path_logPath == '1/') {
+        if ($this->path_logPath === '1/') {
             $this->path_logPath = LOGS_PATH;
         }
 

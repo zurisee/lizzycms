@@ -139,7 +139,7 @@ class Transvar
                         $after = substr($str, $p2 + 2);
 
                         // remove spurious <p></p>:
-                        if ((substr($before, -3) == '<p>') && (substr($after, 0, 4) == '</p>')) {
+                        if ((substr($before, -3) === '<p>') && (substr($after, 0, 4) === '</p>')) {
                             $before = substr($before, 0, -3);
                             $after = substr($after, 4);
                         }
@@ -190,7 +190,7 @@ class Transvar
                 $val = "\n\n<!-- Lizzy Macro: $macro() -->\n$val\n<!-- /$macro() -->\n\n\n";   // mark its output
             }
 
-            if (trim($argStr) == 'help') {
+            if (trim($argStr) === 'help') {
                 if ($val2 = $this->getMacroHelp($macro)) {
                     $val = $val2.$val;
                 }
@@ -415,7 +415,7 @@ class Transvar
             foreach ($a as $f) {
                 $files = glob($f);
                 foreach ($files as $ff) {
-                    if (substr(basename($ff), 0, 1) == '#') {
+                    if (substr(basename($ff), 0, 1) === '#') {
                         continue;
                     }
                     $this->readTransvarsFromFile($ff, $markSource);
@@ -424,7 +424,7 @@ class Transvar
         } elseif (strpos($file, '*') !== false) {
             $files = glob($file);
             foreach ($files as $f) {
-                if (substr(basename($f), 0, 1) == '#') {
+                if (substr(basename($f), 0, 1) === '#') {
                     continue;
                 }
                 $this->readTransvarsFromFile($f, $markSource);
@@ -440,7 +440,7 @@ class Transvar
     //....................................................
     public function readTransvarsFromFile($file, $markSource = false)
     {
-        if ($file[0] == '~') {
+        if ($file[0] === '~') {
             $file = resolvePath($file);
         }
         if (!file_exists($file)) {
@@ -454,7 +454,7 @@ class Transvar
                 $markSource = true;
                 if ($this->config->debug_showVariablesUnreplaced) { // for debugging
                     array_walk($newVars, function (&$value, &$key, $file) {
-                        if ($key != 'page_title') {
+                        if ($key !== 'page_title') {
                             $value = "<span title='$file'>&#123;&#123; $key }}</span>";
                         }
                     }, $file);
@@ -537,7 +537,7 @@ class Transvar
         if (isset($this->transvars[$key])) {
             $entry = $this->transvars[$key];
 
-            if (($key[0] != '_') && (!in_array($key, $this->sysVariables))) {
+            if (($key[0] !== '_') && (!in_array($key, $this->sysVariables))) {
                 $this->usedVars['@:'.$key] = $entry;
             }
             if ($this->config->debug_monitorUnusedVariables && is_array($entry)) {
@@ -576,7 +576,7 @@ class Transvar
             }
 
         } else {
-            if ((strlen($key) > 0) && ($key[0] != '_') && (!in_array($key, $this->sysVariables))) {
+            if ((strlen($key) > 0) && ($key[0] !== '_') && (!in_array($key, $this->sysVariables))) {
                 $this->usedVars['_@:'.$key] = '';
             }
         }
@@ -849,7 +849,7 @@ EOT;
                 $rec = '';
                 $unused = false;
             }
-            if ((isset($line[0]) && ($line[0] != '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
+            if ((isset($line[0]) && ($line[0] !== '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
                 if (isset($this->transvars[$var]['uu'])) {
                     $unused = true;
                 }
@@ -896,7 +896,7 @@ EOT;
             if (preg_match('/^([^\#]*):\s*$/m', $line, $m)) {
                 $var = $m[1];
             }
-            if ((isset($line[0]) && ($line[0] != '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
+            if ((isset($line[0]) && ($line[0] !== '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
                 if (isset($this->transvars[$var]['uu'])) {
                     $out .= $line;
                 } else {
@@ -921,10 +921,10 @@ EOT;
     {
         $note = '';
         foreach($filenames as $file) {
-            if (substr($file, -1) == '*') {
+            if (substr($file, -1) === '*') {
                 $files2 = getDir($file);
                 foreach ($files2 as $f) {
-                    if (fileExt($f) == 'yaml') {
+                    if (fileExt($f) === 'yaml') {
                         $note .= $this->$fun($f);
                     }
                 }
@@ -967,11 +967,11 @@ EOT;
         $c1 = $var[0];
         if (strpos('#^!&', $c1) !== false) {    // modifier? #, ^, !, &
             $var = trim(substr($var, 1));
-            if ($c1 == '#') {
+            if ($c1 === '#') {
                 $this->commmented = true;
-            } elseif ($c1 == '!') {
+            } elseif ($c1 === '!') {
                 $this->dontCache = true;
-            } elseif ($c1 == '&') {
+            } elseif ($c1 === '&') {
                 $this->compileMd = true;
             } else {
                 $this->optional = true;

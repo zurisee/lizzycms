@@ -25,12 +25,12 @@ $this->addMacro($macroName, function () {
     $catchFocus = $this->getArg($macroName, 'catchFocus', '', '');
 
     $this->optionAddNoComment = true;
-    if (($text == 'help') || (!$text && !$contentFrom)) {
+    if (($text === 'help') || (!$text && !$contentFrom)) {
         return "\n<!-- TOOLTIPS modules loaded -->\n";
     }
 
     $ch1 = isset($contentFrom[0]) ? $contentFrom[0] : '';
-    if (($ch1 != '#') && ($ch1 != '.')) {
+    if (($ch1 !== '#') && ($ch1 !== '.')) {
         $contentFrom = '#'.$contentFrom;
     }
     $attr = '';
@@ -63,7 +63,7 @@ $this->addMacro($macroName, function () {
     }
 
     if ($icon) {
-        if (!$icon || ($icon == 'default')) {
+        if (!$icon || ($icon === 'default')) {
             $icon = '~sys/rsc/info.svg';
         }
         $text .= "<img src='$icon' class='lzy-tooltip-icon $iconClass' alt='' />";

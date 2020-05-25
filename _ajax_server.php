@@ -112,7 +112,7 @@ class AjaxServer
 
 		$this->remoteAddress = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : 'REMOTE_ADDR';
 		$this->userAgent = isset($_SESSION['lizzy']['userAgent']) ? $_SESSION['lizzy']['userAgent'] : $_SERVER["HTTP_USER_AGENT"];
-		$this->isLocalhost = (($this->remoteAddress == 'localhost') || (strpos($this->remoteAddress, '192.') === 0) || ($this->remoteAddress == '::1'));
+		$this->isLocalhost = (($this->remoteAddress === 'localhost') || (strpos($this->remoteAddress, '192.') === 0) || ($this->remoteAddress === '::1'));
 		$this->handleUrlArguments();
 		$this->config = [];
 	} // __construct
@@ -243,12 +243,12 @@ class AjaxServer
 	//---------------------------------------------------------------------------
 	private function saveData() {
         $rawData = $this->get_request_data('data');
-		if ($rawData == 'undefined') {
+		if ($rawData === 'undefined') {
             exit('failed#save-data');
         }
 		$data = json_decode($rawData, true);
 		$ticket = $this->get_request_data('ticket');
-		if ($ticket == 'undefined') {
+		if ($ticket === 'undefined') {
             exit('failed#save-data');
         }
 
@@ -279,7 +279,7 @@ class AjaxServer
             if (isset($_POST['lzy_filename'])) {
                 $filename = $_POST['lzy_filename'];
                 $approot = trunkPath($_SERVER['SCRIPT_FILENAME']);
-                if ($filename == 'sitemap') {
+                if ($filename === 'sitemap') {
                     $filename = $approot . 'config/sitemap.txt';
                 } else {
                     $filename = $approot . $filename;

@@ -360,13 +360,13 @@ class SiteStructure
 			} elseif ($level === $lastLevel) {
 				$rec = &$list[$i];
                 $rec['hasChildren'] = false;
-				if (substr($rec['folder'], 0, 2) != '~/') {
+				if (substr($rec['folder'], 0, 2) !== '~/') {
                     $rec['folder'] = $path.$rec['folder'];
 				} else {
                     $rec['folder'] = (strlen($rec['folder']) > 2) ? substr($rec['folder'], 2) : '';
 				}
 
-				if (substr($rec['actualFolder'], 0, 2) != '~/') {
+				if (substr($rec['actualFolder'], 0, 2) !== '~/') {
                     $rec['actualFolder'] = $path.$rec['actualFolder'];
 				} else {
                     $rec['actualFolder'] = (strlen($rec['actualFolder']) > 2) ? substr($rec['actualFolder'], 2) : '';

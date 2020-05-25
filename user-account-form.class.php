@@ -854,7 +854,7 @@ EOT;
 
     private function wrapTag($className, $str)
     {
-        if (($className == MSG) && isset($GLOBALS['globalParams']['auth-message'])) {
+        if (($className === MSG) && isset($GLOBALS['globalParams']['auth-message'])) {
             $str .= ' '.$GLOBALS['globalParams']['auth-message'];
         }
         if ($str) {

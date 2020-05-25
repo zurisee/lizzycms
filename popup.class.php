@@ -56,7 +56,7 @@ class PopupWidget
             $this->argStr = '';
 
             if (is_string($args)) {
-                if ($args == 'help') {
+                if ($args === 'help') {
                     $this->popups = [];
                     $this->page->addContent( $this->renderPopupHelp() );
                     $this->page->addJQ($jq);
@@ -115,7 +115,7 @@ EOT;
             $this->getArg('bgColor', '#000', 'color');
 
             if (isset($args[0])) {
-                if ($args[0] == 'help') {
+                if ($args[0] === 'help') {
                     $this->popups = [];
                     $this->page->addContent( $this->renderPopupHelp() );
                     $this->page->addJQ($jq);
@@ -126,7 +126,7 @@ EOT;
 
             $popupId = $this->contentFrom ? $this->contentFrom : "lzy-popup$popupInx";
             $c1 = $popupId[0];
-            if (($c1 == '#') || ($c1 == '.')) {
+            if (($c1 === '#') || ($c1 === '.')) {
                 $_popupId = $popupId;
                 $popupId = substr($popupId,1);
             } else {
@@ -158,10 +158,10 @@ EOT;
 
             // invocation:
             if ($this->triggerSource) {
-                if ($this->triggerEvent == "right-click") {
+                if ($this->triggerEvent === "right-click") {
                     $jq .= "$('{$this->triggerSource}').contextmenu(function(e) { e.preventDefault(); $('$_popupId').popup('show'); return false; }).css('user-select', 'none');\n";
 
-                } elseif ($this->triggerEvent == "hover") {
+                } elseif ($this->triggerEvent === "hover") {
                     $jq .= <<<EOT
 $('{$this->triggerSource}').on({
     mouseenter: function(event) {
@@ -247,7 +247,7 @@ EOT;
             if ($this->closeButton) {
                 $class .= ' lzy-close-button';
             }
-            if ($this->type != 'info') {
+            if ($this->type !== 'info') {
                 $class .=  ' lzy-popup-'.$this->type;
             }
             $class = "lzy-popup $class";
@@ -266,7 +266,7 @@ EOT;
             if ($this->argStr) {
                 $this->argStr = "\t\t".str_replace("\n", "\n\t\t", $this->argStr);
             }
-            if ($this->triggerEvent != "hover") {
+            if ($this->triggerEvent !== "hover") {
                 $jq .= <<<EOT
 
 $('$_popupId')
@@ -303,7 +303,7 @@ EOT;
             $value = $default;
         }
         $value1 = '';
-        if (($value != 'false') &&  ($value != 'true')) {
+        if (($value !== 'false') &&  ($value !== 'true')) {
             $value1 = "'$value'";
         } elseif (($value === 'false') || ($value === false)) {
             $value = false;

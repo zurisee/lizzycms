@@ -12,7 +12,7 @@ $this->addMacro($macroName, function () {
 
     $gap_size = $this->getArg($macroName, 'gap_size', 'Height of inserted space. Use any form allowed in CSS, e.g. 3em, 20px or 1cm');
 
-    if (trim($gap_size) == '') {
+    if (trim($gap_size) === '') {
 		$gap_size = '1em';
 	} elseif (preg_match('/^[\d\.]+$/', $gap_size)) {
 		$gap_size = ($gap_size / 2).'px';
