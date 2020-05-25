@@ -663,26 +663,16 @@ class LizzyMarkdown
         while ($p1) {
             $p1 = strpos($str, '>', $p1);
             $tmp = ltrim(substr($str, $p1+1));
-            if (preg_match('|\<p\> ([^\<]+) \</p\>(.*)|xms', $tmp, $m)) {
+            $p2 = strpos($tmp, "\n");
+            if ($p2) {
                 $head = substr($str, 0, $p1+1);
-                $literal = $m[1];
+                $literal = substr($tmp, 0, $p2);
                 $literal = base64_decode($literal);
-                $tail = $m[2];
+                $tail = substr($tmp, $p2);
                 $str = "$head\n$literal\n$tail";
-                $p2 = $p1 + strlen($literal);
-
-            } elseif (preg_match('|([^\<]+)(.*)|xms', $tmp, $m)) {
-                $head = substr($str, 0, $p1+1);
-                $literal = $m[1];
-                $literal = base64_decode($literal);
-                $tail = $m[2];
-                $str = "$head\n$literal\n\n\t\t$tail";
-                $p2 = $p1 + strlen($literal);
-
-            } else {
-                break;  // this case should be impossible
+                $p1 = $p1 + strlen($literal) + 2;
             }
-            $p1 = strpos($str, 'data-lzy-literal-block', $p2);
+            $p1 = strpos($str, 'data-lzy-literal-block', $p1);
         }
         return $str;
     } // handleLiteralBlock
