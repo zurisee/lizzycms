@@ -63,7 +63,7 @@ class NavRenderer
             $primaryClass = ' lzy-primary-nav';
             $options['ariaLabel'] = $options['ariaLabel']? $options['ariaLabel'] : '{{ Main Menu }}';
         }
-
+//ToDo: check/rename 'editable'
         // no specific php-file, so render standard output of predefined types:
         if ($type == 'top') {
             $options['navClass'] = trim($options['navClass'].' lzy-nav-top-horizontal lzy-nav-indented lzy-nav-accordion lzy-nav-collapsed lzy-nav-animated lzy-nav-hoveropen lzy-encapsulated');
