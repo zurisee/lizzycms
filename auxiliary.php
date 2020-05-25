@@ -135,20 +135,33 @@ function parseInlineBlockArguments($str, $returnElements = false)
     $elems = [];
     $str = preg_replace('|//.*|', '', $str);    // ignore //-style comments
 
-    if (preg_match('/(.*) !(\S+) (.*)/x', $str, $m)) {      // !arg
+    // special commands: !lang, !off, !literal, !md-compile
+    while (preg_match('/(.*) !(\S+) (.*)/x', $str, $m)) {      // !arg
         $str = $m[1].$m[3];
-        $arr = explode('=', strtolower($m[2]));
-        $k = isset($arr[0])? $arr[0] : '';
-        $v = isset($arr[1])? $arr[1] : '';
-        if ($k === 'lang') {
-            $attr .= " data-lang='$v'";
+        if (strpos($m[2], '=') !== false) {
+            $arr = explode('=', strtolower($m[2]));
+            $k = isset($arr[0]) ? strtolower($arr[0]) : '';
+            $v = isset($arr[1]) ? strtolower($arr[1]) : '';
+        } else {
+            $k = strtolower($m[2]);
+            $v = 'true';
+        }
+        if ($k === 'lang') {                                                  // lang
+            $attr .= " lang='$v' data-lang='$v'";
             $lang = $v;
 
-        } elseif ($k === 'off') {
+        } elseif ($k === 'off') {                                             // off
             $style = ' display:none;';
+
+        } elseif ($k === 'literal') {                                         // literal
+            $literal = $v? (stripos($v, 'true') !== false): true;
+
+        } elseif ($k === 'md-compile') {                                      // md-compile
+            $mdCompile = $v? (stripos($v, 'true') !== false): true;
         }
     }
 
+    // style instructions:  key:value
     if (preg_match_all('/([\w-]+\:\s*[^\s,]+)/x', $str, $m)) {  // style:arg
         foreach ($m[1] as $elem) {
             $s = str_replace([';', '"', "'"], '', $elem);
@@ -160,6 +173,7 @@ function parseInlineBlockArguments($str, $returnElements = false)
         $style = ' style="'. trim($style) .'"';
     }
 
+    // attribute instructions:  key=value
     if (preg_match_all('/( [\w-]+ \=\s* " .*? " ) /x', $str, $m)) {  // attr="arg "
         $elems = $m[1];
         $str = str_replace($m[1], '', $str);
@@ -182,6 +196,7 @@ function parseInlineBlockArguments($str, $returnElements = false)
             $arg = trim($arg, "'");
         }
 
+        // pseudo attributes (for compatibility): lang=, literal=true, md-compile=true
         if (strtolower($name) === 'lang') {                                  // pseudo-attr: 'lang'
             $lang = $arg;
         }
@@ -194,6 +209,7 @@ function parseInlineBlockArguments($str, $returnElements = false)
         }
     }
 
+    // #id:
     if (preg_match('/(.*) \#([\w-]+) (.*)/x', $str, $m)) {      // #id
         if ($m[2]) {    // found
             $str = $m[1].$m[3];
@@ -206,6 +222,7 @@ function parseInlineBlockArguments($str, $returnElements = false)
         }
     }
 
+    // .class:
     if (preg_match_all('/\.([\w-]+)/x', $str, $m)) {            // .class
         $class = implode(' ', $m[1]);
         foreach ($m[0] as $pat) {
@@ -218,12 +235,14 @@ function parseInlineBlockArguments($str, $returnElements = false)
         $class = ' class="'. trim($class) .'"';
     }
 
+    // "text":
     if (preg_match('/(["\']) ([^\1]*) \1 /x', $str, $m)) {            // text
         $text = $m[2];
         $str = str_replace($m[0], '', $str);
     }
 
-    if (preg_match('/\b(\w+)\b/', trim($str), $m)) {            // tag
+    // tag (i.e. no quotes):
+    if (preg_match('/\b(\w+)\b/', trim($str), $m)) {                // tag
         $tag = $m[1];
     }
 
