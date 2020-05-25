@@ -183,7 +183,7 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
             $text = $text ? "$tag $text": $tag;
         }
 
-            // now render the table:
+        // now render the table:
         $out = "\t<table id='$id' class='lzy-table $class'$style$attr><!-- asciiTable -->\n";
         if ($text) {
             $out .= "\t  <caption>$text</caption>\n";
@@ -245,9 +245,9 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
     // ---------------------------------------------------------------
     protected function identifyDivBlock($line, $lines, $current)
     {
-        // if a line starts with at least 3 colons it is identified as a fenced code block
-        if (strncmp($line, ':::', 3) === 0) {
-            return 'fencedCode';
+        // if a line starts with at least 3 colons it is identified as a div-block
+        if (preg_match('/^:{3,10}\s+\S/', $line)) {
+            return 'divBlock';
         }
         return false;
     } // identifyDivBlock
@@ -260,14 +260,21 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
             'content' => [],
             'tag' => 'div',
             'attributes' => '',
-            'literal' => false
+            'literal' => false,
+            'lzyBlockType' => true
         ];
         $line = rtrim($lines[$current]);
     
         // detect class or id and fence length (can be more than 3 backticks)
+        $depth = 0;
         if (preg_match('/(:{3,10})(.*)/',$line, $m)) {
             $fence = $m[1];
-            $rest = $m[2];
+            $rest = trim($m[2]);
+            if ($rest && ($rest[0] === '{')) {      // non-lzy block: e.g. "::: {#id}
+                $block['lzyBlockType'] = false;
+                $depth = 1;
+                $rest = trim(str_replace(['{','}'], '', $rest));
+            }
         } else {
             fatalError("Error in Markdown source line $current: $line", 'File: '.__FILE__.' Line: '.__LINE__);
         }
@@ -281,23 +288,29 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
         $block['literal'] = $literal;
         $block['mdcompile'] = $mdCompile;
 
-        // consume all lines until :::
+        // consume all lines until end-tag, i.e. :::...
         for($i = $current + 1, $count = count($lines); $i < $count; $i++) {
             $line = $lines[$i];
             if (preg_match('/^(:{3,10})\s*(.*)/', $line, $m)) { // it's a potential fence line
                 $fenceEndCandidate = $m[1];
                 $rest = $m[2];
-                if ($fence != $fenceEndCandidate) {
-                    $block['content'][] = $line;
-                } elseif ($rest != '') {
-                    $i--;
-                    break;
-                } else {
-                    break;
+                if ($fence === $fenceEndCandidate) {    // end tag we have to consider:
+                    if ($rest !== '') {    // case nested or consequitive block
+                        if ($block['lzyBlockType']) {   // lzy-style -> consecutive block starts:
+                            $i--;
+                            break;
+                        }
+                        $depth++;
+
+                    } else {                    // end of block
+                        $depth--;
+                        if ($depth < 1) {       // only in case of non-lzyBlocks we may have to skip nested end-tags:
+                            break;
+                        }
+                    }
                 }
-            } else {
-                $block['content'][] = $line;
             }
+            $block['content'][] = $line;
         }
         if ($block['literal']) {     // for shielding, we just encode the entire block to hide it from further processing
             $content = implode("\n", $block['content']);
