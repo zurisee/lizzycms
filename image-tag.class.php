@@ -114,8 +114,10 @@ class ImageTag
                 $w1 += $this->feature_SrcsetDefaultStepSize;
                 $h1 = round($w1 * $this->aspRatio);
             }
-            $this->srcset = " {$this->lateImgLoadingPrefix}srcset='" . substr($this->srcset, 0, -2) . "'";
-            $this->srcset .= ($this->w) ? " sizes='{$this->w}px'" : '';
+            if ($this->srcset) {
+                $this->srcset = " {$this->lateImgLoadingPrefix}srcset='" . substr($this->srcset, 0, -2) . "'";
+                $this->srcset .= ($this->w) ? " sizes='{$this->w}px'" : '';
+            }
 
         } elseif (is_string($this->srcset)) {
             $this->srcset = " {$this->lateImgLoadingPrefix}srcset='{$this->srcset}'";

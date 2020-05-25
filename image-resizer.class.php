@@ -165,6 +165,11 @@ class ImageResizer
         if(!$src || !file_exists($src)) {   // nothing to do:
             return false;
         }
+        $type = strtolower(substr(strrchr($src,"."),1));
+        if ($type === 'svg') {
+            copy($src, $dst);
+            return true;
+        }
 
         // if no width or height supplied, we need to optain it from the image:
         if (!$width || !$height) {
@@ -192,8 +197,7 @@ class ImageResizer
         if (!file_exists($dstPath)) {
             mkdir($dstPath, MKDIR_MASK2, true);
         }
-        $type = strtolower(substr(strrchr($src,"."),1));
-        if($type == 'jpeg') $type = 'jpg';
+        if ($type === 'jpeg') { $type = 'jpg'; }
         switch($type){
             case 'bmp': $img = imagecreatefromwbmp($src); break;
             case 'gif': $img = imagecreatefromgif($src); break;
