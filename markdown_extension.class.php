@@ -77,6 +77,114 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
 
 
     // ---------------------------------------------------------------
+    protected function identifyPandocTable($line, $lines, $current)
+    {
+        // asciiTable starts with '..\w'
+        if (preg_match('/^  \S/', $line) && preg_match('/^  ---/', $lines[$current + 1])) {
+            return true;
+        }
+        return false;
+    }
+
+
+
+    protected function consumePandocTable($lines, $current)
+    {
+        $block = [
+            'pandocTable',
+            'content' => [],
+            'caption' => false,
+            'args' => false
+        ];
+        for($i = $current, $count = count($lines); $i < $count; $i++) {
+            $line = $lines[$i];
+            if ((strncmp($line, '  ', 2) === 0) ||
+                (!$line && (strncmp($lines[$i+1], '  :', 3) === 0))) {
+                if (strncmp($line, '  :', 3) === 0) {
+                    $block['caption'] = trim(substr($line, 3));
+
+                } elseif ($line) {
+                    $block['content'][] = $line;
+                }
+            } else {
+                // stop consuming when code block is over
+                break;
+            }
+        }
+        return [$block, $i];
+    }
+
+
+
+    protected function renderPandocTable($block)
+    {
+        $table = [];
+
+        if (isset($this->mymd->trans->lzy->page->pandoctable)) {
+            $this->mymd->trans->lzy->page->pandoctable++;
+        } else {
+            $this->mymd->trans->lzy->page->pandoctable = 1;
+        }
+        $inx = $this->mymd->trans->lzy->page->pandoctable;
+
+        $tmp = explode(' ', ltrim($block['content'][1]));
+        $nCols = sizeof($tmp);
+        foreach ($tmp as $c => $elem) {
+            $tmp[$c] = strlen($elem);
+        }
+
+        for ($i = 0; $i < sizeof($block['content']); $i++) {
+            if ($i === 1) continue;
+            $line = ltrim($block['content'][$i]);
+            for ($c = 0; $c < $nCols; $c++) {
+                $table[$i][$c] = trim(substr($line, 0, $tmp[$c]));
+                $line = substr($line, $tmp[$c] + 1);
+            }
+        }
+        $nRows = sizeof($table);
+
+        // now render the table:
+        $out = "\t<table class='lzy-table lzy-table$inx'><!-- pandoctable -->\n";
+        if ($block['caption']) {
+            $out .= "\t  <caption>{$block['caption']}</caption>\n";
+        }
+
+        // render header as defined in first row, e.g. |# H1|H2
+        $out .= "\t  <thead>\n\t\t<tr>\n";
+        for ($col = 0; $col < $nCols; $col++) {
+            $cell = isset($table[0][$col]) ? $table[0][$col] : '';
+            $cell = str_replace('\\', '', $cell);
+            $out .= "\t\t\t<th class=\"th$col\">$cell</th>\n";
+        }
+        $out .= "\t\t</tr>\n\t  </thead>\n";
+
+        $out .= "\t  <tbody>\n";
+        for ($row = 2; $row <= $nRows; $row++) {
+            $out .= "\t\t<tr>\n";
+            for ($col = 0; $col < $nCols; $col++) {
+                $cell = isset($table[$row][$col]) ? $table[$row][$col] : '';
+                if ($cell) {
+                    $cell = compileMarkdownStr(trim($cell));
+                    $cell = trim($cell);
+                    if (preg_match('|^<p>(.*)</p>$|', $cell, $m)) {
+                        $cell = $m[1];
+                    }
+                }
+                $out .= "\t\t\t<td class='row".($row+1)." col".($col+1)."'>$cell</td>\n";
+            }
+            $out .= "\t\t</tr>\n";
+        }
+
+        $out .= "\t  </tbody>\n";
+        $out .= "\t</table><!-- /pandoctable -->\n";
+
+        return $out;
+    } // pandocTable
+
+
+
+
+    // ---------------------------------------------------------------
     protected function identifyAsciiTable($line, $lines, $current)
     {
         // asciiTable starts with '|==='
