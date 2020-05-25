@@ -279,7 +279,7 @@ class CreateLink
     private function renderRegularLink()
     {
         $this->class = trim("lzy-page-link $this->class");
-        $c1 = $this->href[0];
+//        $c1 = $this->href[0];
         $rec = false;
 
         $href = $this->href;
@@ -288,9 +288,14 @@ class CreateLink
         if (preg_match('/^ (.*?) ([#?].*)/x', $href, $m)) {
             $hash = $m[2];
             $href = $m[1];
+            if (!$href) {
+                $href = '~page/';
+            }
+            $this->href = $href;
         }
 
         // unqualified link -> check whether it corresponds to a page:
+        $c1 = $this->href[0];
         if ((stripos($href, 'http') !== 0) && ($c1 !== '~') && ($c1 !== '.')) {
             $rec = $this->lzy->siteStructure->findSiteElem($href, true, true);
             if ($rec) {
@@ -347,11 +352,12 @@ class CreateLink
 
         if ((stripos($this->option, 'noprint') === false) && (stripos($this->text, 'http') !== 0)) {
             $href = resolvePath($this->href, true, true, true);
-            $hiddenText = "<span class='print_only'> [$href]</span>";
+            $hiddenText = "<span class='print_only'> [$href$hash]</span>";
         } else {
             $hiddenText = '';
         }
 
+        $this->href .= $hash;
         return $hiddenText;
     } // renderRegularLink
 
