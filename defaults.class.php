@@ -51,6 +51,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'feature_enableScssInPageFolder'    => [false, 'If true, Lizzy checks for .scss files in page folder and compiles them to .css. Alternatively use "enableScssInPageFolder" in Frontmatter of specific pages.', 3 ],
     'feature_enableAllowOrigin'         => ['false', 'Set to "*" or explicitly to a domain to allow other websites to include pages of this site.', 1 ],
     'feature_enableIFrameResizing'      => [false, 'If true, includes js code required by other pages to iFrame-embed this site', 1 ],
+    'feature_externalLinksInNewWin'     => [false, 'If true, automatically makes links open in new window for all external links (i.e. starting with http).', 1 ],
     'feature_filterRequestString'       => [false, 'If true, permits only regular text in requests. Special characters will be discarded.', 3 ],
     'feature_frontmatterCssLocalToSection' => [false, 'If true, all CSS rules in Frontmatter will be modified to apply only to the current section (i.e. md-file content).', 2 ],
     'feature_jQueryModule'              => ['JQUERY', 'Specifies the jQuery Version to be loaded: one of [ JQUERY | JQUERY1 | JQUERY2 | JQUERY3 ], default is jQuery 3.x.', 3 ],
@@ -296,6 +297,14 @@ private $userConfigurableSettingsAndDefaults      = [
     public function getConfigInfo()
     {
         return $this->userConfigurableSettingsAndDefaults;
+    }
+
+
+
+    public function setConfigValue($key, $value) {
+        if (isset($this->$key)) {
+            $this->$key = $value;
+        }
     }
 
 

@@ -85,22 +85,17 @@ class CreateLink
             $this->target = ($this->target === 'newwin')? '_blank': $this->target;
             $this->target = " target='{$this->target}' rel='noopener noreferrer'";
             // see: https://developers.google.com/web/tools/lighthouse/audits/noopener
-            if (!$this->class) {
-                $this->class = 'lzy-newwin_link';
-            }
+            $this->class = trim("$this->class lzy-newwin_link");
 
         } elseif (stripos($this->type, 'extern') !== false) {
             $this->target = " target='_blank' rel='noopener noreferrer'";
-            $this->class = ($this->class) ? "{$this->class} lzy-external_link" : 'lzy-external_link';
             $this->title = $this->title ? $this->title : " title='{{ opens in new win }}'";
-            if (!$this->class) {
-                $this->class = 'lzy-external_link';
-            }
+            $this->class = trim("$this->class lzy-external_link");
         }
 
         if (stripos($this->option, 'download') !== false) {
             $this->target .= ' download target="_blank"';
-            $this->class .= ' lzy-download_link';
+            $this->class = trim("$this->class lzy-download_link");
             $this->href = resolvePath($this->href, true, true);
             $this->text = basename($this->text);
             $hiddenText = '';
@@ -128,7 +123,7 @@ class CreateLink
 
     private function renderMailLink()
     {
-        $this->class = "lzy-mail_link mail_link $this->class";
+        $this->class = trim("lzy-mail_link mail_link $this->class");
         $this->title = ($this->title) ? $this->title : " title='{{ opens mail app }}'";
         $this->body = str_replace(' ', '%20', $this->body);
         $this->body = str_replace(['\n', "\n"], '%0A', $this->body);
@@ -157,7 +152,7 @@ class CreateLink
 
     private function renderSmsLink()
     {
-        $this->class = "lzy-ssm_link $this->class";
+        $this->class = trim("lzy-sms_link $this->class");
         $this->title = ($this->title) ? $this->title : " title='{{ opens messaging app }}'";
         if (!$this->text) {
             $this->text = preg_replace('|^.*:/?/? ([^\?\&]*) .*|x', "$1", $this->href);
@@ -178,10 +173,10 @@ class CreateLink
     private function renderTelLink()
     {
         if (stripos($this->type, 'gsm') !== false) {
-            $this->class = "lzy-gsm_link $this->class";
+            $this->class = trim("lzy-gsm_link $this->class");
 
         } else {
-            $this->class = "lzy-tel_link $this->class";
+            $this->class = trim("lzy-tel_link $this->class");
         }
         $this->title = ($this->title) ? $this->title : " title='{{ opens telephone app }}'";
         if (!$this->text) {
@@ -199,7 +194,7 @@ class CreateLink
 
     private function renderGeoLink()
     {
-        $this->class = "lzy-geo_link $this->class";
+        $this->class = trim("lzy-geo_link $this->class");
         $this->title = ($this->title) ? $this->title : " title='{{ opens map app }}'";
         if (!$this->text) {
             $this->text = preg_replace('|^.*:/?/? ([^\?\&]*) .*|x', "$1", $this->href);
@@ -213,7 +208,7 @@ class CreateLink
 
     private function renderSlackLink()
     {
-        $this->class = "lzy-slack_link $this->class";
+        $this->class = trim("lzy-slack_link $this->class");
         $this->title = ($this->title) ? $this->title : " title='{{ opens slack app }}'";
         if (!$this->text) {
             $this->text = preg_replace('|^.*:/?/? ([^\?\&]*) .*|x', "$1", $this->href);
@@ -227,7 +222,7 @@ class CreateLink
 
     private function renderPdfLink()
     {
-        $this->class = "lzy-pdf_link pdf_link $this->class";
+        $this->class = trim("lzy-pdf_link pdf_link $this->class");
         $this->title = ($this->title) ? $this->title : " title='{{ opens PDF in new window }}'";
         if (!$this->text) {
             $this->text = preg_replace('|^[./~]* ([^\?\&]*) .*|x', "$1", $this->href);
@@ -283,7 +278,7 @@ class CreateLink
 
     private function renderRegularLink()
     {
-        $this->class = "lzy-page-link $this->class";
+        $this->class = trim("lzy-page-link $this->class");
         $c1 = $this->href[0];
         $rec = false;
 
@@ -323,6 +318,9 @@ class CreateLink
 
         // prepareHref:
         if ((stripos($this->type, 'intern') === false)) {
+            if (!$this->target && $this->lzy->config->feature_externalLinksInNewWin) {    // open
+                $this->target = 'newwin';
+            }
             list($elem1) = explode('/', preg_replace('|^https?://|i', '', $this->href));
             $ext = fileExt($elem1);
             if (stripos($this->href, 'http') !== 0) {   // no HTTP(S) in href:
@@ -336,17 +334,18 @@ class CreateLink
                 if ((stripos($this->option, 'abs') !== false)) {
                     $this->href = resolvePath($this->href, true, true, true);
                 }
+                $this->class = trim("lzy-local-link $this->class");
             }
         } else {
             if (stripos($this->href, 'http') !== 0) {  // still no HTTP(S) in href:
                 if ((stripos($this->option, 'abs') !== false)) {
                     $this->href = resolvePath($this->href, true, true, true);
                 }
+                $this->class = trim("lzy-local-link $this->class");
             }
         }
 
         if ((stripos($this->option, 'noprint') === false) && (stripos($this->text, 'http') !== 0)) {
-//        if ((stripos($this->option, 'noprint') === false) && (stripos($this->href, 'http') !== 0)) {
             $href = resolvePath($this->href, true, true, true);
             $hiddenText = "<span class='print_only'> [$href]</span>";
         } else {
