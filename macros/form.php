@@ -40,7 +40,7 @@ $this->addMacro($macroName, function () {
         'type' => 'form-head',
         'label' => $label,
         'mailto' => $mailto,
-        'mailfrom,' => $mailfrom,
+        'mailfrom' => $mailfrom,
         'file' => $file,
         'legend' => $legend,
     ]);
