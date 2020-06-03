@@ -485,12 +485,12 @@ class LizzyMarkdown
             $lines = explode("\n", $str);
             foreach ($lines as $i => $l) {
 
-                if (preg_match_all('/( (?<!["\']) [\w-\.]*?)\@([\w-\.]*?\.\w{2,6}) (?!["\'])/x', $l, $m)) {
+                if (preg_match_all('/( (?<!["\']) [\w\-.]*?)@([\w\-.]*?\.\w{2,6}) (?!["\'])/x', $l, $m)) {
                     foreach ($m[0] as $addr) {
                         $lines[$i] = str_replace($addr, "<a href='mailto:$addr'>$addr</a>", $l);
                     }
 
-                } elseif (preg_match_all('|( (?<!["\']) (https?://) ([\w-\.]+ \. [\w-]{1,6}) [\w-/]* ) (?!["\'])|xi', $l, $m)) {
+                } elseif (preg_match_all('|( (?<!["\']) (https?://) ([\w\-.]+ \. [\w\-]{1,6}) [\w\-/.]* ) (?!["\'])|xi', $l, $m)) {
                     foreach ($m[0] as $j => $tmp) {
                         if (!$m[2][$j]) {
                             $url = "https://" . $m[3][$j];
