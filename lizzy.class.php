@@ -18,6 +18,7 @@ define('LOGS_PATH',             '.#logs/');
 define('MACROS_PATH',           SYSTEM_PATH.'macros/');
 define('EXTENSIONS_PATH',       SYSTEM_PATH.'extensions/');
 define('USER_INIT_CODE_FILE',   USER_CODE_PATH.'init-code.php');
+define('USER_FINAL_CODE_FILE',  USER_CODE_PATH.'final-code.php');
 define('USER_VAR_DEF_FILE',     USER_CODE_PATH.'var-definitions.php');
 define('ICS_PATH',              'ics/'); // where .ics files are located
 
@@ -280,10 +281,10 @@ class Lizzy
             $html = $this->page->lateApplyMessag($html, $timerMsg);
 		}
 
+        $this->runUserFinalCode($html );   // optional custom code to operate on final HTML output
+
         return $html;
     } // render
-
-
 
 
 
@@ -953,6 +954,23 @@ EOT;
 
 
 	//....................................................
+    private function runUserFinalCode( &$html )
+    {
+        if (!$this->config->custom_permitUserInitCode) {
+            return;
+        }
+        if (file_exists($this->config->userFinalCodeFile)) {
+            require_once $this->config->userFinalCodeFile;
+            if (function_exists('finalCode')) {
+                $html = finalCode( $this, $html );
+            }
+        }
+    } // runUserFinalCode
+
+
+
+
+    //....................................................
 	private function getTemplate()
 	{
 		if ($tpl = $this->page->get('template')) {

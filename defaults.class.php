@@ -97,6 +97,7 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->systemHttpPath           = '~/'.SYSTEM_PATH;
 
         $this->userInitCodeFile         = USER_INIT_CODE_FILE;
+        $this->userFinalCodeFile        = USER_FINAL_CODE_FILE;
         $this->cachePath                = CACHE_PATH;
         $this->cacheFileName            = CACHE_FILENAME;
         $this->cachingActive            = false;
