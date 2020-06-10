@@ -129,9 +129,9 @@ function prepareImageWorkingCopy($reqImg0, $imgDefaultMaxDim = '1920x1024')
     // requested img may contain sizing code, e.g. xxx[300x200] -> ignored
     // returns path of working copy of image
     $reqImg = $reqImg0;
-    if (preg_match('/(.*) ( \[ [^\] ]* \] ) (\.\w{1,6}) $/x', $reqImg, $m)) {
+    if (preg_match('/(.*) ( \[ [^\] ]*? \] ) (\.\w{1,6}) $/x', $reqImg, $m)) {
         $reqImg = $m[1] . $m[3];
-    } elseif (preg_match('/(.*) ( \( [^\) ]* \) ) (\.\w{1,6}) $/x', $reqImg, $m)) {
+    } elseif (preg_match('/(.*) ( \( [^\) ]*? \) ) (\.\w{1,6}) $/x', $reqImg, $m)) {
         $reqImg = $m[1] . $m[3];
     }
 
@@ -139,7 +139,6 @@ function prepareImageWorkingCopy($reqImg0, $imgDefaultMaxDim = '1920x1024')
 
     $path = dir_name($reqImgFile);
     $fileName = base_name($reqImgFile);
-//    $fileName = str_replace(' ', '_', $fileName);
     if (!file_exists($reqImgFile)) {
         $reqImgFile = $path.'#'.$fileName;
     }
