@@ -142,6 +142,10 @@ InPage TOC:
     de: 'Inhaltsverzeichnins dieser Seite'
     _:  'Table of contents within this page'
 
+lzy-operate-menu:
+    de: 'Menü öffnen und schliessen'
+    _:  'Operate navigation menu'
+
 #--- Skip-Links
 Skip-links:
     de: 'Direktsprünge'
