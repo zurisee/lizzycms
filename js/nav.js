@@ -1,5 +1,5 @@
 var largeScreenClasses = '';
-
+var hoverTimer = [];
 
 (function ( $ ) {
     if (!$('#lzy').length) {
@@ -50,6 +50,10 @@ var largeScreenClasses = '';
    $('.lzy-nav-hoveropen .lzy-has-children').hover(
         function() {    // mouseover
             var $this = $(this);
+            var tInx = $('> li', $this.parent()).index($this);
+            if ((typeof hoverTimer[tInx] !== 'undefined') && (hoverTimer[tInx])) {
+                clearTimeout(hoverTimer[tInx]);
+            }
             if ($('body').hasClass('touch') || $this.hasClass('lzy-open')) {
                 return;
             }
@@ -66,6 +70,7 @@ var largeScreenClasses = '';
 
         function() {     // mouseout
            var $this = $(this);
+            var tInx = $('> li', $this.parent()).index($this);
             if ($('body').hasClass('touch')) {  // no-touch only
                 return;
             }
@@ -75,7 +80,7 @@ var largeScreenClasses = '';
            }
            if ($this.closest('.lzy-nav').hasClass('lzy-nav-top-horizontal')) {  // top-nav
                if ($this.hasClass('lzy-lvl1')) {
-                   setTimeout(function () {
+                   hoverTimer[tInx] = setTimeout(function () {
                        $this.removeClass('lzy-hover');
                        closeAccordion($this, true);
                    }, 400);
