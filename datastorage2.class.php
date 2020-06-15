@@ -1069,7 +1069,7 @@ class DataStorage2
     {
         $query = "SELECT \"recLocks\" FROM \"{$this->tableName}\"";
         $rawData = $this->lzyDb->querySingle($query, true);
-        return $this->jsonDecode($rawData['recLocks']);
+        return isset($rawData['recLocks']) ? $this->jsonDecode($rawData['recLocks']) : false;
     } // lowlevelReadMetaData
 
 
@@ -1079,7 +1079,7 @@ class DataStorage2
     {
         $query = "SELECT \"recLastUpdates\" FROM \"{$this->tableName}\"";
         $rawData = $this->lzyDb->querySingle($query, true);
-        return $this->jsonDecode($rawData['recLastUpdates']);
+        return isset($rawData['recLastUpdates']) ? $this->jsonDecode($rawData['recLastUpdates']): false;
     } // lowlevelReadRecLastUpdates
 
 
