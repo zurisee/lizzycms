@@ -91,7 +91,7 @@ figure a {
 .lzy-invisible,
 .invisible,
 .visually-hidden {
-    visibility: hidden;
+//    visibility: hidden;	//-> hides from ATs as well
 	position: absolute !important;
 	right: 200vw;
 	width: 1px;
