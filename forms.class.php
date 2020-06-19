@@ -227,7 +227,8 @@ class Forms
             $out = "<div class='lzy-form-legend'>{$args['legend']}</div>\n\n";
         }
 
-        $out .= "\t<form$id$_class$_method$_action>\n";
+        $out .= "\t<form$id$_class$_method$_action novalidate>\n";
+//        $out .= "\t<form$id$_class$_method$_action>\n";
 		$out .= "\t\t<input type='hidden' name='lizzy_form' value='{$this->currForm->formId}' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_time' name='lizzy_time' value='$time' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_next' value='{$this->currForm->next}' />\n";
@@ -238,11 +239,21 @@ class Forms
 //-------------------------------------------------------------
     private function renderTextInput()
     {
-        $out = $this->getLabel();
+        $out = '';
+        if ($this->currRec->errorMsg) {
+            $out .= "\t\t\t<div class='lzy-form-field-errorMsg' aria-hidden='true'>{$this->currRec->errorMsg}</div>\n";
+        }
+        $out .= $this->getLabel();
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $value = $this->getValueAttr();
+        $autocomplete = $this->currRec->autocomplete? " autocomplete='{$this->currRec->autocomplete}'": '';
+        $descrId = "{$this->currRec->fldPrefix}{$this->currRec->elemId}-descr";
+        $descrBy = $this->currRec->description? " aria-describedby='$descrId'": '';
 
-        $out .= "<input type='text' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        $out .= "<input type='text' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value$autocomplete$descrBy />\n";
+        if ($this->currRec->description) {
+            $out .= "\t\t\t<div id='$descrId' class='lzy-form-field-description'>{$this->currRec->description}</div>\n";
+        }
         return $out;
     } // renderTextInput
 
@@ -920,7 +931,10 @@ EOT;
 
         $rec->placeholder = (isset($args['placeholder'])) ? $args['placeholder'] : '';
         $rec->class = (isset($args['class'])) ? $args['class'] : '';
-        
+        $rec->autocomplete = (isset($args['autocomplete'])) ? $args['autocomplete'] : '';
+        $rec->description = (isset($args['description'])) ? $args['description'] : '';
+        $rec->errorMsg = (isset($args['errorMsg'])) ? $args['errorMsg'] : '';
+
         foreach (['min', 'max', 'pattern', 'placeholder'] as $attr) {
             if (isset($args[$attr])) {
                 if (($type === 'checkbox') || ($type === 'radio') || ($type === 'dropdown')) {
