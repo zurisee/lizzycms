@@ -68,6 +68,9 @@ lzy-form-email-notification-subject:
     de: 'Neue Daten empfangen'
     _:  'New data received'
 
+lzy-required-value-missing:
+    de: 'Bitte füllen Sie dieses Feld aus:'
+    _:  'Please fill in this entry field:'
 
 #--- File Upload --------------------------
 lzy-fileadmin-button-tooltip:
