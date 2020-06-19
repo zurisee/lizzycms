@@ -77,7 +77,7 @@ lzy-fileadmin-button-tooltip:
     de: 'Dateinverwaltung anzeigen'
     _:  'Show file manager'
 
-lzy-fileadmin-button-text:  // just in case the button should carry icon and text:
+lzy-fileadmin-button-text:  # just in case the button should carry icon and text:
     de: ''  
     _:  ''
 
