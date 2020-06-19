@@ -17,6 +17,7 @@ $this->addMacro($macroName, function () {
     $this->getArg($macroName, 'id', 'ID to be applied to the &lt;a> Tag.', '');
     $this->getArg($macroName, 'class', 'Class to be applied to the &lt;a> Tag.', '');
     $this->getArg($macroName, 'title', 'Title attribute to be applied to the &lt;a> Tag.', '');
+    $this->getArg($macroName, 'altText', 'Text appended to "text", but made visually hidden. I.e. text only available to assistive technologies.', '');
     $this->getArg($macroName, 'target', 'Target attribute to be applied to the &lt;a> Tag.', '');
     $this->getArg($macroName, 'subject', 'In case of "mail" and "sms": subject to be preset.', '');
     $this->getArg($macroName, 'body', 'In case of "mail": mail body to be preset.', '');
@@ -31,7 +32,7 @@ $this->addMacro($macroName, function () {
     }
 
 
-    $args = $this->getArgsArray($macroName, false, ['href','text','type','id','class','title','target','subject','body','option']);
+    $args = $this->getArgsArray($macroName, false, ['href','text','type','id','class','title','altText','target','subject','body','option']);
 
     $text = $args['text'];
 
@@ -49,6 +50,12 @@ $this->addMacro($macroName, function () {
             $text = str_replace($elem, $elem1, $text);
         }
         $args['text'] = $text;
+    }
+
+    // AT support: alternative text for assistive technologies:
+    if ($args['altText']) {
+        $args['text'] = "<span class='lzy-visible' aria-hidden='true'>{$args['text']}</span>";
+        $args['text'] .= "<span class='lzy-invisible'>{$args['altText']}</span>";
     }
 
     $args['relativeToPage'] = true;
