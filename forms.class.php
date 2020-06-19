@@ -823,21 +823,28 @@ EOT;
 			return;
 		}
 
+        if (isset($args['name'])) {
+            $name = str_replace(' ', '_', $args['name']);
+        } else {
+            $name = translateToIdentifier($label);
+        }
+
+        while (isset($this->currForm->formElements[$name])) {
+            if (preg_match('/(.*?)(\d+)$/', $name, $m)) {
+                $name = $m[1] . (intval($m[2]) + 1);
+            } else {
+                $name .= '1';
+            }
+        }
         if (isset($args['id'])) {
             $elemId = $args['id'];
         } else {
-            $elemId = translateToIdentifier($label);
-            while (isset($this->currForm->formElements[$elemId])) {
-                if (preg_match('/(.*?)(\d+)$/', $elemId, $m)) {
-                    $elemId = $m[1] . (intval($m[2]) + 1);
-                } else {
-                    $elemId .= '1';
-                }
-            }
+            $elemId = translateToIdentifier($name);
         }
 
-        $this->currForm->formElements[$elemId] = new FormElement;
-        $this->currRec = &$this->currForm->formElements[$elemId];
+
+        $this->currForm->formElements[$name] = new FormElement;
+        $this->currRec = &$this->currForm->formElements[$name];
         $rec = &$this->currRec;
 
 		$rec->type = $type;
@@ -849,11 +856,6 @@ EOT;
 		}
 		$rec->label = $label;
 
-		if (isset($args['name'])) {
-            $name = $args['name'];
-        } else {
-            $name = $elemId;
-        }
 		$this->name = $name;
 		$rec->name = $name;
         $_name = " name='$name'";
@@ -1329,6 +1331,9 @@ type:
 
 label (macro *form()*  only): 
 : Text which will be placed in front of the form.
+
+name:
+: Name applied to form element. If not supplied, name will be derived from label.
 
 class: 
 : Class applied to the form field.
