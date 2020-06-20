@@ -164,7 +164,7 @@ class Forms
 
         // error in supplied data? -> signal to user:
         $error = '';
-        $name = $this->currRec->elemId;
+        $name = $this->currRec->name;
         if (isset($this->errorDescr[$this->formId][$name])) {
             $error = $this->errorDescr[$this->formId][$name];
             $error = "\n\t\t<div class='lzy-form-error-msg'>$error</div>";
@@ -180,6 +180,15 @@ class Forms
         } else {
             $out = "\t\t$elem";
         }
+
+        // add comment regarding required fields:
+        if (($this->currRec->type === 'button') &&
+                (stripos($this->currForm->options, 'norequiredcomment') === false)) {
+            if (isset($this->currForm->hasRequiredFields) && $this->currForm->hasRequiredFields) {
+                $out = "\t<div class='lzy-form-required-comment'>{{ lzy-form-required-comment }}</div>\n$out";
+            }
+        }
+
         return $out;
     } // render
 
@@ -189,7 +198,11 @@ class Forms
 //-------------------------------------------------------------
     private function renderFormHead($args)
     {
-		$this->currForm->class = $class = (isset($args['class'])) ? $args['class'] : 'lzy-form';
+        $defaultClass = 'lzy-form';
+        if (stripos($this->currForm->options, 'nocolor') === false) {
+            $defaultClass .= ' lzy-form-colored';
+        }
+		$this->currForm->class = $class = (isset($args['class'])) ? $args['class'] : $defaultClass;
 		if ($this->currForm->formName) {
 		    $class .= ' '.str_replace('_', '-', translateToIdentifier($this->currForm->formName));
         }
@@ -226,9 +239,9 @@ class Forms
         if (isset($args['legend']) && $args['legend']) {
             $out = "<div class='lzy-form-legend'>{$args['legend']}</div>\n\n";
         }
+        $novalidate = (stripos($this->currForm->options, 'validate') === false) ? ' novalidate': '';
 
-        $out .= "\t<form$id$_class$_method$_action novalidate>\n";
-//        $out .= "\t<form$id$_class$_method$_action>\n";
+        $out .= "\t<form$id$_class$_method$_action$novalidate>\n";
 		$out .= "\t\t<input type='hidden' name='lizzy_form' value='{$this->currForm->formId}' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_time' name='lizzy_time' value='$time' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_next' value='{$this->currForm->next}' />\n";
@@ -309,7 +322,8 @@ EOT;
             $groupName = $this->currRec->name;
         }
         $checkedElem = isset($this->currRec->val)? $this->currRec->val: false;
-        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-radio-label'><div class='lzy-legend'><legend>{$this->currRec->label}</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
+        $label = $this->getLabel(false, false);
+        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-radio-label'><div class='lzy-legend'><legend>{$label}</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
         foreach($values as $i => $value) {
             $name = str_replace('!', '', $valueNames[$i]);
             $id = "lzy-radio_{$groupName}_$i";
@@ -345,7 +359,8 @@ EOT;
             $valueNames = $values;
         }
         $groupName = translateToIdentifier($this->currRec->label);
-        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-checkbox-label'><div class='lzy-legend'><legend>{$this->currRec->label}</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
+        $label = $this->getLabel(false, false);
+        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-checkbox-label'><div class='lzy-legend'><legend>$label</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
 
         foreach($values as $i => $value) {
             $preselectedValue = false;
@@ -663,6 +678,7 @@ EOT;
 		$label = $this->currRec->label;
 		$value = (isset($this->currRec->value) && $this->currRec->value) ? $this->currRec->value : $label;
 		$out = '';
+
         $class = " class='".trim($this->currRec->class .' lzy-form-button'). "'";
         $types = preg_split('/\s*[,|]\s*/', $value);
 
@@ -681,14 +697,20 @@ EOT;
 					$out .= "$indent<input type='submit' id='$id' value='$label' $class />\n";
 					
 				} elseif (stripos($type, 'reset') !== false) {
-					$out .= "$indent<input type='reset' id='$id' value='$label' $class />\n";
+				    if ($type[0] === '(') { // case: show reset button only if data has been supplied before:
+				        $type = 'reset';
+				        if ($this->userSuppliedData) {
+                            $out .= "$indent<input type='reset' id='$id' value='$label' $class />\n";
+                        }
+                    } else {
+                        $out .= "$indent<input type='reset' id='$id' value='$label' $class />\n";
+                    }
 					
 				} else {
 					$out .= "$indent<input type='button' id='$id' value='$label' $class />\n";
 				}
 			}
 		}
-
         return $out;
     } //renderButtons
 
@@ -722,11 +744,14 @@ EOT;
 
 
 //-------------------------------------------------------------
-    private function getLabel($id = false)
+    private function getLabel($id = false, $wrapOutput = true)
     {
 		$id = ($id) ? $id : "{$this->currRec->fldPrefix}{$this->currRec->elemId}";
         $requiredMarker =  $this->currRec->requiredMarker;
-		$label = $this->currRec->label;
+        if ($requiredMarker) {
+            $this->currForm->hasRequiredFields = true;
+        }
+        $label = $this->currRec->label;
 		if ($this->translateLabel) {
 		    $hasColon = (strpos($label, ':') !== false);
             $label = trim(str_replace([':', '*'], '', $label));
@@ -745,7 +770,11 @@ EOT;
             }
         }
 
-        return "\t\t\t<label for='$id'>$label</label>";
+        if ($wrapOutput) {
+            return "\t\t\t<label for='$id'>$label</label>";
+        } else {
+            return $label;
+        }
     } // getLabel
 
 
@@ -770,6 +799,9 @@ EOT;
 			if ($args['type'] !== 'form-head') {
                 fatalError("Error: syntax error \nor form field definition encountered without previous element of type 'form-head'", 'File: '.__FILE__.' Line: '.__LINE__);
 			}
+
+			// Note: some head arguments are evaluated in renderFormHeader()
+
             $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form'.($this->inx + 1);
 	        $formId = (isset($args['id'])) ? $args['id'] : false;
 	        if (!$formId) {
@@ -803,6 +835,10 @@ EOT;
                 $GLOBALS["globalParams"]['preventMultipleSubmit'] = true;
             }
             $this->currForm->replaceQuotes =  (isset($args['replaceQuotes']))? $args['replaceQuotes']: true;
+
+            // options or option:
+            $this->currForm->options = isset($args['options'])? $args['options']: (isset($args['option'])? $args['option']: '');
+            $this->currForm->options = str_replace('-', '', $this->currForm->options);
 
 		} else {
             $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form-Elem'.($this->inx + 1);
@@ -1016,7 +1052,7 @@ EOT;
 		} else {
 			$this->clearCache();
 			return false;
-            fatalError("ERROR: unexpected value received from browser", 'File: '.__FILE__.' Line: '.__LINE__);
+            //fatalError("ERROR: unexpected value received from browser", 'File: '.__FILE__.' Line: '.__LINE__);
 		}
 		$dataTime = (isset($userSuppliedData['lizzy_time'])) ? $userSuppliedData['lizzy_time'] : 0;
 		
@@ -1177,7 +1213,8 @@ EOT;
 	private function saveCsv($currFormDescr)
 	{
 		$formId = $currFormDescr->formId;
-		$errorDescr = false;
+		$errorDescr = $this->errorDescr;
+        $errors = (isset($errorDescr[$formId]) && $errorDescr[$formId]) ? sizeof($errorDescr[$formId]) : 0;
 
 		if (isset($currFormDescr->file) && $currFormDescr->file) {
 		    $fileName = resolvePath($currFormDescr->file, true);
@@ -1189,37 +1226,40 @@ EOT;
         $names = $currFormDescr->formData['names'];
         $labels = $currFormDescr->formData['labels'];
 
-        $db = new DataStorage2($fileName);
-        $data = $db->read();
+        if (!$errors) {
+            $db = new DataStorage2($fileName);
+            $data = $db->read();
 
-        if (!$data) {   // no data yet -> prepend header row containing labels:
-            $data = [];
-            $j = 0;
-            foreach($labels as $l => $label) {
-                $label = html_entity_decode($label);
-                if (is_array($label)) { // checkbox returns array of values
-                    $name = $names[$l];
-                    $splitOutput = (isset($currFormDescr->formElements[$name]->splitOutput))? $currFormDescr->formElements[$name]->splitOutput: false ;
-                    if (!$splitOutput) {
-                        $data[0][$j++] = $label[0];
-                    } else {
-                        for ($i=1;$i<sizeof($label); $i++) {
-                            $data[0][$j++] = $label[$i];
+            if (!$data) {   // no data yet -> prepend header row containing labels:
+                $data = [];
+                $j = 0;
+                foreach ($labels as $l => $label) {
+                    if (is_array($label)) { // checkbox returns array of values
+                        $name = $names[$l];
+                        $splitOutput = (isset($currFormDescr->formElements[$name]->splitOutput)) ? $currFormDescr->formElements[$name]->splitOutput : false;
+                        if (!$splitOutput) {
+                            $data[0][$j++] = $label[0];
+                        } else {
+                            for ($i = 1; $i < sizeof($label); $i++) {
+                                $data[0][$j++] = html_entity_decode($label[$i]);
+                            }
                         }
-                    }
 
-                } else {        // normal value
-                    $label = trim($label, ':');
-                    $data[0][$j++] = $label;
+                    } else {        // normal value
+                        $label = html_entity_decode($label);
+                        $label = trim($label, ':');
+                        $data[0][$j++] = $label;
+                    }
                 }
+                $data[0][$j] = 'timestamp';
             }
-            $data[0][$j] = 'timestamp';
+        } else {
+            $data = [];
         }
 
         $r = sizeof($data);
         $j = 0;
         $formElements = &$currFormDescr->formElements;
-        $errors = 0;
         foreach($names as $i => $name) {
             $value = (isset($userSuppliedData[$name])) ? $userSuppliedData[$name] : '';
             if (@$currFormDescr->formElements[$name]->type === 'bypassed') {

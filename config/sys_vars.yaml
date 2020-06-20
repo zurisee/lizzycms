@@ -61,8 +61,8 @@ Continue_:
     en: Continue...
 
 lzy-combined-required-value-missing:
-    de: 'Mindestens eines dieser Felder muss eingegeben werden:'
-    _:  'At least one of these fields must be filled in:'
+    de: 'Bitte mindestens eines dieser Felder ausfüllen:'
+    _:  'Please fill in at least one of these fields:'
 
 lzy-form-email-notification-subject:
     de: 'Neue Daten empfangen'
@@ -71,6 +71,12 @@ lzy-form-email-notification-subject:
 lzy-required-value-missing:
     de: 'Bitte füllen Sie dieses Feld aus:'
     _:  'Please fill in this entry field:'
+
+lzy-form-required-comment:
+    de: 'Mit <span class="lzy-form-required-marker">*</span> bezeichnete Felder sind Pflichtfelder.'
+    _:  'Fields marked by <span class="lzy-form-required-marker">*</span> are mandatory.'
+
+
 
 #--- File Upload --------------------------
 lzy-fileadmin-button-tooltip:
