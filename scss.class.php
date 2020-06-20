@@ -177,6 +177,8 @@ class SCssCompiler
     {
         if (!$this->scss) {
             $this->scss = new Compiler;
+            //$this->scss->setLineNumberStyle(Compiler::LINE_COMMENTS);
+            // see: https://scssphp.github.io/scssphp/docs/ -> Source Line Debugging
         }
         $includeFile = true;
         $fname = basename($file, '.scss');
