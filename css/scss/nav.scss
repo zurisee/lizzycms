@@ -335,6 +335,10 @@ $xCorr: 1em;
     a {
         font-size: var(--lzy-mobile-nav-font-size, $mobile-nav-font-size);
         color: var(--lzy-mobile-nav-txt-color, $mobile-nav-txt-color);
+        position: relative;
+        .lzy-nav-arrow {
+            position: absolute;
+        }
     }
     .lzy-nav-title {
         padding-left: 2em;
@@ -343,51 +347,70 @@ $xCorr: 1em;
     .lzy-lvl1 {
         > a {
             padding-left: 2em;
-            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + #{$mxCorr});
+//            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + #{$mxCorr});
+            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) );
+            .lzy-nav-arrow {
+                left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) - 1em );
+            }
         }
-        &.lzy-has-children > a {
-            padding-left: 1em;    // for IE
-            padding-left: var(--lzy-mobile-nav-first-indent, $mobile-nav-first-indent);
-        }
+//        &.lzy-has-children > a {
+//            padding-left: 1em;    // for IE
+//            padding-left: var(--lzy-mobile-nav-first-indent, $mobile-nav-first-indent);
+//        }
     }
     .lzy-lvl2 {
         > a {
-            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
-        }
-        &.lzy-has-children > a {
+//            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
+//        }
+//        &.lzy-has-children > a {
             padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+            .lzy-nav-arrow {
+                left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+            }
         }
     }
     .lzy-lvl3 {
         > a {
-            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 2 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
-        }
-        &.lzy-has-children > a {
+//            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 2 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
+//        }
+//        &.lzy-has-children > a {
             padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 2 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+            .lzy-nav-arrow {
+                left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 2 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+            }
         }
     }
     .lzy-lvl4 {
         > a {
-            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 3 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
-        }
-        &.lzy-has-children > a {
+//            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 3 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
+//        }
+//        &.lzy-has-children > a {
             padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 3 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+            .lzy-nav-arrow {
+                left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 3 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+            }
         }
     }
     .lzy-lvl5 {
         > a {
-            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 4 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
-        }
-        &.lzy-has-children > a {
+//            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 4 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
+//        }
+//        &.lzy-has-children > a {
             padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 4 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+            .lzy-nav-arrow {
+                left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 4 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+            }
         }
     }
     .lzy-lvl6 {
         > a {
-            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
-        }
-        &.lzy-has-children > a {
+//            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
+//        }
+//        &.lzy-has-children > a {
             padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+            .lzy-nav-arrow {
+                left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+            }
         }
     }
 
@@ -447,8 +470,8 @@ $xCorr: 1em;
 
 
 #lzy .lzy-nav:not(.lzy-nav-top-horizontal) .lzy-nav-arrow {
-    float: left;
-    margin-right: 0.2em;
+//    float: left;
+//    margin-right: 0.2em;
 }
 
 // horizontal nav:
