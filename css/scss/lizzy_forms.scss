@@ -310,13 +310,13 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
             appearance: none;
             display: inline-block;
             position: relative;
-            background-color: #f1f1f1;
-            color: #666;
+//            background-color: #f1f1f1;
+//            color: #666;
             font-size: inherit;
             height: 1em;
             width: 1em;
             border: 0;
-            box-shadow: inset 0 0 0 1px #bbb;
+//            box-shadow: inset 0 0 0 1px #bbb;
             cursor: pointer;
             margin-top: -1px;
             margin-right: 0.65em;
@@ -415,12 +415,57 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
 } // lzy-form
 
 
-.lzy-form-error-msg {
-    padding: 3px 0.5em;
-    color: red;
+
+/* === Color ========================================== */
+.lzy-form-colored {
+    .lzy-form-error-msg {
+        padding: 3px 0.5em;
+        color: red;
+    }
+    .lzy-form-error {
+        box-shadow: 0 0 10px red;
+        padding: 5px !important;
+    }
+
+    .lzy-form-error textarea,
+    .lzy-form-error input {
+        box-shadow: inset 0 0 3px red;
+    }
+    input {
+        background-color: #f1f1f1;
+        color: #666;
+        box-shadow: inset 0 0 0 1px #bbb;
+    }
 }
-.lzy-form-error input {
-    box-shadow: inset 0 0 3px red;
+
+
+
+/* === required field comment ========================= */
+.lzy-form-required-comment {
+    margin-bottom: 1em;
+}
+.lzy-form-colored {
+    .lzy-form-required-marker {
+        color: var(--lzy-form-required-marker-color, orange);
+    }
+
+    .lzy-form-combined-required-marker,
+    .lzy-form-elem-comment sup {
+        color: var(--lzy-combined-required-marker-color, blue);
+    }
+}
+.lzy-large-screen .lzy-form-elem-comment {
+    margin-left: var(--lzy-label-width, 6em);
+}
+.lzy-form-elem-comment {
+    margin-top: 0.6em;
+    display: block;
+    font-style: italic;
+    color: gray;
+}
+.lzy-form-error-msg {
+//    margin-left: var(--lzy-label-width, 6em);
+    padding: 5px 0 !important;
 }
 
 
