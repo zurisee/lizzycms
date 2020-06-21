@@ -91,7 +91,7 @@ figure a {
 .lzy-invisible,
 .invisible,
 .visually-hidden {
-//    visibility: hidden;	//-> hides from ATs as well
+	// visibility: hidden;	//-> hides from ATs as well
 	position: absolute !important;
 	right: 200vw;
 	width: 1px;
@@ -221,7 +221,6 @@ figure a {
 }
 
 /* === Icons ============================== */
-//.lzy-user-logged-in .lzy-footer {
 .lzy-footer {
 	.lzy-icon-edit,
 	.lzy-icon-settings,
@@ -371,7 +370,6 @@ figure a {
 .dl-flex dl {
 	display: block;
 	display: var(--flex);
-	//display: flex;
 	flex-flow: row;
 	flex-wrap: wrap;
 	overflow: visible;
@@ -571,10 +569,6 @@ pre {
 }
 
 
-//.login-form-icon {
-//    height: 14pt;
-//    /* width: 24px; */
-//}
 .lzy-login-form .lzy-form-show-password input {
     display: none;
 }
@@ -934,7 +928,6 @@ button {
 a.lzy-button:visited,
 .lzy-button a,
 a.lzy-button {
-//	border-bottom: none;
 	color: black;
 }
 #lzy .lzy-encapsulated {
@@ -942,7 +935,6 @@ a.lzy-button {
 	a.lzy-button:visited,
 	.lzy-button a,
 	a.lzy-button {
-//		border-bottom: none;
 		color: black;
 	}
 }
