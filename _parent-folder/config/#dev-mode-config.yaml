@@ -1,0 +1,10 @@
+# Dev Mode Config Options
+#========================
+
+admin_autoAdminOnLocalhost: true
+debug_compileScssWithLineNumbers: true
+#debug_forceBrowserCacheUpdate: true
+debug_errorLogging: true
+
+#my_option: true       # custom options available to user code
+

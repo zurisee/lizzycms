@@ -1,0 +1,21 @@
+ -
+    time: '****-**-** 08:00'                            # each '*' will be replaced with value of current time
+#    time: 'We 08:00'                                   # alternative: specify a day of week
+    from: '2020-06-01 00:00'                            # optional
+    till: '2020-07-23 00:00'                            # optional
+    do: scheduled-task-sample                           # script to run -> 'code/@<do>.php'
+    loadLizzy: true
+    args:                                               # -> arguments supplied to script 'do'
+        subject: '[{{ site_title }}] Test-Notification' # example applying variable
+        msg: 'Current state of enrollment: \n\n'        #
+        to: 'name@domain.net'                           # -> see messenger.class for further options
+        dataFile: pages/home/enroll.yaml                # example here: compile summary of enrollments
+-
+    time: 'We 08:00'
+    do:   scheduled-task-sample
+    loadLizzy: true
+    args:
+        msg: 'Hi there'
+        subject: 'My Notification'
+        to: 'slack:slack'                               # requires config/slack.webhook
+        from: 'slack:slack, telegram:lizzy, email:lizzy@domain.net'

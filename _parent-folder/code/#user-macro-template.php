@@ -43,8 +43,8 @@ $macroName = basename(__FILE__, '.php');    // macro name normally the same as t
 
 
 $this->addMacro($macroName, function () {
-    // the actual macro code follows here.
-    // it will be executed for each invocation of this macro within the current page:
+	// the actual macro code follows here.
+	// it will be executed for each invocation of this macro within the current page:
 
 	$macroName = basename(__FILE__, '.php');
 	$this->invocationCounter[$macroName] = (!isset($this->invocationCounter[$macroName])) ? 0 : ($this->invocationCounter[$macroName]+1);
@@ -54,22 +54,22 @@ $this->addMacro($macroName, function () {
 	$sys = $this->config->systemPath;
 
 	// how to get access to macro arguments:
-    $arg1 = $this->getArg($macroName, 'argName1', 'Help-text', 'default value');
-    $arg2 = $this->getArg($macroName, 'argName2', 'Help-text', 'default value');
+	$arg1 = $this->getArg($macroName, 'argName1', 'Help-text', 'default value');
+	$arg2 = $this->getArg($macroName, 'argName2', 'Help-text', 'default value');
 
-    // alternatively, get all arguments at once as an array:
-    $args = $this->getArgsArray($macroName);
+	// alternatively, get all arguments at once as an array:
+	$args = $this->getArgsArray($macroName);
 
 
-    // how to manipulate page-related objects, e.g.:
-    // $this->page->addOverlay('');
+	// how to manipulate page-related objects, e.g.:
+	// $this->page->addOverlay('');
 
-    // how to define additional variables within a macro:
-    // $this->addVariable('myvar', 'value');
+	// how to define additional variables within a macro:
+	// $this->addVariable('myvar', 'value');
 
-    // $this->optionAddNoComment = true;
+	// $this->optionAddNoComment = true;
 	// $this->compileMd = true;
 
-    $str = "<!-- macro $macroName() loaded -->\n";
+	$str = "<!-- macro $macroName() loaded -->\n";
 	return $str;
 });

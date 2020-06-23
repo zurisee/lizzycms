@@ -1,0 +1,7 @@
+Slack Webhook
+=============
+
+You need to obtain a 44 character 'webhook' from slack.
+Then replace this text with your webhook.
+
+See https://slack.com/help/articles/115005265063-Incoming-Webhooks-for-Slack for instructions.
