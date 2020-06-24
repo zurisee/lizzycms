@@ -1,5 +1,7 @@
 <?php
 
+define('TELEGRAM_SESSION_PATH', DATA_PATH.'telegram/');
+
 class Messenger
 {
     public function __construct($from, $lzy = null)
@@ -73,7 +75,8 @@ EOT;
                 $msg1 = str_replace("\n", '<br>', $msg);
                 $this->lzy->page->addMessage($msg1);
             } else {
-                echo "Sending E-Mail to $to<br/>";
+                // on localhost: just output to screen
+                echo "<pre>Sending E-Mail\nto $to\nsubject: $subject\nbody:\n$msg</pre>";
             }
         }
         return $from;
@@ -117,6 +120,9 @@ EOT;
     //------------------------------------
     private function sendTelegram($to, $msg)
     {
+//ToDo: unfinished: test & document setup of Telegram
+return 'not ok';
+
         if ($to[0] !== '@') {
             $to = "@$to";
         }
@@ -132,16 +138,18 @@ EOT;
         chdir($cwd);
         include 'madeline.php';
         chdir($pwd);
-        preparePath('data/telegram');
 
         if ($from) {
             if (file_exists($from)) {
                 $sessionFile = $from;
             } else {
-                $sessionFile = "data/telegram/$from.session.madeline";
+                $sessionFile = TELEGRAM_SESSION_PATH."$from.session.madeline";
             }
         } else {
-            $sessionFile = 'data/telegram/session.madeline';
+            $sessionFile = TELEGRAM_SESSION_PATH.'session.madeline';
+        }
+        if (!file_exists($sessionFile)) {
+            die("Error: session-file '$sessionFile' missing for sending telegram.");
         }
 
         $MadelineProto = new \danog\MadelineProto\API($sessionFile);

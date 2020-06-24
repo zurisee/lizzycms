@@ -3,14 +3,18 @@
  *  Lizzy Service Tasks
  *
  *  -> Daily housekeeping
+ *
  *  -> purging temp folders (caches, recycle bins, logs etc)
- *  -> service tasks launched by cron (-> invoke as ?service)
+ *
+ *  -> service tasks -> invoke as ?service=name-of-taks-file
+ *
+ *  -> scheduled tasks -> invoke as ?scheduled
  *      -> reads data/schedule.yaml for instructions
 */
 
 
 
-define('SCHEDULE_FILE',         DATA_PATH.'schedule.yaml');             // schedule instructions
+define('SCHEDULE_FILE',         CONFIG_PATH.'schedule.yaml');           // schedule instructions
 define('SCHEDULE_LAST_RUN',     CACHE_PATH.'/_schedule-last-run.txt');  // time keeping
 
 
@@ -20,7 +24,7 @@ function runServiceTasks($lzy, $run = 1)
     if ($run === 1) {
         $lzy->runScheduledTaskAfterInit = false;
         if (isset($_GET['scheduled'])) {
-             $res = executeScheduledTasks($lzy);
+            $res = executeScheduledTasks($lzy);
             if ($res === true) {
                 exit();
             } elseif ($res) {
@@ -49,6 +53,9 @@ function runServiceTasks($lzy, $run = 1)
 
     } else { // 2nd run:
         if ($lzy->runScheduledTaskAfterInit) {
+            if (!$lzy->config->admin_enableScheduledTasks) {
+                die("Attempt to run a scheduled task, but is feature not enabled.<br>To activate, set config -> admin_enableScheduledTasks:true");
+            }
             if (executeScheduledTasks($lzy, 2 )) {
                 exit();
             }
@@ -182,19 +189,6 @@ function checkInstallation1()
             chmod($folder, 0755);
         }
     }
-    //    return;
-    //
-    //    print( trim(shell_exec('whoami')).':'.trim(shell_exec('groups'))."<br>\n");
-    //
-    //    $all = array_merge($writableFolders, $readOnlyFolders);
-    //    foreach ($all as $folder) {
-    //        $rec = posix_getpwuid(fileowner($folder));
-    //        $name = $rec['name'];
-    //        $rec = posix_getgrgid(filegroup($filename));
-    //        $group = $rec['name'];
-    //        print("$folder: $name:$group<br>\n");
-    //    }
-    //    exit;
 } // checkInstallation1
 
 
@@ -271,7 +265,7 @@ function clearCaches($lzy, $secondRun = null)
         }
     }
     clearCache($lzy);                            // clear page caches
-//    $lzy->siteStructure->clearCache();           // clear siteStructure cache
+    //$lzy->siteStructure->clearCache();           // clear siteStructure cache
 } // clearCaches
 
 
@@ -299,8 +293,8 @@ function purgeRecyleBins($lzy)
     if (file_exists($sysRecycleBin)) {
         rrmdir($sysRecycleBin);
     }
-
 } // purgeRecyleBins
+
 
 
 
@@ -310,11 +304,15 @@ function executeServiceTask($lzy, $codeFile)
     if (!$codeFile) {
         return false;
     }
-    $do = USER_CODE_PATH . "-$codeFile.php";
+    $do = USER_CODE_PATH . "@$codeFile.php";
     if (file_exists($do)) {
+        if (!$lzy->config->admin_enableServiceTasks) {
+            die("Attempt to run service task '$do', but is feature not enabled.<br>To activate, set config -> admin_enableServiceTasks:true");
+        }
         require_once $do;
-        executeService($lzy);   // normally exits providing json data to agent
-
+        if (function_exists('executeService')) {
+            executeService($lzy);   // normally exits providing json data to agent
+        }
     } else {
         die("Error: service-handler '$do' not found.");
     }
@@ -326,6 +324,7 @@ function executeServiceTask($lzy, $codeFile)
 function executeScheduledTasks($lzy, $run = 1 )
 {
     $schedule = getYamlFile(SCHEDULE_FILE);
+    $forceRun = getUrlArg('force');
 
     if ($run === 1) {
         $lastRun = intval(@filemtime(SCHEDULE_LAST_RUN));
@@ -345,15 +344,23 @@ function executeScheduledTasks($lzy, $run = 1 )
             $secondRunRequired = true;
             continue;
         }
-        $scheduledTime = $scheduleRec['time'];
+        $scheduledTime = isset($scheduleRec['time']) ? $scheduleRec['time'] : '****-**-** 08:00';
 
         // check whether within time window:
-        $schedFrom = strtotime($scheduleRec['from']);
-        $schedTill = strtotime($scheduleRec['till']);
+        $schedFrom = (isset($scheduleRec['from']) && $scheduleRec['from']) ? strtotime($scheduleRec['from']) : 0;
+        if (isset($scheduleRec['till'])) {
+            $schedTill = strtotime($scheduleRec['till']);
+        } else {
+            $schedTill = $now + 100;
+            $scheduleRec['till'] = date('Y-m-i', $schedTill);
+        }
+
         // add one day if no time is defined
         if (strpos($scheduleRec['till'], ':') === false) {
             $schedTill += 86400;
         }
+
+        // check whether within given time window:
         if (($now < $schedFrom) || ($now > $schedTill)) {
             continue;
         }
@@ -380,12 +387,14 @@ function executeScheduledTasks($lzy, $run = 1 )
         $scheduledTime = strtotime($scheduledTime);
 
         // check whether execution time was between last run and this one:
-        if (($scheduledTime > $lastRun) && ($scheduledTime <= $now)) {  // fire now:
+        if ($forceRun || (($scheduledTime > $lastRun) && ($scheduledTime <= $now))) {  // fire now:
             $do = str_replace('@', '', base_name($scheduleRec['do'], false));
             $do = USER_CODE_PATH . "@$do.php";
             if (file_exists($do)) {
-                require_once $do ;
-                runService($lzy, $scheduleRec['args']);
+                require_once $do;
+                if (function_exists('executeScheduledTask')) {
+                    executeScheduledTask($lzy, $scheduleRec['args']);
+                }
 
             } elseif (!sendSimpleNotification($scheduleRec['args'])) { // send msg directly, if msg is defined
                 die("Error: schedule-handler '$do' not found.");
@@ -394,6 +403,7 @@ function executeScheduledTasks($lzy, $run = 1 )
     }
     return $secondRunRequired ? 1 : true;
 } // executeScheduledTasks
+
 
 
 
