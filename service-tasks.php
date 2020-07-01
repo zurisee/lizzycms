@@ -228,7 +228,7 @@ function clearLogs()
 
 
 //....................................................
-function clearCache($lzy)
+function clearMdCache($lzy)
 {
     $dir = glob($lzy->config->cachePath.'*');
     foreach($dir as $file) {
@@ -247,7 +247,7 @@ function clearCache($lzy)
             unlink($filename);
         }
     }
-} // clearCache
+} // clearMdCache
 
 
 
@@ -264,7 +264,7 @@ function clearCaches($lzy, $secondRun = null)
             return;
         }
     }
-    clearCache($lzy);                            // clear page caches
+    clearMdCache($lzy);                            // clear page caches
     //$lzy->siteStructure->clearCache();           // clear siteStructure cache
 } // clearCaches
 

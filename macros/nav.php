@@ -38,6 +38,8 @@ $this->addMacro($macroName, function () {
     $this->getArg($macroName, 'smallScreenHeaderText', 'Text in small-screen-header, typically the app name', '');
     $this->getArg($macroName, 'inPageSizeThreshold', 'If less that this number of H-tags are found, the tag containing in-page nav is hidden', 0);
 
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
+
     if ($type === 'help') {
         return '';
     }

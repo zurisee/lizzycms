@@ -23,6 +23,7 @@ $this->addMacro($macroName, function () {
     $src = $this->getArg($macroName, 'src', 'Source folder from which to get video sources', '');
     $width = $this->getArg($macroName, 'width', '(optional) width of display (height will be automatically derived', '');
     $class = $this->getArg($macroName, 'class', '(optional) class applied to DIV around the player', '');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if ($src === 'help') {
         return '';

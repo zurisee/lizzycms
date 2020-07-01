@@ -183,8 +183,13 @@ class Transvar
         if (isset($this->macros[$macro])) { // and try to execute it
 
             $this->optionAddNoComment = false;
+            $this->disablePageCaching = false;
 
             $val = $this->executeMacro($macro);
+
+            if ($this->disablePageCaching) {
+                $this->config->cachingActive = false;
+            }
 
             if (($val !== null) && ($this->config->isLocalhost || $this->config->isPrivileged) && !$this->optionAddNoComment) {
                 $val = "\n\n<!-- Lizzy Macro: $macro() -->\n$val\n<!-- /$macro() -->\n\n\n";   // mark its output

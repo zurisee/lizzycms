@@ -25,6 +25,7 @@ $this->addMacro($macroName, function ($args) {
     $postfixText = $this->getArg($macroName, 'postfixText', 'Text that will be appended to output');
     $mdCompile = $this->getArg($macroName, 'mdCompile', 'Runs the output through the MD-compiler', true);
     $execMacros = $this->getArg($macroName, 'execMacros', 'Runs the output through Variable/Macro translation');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if ($count === 'help') {
         return '';

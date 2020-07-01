@@ -40,6 +40,7 @@ $this->addMacro($macroName, function () {
     $bottom = $this->getArg($macroName, 'bottom', 'Where to place measured from bottom ', false);
     $angle = $this->getArg($macroName, 'angle', 'Angle by which the Post-it is tilted', '');
     $color = $this->getArg($macroName, 'color', 'Background-color for Post-it', '');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if ($text === 'help') {
         return '';

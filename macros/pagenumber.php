@@ -11,6 +11,7 @@ $this->addMacro($macroName, function ( ) {
 
     $offset = $this->getArg($macroName, 'offset', '(optional) offset value to be added to the page-number', 0);
     $addNumberOfPages = $this->getArg($macroName, 'addNumberOfPages', '(optional) number of all pages &rarr; overrides the automatically determined number of pages', '');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if ($offset === 'help') {
         return '';

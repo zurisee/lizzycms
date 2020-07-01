@@ -34,6 +34,7 @@ $this->addMacro($macroName, function () {
     $imagePath = $this->getArg($macroName, 'imagePath', '(optional) Path to the image folder', '');
     $previewImgPath = $this->getArg($macroName, 'previewImgPath', '(optional) Path to preview images (default: thumbs/)', 'thumbs/');
     $previewImgSize = $this->getArg($macroName, 'previewImgSize', '(optional) Size of preview images (default: 512x384)', '512x384');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     
 	if ($fullsizeImagePath) {

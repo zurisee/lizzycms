@@ -7,6 +7,7 @@ $macroName = basename(__FILE__, '.php');
 $this->addMacro($macroName, function () {
     $macroName = basename(__FILE__, '.php');
     $overlay = $this->getArg($macroName, 'overlay', 'If true, the converter tool will be presented in an overlay.', true);
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(false) Enables page caching (which is disabled for this macro by default). Note: only active if system-wide caching is enabled.', true);
 
     $html = <<<EOT
 <h1>{{ Convert Password }}</h1>

@@ -12,7 +12,7 @@ $this->addMacro($macroName, function () {
     $renderResult = $this->getArg($macroName, 'renderResult', '[true,false,loggedin,privileged] Whether and to whom the result shall be shown.', false);
     $label = $this->getArg($macroName, 'label', 'Optional label preceding the count, if rendered', '');
     $option = $this->getArg($macroName, 'option', '[as-comment] How result shall be shown.', false);
-    $avoidRepeatCount = $this->getArg($macroName, 'avoidRepeatCount', '(optional) If true, does not count repeated loading of same page.', true);
+    $avoidRepeatCount = $this->getArg($macroName, 'avoidRepeatCount', '(optional) If true, does not count repeated loading of same page (default: true).', true);
     $freezeTime = $this->getArg($macroName, 'freezeTime', '(optional) If set, defines the time (in sec) during which page hits within the same sesssion are ignored (default: 60s).', 60);
 
     if ($counterName === 'help') {
@@ -28,6 +28,7 @@ $this->addMacro($macroName, function () {
     $lastAccess = getStaticVariable('lastCounterAccess');
     $lastAccessTime = isset($lastAccess[$counterName]) ? $lastAccess[$counterName]: 0;
     $doCount = !$avoidRepeatCount || ($lastAccessTime < (time() - $freezeTime));
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(false) Enables page caching (which is disabled for this macro by default). Note: only active if system-wide caching is enabled.', true);
 
     if ($doCount) {
         if (isset($counters[$counterName])) {

@@ -9,6 +9,7 @@ $this->addMacro($macroName, function () {
 
     $dataSrc = $this->getArg($macroName, 'dataSrc', 'Filename of datasource', '');
     $return = $this->getArg($macroName, 'return', '[size|recNo] ', false);
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(false) Enables page caching (which is disabled for this macro by default). Note: only active if system wide caching is enabled.', true);
 
     if (!$dataSrc || ($dataSrc === 'help')) {
         return '';
@@ -22,5 +23,6 @@ $this->addMacro($macroName, function () {
     }
 
     $this->optionAddNoComment = true;
+
 	return $str;
 });

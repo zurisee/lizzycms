@@ -22,6 +22,7 @@ $this->addMacro($macroName, function () {
 	$inx = $this->invocationCounter[$macroName] + 1;
 
     $src = $this->getArg($macroName, 'src', 'Path to sound file', '');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if (($src === '') || ($src === 'help')) {
 		return '';

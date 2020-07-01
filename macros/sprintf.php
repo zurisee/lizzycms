@@ -9,8 +9,12 @@ $macroName = basename(__FILE__, '.php');
 $this->addMacro($macroName, function () {
 	$macroName = basename(__FILE__, '.php');
 	$this->invocationCounter[$macroName] = (!isset($this->invocationCounter[$macroName])) ? 0 : ($this->invocationCounter[$macroName]+1);
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     $args = $this->getArgsArray($macroName);
+    if (isset($args['disableCaching'])) {
+        unset($args['disableCaching']);
+    }
     if (isset($args[0]) && ($args[0] === 'help')) {
         return '';
     }

@@ -11,6 +11,7 @@ $this->addMacro($macroName, function () {
 	$inx = $this->invocationCounter[$macroName] + 1;
 
     $gap_size = $this->getArg($macroName, 'gap_size', 'Height of inserted space. Use any form allowed in CSS, e.g. 3em, 20px or 1cm');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if (trim($gap_size) === '') {
 		$gap_size = '1em';

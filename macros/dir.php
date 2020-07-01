@@ -16,6 +16,7 @@ $this->addMacro($macroName, function () {
     $this->getArg($macroName, 'target', '"target" attribute to be applied to the a-tag.', '');
     $this->getArg($macroName, 'maxAge', '[integer] Maximum age of file (in number of days).', '');
     $this->getArg($macroName, 'orderedList', 'If true, renders found objects as an ordered list (&lt;ol>).', '');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if ($path === 'help') {
         return '';

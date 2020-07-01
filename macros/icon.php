@@ -17,6 +17,7 @@ $this->addMacro($macroName, function () {
     if ($title) {
         $tooltip = $title;
     }
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     $name = strtolower($name);
     $supportedIcons = ',calendar,error,user,settings,cloud,desktop,mobile,config,tel,geo,map,sms,info,doc,docs,trash,enlarge,reduce,smile,nosmile,paste2,link,menu,newwin,edit,mail,show2,enlarge2,reduce2,ok,cancel,locked,unlocked,exit,favorite,send,show,hide,source,search,up,down,slack,pdf,gsm,upload,download,globe,key,bubble,stack,attachment,heart,fullscreen,cut,copy,paste,cancel2,clock,danger,wait,speed,crosshairs,picture,pictures,movie,sync,reload,power,insert,wifi,vol-up,volume,vol-down,flag,play,stop,mute,rec,forward,backward,start,print,save,pause,end,rename,select,';

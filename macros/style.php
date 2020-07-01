@@ -11,6 +11,7 @@ $this->addMacro($macroName, function () {
 
     $text = $this->getArg($macroName, 'text', 'Text to be wrapped in a span', '');
     $style = $this->getArg($macroName, 'style', 'CSS code to be applied to the given text.', '');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if ($text === 'help') {
         return '';

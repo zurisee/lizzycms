@@ -11,6 +11,7 @@ $this->addMacro($macroName, function () {
 
     $text = $this->getArg($macroName, 'text', '', '');
     $color = $this->getArg($macroName, 'color', '', 'black');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     $str = "<span style='color:var(--lzy-color, $color);'>$text</span>";
     $this->optionAddNoComment = true;

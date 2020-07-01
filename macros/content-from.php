@@ -10,6 +10,7 @@ $this->addMacro($macroName, function () {
     $id = "lzy-content-from{$this->invocationCounter[$macroName]}";
 
     $selector = $this->getArg($macroName, 'selector', 'ID or Class selector of page element that shall be imported.', 'default value');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     $jq = "\n\t$('#$id').html( $('$selector').html() );";
     $this->page->addJq($jq);

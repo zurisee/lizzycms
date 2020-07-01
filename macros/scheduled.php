@@ -15,6 +15,7 @@ $this->addMacro($macroName, function () {
     $variable = $this->getArg($macroName, 'variable', 'Text from variable to be displayed', '');
     $showFrom = $this->getArg($macroName, 'showFrom', 'Content will be visible after this time (format: YYYY-MM-DD HH:MM)', false);
     $showTill = $this->getArg($macroName, 'showTill', 'Content will be visible until this time (format: YYYY-MM-DD HH:MM)', false);
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(false) Enables page caching (which is disabled for this macro by default). Note: only active if system-wide caching is enabled.', true);
 
     if ($variable) {
         $text .= $this->getVariable($variable);

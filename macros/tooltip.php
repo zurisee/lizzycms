@@ -23,6 +23,7 @@ $this->addMacro($macroName, function () {
     $arrowSize = $this->getArg($macroName, 'arrowSize', 'Size of the arrow.', '');
     $sticky = $this->getArg($macroName, 'sticky', 'If true, tooltip will open on mouseover and remain open till a click outside occurs.', false);
     $catchFocus = $this->getArg($macroName, 'catchFocus', '', '');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     $this->optionAddNoComment = true;
     if (($text === 'help') || (!$text && !$contentFrom)) {

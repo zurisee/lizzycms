@@ -14,6 +14,7 @@ define('DEV_MODE_CONFIG_FILE',  CONFIG_PATH.'dev-mode-config.yaml');
 
 define('DATA_PATH',            'data/');
 define('CACHE_PATH',            '.#cache/');
+define('PAGE_CACHE_PATH',       CACHE_PATH.'pages/');
 define('LOGS_PATH',             '.#logs/');
 define('MACROS_PATH',           SYSTEM_PATH.'macros/');
 define('EXTENSIONS_PATH',       SYSTEM_PATH.'extensions/');
@@ -108,6 +109,9 @@ class Lizzy
 	//....................................................
     public function __construct()
     {
+        session_start();
+        $this->checkCache();
+
         $this->setDefaultTimezone();
         $this->checkInstallation();
 
@@ -147,7 +151,6 @@ class Lizzy
             die("Error: file not found: ".$configFile);
         }
 
-        session_start();
         $this->sessionId = session_id();
 
         $this->getConfigValues(); // from config/config.yaml
@@ -225,6 +228,9 @@ class Lizzy
         if ($accessGranted) {
 
             // enable caching of compiled MD pages:
+            // Note: in most cases MD-caching will not become active since the page caching
+            //  will kick in before we get to this point.
+            //  ToDo: figure out whether MD-caching is still required at all
             if ($this->config->cachingActive && $this->page->readFromCache()) {
                 $html = $this->page->render(true);
                 $html = $this->resolveAllPaths($html);
@@ -232,6 +238,7 @@ class Lizzy
                     $timerMsg = 'Page rendering time: '.readTimer();
                     $html = $this->page->lateApplyMessag($html, $timerMsg);
                 }
+                $html .= "\n<!-- cached page -->";
                 return $html;
             }
 
@@ -283,6 +290,7 @@ class Lizzy
 
         $this->runUserFinalCode($html );   // optional custom code to operate on final HTML output
 
+        $this->storeToCache( $html );
         return $html;
     } // render
 
@@ -528,10 +536,11 @@ class Lizzy
 
         global $globalParams, $pathToRoot;
 
-        $requestUri     = (isset($_SERVER["REQUEST_URI"])) ? rawurldecode($_SERVER["REQUEST_URI"]) : '';
+//        $requestUri     = (isset($_SERVER["REQUEST_URI"])) ? rawurldecode($_SERVER["REQUEST_URI"]) : '';
         $absAppRoot     = dir_name($_SERVER['SCRIPT_FILENAME']);
         $scriptPath     = dir_name($_SERVER['SCRIPT_NAME']);
         // ignore filename part of request:
+        $requestUri     = (isset($_SERVER["REQUEST_URI"])) ? rawurldecode($_SERVER["REQUEST_URI"]) : '';
         if (fileExt($requestUri)) {
             $requestUri     = dir_name($requestUri);
         }
@@ -666,6 +675,14 @@ class Lizzy
         $this->config->pathToRoot = $this->pathToRoot;
 
         $globalParams['path_logPath'] = $this->config->path_logPath;
+
+        if (!isset($_SESSION['lizzy']['lang'])) {
+            if ($this->config->site_multiLanguageSupport) {
+                $_SESSION['lizzy']['lang'] = $this->config->site_defaultLanguage;
+            } else {
+                $_SESSION['lizzy']['lang'] = '';
+            }
+        }
     } // getConfigValues
 
 
@@ -1370,7 +1387,8 @@ EOT;
 
             if (getUrlArg('purge')) {                        // empty recycleBins and caches
                 purgeRecyleBins( $this );
-                clearCache( $this );
+                clearMdCache( $this );
+                $this->purgePageCache();
                 clearLogs();
                 reloadAgent();
             }
@@ -2283,6 +2301,110 @@ EOT;
         $this->trans->addVariable('next_page', "");
         $this->trans->addVariable('prev_page', "");
     } // initializeAsOnePager
+
+
+
+
+    //....................................................
+    private function storeToCache($html)
+    {
+        if (!$this->config->site_enableCaching || !$this->config->cachingActive) {
+            return;
+        }
+        if (isset($_SESSION['lizzy']['nc']) && $_SESSION['lizzy']['nc']) {
+            return;
+        }
+
+        $requestedPage = $this->getCacheFilename();
+        preparePath($requestedPage);
+        file_put_contents($requestedPage, $html);
+    } // storeToCache
+
+
+
+
+    //....................................................
+    private function checkCache()
+    {
+        $nc = getUrlArg('nc');
+        if ($nc) {  // nc = no-caching -> when specified, make sure page cache is cleared
+            $this->purgePageCache();
+        }
+        if ($this->dailyPageCacheReset()) {
+            return;
+        }
+        if (isset($_SESSION['lizzy']['user']) && $_SESSION['lizzy']['user']) {
+            return;
+        }
+        if (isset($_SESSION['lizzy']['nc']) && $_SESSION['lizzy']['nc']) {
+            return;
+        }
+        if ($_GET || $_POST) {
+            return;
+        }
+        $requestedPage = $this->getCacheFilename();
+        if (file_exists($requestedPage)) {
+            $html = file_get_contents($requestedPage);
+            $html .= "\n<!-- cached page -->";
+            exit ($html);
+        }
+        return false;
+    } // checkCache
+
+
+
+
+    private function getCacheFilename()
+    {
+        $scriptPath = dir_name($_SERVER['SCRIPT_NAME']);
+        // ignore filename part of request:
+        $requestUri = (isset($_SERVER["REQUEST_URI"])) ? rawurldecode($_SERVER["REQUEST_URI"]) : '';
+        if (fileExt($requestUri)) {
+            $requestUri = dir_name($requestUri);
+        }
+        $appRoot = fixPath(commonSubstr( $scriptPath, dir_name($requestUri), '/'));
+        $ru = preg_replace('/\?.*/', '', $requestUri); // remove opt. '?arg'
+        $requestedpageHttpPath = dir_name(substr($ru, strlen($appRoot)));
+        if ($requestedpageHttpPath === '.') {
+            $requestedpageHttpPath = '';
+        }
+
+        $lang = isset($_SESSION['lizzy']['lang']) ? $_SESSION['lizzy']['lang'] : '';
+        if ($lang) {
+            $lang = ".$lang";
+        }
+
+        $requestedPage = trim($requestedpageHttpPath, '/');
+        $requestedPage .= $lang;
+        $requestedPage = PAGE_CACHE_PATH . $requestedPage . "/index$lang.html";
+        return $requestedPage;
+    } // getCacheFilename
+
+
+
+    private function dailyPageCacheReset()
+    {
+        if (file_exists(HOUSEKEEPING_FILE)) {
+            $fileTime = intval(filemtime(HOUSEKEEPING_FILE) / 86400);
+            $today = intval(time() / 86400);
+            if (($fileTime) !== $today) {
+                $this->purgePageCache();
+                return true;
+            }
+        } else {
+            $this->purgePageCache();
+            return true;
+        }
+        return false;
+    } // dailyPageCacheReset
+
+
+
+
+    private function purgePageCache()
+    {
+        rrmdir(PAGE_CACHE_PATH);
+    } // purgePageCache
 } // class WebPage
 
 

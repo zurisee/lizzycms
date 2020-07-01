@@ -10,6 +10,7 @@ $this->addMacro($macroName, function () {
     $class = $this->getArg($macroName, 'class', 'Class to apply', '');
     $style = $this->getArg($macroName, 'style', 'Style to apply', '');
     $text = $this->getArg($macroName, 'text', 'Text to put between opening and closing tags', '');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     $id = $id ? " id='$id'" : '';
     $class = $class ? " class='$class'" : '';

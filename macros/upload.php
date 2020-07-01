@@ -18,10 +18,14 @@ $this->addMacro($macroName, function () {
     $this->getArg($macroName, 'label', 'Text on the upload button (default: "&#123;{ Upload File(s) }}").', '');
     $this->getArg($macroName, 'labelClass', 'Class applied to the upload button (default: "lzy-button").', 'lzy-button');
     $this->getArg($macroName, 'multiple', '[true,false] If true, user can select multiple files for upload (default: false).', false);
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(false) Enables page caching (which is disabled for this macro by default). Note: only active if system-wide caching is enabled.', true);
     if ($path === 'help') {
         return '';
     }
     $args = $this->getArgsArray($macroName);
+    if (isset($args['disableCaching'])) {
+        unset($args['disableCaching']);
+    }
 
     if ($inx === 1) {
 		$this->form = new Forms($this->lzy);

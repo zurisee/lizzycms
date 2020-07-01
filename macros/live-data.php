@@ -21,6 +21,7 @@ $this->addMacro($macroName, function () {
     $this->getArg($macroName, 'mode', '[manual] Manual mode: invoke live-data fields manually. Means, HTML code is created outside of this macro, in particular in case when elementName is specified as a list.', false);
     $this->getArg($macroName, 'callback', '(optional) If defined, the js function will be called before updating the correspondint target value.', false);
     $this->getArg($macroName, 'postUpdateCallback', '(optional) If defined, the js function will be called before updating the correspondint target value.', false);
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(false) Enables page caching (which is disabled for this macro by default). Note: only active if system-wide caching is enabled.', true);
 
     if ($file === 'help') {
         return '';

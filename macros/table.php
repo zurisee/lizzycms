@@ -30,8 +30,13 @@ $this->addMacro($macroName, function () {
             return "<div>Error: Datasource-File '$dataSource' not found for macro 'table()'.</div>\n";
         }
     }
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
+
 
     $options = $this->getArgsArray($macroName, false);
+    if (isset($options['disableCaching'])) {
+        unset($options['disableCaching']);
+    }
     $options['dataSource'] = $file;
 
     $dataTable = new HtmlTable($this->lzy, $inx, $options);

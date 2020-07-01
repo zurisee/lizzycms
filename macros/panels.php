@@ -26,6 +26,7 @@ $this->addMacro($macroName, function () {
     $preOpen = $this->getArg($macroName, 'preOpen', '[false | number] If set, defines which panel should initially appear opened (numbers starting at 1)', true);
     $closeButton = $this->getArg($macroName, 'closeButton', '[false | false] If set, adds a close button to tab headers', false);
     $omitScript = $this->getArg($macroName, 'omitScript', '[false | number] If set, skips generation of init-script (thus you may invoke it manually before other scripts)', false);
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 //    $threshold = $this->getArg($macroName, 'threshold', 'defines the width threshold used for switching between tabs- and accordion-mode (default is 480px)', '');
 //??? TBD
     // Threshold for switching modes:

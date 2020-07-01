@@ -22,6 +22,7 @@ $this->addMacro($macroName, function () {
     $outerWrapperTag = $this->getArg($macroName, 'outerWrapperTag', '(optional) HTML-tag in which to wrap the set of included files.', false);
     $outerWrapperClass = $this->getArg($macroName, 'outerWrapperClass', '(optional) class applied to the wrapper around all files.', '');
     $compileMarkdown = $this->getArg($macroName, 'compileMarkdown', '(optional) Flag to inhibit MD-compilation of .md files.', true);
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if ($wrapperClass) {
         $wrapperClass = " class='$wrapperClass'";

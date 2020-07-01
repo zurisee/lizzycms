@@ -12,6 +12,7 @@ $this->addMacro($macroName, function () {
     $wrapperTag = $this->getArg($macroName, 'wrapperTag', '(optional) HTML-tag used to wrap rendered data.', 'div');
     $wrapperClass = $this->getArg($macroName, 'wrapperClass', '(optional) Class applied to element wrapping rendered data.', '');
     $noDataResponse = $this->getArg($macroName, 'noDataResponse', '(optional) Response if no data was found.', "<div class='lzy-get-data-none-found'>{{ lzy-get-data-none-found }}</div>\n");
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(false) Enables page caching (which is disabled for this macro by default). Note: only active if system-wide caching is enabled.', true);
 
     if (!isset($GLOBALS["globalParams"]['get-data'][ $GLOBALS["globalParams"]["pagePath"] ])) {
         $GLOBALS["globalParams"]['get-data'][ $GLOBALS["globalParams"]["pagePath"]] = 0;

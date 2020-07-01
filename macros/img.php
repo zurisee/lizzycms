@@ -13,6 +13,7 @@ $this->addMacro($macroName, function () {
     $inx = $this->invocationCounter[$macroName] + 1;
 
     $src = $this->getArg($macroName, 'src', 'Name of image-file. By default Lizzy assumes to find it in the page folder. Use "&#126;/path-to-file" if the image is stored somewhere else.');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if ($src === 'help') {
         $this->getArg($macroName, 'alt', 'Alt-text for image, i.e. a short text that describes the image.');

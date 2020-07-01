@@ -11,6 +11,7 @@ $this->addMacro($macroName, function () {
     $recursive = $this->getArg($macroName, 'recursive', 'If true, files in sub-folders will be included.)', false);
     $exclude = $this->getArg($macroName, 'exclude', 'Regex-pattern of elements to be excluded.', false);
     $file = $this->getArg($macroName, 'file', 'Synonym for "files"', '');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if ($files === 'help') {
         return;

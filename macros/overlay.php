@@ -7,6 +7,8 @@ $macroName = basename(__FILE__, '.php');
 $this->addMacro($macroName, function () {
     $macroName = basename(__FILE__, '.php');
     $text = $this->getArg($macroName, 'text', 'Text to be displayed in the Popup', '');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
+
     if ($text === 'help') {
         $this->getArg($macroName, 'contentFrom', 'Text to be optained from the selected element (e.g. \'#box\')', '');
         $this->getArg($macroName, 'fromFile', 'Text to be optained from given file', '');

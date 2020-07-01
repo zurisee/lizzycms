@@ -22,6 +22,7 @@ $this->addMacro($macroName, function () {
     $this->getArg($macroName, 'subject', 'In case of "mail" and "sms": subject to be preset.', '');
     $this->getArg($macroName, 'body', 'In case of "mail": mail body to be preset.', '');
     $option = $this->getArg($macroName, 'option', '[download,abs,src,url] Modifies the output. "download" forces a download action. "abs" renders absolute paths/urls. "src" renders the source code. "url" renders the resulting address (without HTML wrapper)', '');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if ($href === 'help') {
         return 'Supported link-types: mail, pdf, sms, tel, geo, gsm, slack';

@@ -20,6 +20,7 @@ $this->addMacro($macroName, function () {
     $arg = $this->getArg($macroName, 'arg', 'Argument to be applied in comparison', '');
     $then = $this->getArg($macroName, 'then', 'What to return if the state is active', '');
     $else = $this->getArg($macroName, 'else', 'What to return if the state is not active', '');
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(false) Enables page caching (which is disabled for this macro by default). Note: only active if system-wide caching is enabled.', true);
 
     $inx = $this->invocationCounter[$macroName] + 1;
 
