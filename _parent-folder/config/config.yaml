@@ -9,55 +9,81 @@ debug_compileScssWithLineNumbers: true
 __END__
 #=== List of available configuration items ===========================
 
-admin_allowDisplaynameForLogin: ''                # default=false
-admin_autoAdminOnLocalhost: ''                    # default=false
-admin_defaultAccessLinkValidyTime: ''             # default=900
-admin_defaultGuestGroup: ''                       # default=guest
-admin_defaultLoginValidityPeriod: ''              # default=86400
-admin_enableDailyUserTask: ''                     # default=false
-admin_enableSelfSignUp: ''                        # default=false
-admin_userAllowSelfAdmin: ''                      # default=false
-custom_permitUserCode: ''                         # default=false
-custom_permitUserInitCode: ''                     # default=false
-custom_permitUserVarDefs: ''                      # default=false
-custom_wrapperTag: ''                             # default=section
-debug_allowDebugInfo: ''                          # default=false
-debug_collectBrowserSignatures: ''                # default=false
-debug_compileScssWithLineNumbers: ''              # default=false
-debug_errorLogging: ''                            # default=false
-debug_forceBrowserCacheUpdate: ''                 # default=false
-debug_logClientAccesses: ''                       # default=false
-debug_showDebugInfo: ''                           # default=false
-debug_showUndefinedVariables: ''                  # default=false
-debug_showVariablesUnreplaced: ''                 # default=false
-debug_monitorUnusedVariables: ''                  # default=false
-feature_autoConvertLinks: ''                      # default=false
-feature_enableAllowOrigin: ''                     # default=false
-feature_enableIFrameResizing: ''                  # default=false
-feature_filterRequestString: ''                   # default=false
-feature_frontmatterCssLocalToSection: ''          # default=false
-feature_jQueryModule: ''                          # default=JQUERY
-feature_pageSwitcher: ''                          # default=false
-feature_lateImgLoading: ''                        # default=false
-feature_ImgDefaultMaxDim: ''                      # default=1600x1200
-feature_SrcsetDefaultStepSize: ''                 # default=300
-feature_preloadLoginForm: ''                      # default=false
-feature_renderTxtFiles: ''                        # default=false
-feature_screenSizeBreakpoint: ''                  # default=480
-feature_sitemapFromFolders: ''                    # default=false
-feature_supportLegacyBrowsers: ''                 # default=false
-path_logPath: ''                                  # default=.#logs/
-path_pagesPath: ''                                # default=pages/
-path_stylesPath: ''                               # default=css/
-path_userCodePath: ''                             # default=code/
-site_compiledStylesFilename: ''                   # default=__styles.css
-site_dataPath: ''                                 # default=data/
-site_defaultLocale: ''                            # default=en_US
-site_enableCaching: ''                            # default=false
-site_extractSelector: ''                          # default=body main
-site_allowInsecureConnectionsTo: ''               # default=192.*
-site_pageTemplateFile: ''                         # default=page_template.html
-site_robots: ''                                   # default=false
-site_sitemapFile: ''                              # default=sitemap.txt
-site_supportedLanguages: ''                       # default=en
-site_timeZone: ''                                 # default=auto
+admin_activityLogging: false                 # If true, logs activities to file .#logs/log.txt.
+admin_allowDisplaynameForLogin: true         # If true, users may log in using their "DisplayName" rather than their "UserName".
+admin_autoAdminOnLocalhost: true             # If true, on local host user automatically has admin privileges without login.
+admin_defaultAccessLinkValidyTime: 900       # Default Time in seconds during whith an access-link is valid.
+admin_defaultGuestGroup: guest               # Name of default group for self-registration.
+admin_defaultLoginValidityPeriod: 86400      # Defines how long a user can access the page since the last login.
+admin_enableAccessLink: false                # Activates one-time-access-link login mechanism.
+admin_enableDailyFilePurge: false            # If true, Lizzy reads config/daily-purge.txt and deletes all listed files one per day.
+admin_enableDailyUserTask: true              # If true, looks for "code/user-daily-task.php" and executes it.
+admin_enableEditing: false                   # Enables online editing
+admin_enableFileManager: false               # If true, the file-manager (upload, rename, delete) is enabled for privileged users.
+admin_enableScheduledTasks: true             # If true, a scheduler (cron) can invoke scheduled tasks by calling "?scheduled".
+admin_enableSelfSignUp: true                 # If true, visitors can create a guest account on their own.
+admin_enableServiceTasks: true               # If true, an external process can invoke service tasks by calling "?service=service-task".
+admin_useRequestRewrite: false               # If true, assumes web-server supports request-rewrite (i.e. .htaccess).
+admin_userAllowSelfAdmin: true               # If true, user can modify their account after they logged in
+
+custom_permitServiceCode: true               # Enables the 'service routine' mechanism: run PHP code in 'code/' (filename starting with '@')
+custom_permitUserCode: true                  # Only if true, user-provided code can be executed. And only if located in 'code/'
+custom_permitUserInitCode: true              # Only if true, user-provided init-code can be executed. And only if located in 'code/'
+custom_permitUserVarDefs: true               # Only if true, "_code/user-var-defs.php" will be executed.
+custom_relatedGitProjects:                   # Git Project(s) to be included in ?getstat command
+custom_wrapperTag: section                   # The HTML tag in which MD-files are wrapped (default: section)
+
+debug_allowDebugInfo: true                   # [false|true] If true, debugging Info can be activated: log in as admin and invoke URL-cmd "?debug"
+debug_collectBrowserSignatures: true         # If true, Lizzy records browser signatures of visitors.
+debug_compileScssWithLineNumbers: true       # If true, original line numbers are added as comments to compiled CSS."
+debug_enableDevMode: true                    # [false|true] Enables devolepment mode
+debug_enableDevModeAutoOff: true             # [false|true] If true, devolepment mode is automatically turned of the next morning
+debug_errorLogging: true                     # Enable or disabling logging.
+debug_forceBrowserCacheUpdate: true          # If true, the browser is forced to ignore the cache and reload css and js resources on every time.
+debug_logClientAccesses: true                # If true, Lizzy records visits (IP-addresses and browser/os types).
+debug_monitorUnusedVariables: true           # [false|true] If true, Lizzy keeps track of variable usage. Initialize tracking with url-arg "?reset"
+debug_showDebugInfo: true                    # If true, debugging info is appended to the page (prerequisite: localhost or logged in as editor/admin)
+debug_showUndefinedVariables: true           # If true, all undefined static variables (i.e. obtained from yaml-files) are marked.
+debug_showVariablesUnreplaced: true          # If true, all static variables (i.e. obtained from yaml-files) are render as {{ name }}.
+
+feature_ImgDefaultMaxDim: 1600x1200          # Defines the max dimensions ("WxH") to which Lizzy automatically converts images which it finds in the pages folders.
+feature_SrcsetDefaultStepSize: 300           # Defines the step size when Lizzy creates srcsets for images.
+feature_autoConvertLinks: true               # If true, automatically converts text that looks like links to HTML-links (i.e. <a> tags).
+feature_autoLoadClassBasedModules: false     # If true, automatically loads modules that are invoked by applying classes, e.g. .editable
+feature_autoLoadJQuery: false                # If true, jQuery will be loaded automatically (even if not initiated explicitly by macros)
+feature_enableAllowOrigin: false             # Set to "*" or explicitly to a domain to allow other websites to include pages of this site.
+feature_enableIFrameResizing: true           # If true, includes js code required by other pages to iFrame-embed this site
+feature_enableScssInPageFolder: true         # If true, Lizzy checks for .scss files in page folder and compiles them to .css. Alternatively use "enableScssInPageFolder" in Frontmatter of specific pages.
+feature_externalLinksInNewWin: true          # If true, automatically makes links open in new window for all external links (i.e. starting with http).
+feature_filterRequestString: true            # If true, permits only regular text in requests. Special characters will be discarded.
+feature_frontmatterCssLocalToSection: true   # If true, all CSS rules in Frontmatter will be modified to apply only to the current section (i.e. md-file content).
+feature_jQueryModule: JQUERY                 # Specifies the jQuery Version to be loaded: one of [ JQUERY | JQUERY1 | JQUERY2 | JQUERY3 ], default is jQuery 3.x.
+feature_lateImgLoading: true                 # If true, enables general use of lazy-loading of images
+feature_pageSwitcher: true                   # If true, code will be added to support page switching (by arrow-keys or swipe gestures)
+feature_preloadLoginForm: true               # If true, code for login popup is preloaded and opens without page load.
+feature_quickview: false                     # If true, enables automatic Quickview of images
+feature_renderTxtFiles: true                 # If true, all .txt files in the pages folder are rendered (in <pre>-tags, i.e. as is). Otherwise they are ignored.
+feature_screenSizeBreakpoint: 480            # [px] Determines the point where Lizzy switches from small to large screen mode.
+feature_selflinkAvoid: true                  # If true, the nav-link of the current page is replaced with a local page link (to satisfy a accessibility requirement).
+feature_sitemapFromFolders: true             # If true, the sitemap will be derived from the folder structure under pages/, rather than the config/sitemap.yaml file.
+feature_supportLegacyBrowsers: true          # If true, jQuery 1 is loaded in case of legacy browsers.
+feature_touchDeviceSupport: false            # If true, Lizzy supports swipe gestures etc. on touch devices.
+
+path_logPath: .#logs/                        # [true|Name] Name of folder to which logging output will be sent. Or "false" for disabling logging.
+path_pagesPath: pages/                       # Name of folder in which all pages reside.
+path_stylesPath: css/                        # Name of folder in which style sheets reside
+path_userCodePath: code/                     # Name of folder in which user-provided PHP-code must reside.
+
+site_allowInsecureConnectionsTo: 192.*       # [domain(s)] Permit login over insecure connections to webhost on stated domain/ip-address.
+site_compiledStylesFilename: __styles.css    # Name of style sheet containing collection of compiled user style sheets
+site_dataPath: data/                         # Path to data/ folder.
+site_defaultLocale: en_US                    # Default local, e.g. "en_US" or "de_CH"
+site_enableCaching: true                     # If true, Lizzy's caching mechanism is activated. (not fully implemented yet)
+site_enableRelLinks: false                   # If true, injects "rel links" into header, e.g. "<link rel='next' title='Next' href='...'>"
+site_extractSelector: body main              # [selector] Lets an external js-app request an extract of the web-page
+site_pageTemplateFile: page_template.html    # Name of file that will be used as the template. Must be located in 'config/'
+site_robots: true                            # If true, Lizzy will add a meta-tag to inform search engines, not to index this site.
+site_sitemapFile: sitemap.txt                # Name of file that defines the site structure. Build hierarchy simply by indenting.
+site_supportedLanguages: en                  # Defines which languages will be supported: comma-separated list of language-codes. E.g. "en, de, fr" (first elem => default lang)
+site_timeZone: auto                          # Name of timezone, e.g. "UTC" or "CET". If auto, attempts to set it automatically.
+
