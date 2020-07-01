@@ -231,7 +231,7 @@ class Lizzy
             // Note: in most cases MD-caching will not become active since the page caching
             //  will kick in before we get to this point.
             //  ToDo: figure out whether MD-caching is still required at all
-            if ($this->config->cachingActive && $this->page->readFromCache()) {
+            if ($this->config->mdCachingActive && $this->page->readFromCache()) {
                 $html = $this->page->render(true);
                 $html = $this->resolveAllPaths($html);
                 if ($this->timer) {

@@ -78,7 +78,8 @@ private $userConfigurableSettingsAndDefaults      = [
     'site_compiledStylesFilename'       => ['__styles.css', 'Name of style sheet containing collection of compiled user style sheets', 2 ],
     'site_dataPath'                     => [DATA_PATH, 'Path to data/ folder.', 3 ],
     'site_defaultLocale'                => ['en_US', 'Default local, e.g. "en_US" or "de_CH"', 3 ],
-    'site_enableCaching'                => [false, 'If true, Lizzy\'s caching mechanism is activated. (not fully implemented yet)', 3 ],
+    'site_enableCaching'                => [false, 'If true, Lizzy\'s caching mechanism is activated.', 1 ],
+    'site_enableMdCaching'                => [false, 'If true, Lizzy\'s MD caching mechanism is activated. (not fully implemented yet)', 3 ],
     'site_extractSelector'              => ['body main', '[selector] Lets an external js-app request an extract of the web-page', 3 ],
     'site_enableRelLinks'               => [true, 'If true, injects "rel links" into header, e.g. "&lt;link rel=\'next\' title=\'Next\' href=\'...\'>"', 3 ],
     'site_allowInsecureConnectionsTo'   => ['192.*', '[domain(s)] Permit login over insecure connections to webhost on stated domain/ip-address.', 1 ],
@@ -103,6 +104,7 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->cachePath                = CACHE_PATH;
         $this->cacheFileName            = CACHE_FILENAME;
         $this->cachingActive            = false;
+        $this->mdCachingActive          = false;
         $this->siteIdententation        = MIN_SITEMAP_INDENTATION;
         $this->configFile               = $configFile;
 
