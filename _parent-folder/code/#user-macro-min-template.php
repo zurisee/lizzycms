@@ -10,8 +10,13 @@ $this->addMacro($macroName, function () {
 	$sys = $this->config->systemPath;
 
 	$arg1 = $this->getArg($macroName, /*arg-name*/ '', /*help-text*/ '', /* default-value*/'');
+//    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
+
 
 	$args = $this->getArgsArray($macroName);
+//    if (isset($args['disableCaching'])) {
+//        unset($args['disableCaching']);
+//    }
 
 	$str = '';  // text rendered by macro
 

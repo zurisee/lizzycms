@@ -57,8 +57,15 @@ $this->addMacro($macroName, function () {
 	$arg1 = $this->getArg($macroName, 'argName1', 'Help-text', 'default value');
 	$arg2 = $this->getArg($macroName, 'argName2', 'Help-text', 'default value');
 
+	// use this arg in case your macro does not allow to be cached:
+    $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(false) Enables page caching (which is disabled for this macro by default). Note: only active if system-wide caching is enabled.', true);
+
+
 	// alternatively, get all arguments at once as an array:
 	$args = $this->getArgsArray($macroName);
+    if (isset($args['disableCaching'])) {
+        unset($args['disableCaching']);
+    }
 
 
 	// how to manipulate page-related objects, e.g.:
