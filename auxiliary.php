@@ -1957,6 +1957,9 @@ function rrmdir($src)
     // remove dir recursively
     $src = rtrim($src, '/');
     $dir = opendir($src);
+    if (!$dir) {
+        return;
+    }
     while(false !== ( $file = readdir($dir)) ) {
         if (( $file !== '.' ) && ( $file !== '..' )) {
             $full = $src . '/' . $file;
