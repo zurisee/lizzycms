@@ -1956,6 +1956,9 @@ function rrmdir($src)
 {
     // remove dir recursively
     $src = rtrim($src, '/');
+    if (!file_exists($src)) {
+        return;
+    }
     $dir = opendir($src);
     if (!$dir) {
         return;
