@@ -78,6 +78,15 @@ function scrollIntoView( selector, container )
 
 
 
+//--------------------------------------------------------------
+Date.prototype.addHours = function(h) {
+    this.setTime(this.getTime() + (h*60*60*1000));
+    return this;
+}
+
+
+
+
 // === Message Box =================================
 if ($('.lzy-msgbox').length) {
     setupMessageHandler(800);
@@ -163,7 +172,9 @@ function isServerErrMsg(json)
         console.log('- response: ' + json.replace(/<(?:.|\n)*?>/gm, ''));
         return true;
     }
-    console.log('- response: ' + json);
+    if ( json ) {
+        console.log('- response: ' + json);
+    }
     return false;
 } // isServerErrMsg
 
