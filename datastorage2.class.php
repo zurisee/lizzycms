@@ -1625,6 +1625,7 @@ EOT;
             try {
                 $data = Yaml::parse($str);
             } catch(Exception $e) {
+                writeLog("Error in Yaml-Code: <pre>\n$str\n</pre>\n".$e->getMessage());
                 die("Error in Yaml-Code: <pre>\n$str\n</pre>\n".$e->getMessage());
             }
         }
