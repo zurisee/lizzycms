@@ -418,7 +418,12 @@ class DataStorage2
 
     public function getNoOfRecords()
     {
-        return sizeof($this->getData( true ));
+        $data = $this->getData( true );
+        if (!$data) {
+            return 0;
+        } else {
+            return sizeof($data);
+        }
     } // getNoOfRecords
 
 
@@ -966,6 +971,9 @@ class DataStorage2
 
     private function fixRecId($recId, $allowNewRec = false, $supportedArgs = false)
     {
+        if (!$this->data) {
+            return false;
+        }
         if (is_array($recId)) {
             return $this->parseRecModifArgs($recId, $supportedArgs);
         }
