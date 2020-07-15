@@ -443,7 +443,7 @@ class Transvar
 
 
     //....................................................
-    public function readTransvarsFromFile($file, $markSource = false)
+    public function readTransvarsFromFile($file, $markSource = false, $dontOverwrite = false)
     {
         if ($file[0] === '~') {
             $file = resolvePath($file);
@@ -475,7 +475,15 @@ class Transvar
                         $newVars[$key]['src'] = $file;
                     };
                 }
-                $this->transvars = array_merge($this->transvars, $newVars);
+                if ($dontOverwrite) {
+                    foreach ($newVars as $k => $v) {
+                        if (!isset($this->transvars[$k])) {
+                            $this->transvars[$k] = $v;
+                        }
+                    }
+                } else {
+                    $this->transvars = array_merge($this->transvars, $newVars);
+                }
             }
         }
     } // readTransvarsFromFile
