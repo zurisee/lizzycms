@@ -370,13 +370,22 @@ class Authentication
 
 
 
-    public function getUserRec( $username )
+    public function getUserRec( $username = false )
     {
-        if (isset($this->knownUsers[$username])) {
-            return $this->knownUsers[$username];
+        if (!$username) {
+            $rec = $this->userRec;
+        } elseif (isset($this->knownUsers[$username])) {
+            $rec = $this->knownUsers[$username];
         } else {
             return [];
         }
+        if (isset($rec['password'])) {
+            unset($rec['password']);
+        }
+        if (isset($rec['accessCode'])) {
+            unset($rec['accessCode']);
+        }
+        return $rec;
     } // getUserRec
 
 
