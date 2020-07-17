@@ -245,6 +245,12 @@ class Forms
 		$out .= "\t\t<input type='hidden' name='lizzy_form' value='{$this->currForm->formId}' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_time' name='lizzy_time' value='$time' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_next' value='{$this->currForm->next}' />\n";
+
+		if ($this->currForm->antiSpam) {
+            $out .= "\t\t<div class='fld-ch' aria-hidden='true'>\n";
+            $out .= "\t\t\t<label for='fld_ch'>Name:</label><input id='fld_ch' type='text' class='lzy-form-check' name='lzy-form-name' value='' />\n";
+            $out .= "\t\t</div>\n";
+        }
 		return $out;
 	} // renderFormHead
 
@@ -835,6 +841,7 @@ EOT;
                 $GLOBALS["globalParams"]['preventMultipleSubmit'] = true;
             }
             $this->currForm->replaceQuotes =  (isset($args['replaceQuotes']))? $args['replaceQuotes']: true;
+            $this->currForm->antiSpam =  (isset($args['antiSpam']))? $args['antiSpam']: true;
 
             // options or option:
             $this->currForm->options = isset($args['options'])? $args['options']: (isset($args['option'])? $args['option']: '');
@@ -1106,6 +1113,17 @@ EOT;
 		$labels = &$formData['labels'];
 		$names = &$formData['names'];
 		$userSuppliedData = $this->userSuppliedData;
+
+		if ($userSuppliedData["lzy-form-name"] !== '') {
+		    $out = var_export($userSuppliedData, true);
+            $out = str_replace("\n", ' ', $out);
+            $out .= "\n[{$_SERVER['REMOTE_ADDR']}] {$_SERVER['HTTP_USER_AGENT']}\n";
+            $logState = $GLOBALS["globalParams"]["errorLoggingEnabled"];
+            $GLOBALS["globalParams"]["errorLoggingEnabled"] = true;
+            writeLog($out, 'spam-log.txt');
+            $GLOBALS["globalParams"]["errorLoggingEnabled"] = $logState;
+            return;
+        }
 
 		// check required entries:
         foreach ($currFormDescr->formElements as $name => $rec) {
@@ -1409,6 +1427,9 @@ postprocess:
 
 warnLeavingPage:
 : If true (=default), user will be warned if attempting to leave the page without submitting entries.
+
+antiSpam:
+: If true (=default), honey pot field is embedded in the form as an spam prevention measure.
 
 encapsulate:
 : If true, applies Lizzy's CSS encapsulation (i.e. adds lzy-encapsulated class to form element).
