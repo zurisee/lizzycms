@@ -178,11 +178,15 @@ $('{$this->triggerSource}').on({
 
 EOT;
 
-                } else {
-                    $jq .= "\n$('{$this->triggerSource}').bind('{$this->triggerEvent}', function(e) { e.preventDefault(); $('$_popupId').popup('show'); });\n";
+                } elseif ($this->triggerSource !== 'none') {
+                    $jq .= <<<EOT
+$('{$this->triggerSource}')
+    .bind('{$this->triggerEvent}', function(e) { e.preventDefault(); $('$_popupId').popup('show'); })
+    .attr('aria-expanded', false);
+
+EOT;
                 }
                 $this->getArg('triggerEvent', 'click');
-                $jq .= "$('{$this->triggerSource}').attr('aria-expanded', false);\n";
                 $this->argStr .= "onopen: function() { $('{$this->triggerSource}').attr('aria-expanded', true); $onOpen},\n";
                 $this->argStr .= "onclose: function() { $('{$this->triggerSource}').attr('aria-expanded', false); },\n";
                 if ($this->autoOpen) {
