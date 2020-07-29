@@ -76,6 +76,13 @@ lzy-form-required-comment:
     de: 'Mit <span class="lzy-form-required-marker">*</span> bezeichnete Felder sind Pflichtfelder.'
     _:  'Fields marked by <span class="lzy-form-required-marker">*</span> are mandatory.'
 
+lzy-yes:
+    de: 'Ja'
+    _:  'Yes'
+lzy-no:
+    de: 'Nein'
+    _:  'No'
+
 
 
 #--- File Upload --------------------------

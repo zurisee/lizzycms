@@ -149,6 +149,8 @@ private $userConfigurableSettingsAndDefaults      = [
 
         $this->loadModules['QUICKVIEW']     	    = array('module' => 'js/quickview.js, css/quickview.css', 'weight' => 92);
 
+        $this->loadModules['JS_POPUPS']             = array('module' => 'js/js-popup.js, css/js-popup.css', 'weight' => 86);
+
         $this->loadModules['POPUP']  = // POPUP is synonym for POPUPS
         $this->loadModules['POPUPS']                = array('module' => 'third-party/jquery-popupoverlay/jquery.popupoverlay.js,'.
                                                                         'css/popup.css', 'weight' => 85);
