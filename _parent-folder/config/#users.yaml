@@ -40,6 +40,8 @@
 #       restricted pages. Not very secure but convenient.
 # accessCodeValidUntil:
 #       (optional) defines the date and time until an accessCode (see above) expires.
+# inactive:
+#       (optional) If true, the owner of this account cannot log in.
 #--------------------------------------------------------------------------------------
 
 
