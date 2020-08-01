@@ -44,6 +44,17 @@ body {
     padding: 20px;
     max-width: 28em;
 }
+.lzy-invite-user-form {
+    max-width: 40em;
+}
+.lzy-textarea2 {
+    min-height: 16em;
+}
+.lzy-invite-user-mailtext-wrapper {
+    margin: 1.5em 0;
+    border: 1px solid gray;
+    padding: 10px;
+}
 
 .lzy-login-form input,
 .lzy-invite-user-form input,
@@ -146,11 +157,15 @@ input.lzy-form-checkbox {
     margin-top: 5px;
 }
 
+.lzy-form-element label {
+    margin: 1em 0 0.3em 0;
+    display: inline-block;
+}
+.lzy-account-form-wrapper textarea,
 .lzy-account-form-wrapper input {
     border: 0.2px solid #bbb;
     padding: 3px 0.5em;
-    margin-top: 1em;
-    /*margin-top: 0.5em;*/
+    margin-top: 0.3em;
 }
 .lzy-account-form-wrapper input:focus {
     box-shadow: 0 0 5px 2px #67770e;

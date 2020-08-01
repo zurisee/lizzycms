@@ -191,5 +191,9 @@ $('.lzy-invite-user-form').submit(function () {
         txt = txt.replace(/\n/, ';');
         $('#lzy-textarea1').val(txt);
     }
+
+    txt = $('#lzy-textarea2').val();
+    txt = txt.replace(/\n/g, ' BR ');
+    $('#lzy-textarea2').val( txt );
 })
 

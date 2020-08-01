@@ -58,8 +58,7 @@ class AdminTasks
         } elseif ($requestType === 'lzy-invite-user-email') {           // admin requested invitation mail to new user:
             if ($this->lzy->config->admin_enableSelfSignUp) {
                 $emails = get_post_data('lzy-invite-user-email-addresses');
-                $groups = get_post_data('lzy-invite-user-groups');
-                $result = $this->sendInvitationByMails($emails, DEFAULT_INVITATION_LINK_VALIDITY_TIME, $groups);
+                $result = $this->sendInvitationByMails($emails, DEFAULT_INVITATION_LINK_VALIDITY_TIME);
                 $result = str_replace('<', '&lt;', $result);
                 $msg = <<<EOT
                     <h1 style="margin: 2em 0 1em;">Sending invitations:</h1>
@@ -690,9 +689,14 @@ EOT;
 
 
     //....................................................
-    public function sendInvitationByMails($submittedEmail, $accessCodeValidyTime, $groups = '')
+    public function sendInvitationByMails($submittedEmail, $accessCodeValidyTime)
     {
         global $globalParams;
+
+        $groups = get_post_data('lzy-invite-user-groups');
+        $subject = get_post_data('lzy-invite-user-subject');
+        $text = get_post_data('lzy-invite-user-mailtext-');
+        $text = str_replace(' BR ', "\n", $text);
 
         $out = '';
         $validUntil = time() + $accessCodeValidyTime;
@@ -725,9 +729,9 @@ EOT;
 //$hash = $tick->createTicket($otRec, 100, $accessCodeValidyTime);
 
             $url = $globalParams['pageUrl'] . $hash . '/';
-            // $url = "<a href='$url'>$url</a>";  // ToDo: required in e-mail?
-            $subject = "[{{ site_title }}] {{ lzy-signup-invitation-subject }} {$globalParams['host']}";
-            $message = "{{ lzy-signup-invitation1 }} $url {{ lzy-signup-invitation2 }}$validUntilStr{{ lzy-signup-invitation3 }}\n\n{{ lzy-signup-invitation-greeting }}";
+            $subject = str_replace(['{site_title}', '{lzy-invitation-default-subject}', '{lzy-invitation-host}'],
+                    ['{{ site_title }}', '{{ lzy-signup-invitation-subject }}', $globalParams['host']], $subject);
+            $message = str_replace(['{lzy-invitation-link}', '{lzy-invitation-expiry-date}'], [$url, $validUntilStr], $text);
 
             $ok = $this->sendMail($email, $subject, $message);
             if ($ok) {

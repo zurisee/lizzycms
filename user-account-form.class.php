@@ -673,6 +673,12 @@ EOT;
         $email = $this->renderTextareaInput('lzy-invite-user-email-', 'addresses',true);
         $group = $this->renderTextlineInput('lzy-invite-user-', 'groups', false, '','{{ guest }}');
         $checkbox = $this->renderCheckbox('lzy-invite-user-create-hash-', '');
+        $this->inx++;
+
+        $subject = "[{{ site_title }}] {{ lzy-signup-invitation-subject }} {$GLOBALS['globalParams']['host']}";
+        $subject = $this->renderTextlineInput('lzy-invite-user-', 'subject', false, '', $subject);
+
+        $mailText = $this->renderTextareaInput('lzy-invite-user-mailtext-', '', '', '', '{{ lzy-signup-invitation }}');
         $submitButton = $this->createSubmitButton('lzy-invite-user-email-');
 
 
@@ -686,13 +692,20 @@ $message
 $notification
 $email
 $group
-$checkbox            
+$checkbox
+
+<div class="lzy-invite-user-mailtext-wrapper">
+$subject
+$mailText
+</div>
+
 $submitButton
                 </form>
             </div><!-- /account-form -->
 
 EOT;
 
+        $this->config->feature_replaceNLandTabChars = true;
         $this->page->addJQFiles('USER_ADMIN');
         return $str;
     } // createInviteUserForm
@@ -901,7 +914,7 @@ EOT;
     {
         $required = ($required) ? " required aria-required='true'" : '';
         $placeholder = ($placeholder) ? " placeholder='$placeholder'" : '';
-        $preset = ($preset) ? " preset='$preset'" : '';
+//        $preset = ($preset) ? " preset='$preset'" : '';
         return <<<EOT
                     <div class="lzy-form-element">
                         <label for="lzy-textarea{$this->inx}" class="lzy-textarea-label">
@@ -909,7 +922,7 @@ EOT;
                             <a href="#" class="lzy-admin-show-info" title="{{ {$prefix}info-title }}" aria-label="{{ {$prefix}info-title }}">{$this->infoIcon}</a> 
                             <span class="lzy-admin-info lzy-{$prefix}info" style="display: none">{{ {$prefix}info }}</span>
                         </label>
-                        <textarea id="lzy-textarea{$this->inx}" class="lzy-textarea" name="{$prefix}$fieldName"$required$placeholder>$preset</textarea>
+                        <textarea id="lzy-textarea{$this->inx}" class="lzy-textarea lzy-textarea{$this->inx}" name="{$prefix}$fieldName"$required$placeholder>$preset</textarea>
                         <output class='lzy-error-message' aria-live="polite" aria-relevant="additions"></output>
                     </div>
 EOT;

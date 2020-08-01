@@ -549,17 +549,45 @@ lzy-signup-invitation-subject:
     de: "Einladung für Webzugang"
     _:  "Invitation to access website"
 
-lzy-signup-invitation1:
-    de: "Guten Tag\n\nWir laden Sie ein, bei unserer Website {{ site_title }} ein Konto zu eröffnen.\nDamit erhalten Sie Zugang zu unseren nicht-öffentlichen Inhalten.\nÖffnen Sie den folgenden Link:\n\n\t"
-    _:  "Hello\n\nWe invite your to open an account on our Website {{ site_title }}.\nThis let's you access our non-public pages. Open the following link: \n\n\t"
+lzy-invite-user-mailtext-prompt:
+    de: 'Einladungs-Mail'
+    _:  'Invitation Mail'
 
-lzy-signup-invitation2:
-    de: "\n\nBitte beachten Sie, dass der Link aus Sicherheitsgründen nur einmal und nur bis am "
-    _:  "\n\nPlease note that this link only works once and only before "
+lzy-invite-user-mailtext-info:
+    de: 'Platzhalter: {lzy-invitation-link}, {lzy-invitation-expiry-date}'
+    _:  'Placeholder:  {lzy-invitation-link}, {lzy-invitation-expiry-date}'
 
-lzy-signup-invitation3:
-    de: " funktioniert."
-    _:  ""
+lzy-invite-user-subject-prompt:
+    de: 'Betreff'
+    _:  'Subject'
+
+lzy-invite-user-subject-login-info:
+    de: 'Platzhalter: {site_title}, {lzy-invitation-default-subject}, {lzy-invitation-host}'
+    _:  'Placeholder:  {site_title}, {lzy-invitation-default-subject}, {lzy-invitation-host}'
+
+lzy-signup-invitation:
+    de: |
+        Guten Tag\n\nWir laden Sie ein, bei unserer Website {{ site_title }} ein Konto zu eröffnen.
+        Damit erhalten Sie Zugang zu unseren nicht-öffentlichen Inhalten.
+        Öffnen Sie den folgenden Link:\n\n\t{lzy-invitation-link}\n
+        Bitte beachten Sie, dass der Link aus Sicherheitsgründen nur einmal und nur bis am {lzy-invitation-expiry-date} funktioniert.
+    _:  |
+        Hello\n\nWe invite your to open an account on our Website {{site_title}}.
+        This let's you access our non-public pages.
+        Open the following link: \n\n\t{lzy-invitation-link}\n
+        Please note that this link only works once and only before {lzy-invitation-expiry-date}.
+
+#lzy-signup-invitation1:
+#    de: "Guten Tag\n\nWir laden Sie ein, bei unserer Website {{ site_title }} ein Konto zu eröffnen.\nDamit erhalten Sie Zugang zu unseren nicht-öffentlichen Inhalten.\nÖffnen Sie den folgenden Link:\n\n\t"
+#    _:  "Hello\n\nWe invite your to open an account on our Website {{ site_title }}.\nThis let's you access our non-public pages. Open the following link: \n\n\t"
+#
+#lzy-signup-invitation2:
+#    de: "\n\nBitte beachten Sie, dass der Link aus Sicherheitsgründen nur einmal und nur bis am "
+#    _:  "\n\nPlease note that this link only works once and only before "
+#
+#lzy-signup-invitation3:
+#    de: " funktioniert."
+#    _:  ""
 
 lzy-signup-invitation-greeting:
     de: "Beste Grüsse vom Webmaster {{ site_title }}"
