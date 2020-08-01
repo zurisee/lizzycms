@@ -495,6 +495,8 @@ class Transvar
     {
         if ($lang === false) {	// delete first
             $this->transvars[$key] = '';
+        } else {
+            $lang = ($lang) ? $lang : $_SESSION["lizzy"]["lang"];
         }
         if ($lang) {
             if (!isset($this->transvars[$key][$lang])) {
@@ -544,7 +546,7 @@ class Transvar
     //....................................................
     public function getVariable($key, $lang = '')
     {
-        $lang = ($lang) ? $lang : $this->config->lang;
+        $lang = ($lang) ? $lang : $_SESSION["lizzy"]["lang"];
         $out = false;
 
         if (isset($this->transvars[$key])) {
@@ -681,7 +683,7 @@ class Transvar
 	//....................................................
 	public function readAll($lang = false)
 	{
-		$lang = ($lang) ? $lang : $this->lang;
+        $lang = ($lang) ? $lang : $_SESSION["lizzy"]["lang"];
 		$vars = array();
 		foreach ($this->transvars as $key => $entry) {
 			if (!is_array($entry)) {
