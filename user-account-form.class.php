@@ -16,21 +16,9 @@ class UserAccountForm
     private $un_preset = '';
 
     public function __construct($lzy, $infoIcon = SHOW_PW_INFO_ICON)
-//    public function __construct($lzy, $infoIcon = '&#9432;')
     {
         global $lizzyAccountCounter;
         $this->showPwIcon = SHOW_PW_ICON;
-//        $this->showPwIcon = <<<'EOT'
-//<svg width="100%" height="100%" viewBox="0 0 512 512" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:1.41421;">
-//    <g>
-//        <path d="M499.4,250.8C448.4,164.5 355.8,110.4 256,110.4C156.2,110.4 63.5,164.5 12.6,250.8C10.5,253.9 10.5,258.1 12.6,261.2C63.6,347.5 156.2,401.6 256,401.6C355.8,401.6 448.5,347.5 499.4,261.2C501.5,258.1 501.5,253.9 499.4,250.8ZM256,380.8C165.5,380.8 81.2,333 34.4,256C81.2,179 165.5,131.2 256,131.2C346.5,131.2 430.8,179 477.6,256C430.8,333 346.5,380.8 256,380.8Z" style="fill-rule:nonzero;"/>
-//        <path d="M256,162.4C204,162.4 162.4,204 162.4,256C162.4,308 204,349.6 256,349.6C308,349.6 349.6,308 349.6,256C349.6,204 308,162.4 256,162.4ZM256,328.8C215.4,328.8 183.2,296.5 183.2,256C183.2,215.5 215.5,183.2 256,183.2C296.5,183.2 328.8,215.5 328.8,256C328.8,296.5 296.6,328.8 256,328.8Z" style="fill-rule:nonzero;"/>
-//        <path d="M256,214.4L256,235.2C267.4,235.2 276.8,244.6 276.8,256C276.8,267.4 267.4,276.8 256,276.8C244.6,276.8 235.2,267.4 235.2,256L214.4,256C214.4,278.9 233.1,297.6 256,297.6C278.9,297.6 297.6,278.9 297.6,256C297.6,233.1 278.9,214.4 256,214.4Z" style="fill-rule:nonzero;"/>
-//        <path class="crossed" d="M466.554,127.017L468.71,128.769L470.137,131.153L470.662,133.881L470.223,136.625L468.871,139.053L466.771,140.872L57.991,385.529L55.396,386.521L52.618,386.564L49.992,385.655L47.836,383.903L46.409,381.519L45.884,378.791L46.323,376.047L47.674,373.62L49.774,371.8L458.555,127.143L461.15,126.152L463.928,126.108L466.554,127.017Z"/>
-//    </g>
-//</svg>
-//
-//EOT;
 
         $this->infoIcon = $infoIcon;
         if (!isset($GLOBALS['globalParams']['legacyBrowser']) || $GLOBALS['globalParams']['legacyBrowser']) {
@@ -46,7 +34,8 @@ class UserAccountForm
             }
             $this->trans->readTransvarsFromFile('~sys/config/admin.yaml');
             $this->checkInsecureConnection();
-            $this->page->addModules('USER_ADMIN');
+            $this->page->addModules('USER_ADMIN, JS_POPUPS');
+//            $this->page->addModules('USER_ADMIN');
         } else {
             $this->config = null;
             $this->page = null;
@@ -57,7 +46,6 @@ class UserAccountForm
         $this->message = (isset($lzy->auth->message)) ? $lzy->auth->message : '';
         $this->warning = (isset($lzy->auth->warning)) ? $lzy->auth->warning : '';
     } // __construct
-
 
 
     public function renderLoginForm($notification = '', $message = '', $returnRaw = false)
@@ -81,8 +69,6 @@ class UserAccountForm
     } // authForm
 
 
-
-
     public function renderLoginUnPwForm($notification = '', $message = '')
     {
         $this->page = new Page;
@@ -92,8 +78,6 @@ class UserAccountForm
 
         return $this->page;
     } // authForm
-
-
 
 
     public function renderLoginAcessLinkForm($notification = '', $message = '')
@@ -107,8 +91,6 @@ class UserAccountForm
     } // authForm
 
 
-
-
     public function renderSignUpForm($group, $notification = '', $message = '')
     {
         setStaticVariable('self-signup-to-group', $group);
@@ -119,15 +101,13 @@ class UserAccountForm
         } else {
             $str = "<h2>{{ lzy-self-sign-up }}</h2>";
             $this->page = new Page;
-            $str .= $this->createSignUpForm($notification);
+            $str .= $this->createSignUpForm($notification, '');
         }
 
         $this->page->addOverride($str);
 
         return $this->page;
     } // authForm
-
-
 
 
     public function renderAddUserForm($group, $notification = '', $message = '')
@@ -142,6 +122,90 @@ class UserAccountForm
     }
 
 
+    public function renderCreateUserForm($rec)
+    {
+        $accessCodeValidyTime = 900;
+        $tick = new Ticketing();
+        $rec['mode'] = 'sign-up-invited-user';
+        $hash = $tick->createTicket($rec, 1, $accessCodeValidyTime);
+//        $hash = $tick->createTicket($rec, 100, $accessCodeValidyTime);
+
+        $str = "\t\t\t<h1>{{ lzy-user-self-signup-title }}</h1>";
+        $str .= "\t\t\t<p>{{ lzy-user-self-signup-intro }}</p>";
+        $str .= $this->createCreateUserForm($rec, $hash);
+
+        $js = <<<'EOT'
+var ok = false;
+
+function checkUn( ok ) {
+    var un = $('#lzy-login-textinput1').val();
+    if (un) {
+        console.log(`checking username: ${un}`);
+        $.ajax({
+          url: "./?lzy-check-username=" + un,
+        }).done(function( data ) {
+            if (data === 'ok') {
+                if (ok === true) {
+                    ok = false;
+                    $('.lzy-signup-form').submit();
+                }
+            } else {
+                $('#lzy-login-textinput1').focus();
+                lzyPopup({
+                    content: data,
+                    buttons: '{{ lzy-signup-continue }}'
+                });
+            }
+        });
+    } else {
+        $('#lzy-login-textinput1').focus();
+        $('#lzy-login-textinput1 + .lzy-error-message').text( '{{ lzy-username-required }}' );
+    }
+    return false;
+}
+
+EOT;
+        $this->page->addJs( $js );
+        $minPwLength = PW_MIN_LENGTH;
+
+        $jq = <<<EOT
+\$('.lzy-signup-submit-btn').click(function(e) {
+    e.preventDefault();
+    var pw = \$('#lzy-login-password1').val();
+    var pw2 = \$('#lzy-login-password21').val();
+    \$('#lzy-login-password1 + .lzy-error-message').text( '' );
+    \$('#lzy-login-textinput1 + .lzy-error-message').text( '' );
+    var dfd = \$.Deferred();
+    dfd.done( checkUn );
+  
+    if (pw) {
+        if (pw !== pw2) {
+            lzyPopup({
+                text: '{{ lzy-signup-passwords-not-identical }}',
+                buttons: '{{ lzy-signup-continue }}'
+            });
+       } else if ((pw.length < $minPwLength) || (!pw.match(/[A-Z]/)) || (!pw.match(/\W/)) || (!pw.match(/\d/)) ) {
+            lzyPopup({
+                contentRef: '#lzy-weak-pw-warning',
+                buttons: '{{ lzy-signup-continue-anyway }}, {{ lzy-signup-abort }}',
+                closeOnBgClick: false,
+                callbacks: function() { dfd.resolve( true ); }
+            });
+        } else {
+            checkUn( true );
+        }
+    } else {
+        \$('#lzy-login-password1').focus();
+        \$('#lzy-login-password1 + .lzy-error-message').text( '{{ lzy-password-required }}' );
+    }
+});
+
+EOT;
+        $this->page->addJq( $jq );
+
+        $str .= "\t<div id='lzy-weak-pw-warning' style='display: none;'><div>{{ lzy-weak-pw-warning }}</div></div>\n";
+        return $str;
+    } // renderCreateUserForm
 
 
     public function renderAddUsersForm($group, $notification = '', $message = '')
@@ -156,8 +220,6 @@ class UserAccountForm
     }
 
 
-
-
     public function renderChangePwForm($user, $notification = '', $message = '')
     {
         $str = "<h2>{{ lzy-change-password }}</h2>";
@@ -168,8 +230,6 @@ class UserAccountForm
 
         return $this->page;
     }
-
-
 
 
     public function renderOnetimeLinkEntryForm($user, $validUntilStr, $prefix)
@@ -194,6 +254,17 @@ class UserAccountForm
 EOT;
         return $form;
     }
+
+
+
+    public function renderInviteUserForm($userRec, $notification = '', $message = '')
+    {
+        $html = "\t\t<h2>{{ lzy-invite-user-request-header }}</h2>\n";
+        $html .= $this->createInviteUserForm($notification = '', $message = '');
+        $html .= "\t{{ lzy-invite-user-request-description }}\n";
+        return $html;
+    } // renderInviteUserForm
+
 
 
 
@@ -301,8 +372,6 @@ EOT;
 
         return $html;
     } // createMultimodeLoginForm
-
-
 
 
 
@@ -473,7 +542,48 @@ EOT;
 
         $this->page->addJQFiles('USER_ADMIN');
         return $str;
-    } // createPWAccessForm
+    } // createAddUsersForm
+
+
+
+    private function createCreateUserForm($rec, $hash)
+    {
+        $this->inx++;
+        $path = $GLOBALS["globalParams"]["pagePath"];
+        if ($path) {
+            $path = trunkPath($path, 1, false);
+        } else {
+            $path = '';
+        }
+        $url = $GLOBALS["globalParams"]["appRoot"].$path.$hash.'/';
+        $email = $rec['email'];
+
+        $username = $this->renderTextlineInput('lzy-self-signup-user-', 'username', true);
+        $password = $this->renderPasswordInput('lzy-self-signup-user-password-', true, false, true);
+        $submitButton = $this->createSubmitButton('lzy-add-users-', 'lzy-signup-submit-btn');
+
+        $str = <<<EOT
+
+            <div class="lzy-account-form-wrapper">                
+                <form class="lzy-signup-form"  action="$url" method="POST">
+                    <input type="hidden" name="lzy-user-admin" value="self-signup" />
+                    <div class="lzy-user-self-signup-email-box">
+                        <span class="lzy-user-self-signup-email-label">{{ lzy-user-self-signup }}</span>
+                        <span class="lzy-user-self-signup-email">$email</span>
+                        <span class="lzy-user-self-signup-email-label2">{{ lzy-user-self-signup2 }}</span>
+                    </div>
+
+$username
+$password
+$submitButton
+                </form>
+            </div><!-- /account-form -->
+
+EOT;
+
+        $this->page->addJQFiles('USER_ADMIN');
+        return $str;
+    } // createCreateUserForm
 
 
 
@@ -554,6 +664,41 @@ EOT;
 
 
 
+    private function createInviteUserForm($notification, $message = '')
+    {
+        $notification = $this->wrapTag(NOTI, $notification);
+        $message = $this->wrapTag(MSG, $message);
+        $this->inx++;
+
+        $email = $this->renderTextareaInput('lzy-invite-user-email-', 'addresses',true);
+        $group = $this->renderTextlineInput('lzy-invite-user-', 'groups', false, '','{{ guest }}');
+        $checkbox = $this->renderCheckbox('lzy-invite-user-create-hash-', '');
+        $submitButton = $this->createSubmitButton('lzy-invite-user-email-');
+
+
+        $str = <<<EOT
+
+            <div class="lzy-account-form-wrapper">
+$message
+                <form class="lzy-invite-user-form"  action="./" method="POST">
+                    <input type="hidden" name="lzy-user-admin" value="lzy-invite-user-email" />
+                    <input type="hidden" name="lzy-user" value="" />
+$notification
+$email
+$group
+$checkbox            
+$submitButton
+                </form>
+            </div><!-- /account-form -->
+
+EOT;
+
+        $this->page->addJQFiles('USER_ADMIN');
+        return $str;
+    } // createInviteUserForm
+
+
+
     private function createChangeEmailForm($user, $notification, $message = '')
     {
         $notification = $this->wrapTag(NOTI, $notification);
@@ -582,7 +727,7 @@ EOT;
 
         $this->page->addJQFiles('USER_ADMIN');
         return $str;
-    } // createPWAccessForm
+    } // createChangeEmailForm
 
 
 
@@ -618,11 +763,15 @@ EOT;
 
 
 
-
-    private function createSubmitButton($prefix)
+// --- Render Form Elements: -------------------------------------------------
+    private function createSubmitButton($prefix, $class = 'lzy-admin-submit-button')
     {
         return <<<EOT
-                    <button id="lzy-login-submit-button{$this->inx}" class="lzy-admin-submit-button {$prefix}submit-button lzy-button" name="btn_submit" value="submit">{{ {$prefix}send }}</button>
+                    <input type="submit" id="lzy-login-submit-button{$this->inx}" class="$class {$prefix}submit-button lzy-button" value="{{ {$prefix}send }}" />
+
+EOT;
+        return <<<EOT
+                    <button id="lzy-login-submit-button{$this->inx}" class="$class {$prefix}submit-button lzy-button" name="btn_submit" value="submit">{{ {$prefix}send }}</button>
 
 EOT;
     }
@@ -641,25 +790,40 @@ EOT;
 
 
 
-    private function renderPasswordInput($prefix, $required = true, $hideShowPwIcon = false)
+    private function renderPasswordInput($prefix, $required = true, $hideShowPwIcon = false, $renderPwRepeatField = '')
     {
         $i = '';
         if (preg_match('/(\d+)/', $prefix, $m)) {
             $i = $m[1];
         }
+        $name = rtrim($prefix, '-');
         $required = ($required) ? ' required aria-required="true"': '';
         $showPwIcon = (!$hideShowPwIcon) ? '<div class="lzy-form-show-password"><a href="#" aria-label="{{ lzy-login-show-password }}">'.$this->showPwIcon.'</a></div>': '';
-//        $showPwIcon = (!$hideShowPwIcon) ? '<div class="lzy-form-show-password"><a href="#" aria-label="{{ lzy-login-show-password }}"><img src="~sys/rsc/show.png" class="login-form-icon" alt="" title="{{ lzy-login-show-password }}" /></a></div>': '';
 
+        if ($renderPwRepeatField) {
+            $renderPwRepeatField = <<<EOT
+                        <label for="lzy-login-password2{$this->inx}" class="lzy-form-password-label lzy-form-password-label2">
+                            <span>{{ {$prefix}prompt2 }}:</span>
+                            <a href="#" class="lzy-admin-show-info lzy-admin-show-info2" title="{{ {$prefix}info-title }}" aria-label="{{ {$prefix}info-title }}">{$this->infoIcon}</a> 
+                            <span class="lzy-admin-info {$prefix}info" style="display: none">{{ {$prefix}info2 }}</span>
+                        </label>
+                        <input type="password" id="lzy-login-password2{$this->inx}" class="lzy-form-password lzy-form-password2" name='{$name}$i'$required />
+
+EOT;
+
+        }
         return <<<EOT
-                    <label for="lzy-login-password{$this->inx}" class="lzy-form-password-label">
-                        <span>{{ {$prefix}prompt }}:</span>
-                        <a href="#" class="lzy-admin-show-info" title="{{ {$prefix}info-title }}" aria-label="{{ {$prefix}info-title }}">{$this->infoIcon}</a> 
-                        <span class="lzy-admin-info lzy-{$prefix}info" style="display: none">{{ {$prefix}info }}</span>
+                    <div class="lzy-form-element">
+                        <label for="lzy-login-password{$this->inx}" class="lzy-form-password-label">
+                            <span>{{ {$prefix}prompt }}:</span>
+                            <a href="#" class="lzy-admin-show-info" title="{{ {$prefix}info-title }}" aria-label="{{ {$prefix}info-title }}">{$this->infoIcon}</a> 
+                            <span class="lzy-admin-info {$prefix}info" style="display: none">{{ {$prefix}info }}</span>
+                        </label>
 $showPwIcon
-                        <input type="password" id="lzy-login-password{$this->inx}" class="lzy-form-password" name='{$prefix}password$i'$required />
+                        <input type="password" id="lzy-login-password{$this->inx}" class="lzy-form-password" name='{$name}$i'$required />
                         <output class='lzy-error-message' aria-live="polite" aria-relevant="additions"></output>
-                    </label>
+$renderPwRepeatField
+                    </div>
 
 EOT;
     }
@@ -674,13 +838,15 @@ EOT;
         $js = ($forceEmailType) ? ' onkeyup="this.setAttribute(\'value\', this.value);"': '';
 
         return <<<EOT
-                    <label for="lzy-login-email{$this->inx}" class="lzy-form-email-label">
-                        <span>{{ {$prefix}prompt }}:</span>
-                        <a href="#" class="lzy-admin-show-info" title="{{ {$prefix}info-title }}" aria-label="{{ {$prefix}info-title }}">{$this->infoIcon}</a> 
-                        <span class="lzy-admin-info" style="display: none">{{ {$prefix}info-text }}</span>
-                    </label>
-                    <input type="$type" id="lzy-login-email{$this->inx}"  class="lzy-login-email" name="{$prefix}email"$required placeholder="name@domain.net"$js>
-                    <output class='lzy-error-message' aria-live="polite" aria-relevant="additions" style="display: none;">{{ lzy-error-email-required }}</output>
+                    <div class="lzy-form-element">
+                        <label for="lzy-login-email{$this->inx}" class="lzy-form-email-label">
+                            <span>{{ {$prefix}prompt }}:</span>
+                            <a href="#" class="lzy-admin-show-info" title="{{ {$prefix}info-title }}" aria-label="{{ {$prefix}info-title }}">{$this->infoIcon}</a> 
+                            <span class="lzy-admin-info" style="display: none">{{ {$prefix}info-text }}</span>
+                        </label>
+                        <input type="$type" id="lzy-login-email{$this->inx}"  class="lzy-login-email" name="{$prefix}email"$required placeholder="name@domain.net"$js>
+                        <output class='lzy-error-message' aria-live="polite" aria-relevant="additions" style="display: none;">{{ lzy-error-email-required }}</output>
+                    </div>
 EOT;
     }
 
@@ -690,13 +856,15 @@ EOT;
     private function renderUsernameInput($prefix)
     {
         return <<<EOT
-                   <label for="lzy-login-username{$this->inx}" class="lzy-form-username-label">
-                        <span>{{ {$prefix}username-prompt }}:</span>
-                        <a href="#" class="lzy-admin-show-info" title="{{ {$prefix}username-info-title }}" aria-label="{{ {$prefix}username-info-title }}">{$this->infoIcon}</a> 
-                        <span class="lzy-admin-info" style="display: none">{{ {$prefix}username-info-text }}</span>
+                    <div class="lzy-form-element">
+                        <label for="lzy-login-username{$this->inx}" class="lzy-form-username-label">
+                            <span>{{ {$prefix}username-prompt }}:</span>
+                            <a href="#" class="lzy-admin-show-info" title="{{ {$prefix}username-info-title }}" aria-label="{{ {$prefix}username-info-title }}">{$this->infoIcon}</a> 
+                            <span class="lzy-admin-info" style="display: none">{{ {$prefix}username-info-text }}</span>
+                        </label>
                         <input type="text" id="lzy-login-username{$this->inx}" class="lzy-login-username" name="{$prefix}username" required aria-required="true" value="{$this->un_preset}" />
                         <output class='lzy-error-message' aria-live="polite" aria-relevant="additions"></output>
-                    </label>
+                    </div>
 
 EOT;
     }
@@ -709,40 +877,61 @@ EOT;
 
 
 
-    private function renderTextlineInput($prefix, $fieldName, $required = false, $placeholder = '')
+    private function renderTextlineInput($prefix, $fieldName, $required = false, $placeholder = '', $preset = '')
     {
         $required = ($required) ? " required aria-required='true'" : '';
         $placeholder = ($placeholder) ? " placeholder='$placeholder'" : '';
+        $preset = ($preset) ? " value='$preset'" : '';
         return <<<EOT
-                   <label for="lzy-login-textinput{$this->inx}" class="lzy-form-textinput-label">
-                        <span>{{ {$prefix}{$fieldName}-prompt }}:</span>
-                        <a href="#" class="lzy-admin-show-info" title="{{ {$prefix}info-title }}" aria-label="{{ {$prefix}info-title }}">{$this->infoIcon}</a> 
-                        <span class="lzy-admin-info" style="display: none">{{ {$prefix}{$fieldName}-login-info }}</span>
-                        <input type="text" id="lzy-login-textinput{$this->inx}" class="lzy-login-textinput" name="{$prefix}$fieldName"$required$placeholder>
+                    <div class="lzy-form-element">
+                        <label for="lzy-login-textinput{$this->inx}" class="lzy-form-textinput-label">
+                            <span>{{ {$prefix}{$fieldName}-prompt }}:</span>
+                            <a href="#" class="lzy-admin-show-info" title="{{ {$prefix}info-title }}" aria-label="{{ {$prefix}info-title }}">{$this->infoIcon}</a> 
+                            <span class="lzy-admin-info" style="display: none">{{ {$prefix}{$fieldName}-login-info }}</span>
+                        </label>
+                        <input type="text" id="lzy-login-textinput{$this->inx}" class="lzy-login-textinput" name="{$prefix}$fieldName"$required$placeholder$preset />
                         <output class='lzy-error-message' aria-live="polite" aria-relevant="additions"></output>
-                    </label>
+                    </div>
 
 EOT;
     }
 
 
-    private function renderTextareaInput($prefix, $fieldName, $required = false, $placeholder = '')
+    private function renderTextareaInput($prefix, $fieldName, $required = false, $placeholder = '', $preset = '')
     {
         $required = ($required) ? " required aria-required='true'" : '';
         $placeholder = ($placeholder) ? " placeholder='$placeholder'" : '';
+        $preset = ($preset) ? " preset='$preset'" : '';
         return <<<EOT
-                   <label for="lzy-textarea{$this->inx}" class="lzy-textarea-label">
-                        <span>{{ {$prefix}prompt }}:</span>
-                        <a href="#" class="lzy-admin-show-info" title="{{ {$prefix}info-title }}" aria-label="{{ {$prefix}info-title }}">{$this->infoIcon}</a> 
-                        <span class="lzy-admin-info lzy-{$prefix}info" style="display: none">{{ {$prefix}info }}</span>
-                        
-                        <textarea id="lzy-textarea{$this->inx}" class="lzy-textarea" name="{$prefix}$fieldName"$required$placeholder></textarea>
-                        
+                    <div class="lzy-form-element">
+                        <label for="lzy-textarea{$this->inx}" class="lzy-textarea-label">
+                            <span>{{ {$prefix}prompt }}:</span>
+                            <a href="#" class="lzy-admin-show-info" title="{{ {$prefix}info-title }}" aria-label="{{ {$prefix}info-title }}">{$this->infoIcon}</a> 
+                            <span class="lzy-admin-info lzy-{$prefix}info" style="display: none">{{ {$prefix}info }}</span>
+                        </label>
+                        <textarea id="lzy-textarea{$this->inx}" class="lzy-textarea" name="{$prefix}$fieldName"$required$placeholder>$preset</textarea>
                         <output class='lzy-error-message' aria-live="polite" aria-relevant="additions"></output>
-                    </label>
-
+                    </div>
 EOT;
-    }
+    } // renderTextareaInput
+
+
+
+
+    private function renderCheckbox($prefix, $fieldName)
+    {
+        return <<<EOT
+                    <div class="lzy-form-element">
+                        <input type="checkbox" id="lzy-checkbox{$this->inx}" class="lzy-form-checkbox" name="{$prefix}$fieldName" />
+                        <label for="lzy-checkbox{$this->inx}" class="lzy-checkbox-label">
+                            <span>{{ {$prefix}prompt }}</span>
+                            <a href="#" class="lzy-admin-show-info" title="{{ {$prefix}info-title }}" aria-label="{{ {$prefix}info-title }}">{$this->infoIcon}</a> 
+                            <span class="lzy-admin-info lzy-{$prefix}info" style="display: none">{{ {$prefix}info }}</span>
+                        </label>
+                        <output class='lzy-error-message' aria-live="polite" aria-relevant="additions"></output>
+                    </div>
+EOT;
+    } // renderCheckbox
 
 
 
@@ -751,8 +940,8 @@ EOT;
     {
         $linkToThisPage = $GLOBALS['globalParams']['pageUrl'];
         if ($this->loggedInUser) {
-            $logInVar = $this->renderLoginAccountMenu( $userRec );
-            $this->page->addPopup(['contentFrom' => '.lzy-login-menu', 'triggerSource' => '.lzy-login-link-menu > a']);
+            $logInVar = $this->renderLoginAccountLink( $userRec );
+//            $this->page->addPopup(['contentFrom' => '.lzy-login-menu', 'triggerSource' => '.lzy-login-link > a']);
 
         } else {
             if ($this->config->isLocalhost) {
@@ -770,15 +959,48 @@ EOT;
 EOT;
         }
         return $logInVar;
-    }
+    } // renderLoginLink
 
 
 
 
-    /**
-     * @param $username
-     * @return string
-     */
+    public function renderLoginMenu( $userRec )
+    {
+        $logInVar = '';
+        if ($this->loggedInUser) {
+            $logInVar = $this->renderLoginAccountMenu( $userRec );
+            $this->page->addPopup(['contentFrom' => '.lzy-login-menu', 'triggerSource' => '.lzy-login-link > a']);
+
+        }
+        return $logInVar;
+    } // renderLoginMenu
+
+
+
+
+    private function renderLoginAccountLink( $userRec )
+    {
+        $pageUrl = $GLOBALS['globalParams']['pageUrl'];
+        $displayName = $this->loggedInUser;
+        $locked = isset($userRec['locked']) && $userRec['locked'];
+//        $option = '';
+//        if ($this->config->admin_userAllowSelfAdmin && !$locked) {
+//            $option = "\t\t\t<li><a href='$pageUrl?admin=edit-profile'>{{ Your Profile }}</a></li>\n";
+//        }
+        if (isset($userRec['groupAccount']) && $userRec['groupAccount'] && isset($_SESSION["lizzy"]["loginEmail"])) {
+            $displayName = $_SESSION["lizzy"]["loginEmail"];
+        }
+
+        $logInVar = <<<EOT
+<div class="lzy-login-link"> <a href="#" title="{{ Logged in as }} $displayName">{{ lzy-login-icon }}</a></div>
+
+EOT;
+        return $logInVar;
+    } // renderLoginAccountLink
+
+
+
+
     private function renderLoginAccountMenu( $userRec )
     {
         $pageUrl = $GLOBALS['globalParams']['pageUrl'];
@@ -789,12 +1011,15 @@ EOT;
         if ($this->config->admin_userAllowSelfAdmin && !$locked) {
             $option = "\t\t\t<li><a href='$pageUrl?admin=edit-profile'>{{ Your Profile }}</a></li>\n";
         }
+        if ($GLOBALS["globalParams"]["isAdmin"]) {
+            $option .= "\t\t\t<li><a href='$pageUrl?admin=invite-new-user'>{{ lzy-adm-invite-new-user }}</a></li>\n";
+        }
         if (isset($userRec['groupAccount']) && $userRec['groupAccount'] && isset($_SESSION["lizzy"]["loginEmail"])) {
             $displayName = $_SESSION["lizzy"]["loginEmail"];
         }
 
         $logInVar = <<<EOT
-<div class="lzy-login-link-menu"> <a href="#" title="{{ Logged in as }} $displayName">{{ lzy-login-icon }}</a>
+<div class="lzy-login-link-menu">
     <div class="lzy-login-menu" style="display:none;">
         <div>{{ User account }} <strong>$displayName</strong></div>
         <ol>
@@ -804,8 +1029,19 @@ EOT;
 </div>
 
 EOT;
+//        $logInVar = <<<EOT
+//<div class="lzy-login-link-menu"> <a href="#" title="{{ Logged in as }} $displayName">{{ lzy-login-icon }}</a>
+//    <div class="lzy-login-menu" style="display:none;">
+//        <div>{{ User account }} <strong>$displayName</strong></div>
+//        <ol>
+//            <li><a href='$pageUrl?logout'>{{ Logout }}</a></li>$option
+//        </ol>
+//    </div>
+//</div>
+//
+//EOT;
         return $logInVar;
-    }
+    } // renderLoginAccountMenu
 
 
 

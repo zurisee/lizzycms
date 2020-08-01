@@ -69,7 +69,6 @@ require_once SYSTEM_PATH.'sitestructure.class.php';
 require_once SYSTEM_PATH.'authentication.class.php';
 require_once SYSTEM_PATH.'image-resizer.class.php';
 require_once SYSTEM_PATH.'datastorage2.class.php';
-//require_once SYSTEM_PATH.'datastorage.class.php';
 require_once SYSTEM_PATH.'sandbox.class.php';
 require_once SYSTEM_PATH.'uadetector.class.php';
 require_once SYSTEM_PATH.'user-account-form.class.php';
@@ -197,11 +196,14 @@ class Lizzy
         // Future: optionally enable Auto-Attribute mechanism
         //        $this->loadAutoAttrDefinition();
 
-        $urlArgs = ['config', 'list', 'help', 'admin', 'reset', 'login', 'unused', 'reset-unused', 'remove-unused', 'log', 'info', 'touch'];
-        foreach ($urlArgs as $arg) {
-            if (isset($_GET[$arg])) {
-                $this->config->site_enableCaching = false;
-                break;
+        // check for url args that require caching to be turned off:
+        if (isset($_GET)) {
+            $urlArgs = ['config', 'list', 'help', 'admin', 'reset', 'login', 'unused', 'reset-unused', 'remove-unused', 'log', 'info', 'touch'];
+            foreach ($_GET as $arg => $value) {
+                if (in_array($arg, $urlArgs)) {
+                    $this->config->site_enableCaching = false;
+                    break;
+                }
             }
         }
         $this->config->cachingActive = $this->config->site_enableCaching;
@@ -300,8 +302,20 @@ class Lizzy
     private function handleAdminRequests()
     {
         $userAdminInitialized = file_exists(CONFIG_PATH.$this->config->admin_usersFile);
-        if (!isset($_REQUEST['lzy-user-admin']) ||
-            (!$this->auth->isAdmin() && $userAdminInitialized)) {
+        if (!$userAdminInitialized) {
+            return false;
+        }
+        if ($un = getUrlArg('lzy-check-username', true)) {
+            $exists = $this->auth->findUserRecKey( $un );
+            if ($exists) {
+                $msg = 'lzy-signup-username-not-available';
+                $msg = $this->trans->translateVariable($msg);
+            } else {
+                $msg = 'ok';
+            }
+            exit( $msg );
+        }
+        if (!isset($_REQUEST['lzy-user-admin']) || !$this->auth->isAdmin()) {
             return false;   // nothing to do
         }
         require_once SYSTEM_PATH.'admintasks.class.php';
@@ -568,7 +582,15 @@ class Lizzy
         $globalParams['pagePath'] = null;
         $globalParams['pathToPage'] = null; // needs to be set after determining actually requested page
 
-        $pageHttpPath = $this->auth->handleAccessCodeInUrl( $pageHttpPath );
+        $this->pageUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestedPath;
+        $globalParams['pageUrl'] = $this->pageUrl;
+
+        $pageHttpPath0 = $pageHttpPath;
+        if (preg_match('|[A-Z][A-Z0-9]{4,}/?$|', $pageHttpPath)) {
+            $pageHttpPath = trunkPath($pageHttpPath, 1, false);
+        }
+
+//        $pageHttpPath = $this->auth->handleAccessCodeInUrl( $pageHttpPath );
 
         $pageHttpPath       = strtolower($pageHttpPath);
         if ($this->config->feature_filterRequestString) {
@@ -590,8 +612,8 @@ class Lizzy
 
         $globalParams['host'] = $requestScheme.$_SERVER['HTTP_HOST'].'/';
         $this->appRootUrl = $requestScheme.$_SERVER['HTTP_HOST'] . $appRoot;
-        $this->pageUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestedPath;
-        $globalParams['pageUrl'] = $this->pageUrl;
+//        $this->pageUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestedPath;
+//        $globalParams['pageUrl'] = $this->pageUrl;
 
 
         $globalParams['absAppRoot'] = $absAppRoot;  // path from FS root to base folder of app, e.g. /Volumes/...
@@ -659,6 +681,9 @@ class Lizzy
         if ($this->config->debug_logClientAccesses) {
             writeLog('[' . getClientIP(true) . "] $ua" . (($this->config->isLegacyBrowser) ? " (Legacy browser!)" : ''));
         }
+
+        $this->auth->handleAccessCodeInUrl( $pageHttpPath0 );
+
     } // analyzeHttpRequest
 
 
@@ -798,6 +823,7 @@ class Lizzy
             $userAcc = new UserAccountForm($this);
             $rec = $this->auth->getLoggedInUser(true);
             $login = $userAcc->renderLoginLink($rec);
+            $loginMenu = $userAcc->renderLoginMenu($rec);
             $userName = $userAcc->getUsername();
         } else {
             $userName = '';
@@ -807,8 +833,10 @@ class Lizzy
     </span>
     <div id="login-warning" style="display:none;">Warning:<br>no users defined - login mechanism is disabled.<br>&rarr; see config/users.yaml</div>
 EOT;
+            $loginMenu = '';
             $this->page->addModules('TOOLTIPS');
         }
+        $this->trans->addVariable('lzy-login-menu', $loginMenu);
         $this->trans->addVariable('lzy-login-button', $login);
         $this->trans->addVariable('user', $userName, false);
 
@@ -819,6 +847,7 @@ EOT;
 
         if ($this->config->admin_enableFileManager && $this->auth->checkGroupMembership('fileadmins')) {
             $this->trans->addVariable('lzy-fileadmin-button', "<button class='lzy-fileadmin-button' title='{{ lzy-fileadmin-button-tooltip }}'><span class='lzy-icon-docs'></span>{{^ lzy-fileadmin-button-text }}</button>", false);
+//ToDo: injectUploader creates Hash -> avoid?
             $uploader = $this->injectUploader($this->pagePath);
             $this->page->addBodyEndInjections($uploader);
         } else {
@@ -1927,7 +1956,7 @@ EOT;
 
 
     //....................................................
-    public function sendMail($to, $subject, $message, $from = false)
+    public function sendMail($to, $subject, $message, $from = false, $exitOnError = true)
     {
         if (!$from) {
             $from = $this->trans->getVariable('webmaster_email');
@@ -1946,8 +1975,9 @@ $explanation
 
 EOT;
             $this->page->addOverlay(['text' => $str, 'mdCompile' => false ]);
+            return true;
         } else {
-            sendMail($to, $from, $subject, $message);
+            return sendMail($to, $from, $subject, $message, $exitOnError);
         }
     } // sendMail
 
@@ -2019,9 +2049,9 @@ EOT;
     {
         $locale = $this->config->site_defaultLocale;
         if (preg_match('/^[a-z]{2}_[A-Z]{2}$/', $locale)) {
-            setlocale(LC_ALL, "$locale.utf-8");
+            setlocale(LC_TIME, "$locale.utf-8");
         } else {
-            setlocale(LC_ALL, "en_UK.utf-8");
+            setlocale(LC_TIME, "en_UK.utf-8");
         }
 
         $timeZone = ($this->config->site_timeZone === 'auto') ? $this->setDefaultTimezone() : $this->config->site_timeZone;

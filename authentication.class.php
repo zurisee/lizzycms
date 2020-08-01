@@ -1,5 +1,8 @@
 <?php
 
+define('PW_MIN_LENGTH', 10);
+
+
 class Authentication
 {
 	public $message = '';
@@ -29,8 +32,8 @@ class Authentication
 
 
         $res = null;
-        if (isset($_POST['lzy-login-username']) && isset($_POST['lzy-login-password-password'])) {    // user sent un & pw
-            $credentials = array('username' => $_POST['lzy-login-username'], 'password' => $_POST['lzy-login-password-password']);
+        if (isset($_POST['lzy-login-username']) && isset($_POST['lzy-login-password'])) {    // user sent un & pw
+            $credentials = array('username' => $_POST['lzy-login-username'], 'password' => $_POST['lzy-login-password']);
             if (($user = $this->validateCredentials($credentials))) {
                 $res = [$user, "{{ lzy-login-successful }}", 'Message'];
             } else {
@@ -47,9 +50,6 @@ class Authentication
 
         if ($res === null) {        // no login attempt detected -> check whether already logged in:
             $user = $this->setUserAsLoggedIn();
-            if (!$user) {
-                $this->logout();
-            }
             $res = true;
 
             if ($user && ($msg = getNotificationMsg())) {
@@ -117,13 +117,27 @@ class Authentication
     //....................................................
     public function handleAccessCodeInUrl($pagePath)
     {
+        global $globalParams;
         $codeCandidate = basename($pagePath);
         if ($codeCandidate && preg_match('/^[A-Z][A-Z0-9]{4,}$/', $codeCandidate)) {
-            $this->validateOnetimeAccessCode($codeCandidate);    // reloads on success, returns on failure
+            $res = $this->validateOnetimeAccessCode($codeCandidate);    // reloads on success, returns on failure
+            if ($res === 'ok') {
+                $pagePath = trunkPath($pagePath, 1, false);
+                return $pagePath;
+            }
 
             $this->validateAccessCode($codeCandidate);   // check access code in user records and log in&reload if found
 
-            $pagePath = preg_replace('|/[A-Z][A-Z0-9]{4,}/?$|', '', $pagePath);
+            $path = $globalParams['requestedUrl'];
+            $html = <<<EOT
+            <h1>{{ lzy-link-expired }}</h1>
+            <p>{{ lzy-link-expired-explanation }}</p>
+            <p style="padding: 1em 2em;">$path</p>
+
+EOT;
+            $this->lzy->page->addOverride($html);
+
+            $pagePath = trunkPath($pagePath, 1, false);
         }
         return $pagePath;   // access granted
     } // handleAccessCodeInUrl
@@ -139,7 +153,10 @@ class Authentication
         //  2) from authenticate() -> code from post variable
 
         list($userRec, $oneTimeRec) = $this->readOneTimeAccessCode($code);
-        $this->handleOneTimeCodeActions($oneTimeRec); // reloads if login successful
+        $res = $this->handleOneTimeCodeActions($oneTimeRec); // reloads if login successful
+        if ($res === 'ok') {
+            return 'ok';
+        }
 
         $getArg = false;
         if ($userRec) {
@@ -207,6 +224,21 @@ class Authentication
             $adm = new AdminTasks($this->lzy);
             $adm->changeEMail($oneTimeRec['email']);
             reloadAgent(false, 'email-change-successful');
+
+        } elseif (($mode === 'user-signup-invitation') && isset($oneTimeRec['email'])) {
+            require_once SYSTEM_PATH.'admintasks.class.php';
+            $adm = new AdminTasks($this->lzy);
+            $html = $adm->renderCreateUserForm( $oneTimeRec );
+            $this->lzy->page->addOverride($html);
+            return 'ok';
+
+        } elseif ($mode === 'sign-up-invited-user') {
+            $signUp = true;
+            require_once SYSTEM_PATH.'admintasks.class.php';
+            $adm = new AdminTasks($this->lzy);
+            $html = $adm->signupUser( $oneTimeRec );
+            $this->lzy->page->addOverride($html);
+            return 'ok';
         }
         return $getArg;
     } // handleOneTimeCodeActions
@@ -277,11 +309,17 @@ class Authentication
     public function setUserAsLoggedIn($user = false, $rec = null, $loginEmail = '')
 	{
         if ($loggedIn = $this->getLoggedInUser()) {
-            return $loggedIn;
-        }
-	    if (!$user) {
+            if (!$user) {
+                return $loggedIn;
+            } elseif ($user === $loggedIn) {
+                return $loggedIn;
+            } else {    // new login while still logged in as other user:
+                $this->logout();
+            }
+        } elseif (!$user) {
             return false;
         }
+
 	    if (isset($rec['inactive']) && $rec['inactive']) {  // account is inactive, no login allowed
 	        return false;
         }
@@ -572,7 +610,7 @@ class Authentication
         if ($password2 && ($password !== $password2)) {
             return '{{ lzy-change-password-not-equal-response }}';
         }
-        if (strlen($password) < 8) {
+        if (strlen($password) < PW_MIN_LENGTH) {
             return '{{ lzy-change-password-too-short-response }}';
         }
         if (!preg_match('/[A-Z]/', $password) ||

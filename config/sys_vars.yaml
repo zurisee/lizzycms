@@ -271,12 +271,21 @@ lzy-onetimelogin-email-info-title:
 
 
 lzy-onetimelogin-email-info-text:
-    de: "<p>Geben Sie Ihre <strong>E-Mail-Adresse</strong> ein. <br>&rarr; Sie erhalten dann eine Mail mit einem Zugangs-Link. Klicken Sie auf diesen Link. So sind Sie automatisch im Browser angemeldet.</p>
-    <p>Der Link enthält einen <strong>Zugangs-Code</strong>. Dieser Code ist nur ein einziges Mal und nur während 15 Minuten gültig.</p>
-    <p>Damit dies funktioniert, muss Ihre E-Mail-Adresse bei uns registriert sein. Kontaktieren Sie den {{ webmaster_link }}, falls dies nicht der Fall ist.</p>"
-    en: "<p>Enter your <strong>e-mail address</strong>.<br>&rarr; You will then get an e-mail containing a link. Click on that link to open the web-page you requested.</p>
-    <p>This Link contains an <strong>access code</strong>. This code is only valid one time and within the next 15 minutes.</p>
-    <p>Note: for this to work your e-mail address must be registered. Contact the {{ webmaster_link }} if that is not the case.</p>"
+    de: |
+        <p>Geben Sie Ihre <strong>E-Mail-Adresse</strong> ein. <br>
+        &rarr; Sie erhalten dann eine Mail mit einem Zugangs-Link.
+        Klicken Sie auf diesen Link. So sind Sie automatisch im Browser angemeldet.</p>
+        <p>Der Link enthält einen <strong>Zugangs-Code</strong>.
+        Dieser Code ist nur ein einziges Mal und nur während 15 Minuten gültig.</p>
+        <p>Damit dies funktioniert, muss Ihre E-Mail-Adresse bei uns registriert sein.
+        Kontaktieren Sie den {{ webmaster_link }}, falls dies nicht der Fall ist.</p>
+    en: |
+        <p>Enter your <strong>e-mail address</strong>.<br>&rarr;
+        You will then get an e-mail containing a link. Click on that link to open the web-page you requested.</p>
+        <p>This Link contains an <strong>access code</strong>.
+        This code is only valid one time and within the next 15 minutes.</p>
+        <p>Note: for this to work your e-mail address must be registered.
+        Contact the {{ webmaster_link }} if that is not the case.</p>
 
 lzy-login-username-prompt:
     de: E-Mail Adresse (oder Benutzername)
@@ -285,8 +294,14 @@ lzy-login-username-prompt:
 info-lzy-onetimelogin-title:
 
 lzy-login-username-info-text:
-    de: "Falls Sie Benutzernamen und Kennwort kennen, können Sie sich hier anmelden. Geben Sie in das folgende Feld Ihren Benutzernamen ein. Dies entspricht normalerweise Ihrer E-Mail Adresse."
-    en: "If you know your username and password you can log in now. Enter your username in the following field. Usually your e-mail address is used as your username."
+    de: |
+        Falls Sie Benutzernamen und Kennwort kennen, können Sie sich hier anmelden.
+        Geben Sie in das folgende Feld Ihren Benutzernamen ein.
+        Dies entspricht normalerweise Ihrer E-Mail Adresse.
+    en: |
+        If you know your username and password you can log in now.
+        Enter your username in the following field.
+        Usually your e-mail address is used as your username.
 
 lzy-login-password-prompt:
     de: Kennwort
@@ -297,8 +312,13 @@ lzy-login-username-info-title:
     en: Help
 
 lzy-login-password-info:
-    de: "Geben Sie hier Ihr Kennwort ein. Verwenden Sie &#34;Anmelden ohne Kennwort&#34;, falls Sie ihr Kennwort nicht kennen (oder dieses nicht funktionierte)."
-    en: "Enter your password here. Use <strong>login by e-mail</strong> if you don&#39;t have your password available (if that didn&#39;t work)."
+    de: |
+        Geben Sie hier Ihr Kennwort ein.
+        Verwenden Sie &#34;Anmelden ohne Kennwort&#34;,
+        falls Sie ihr Kennwort nicht kennen (oder dieses nicht funktionierte).
+    en: |
+        Enter your password here.
+        Use <strong>login by e-mail</strong> if you don&#39;t have your password available (if that didn&#39;t work).
 
 login-email-prompt:
     de: Ihre E-Mail Adresse
@@ -339,8 +359,6 @@ LoginLink:
 Logged in as:
     de: Angemeldet als
     _: Logged in as
-#    de: Angemeldet als
-#    en: Logged in as
 
 User account:
     de: Benutzerkonto
@@ -353,8 +371,6 @@ Open user popup:
 User account of:
     de: Angemeldet als
     _: Logged in as
-#    de: Benutzerkonto von
-#    _: User account of
 
 page requires login:
     de: "Sie müssen angemeldet sein, um die gesuchte Seite sehen zu können."
@@ -504,6 +520,9 @@ Your Profile:
     de: Profil bearbeiten
     en: Edit Profile
 
+lzy-adm-invite-new-user:
+    de: 'Neuen Benutzer einladen'
+    _:  'Invite new user'
 
 
 #--- Insecure Connection ----------------------------
@@ -633,8 +652,12 @@ lzy-config-button:
 
 # Macro Editable()
 'lzy-editable-temporarily-locked': 
-    de: 'Dieses Feld ist momentan gesperrt, weil es gerade von jemand anderem bearbeitet wird.\n\nBitte versuchen Sie es in ein paar Minuten nochmals. (Seite muss dann neu geladen werden!)'
-    _: 'This field is currently locked because somebody else is editing it.\n\nPlease try again in a few minutes. (Remember to reload the page when trying again.)'
+    de: |
+        Dieses Feld ist momentan gesperrt, weil es gerade von jemand anderem bearbeitet wird.\n\n
+        Bitte versuchen Sie es in ein paar Minuten nochmals. (Seite muss dann neu geladen werden!)
+    _: |
+        This field is currently locked because somebody else is editing it.\n\n
+        Please try again in a few minutes. (Remember to reload the page when trying again.)
 
 #--- Forms ----------------------------------------
 lzy-form-data-received-ok:
@@ -647,3 +670,16 @@ lzy-form-continue:
     de: Weiter...
     en: Continue...
 
+
+#--- magic links ---------------------
+lzy-link-expired:
+    de: 'Link ungültig'
+    _:  'Link Expired'
+
+lzy-link-expired-explanation:
+    de: 'Der Link, mit dem Sie diese Website aufgerufen haben, ist abgelaufen oder war nie gültig:'
+    _:  'The you used to access this website has expired or has never been valid:'
+
+lzy-signup-username-not-available:
+    de: 'Benutzername bereits vergeben - bitte wählen Sie einen anderen.'
+    _:  'Username already taken - please chose another one.'

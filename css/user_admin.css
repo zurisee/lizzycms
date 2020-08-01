@@ -37,6 +37,7 @@ body {
 }
 
 .lzy-login-form,
+.lzy-invite-user-form,
 .lzy-signup-form {
     margin: 1em 0;
     border: 1px solid #ddd;
@@ -45,18 +46,31 @@ body {
 }
 
 .lzy-login-form input,
+.lzy-invite-user-form input,
 .lzy-signup-form input {
 	width: 100%;
     line-height: 1.5em;
 }
-.lzy-login-form > label,
-.lzy-signup-form > label {
+.lzy-login-form textarea,
+.lzy-invite-user-form textarea,
+.lzy-signup-form textarea {
+	width: 100%;
+    line-height: 1.5em;
+}
+.lzy-login-form  label,
+.lzy-user-self-signup-email-label,
+.lzy-signup-form  label {
     display: block;
-    margin: 10px 0;
+}
+.lzy-login-form  label,
+.lzy-signup-form  label,
+.lzy-form-show-password a {
+    margin: 2em 0 0 0;
 }
 
 .lzy-signup-form button,
 .lzy-login-form button,
+.lzy-invite-user-form button,
 .lzy-login-form-button {
     min-width: 6em;
     padding: 5px 1.5em;
@@ -72,6 +86,20 @@ body {
     margin-right: 1em;
 }
 
+.lzy-form-password-label.lzy-form-password-label {
+	display: inline-block;
+    /*margin: 0.75em 0 0em;*/
+}
+/*.lzy-form-show-password2 > a,*/
+.lzy-form-password-label2.lzy-form-password-label2 {
+    margin: 0.7em 0 0em;
+}
+.lzy-form-password2.lzy-form-password2 {
+    margin-top: 0.5em;
+}
+.signup-submit-btn.signup-submit-btn {
+    margin-top: 1.5em;
+}
 .lzy-form-password > input,
 .lzy-login-username > input {
     padding: 5px 10px;
@@ -82,6 +110,11 @@ body {
 }
 .lzy-form-show-password a {
     display: inline-block;
+}
+
+input.lzy-form-checkbox {
+    display: inline-block;
+    width: 2em;
 }
 
 .lzy-textarea-label textarea {
@@ -116,7 +149,8 @@ body {
 .lzy-account-form-wrapper input {
     border: 0.2px solid #bbb;
     padding: 3px 0.5em;
-    margin-top: 0.5em;
+    margin-top: 1em;
+    /*margin-top: 0.5em;*/
 }
 .lzy-account-form-wrapper input:focus {
     box-shadow: 0 0 5px 2px #67770e;
@@ -250,4 +284,37 @@ input.lzy-login-email[type=email]:valid {
     border: 1px solid #ddd;
     margin-top: 4em;
     max-width: 25em;
+}
+
+.lzy-adduser-response {
+    margin: 2em 0;
+    padding: 1em;
+    border: 1px solid #aaa;
+}
+
+
+/* User self signup form */
+.lzy-user-self-signup-access-code-box,
+.lzy-user-self-signup-email {
+    display: block;
+    border: 0.2px solid #bbb;
+    padding: 3px 0.5em;
+    margin-top: 0.5em;
+}
+
+.lzy-signup-access-code-explanation {
+    margin: 1em 0;
+}
+.lzy-signup-access-link {
+    display: block;
+    color: red;
+}
+.lzy-adduser-response > div {
+    margin: 0.5em 0;
+}
+.lzy-adduser-response > div > span {
+    display: inline-block;
+}
+.lzy-adduser-response > div > span:first-child {
+    width: 8em;
 }

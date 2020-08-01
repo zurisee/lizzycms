@@ -260,14 +260,16 @@ lzy-change-password-not-equal-response:
     _:  The entered passwords were not identical.
 
 lzy-change-password-too-short-response:
-    de: Die eingegebenen Kennwörter waren zu kurz, sie müssen mindestens 8 Zeichen lang sein.
-    _:  The entered passwords were too short, they must be at least 8 characters long.
+    de: Die eingegebenen Kennwörter waren zu kurz, sie müssen mindestens 10 Zeichen lang sein.
+    _:  The entered passwords were too short, they must be at least 10 characters long.
 
 lzy-change-password-insufficient-response:
-    de: "Das neue Kennwort entsprecht nicht den Minimalanforderungen: <br /><br />
-        Es muss mindestens 8 Zeichen lang sein und <br />Grossbuchstaben, Ziffern und Sonderzeichen enthalten."
-    _:  "The new password does not meet our security requirements:<br /><br />
-        It must be at least 8 characters long and <br />must contain uppercase letters, digits and special characters."
+    de: |
+        Das neue Kennwort entsprecht nicht den Minimalanforderungen: <br /><br />
+        Es muss mindestens 8 Zeichen lang sein und <br />Grossbuchstaben, Ziffern und Sonderzeichen enthalten.
+    _:  |
+        The new password does not meet our security requirements:<br /><br />
+        It must be at least 8 characters long and <br />must contain uppercase letters, digits and special characters.
 
 lzy-error-email-required:
     de: 'Eingabe einer E-Mail Adresse ist notwendig'
@@ -306,12 +308,14 @@ lzy-change-password:
 
 # One-time access link/code form and email
 lzy-onetime access link sent:
-    de: "<h1>Zugangs-Link versendet</h1>
-    <p>Wir haben eine E-Mail an Sie gesendet. Diese enthält einen <strong>Link</strong>.<br /> 
-    &rarr; Klicken Sie auf diesen Link. So gelangen Sie zurück zu dieser Seite. </p>"
-    _:  "<h1>Access Link sent</h1>
-    <p>We have sent an e-mail to you. It contains a <strong>link</strong>.<br />
-    &rarr; Click on this link to access the web-page you wanted to see. </p>"
+    de: |
+        <h1>Zugangs-Link versendet</h1>
+        <p>Wir haben eine E-Mail an Sie gesendet. Diese enthält einen <strong>Link</strong>.<br />
+        &rarr; Klicken Sie auf diesen Link. So gelangen Sie zurück zu dieser Seite. </p>
+    _:  |
+        <h1>Access Link sent</h1>
+        <p>We have sent an e-mail to you. It contains a <strong>link</strong>.<br />
+        &rarr; Click on this link to access the web-page you wanted to see. </p>
 
 lzy-enter onetime code:
     de: "Code aus zugesandter E-Mail:"
@@ -342,8 +346,8 @@ lzy-change-password-not-logged-in-response:
 
 # Add User:
 lzy-add-user-response:
-    de: Benutzer erfolgreich hinzugefügt
-    _:  User has been added successfully
+    de: 'Benutzerkonto eröffnet:'
+    _:  'User account created:'
 
 
 # Add Users:
@@ -353,7 +357,7 @@ lzy-add-users-response:
 
 lzy-add-users-response2:
     de: hinzugefügt
-    _:  ''
+    _:  'added'
 
 lzy-add-users-none-added:
     de: Es wurden keine Benutzer zur Gruppe
@@ -361,7 +365,7 @@ lzy-add-users-none-added:
 
 lzy-add-users-none-added2:
     de: hinzugefügt
-    _:  ''
+    _:  'added'
 
 
 # Change Username:
@@ -400,30 +404,38 @@ lzy-email-change-mail-up2:
     de: "\n\nSie können auch den folgenden Code ins Eigabefeld in der Website eintragen:"
     _:  "\n\nOr you can enter the following code into the entry field in the webpage:"
 
-lzy-email-change-mail-up3:
-    de: "\n\nBitte beachten Sie, dass der Link und der Code nur einmal innerhalb der nächsten 15 Minuten funktioniert.\n\nSollten nicht Sie die Änderung Ihrer E-Mail Adresse beantragt haben, ignorieren Sie diese Mail.\n\nBeste Grüsse, Ihre Lizzy"
-    _:  "\n\nPlease note that this link and this code only works once within the next 15 minutes. In case it wasn't you who requested this modification, you may ignore this e-mail.\n\nCheers, \nLizzy\n "
+#lzy-email-change-mail-up3:
+#    de: |
+#        \n\nBitte beachten Sie, dass der Link und der Code nur einmal innerhalb der nächsten 15 Minuten funktioniert.\n\n
+#        Sollten nicht Sie die Änderung Ihrer E-Mail Adresse beantragt haben, ignorieren Sie diese Mail.
+#    _:  |
+#        \n\nPlease note that this link and this code only works once within the next 15 minutes.
+#        In case it wasn't you who requested this modification, you may ignore this e-mail.
 
 
 lzy-change-mail-link sent :
-    de: "<h1>Bestätigungs-Link versendet</h1>
-    <p>Wir haben Ihnen eine E-Mail gesendet. Diese enthält einen <strong>Link</strong>.<br /> 
-    &rarr; Klicken Sie auf diesen Link, um Ihre neue E-Mail Adresse zu bestätigen. </p>
-    <p><br />Stattdessen können Sie auch den Code aus der E-Mail kopieren und hier einfügen:</p>"
-    _:  "<h1>Sign-up Link Sent</h1>
-    <p>We have sent you an e-mail. It contains a <strong>link</strong>.<br />
-    &rarr; Click on this link to confirm your new e-mail address. </p>
-    <p><br />Alternatively you can copy the code from the e-mail to the entry field below:</p>"
+    de: |
+        <h1>Bestätigungs-Link versendet</h1>
+        <p>Wir haben Ihnen eine E-Mail gesendet. Diese enthält einen <strong>Link</strong>.<br />
+        &rarr; Klicken Sie auf diesen Link, um Ihre neue E-Mail Adresse zu bestätigen. </p>
+        <p><br />Stattdessen können Sie auch den Code aus der E-Mail kopieren und hier einfügen:</p>
+    _:  |
+        <h1>Sign-up Link Sent</h1>
+        <p>We have sent you an e-mail. It contains a <strong>link</strong>.<br />
+        &rarr; Click on this link to confirm your new e-mail address. </p>
+        <p><br />Alternatively you can copy the code from the e-mail to the entry field below:</p>
 
 lzy-change-mail-link sent2:
     de: "Link und Code können nur verwendet werden bis:"
     _:  "This link and this code only work once and only until:"
     
 lzy-change-mail-link sent3:
-    de: "<br />Sobald die Bestätigung erfolgt ist, können Sie sich bei unserer Website mir Ihrer neuen E-Mail Adresse anmelden.<br />
-        Sie benötigen keinen Benutzernamen, aber Sie können einen festlegen, falls Sie möchten."
-    _:  "<br />After confirmation of your new e-mail address is completed you can use this new e-mail address to log into our website.<br />
-        You don't need a user-name, but you can define one if you like."
+    de: |
+        <br />Sobald die Bestätigung erfolgt ist, können Sie sich bei unserer Website mir Ihrer neuen E-Mail Adresse anmelden.<br />
+        Sie benötigen keinen Benutzernamen, aber Sie können einen festlegen, falls Sie möchten.
+    _:  |
+        <br />After confirmation of your new e-mail address is completed you can use this new e-mail address to log into our website.<br />
+        You don't need a user-name, but you can define one if you like.
 
 
 # delete user account:
@@ -450,3 +462,293 @@ lzy-delete-profile-confirm-prompt:
 lzy-delete-account-success-response:
     de: 'Ihre Profil ist jetzt gelöscht.'
     _: 'Your profile is now deleted.'
+
+
+# === Invite Users ========================================
+lzy-invite-user-request-header:
+    de: 'Neuen Benutzer einladen'
+    _:  'Invite New User'
+
+lzy-invite-user-email-prompt:
+    de: 'E-Mail Adresse(n)'
+    _:  'E-mail address(es)'
+
+lzy-invite-user-email-info:
+    de: 'Format: <code>name@domain.net</code> oder<br /><code>Name &lt;name@domain.net></code><br />Mehrere Adressen &rarr; trennen mit "," oder ";".'
+    _:  'Format: <code>name@domain.net</code> or<br /><code>Name &lt;name@domain.net></code><br />Multiple addresses &rarr; separated by "," or ";".'
+
+lzy-invite-user-groups-prompt:
+    de: 'Gruppe(n)'
+    _:  'Group(s)'
+
+lzy-invite-user-groups-login-info:
+    de: 'Bestimmt, welcher/n Benutzergruppe/n die neuen Benutzer zugewiesen werden (z.B. "gast").'
+    _:  'Defines to which group(s) new users will be assigned to (e.g. "guest").'
+
+lzy-invite-user-email-send:
+    de: 'Einladung(en) versenden'
+    _:  'Send invitation(s)'
+
+lzy-invite-user-request-info-text:
+    de: 'E-Mail Adresse, an welche die Einladung gesendet wird.'
+    _:  'E-mail address to which the invitation will be sent.'
+
+lzy-invite-user-request-description:
+    de: |
+        <h3>Erklärungen</h3>
+        <ul>
+            <li>An die oben eingegebenen Adressen werden <strong>Einladungs-Mails</strong> gesendet. </li>
+            <li>Jede Mail enthält einen individuellen <strong>Link</strong>. Der Link führt zu einem
+                Registrierungsformular dieser Website. <br />Aus Sicherheitsgründen können diese Links nur einmal verwendet werden.
+                Sie verfallen nach spätestens einer Woche.</li>
+            <li>Die eingeladene Person kann dort ihr <strong>Kennwort</strong> definieren. </li>
+            <li>Zudem kann sie einen <strong>Benutzernamen</strong> definieren.</li>
+        </ul>
+        <h3>Beachte:</h3>
+        <p>&rarr; Anmelden kann man sich wahlweise mittels E-Mail Adresse oder Benutzername.<br />
+           &rarr; Auch das Anfordern eines Zugangs-Links ist mit beiden möglich (falls diese Option freigeschaltet ist).
+        </p>
+    _:  |
+        <h3>Explanations</h3>
+         <ul>
+             <li>Invitation e-mails will be sent to the addresses entered above.</li>
+             <li>These mails contains individual Links which leads back to the registration form of this website.<br />
+                For security reasons these links are valid only once. And they expire after one week if not used.</li>
+             <li>In this registration form the invited person can define a <strong>password</strong>.</li>
+             <li>Furthermore it is possible to define a <strong>username</strong>.</li>
+         </ul>
+         <h3>Note:</h3>
+         <p>
+         &rarr; Users can login in using their e-mail address or username.<br />
+         &rarr; Alternatively, users can login by requesting a one-time access link, again by suppplying e-mail address or username (if that feature is enabled).
+         </p>
+
+guest:
+    de: gast
+    _:  guest
+
+
+# ---
+#lzy-signup-invitation-email-prompt:
+#    de: 'Ihre E-Mail Adresse'
+#    _:  'Your e-mail address'
+#
+#lzy-signup-invitation-email-info-title:
+#    de: Hilfe zur Selbstregistrierung
+#    _:  Help on self registration
+#
+#lzy-signup-invitation-email-info-text:
+#    de: "Sie können sich bei dieser Website selbständig registerien, d.h. ein Profil eröffnen. Geben Sie zunächst Ihre E-Mail Adresse bekannt. Sie werden daraufhin eine E-Mail erhalten. Öffnen Sie diese und folgen Sie den Anweisungen."
+#    _:  "You can register with this website (i.e. create a profile). Enter your e-mail address here. You will then receive an e-mail. Open it and follow the instructions."
+#
+#lzy-signup-invitation-send:
+#    de: Registrierungs-E-Mail senden
+#    _:  Send registration e-mail
+#
+lzy-signup-invitation-subject:
+    de: "Einladung für Webzugang"
+    _:  "Invitation to access website"
+
+lzy-signup-invitation1:
+    de: "Guten Tag\n\nWir laden Sie ein, bei unserer Website {{ site_title }} ein Konto zu eröffnen.\nDamit erhalten Sie Zugang zu unseren nicht-öffentlichen Inhalten.\nÖffnen Sie den folgenden Link:\n\n\t"
+    _:  "Hello\n\nWe invite your to open an account on our Website {{ site_title }}.\nThis let's you access our non-public pages. Open the following link: \n\n\t"
+
+lzy-signup-invitation2:
+    de: "\n\nBitte beachten Sie, dass der Link aus Sicherheitsgründen nur einmal und nur bis am "
+    _:  "\n\nPlease note that this link only works once and only before "
+
+lzy-signup-invitation3:
+    de: " funktioniert."
+    _:  ""
+
+lzy-signup-invitation-greeting:
+    de: "Beste Grüsse vom Webmaster {{ site_title }}"
+    _:  "Cheers, Webmaster {{ site_title }}"
+
+
+
+lzy-signup-invitation-link sent:
+    de: "<h1>Registrierungs-Link versendet</h1>
+    <p>Wir haben Ihnen eine E-Mail gesendet. Diese enthält einen <strong>Link</strong>.<br />
+    &rarr; Klicken Sie auf diesen Link, um sich bei unserer Website zu registrieren. </p>
+    <p><br />Stattdessen können Sie auch den Code aus der E-Mail kopieren und hier einfügen:</p>"
+    _:  "<h1>Sign-up Link Sent</h1>
+    <p>We have sent you an e-mail. It contains a <strong>link</strong>.<br />
+    &rarr; Click on this link to create a user account at our website. </p>
+    <p><br />Alternatively you can copy the code from the e-mail to the entry field below:</p>"
+
+lzy-signup-invitation-link sent2:
+    de: "Link und Code können nur verwendet werden bis:"
+    _:  "This link and this code only work once and only until:"
+
+lzy-signup-invitation-link sent3:
+    de: "<br />Sobald die Registrierung abgeschlossen ist, können Sie sich bei unserer Website mir Ihrer E-Mail Adresse anmelden.<br />
+        Sie benötigen keinen Benutzernamen, aber Sie können einen festlegen, falls Sie möchten."
+    _:  "<br />After registration is completed you can use your e-mail address to log into our website.<br />
+        You don't need a user-name, but you can define one if you like."
+
+
+
+# --- self signup form ----------------------------------
+lzy-user-self-signup-title:
+    de: 'Registrieren'
+    _:  'Registration'
+
+lzy-user-self-signup-intro:
+    de: 'Die nicht-öffentlichen Bereiche dieser Website erreichen Sie, nachdem Sie ein Konto eröffnet haben.'
+    _:  'After signing up to this website you can access the non-public sections.'
+
+
+lzy-user-self-signup:
+    de: 'Ihre E-Mail Adresse: {{ lzy-user-self-signup-info }}'
+    _:  'Your e-mail address: {{ lzy-user-self-signup-info }}'
+
+lzy-user-self-signup-info:
+    _: '<a href="#" class="lzy-admin-show-info" title="lzy-self-signup-user-info-title" aria-label="lzy-self-signup-user-info-title"><span class="lzy-icon-info"></span></a>
+    <span class="lzy-admin-info" style="display: none">{{ lzy-user-self-signup-info-text }}</span>'
+
+lzy-user-self-signup2:
+    de: ''
+    _:  ''
+
+lzy-user-self-signupinfo-text:
+    de: 'xxx:'
+    _:  ':'
+
+lzy-self-signup-user-username-prompt:
+    de: 'Benutzername'
+    _:  'Username'
+
+lzy-self-signup-user-username-login-info:
+    de: 'Bestimmen Sie hier Ihren Benutzernamen.<br />Dies kann Ihre E-Mail Adresse sein, muss aber nicht.<br />Sie werden eine Fehlermeldung erhalten, falls der von Ihnen gewählte Benutzername bereits vergeben ist.'
+    _:  'Define your username here.'
+
+lzy-self-signup-user-password-prompt:
+    de: 'Kennwort'
+    _:  'Password'
+
+lzy-self-signup-user-password-prompt2:
+    de: 'Kennwort wiederholen'
+    _:  'Repeat password'
+
+lzy-self-signup-user-password-info:
+    de: |
+        Bestimmen Sie hier Ihr Kennwort, das Sie künftig für diese Website verwenden wollen.
+        Das Kennwort sollte nicht leicht zu erraten sein.
+        Vermeiden Sie, ein und dasselbe Kenntwort mehrfach zu verwenden.
+    _:  |
+        Define the password with which you want to access this website in the future.
+        Chose a password that cannot be easily guessed.
+        Avoid using one and the same password for multiple purposes.
+
+lzy-username-required:
+    de: 'Sie müssen einen Benutzernamen definieren'
+    _:  'You need to define a username'
+
+lzy-password-required:
+    de: 'Sie müssen ein neues Kennwort definieren'
+    _:  'You need to define a new password'
+
+lzy-signup-passwords-not-identical:
+    de: 'Die eingegebenen Kennwörter sind nicht identisch.'
+    _:  'The entered password are not identical.'
+
+lzy-invite-user-create-hash-prompt:
+    de: 'Access-Code erzeugen'
+    _:  'Generate access-code'
+
+lzy-invite-user-create-hash-info:
+    de: |
+        Wenn aktiviert, erzeugt diese Option einen Access-Code, bzw. Zugangslink, für den neuen Benutzer.
+        Damit kann dieser die Website öffnen und sich auch gleich anmelden.
+    _:  |
+        If enabled, this option will generate access-code (resp. access-link) for the new user.
+        With such a link the user can open this website and automatically log in.
+
+lzy-add-user-data-missing:
+    de: 'Registrierung misslungen: es fehlt Benutzername und/oder Kennwort.'
+    _:  'Sign-up failed: username and/or password missing.'
+
+lzy-signup-access-code-label:
+    de: 'Ihr Direktlink:'
+    _:  'Your access-link:'
+
+#lzy-signup-access-code-explanation:
+#    de: |
+#        <h3>Erklärung:</h3>
+#        <p>Mit diesem <em>Direktlink</em> können Sie künftig die Webseite aufrufen und sich sofort anmelden.
+#        Bewahren Sie diesen Link gut auf, speichern Sie ihn als Favoriten, aber geben Sie ihn nicht weiter!</p>
+#    _:  |
+#        <h3>Explanation:</h3>
+#        <p>With this <em>direct access link</em> you can open this website and log in automatically.
+#        Save this link, e.g. as a favorit in your browser. But do not hand this link out to anyone else!</p>
+
+
+lzy-user-self-signup-access-code1:
+    de: |
+        <h2>Erklärung zum Zugangslink</h2>
+        <p>Mit diesem Zugangslink können Sie die Website öffnen und sind sofort angemeldet.</p>
+        <p>Am einfachsten: klicken Sie auf den Link und speichern sie die geöffnete Seite als Lesezeichen.</p>
+    _:  |
+        <h2>Explanation regarding access-link</h2>
+        <p>This link lets you open the website and autmatically sign in.</p>
+        <p>Easiest to handle: click on the link and then bookmark the opened page in your browser.</p>
+
+
+#lzy-user-self-signup-access-code2:
+#    de: |
+#        <p></p>
+#    _:  ''
+
+lzy-user-self-signup-email:
+    _: 'E-Mail'
+
+lzy-user-self-signup-username:
+    de: 'Benutzername'
+    _:  'Username'
+
+lzy-user-self-signup-password:
+    de: 'Kennwort'
+    _:  'Password'
+
+lzy-user-self-signup-displayname:
+    de: 'Anzeigename'
+    _:  'Display name'
+
+lzy-user-self-signup-access-link:
+    de: 'Zugangslink'
+    _:  'Access link'
+
+lzy-signup-continue:
+    de: 'Weiter'
+    _:  'Continue'
+
+lzy-signup-continue-anyway:
+    de: 'Trotzdem weiter'
+    _:  'Continue anyway'
+
+lzy-signup-abort:
+    de: 'Zurück und ändern'
+    _:  'Go back and change'
+
+lzy-weak-pw-warning:
+    de: |
+        <h1>Warnung</h1>
+        <div style='text-align:left;'>
+        <p>Das gewählte Kennwort ist sehr schwach, Sie sollten ein stärkeres wählen:</p>
+        <ul><li>Mindestens 10 Zeichen</li>
+            <li>Mindestens ein Grossbuchstabe</li>
+            <li>Mindestens eine Ziffer</li>
+            <li>Mindestens ein Sonderzeichen</li>
+        </ul>
+        </div>
+    _:  |
+        <h1>Warning</h1>
+        <div style='text-align:left;'>
+        <p>The password you chose is very weak, you should define a stronger one:</p>
+        <ul><li>At least 10 characters</li>
+            <li>At least one upper case letter</li>
+            <li>At least one digit</li>
+            <li>At least one special character</li>
+        </ul>
+        </div>

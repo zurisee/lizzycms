@@ -2,6 +2,7 @@
 
 require_once SYSTEM_PATH.'ticketing.class.php';
 
+define('DEFAULT_INVITATION_LINK_VALIDITY_TIME', 604800);
 
 class AdminTasks
 {
@@ -53,6 +54,24 @@ class AdminTasks
             $str = $this->addUser($rec);
             $res = [false, $str, 'Message'];
 
+
+        } elseif ($requestType === 'lzy-invite-user-email') {           // admin requested invitation mail to new user:
+            if ($this->lzy->config->admin_enableSelfSignUp) {
+                $emails = get_post_data('lzy-invite-user-email-addresses');
+                $groups = get_post_data('lzy-invite-user-groups');
+                $result = $this->sendInvitationByMails($emails, DEFAULT_INVITATION_LINK_VALIDITY_TIME, $groups);
+                $result = str_replace('<', '&lt;', $result);
+                $msg = <<<EOT
+                    <h1 style="margin: 2em 0 1em;">Sending invitations:</h1>
+                    <pre>\n$result</pre>
+                    <div style="margin: 2em 0">
+                        <a href='{$GLOBALS["globalParams"]["pageUrl"]}'>Continue...</a>
+                    </div>
+EOT;
+            } else {
+                $msg = "Feature admin_enableSelfSignUp not enabled";
+            }
+            $res = [false, $msg, 'Override'];
 
         } else {
             $user = $this->loggedInUser;
@@ -160,12 +179,19 @@ class AdminTasks
             $html = $accountForm->renderEditProfileForm($userRec, $notification);
             $this->page->addOverride($html, true, false);
             $this->page->addModules('PANELS');
+            $jq = "initLzyPanel('.lzy-panels-widget', 1);";
+            $this->page->addJq( $jq );
+            return '';
+
+        } elseif ($adminTask === 'invite-new-user') {
+            $html = $accountForm->renderInviteUserForm($notification);
+            $this->page->addOverride($html, true, false);
             return '';
         }
 
 
-
-        if (!$GLOBALS['globalParams']['isAdmin'] && $userAdminInitialized) {
+//???
+        if (!$GLOBALS['globalParams']['isAdmin'] && $this->userAdminInitialized) {
             return '';
         }
 
@@ -257,6 +283,59 @@ class AdminTasks
         }
         return $str;
     }
+
+
+
+    //....................................................
+    public function signupUser($rec)
+    {
+        $username = get_post_data('lzy-self-signup-user-username');
+        $pw = get_post_data('lzy-self-signup-user-password');
+
+        if (!$username || !$pw) {
+            $str = "<div class='lzy-adduser-wrapper lzy-adduser-response'>{{ lzy-add-user-data-missing }}</div>";
+            return $str;
+        }
+        $res = $this->checkPasswordQuality($pw);
+        if ($res) {
+            return "<div class='lzy-adduser-wrapper lzy-adduser-response lzy-error'>{{ lzy-insufficient-password }}: $pw</div>";
+        }
+
+        $userRec = [
+            'password' => password_hash($pw, PASSWORD_DEFAULT),
+            'username' => $username,
+            'email' => $rec['email'],
+            'displayName' => $rec['displayName'],
+            'groups' => $rec['groups'],
+        ];
+        $acStr = $acAnnouncement = '';
+        if (isset($rec['accessCode'])) {
+            $userRec['accessCode'] = $rec['accessCode'];
+            $href = $GLOBALS["globalParams"]["absAppRootUrl"].$rec['accessCode'];
+            $link = "<a class='lzy-user-self-signup-access-link' href='$href'>$href</a>";
+            $acStr = "\t\t\t\t<div><span>{{ lzy-user-self-signup-access-link }}:</span><span>$link</span></div>\n";
+            $acExplanation = "\t\t\t\t{{ lzy-user-self-signup-access-code1 }}\n";
+        }
+        $res = $this->addUserToDB($username, $userRec);
+        if ($res === true) {
+            $str = <<<EOT
+            <div class='lzy-adduser-wrapper lzy-adduser-response'>
+                <h1>{{ lzy-add-user-response }}</h1> 
+                <div><span>{{ lzy-user-self-signup-username }}:</span><span>{$userRec['username']}</span></div>
+                <div><span>{{ lzy-user-self-signup-password }}:</span><span>{$pw}</span></div>
+                <div><span>{{ lzy-user-self-signup-email }}:</span><span>{$userRec['email']}</span></div>
+                <div><span>{{ lzy-user-self-signup-displayname }}:</span><span>{$userRec['displayName']}</span></div>
+$acStr
+$acExplanation
+            </div>
+            <p><a href="{$GLOBALS["globalParams"]["absAppRootUrl"]}">{{ lzy-form-continue }}</a> </p>
+EOT;
+
+        } else {
+            $str = "<div class='lzy-adduser-wrapper lzy-adduser-response lzy-error'>{{ $res }}: $username</div>";
+        }
+        return $str;
+    } // signupUser
 
 
 
@@ -386,6 +465,10 @@ class AdminTasks
         // for security: self-signup for admin-group only possible as long as there
         // no accounts registered at all, i.e. only the first signup may become admin:
         $knownUsers = $this->auth->getKnownUsers();
+        if ($this->auth->findUserRecKey($email)) {
+            writeLog("sending invitation: user '$email' already exists.");
+            return false;
+        }
 
         if ($group === 'admin') {
             if (sizeOf($knownUsers) > 0) {
@@ -404,6 +487,16 @@ class AdminTasks
             return true;
         }
     } // createGuestUserAccount
+
+
+
+    public function renderCreateUserForm( $rec )
+    {
+        $accountForm = new UserAccountForm($this->lzy);
+
+        $override = $accountForm->renderCreateUserForm($rec);
+        return $override;
+    } // renderCreateUserForm
 
 
 
@@ -461,16 +554,22 @@ class AdminTasks
         if (strpos($message, '{{') !== false) {
             $message = $this->lzy->trans->translate($message);
         }
-        $this->lzy->sendMail($to, $subject, $message);
+        return $this->lzy->sendMail($to, $subject, $message, false);
     } // sendMail
 
 
 
     private function addUserToDB($username, $userRec)
     {
-        $userRecs = $this->auth->getKnownUsers();
-        $userRecs[$username] = $userRec;
-        writeToYamlFile($this->auth->userDB, $userRecs);
+        $knownUsers = $this->auth->getKnownUsers();
+        if (!$username || !is_array($userRec)) {
+            return 'Bad parameters';
+        }
+        if (isset($knownUsers[$username])) {
+            return 'lzy-username-already-taken';
+        }
+        $knownUsers[$username] = $userRec;
+        writeToYamlFile($this->auth->userDB, $knownUsers);
         return true;
     } // addUserToDB
 
@@ -479,9 +578,17 @@ class AdminTasks
 
     private function addUsersToDB($userRecs)
     {
+        if (!is_array($userRecs)) {
+            return false;
+        }
         $knownUsers = $this->auth->getKnownUsers();
-        $userRecs = array_merge($knownUsers, $userRecs);
-        writeToYamlFile($this->auth->userDB, $userRecs);
+        foreach ($userRecs as $un => $rec) {
+            if (isset($knownUsers[$un])) {
+                return false;
+            }
+            $knownUsers[$un] = $rec;
+        }
+        writeToYamlFile($this->auth->userDB, $knownUsers);
         return true;
     } // addUsersToDB
 
@@ -577,7 +684,61 @@ class AdminTasks
             $message = $userAcc->renderOnetimeLinkEntryForm($submittedEmail, $validUntilStr, 'lzy-change-mail-link');
         }
         return [$message, $displayName];
-    }
+    } // sendCodeByMail
+
+
+
+
+    //....................................................
+    public function sendInvitationByMails($submittedEmail, $accessCodeValidyTime, $groups = '')
+    {
+        global $globalParams;
+
+        $out = '';
+        $validUntil = time() + $accessCodeValidyTime;
+        $validUntilStr = strftime('%x', $validUntil);
+
+        if (strpos($submittedEmail, ",") !== false) {
+            $submittedEmail = str_replace(',', ';', $submittedEmail);
+        }
+        $emails = explodeTrim(';', $submittedEmail);
+
+        foreach ($emails as $email) {
+            $name = '';
+            if (preg_match('/^(.*)<(.*)>/', $email, $m)) {
+                $name = trim($m[1]);
+                $email = $m[2];
+            }
+            if ($res = $this->auth->findUserRecKey($email, '*')) {
+                $out .= "email already in use: $email\n";
+                continue;
+            }
+
+            $tick = new Ticketing();
+
+            $otRec = ['username' => '', 'displayName' => $name, 'email' => $email, 'mode' => 'user-signup-invitation', 'groups' => $groups];
+            $ac = get_post_data('lzy-invite-user-create-hash-');
+            if ($ac === 'on') {
+                $otRec['accessCode'] = $tick->createHash();
+            }
+            $hash = $tick->createTicket($otRec, 1, $accessCodeValidyTime);
+//$hash = $tick->createTicket($otRec, 100, $accessCodeValidyTime);
+
+            $url = $globalParams['pageUrl'] . $hash . '/';
+            // $url = "<a href='$url'>$url</a>";  // ToDo: required in e-mail?
+            $subject = "[{{ site_title }}] {{ lzy-signup-invitation-subject }} {$globalParams['host']}";
+            $message = "{{ lzy-signup-invitation1 }} $url {{ lzy-signup-invitation2 }}$validUntilStr{{ lzy-signup-invitation3 }}\n\n{{ lzy-signup-invitation-greeting }}";
+
+            $ok = $this->sendMail($email, $subject, $message);
+            if ($ok) {
+                $out .= "sent: $email\n";
+            } else {
+                $out .= "failed: $email\n";
+            }
+        }
+
+        return $out;
+    } // sendInvitationByMails
 
 
 
@@ -602,5 +763,28 @@ class AdminTasks
             }
         }
     } // sendAccessLinkMail
+
+
+
+    private function checkPasswordQuality($password)
+    {
+        if (!$this->lzy->admin_enforcePasswordQuality)  {
+            return false;
+        }
+        // min length:
+        if (strlen($password) < 6) {
+            return 'lzy-password-too-short';
+        }
+        if (!preg_match('/[A-Z]/', $password )) {
+            return 'lzy-password-without-uppercase-letter';
+        }
+        if (!preg_match('/\W/', $password )) {
+            return 'lzy-password-without-special-character';
+        }
+        if (!preg_match('/\d/', $password )) {
+            return 'lzy-password-without-digit';
+        }
+        return false;
+    } // checkPasswordQuality
 
 } // class
