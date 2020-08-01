@@ -70,6 +70,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'feature_sitemapFromFolders'        => [false, 'If true, the sitemap will be derived from the folder structure under pages/, rather than the config/sitemap.yaml file.', 3 ],
     'feature_supportLegacyBrowsers'     => [false, 'If true, jQuery 1 is loaded in case of legacy browsers.', 2 ],
     'feature_touchDeviceSupport'        => [true, 'If true, Lizzy supports swipe gestures etc. on touch devices.', 2 ],
+    'feature_replaceNLandTabChars'      => [false, 'If true, "\\n" and "\\t" will be replaced to corresponding control characters.', 3 ],
 
     'path_logPath'                      => [LOGS_PATH, '[true|Name] Name of folder to which logging output will be sent. Or "false" for disabling logging.', 3 ],
     'path_pagesPath'                    => ['pages/', 'Name of folder in which all pages reside.', 3 ],

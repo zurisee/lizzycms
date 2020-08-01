@@ -1050,6 +1050,10 @@ EOT;
             $html = $this->render(true);
         }
 
+        if ($this->config->feature_replaceNLandTabChars) {
+            $html = str_replace(['\n', '\t'], ["\n", "\t"], $html);
+        }
+
         return $html;
     } // render
 
