@@ -1387,6 +1387,7 @@ function reloadAgent($target = false, $getArg = false)
         $target = resolvePath($target, false, true);
     } else {
         $target = $globalParams['pageUrl'];
+        $target = preg_replace('|/[A-Z][A-Z0-9]{4,}/?$|', '/', $target);
     }
     if ($getArg) {
         setNotificationMsg($getArg);
@@ -2078,12 +2079,15 @@ function fatalError($msg, $origin = '', $offendingFile = '')
 
 
 //-------------------------------------------------------------
-function sendMail($to, $from, $subject, $message)
+function sendMail($to, $from, $subject, $message, $exitOnError = true)
 {
     $headers = "From: $from\r\n" . 'X-Mailer: PHP/' . phpversion();
 
-    if (!mail($to, $subject, $message, $headers)) {
+    $res = mail($to, $subject, $message, $headers);
+    if (!$res && $exitOnError) {
         fatalError("Error: unable to send e-mail", 'File: '.__FILE__.' Line: '.__LINE__);
+    } else {
+        return $res;
     }
 } // sendMail
 
