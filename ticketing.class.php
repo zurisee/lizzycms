@@ -146,7 +146,7 @@ class Ticketing
     }
 
 
-    private function createHash()
+    public function createHash()
     {
         do {
             $hash = chr(random_int(65, 90));  // first always a letter
