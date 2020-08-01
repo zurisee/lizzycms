@@ -1,81 +1,138 @@
-/*  JS-Popup  */
+/*  JS-Popup
+*   Options:
+*       text            : text (html) to be displayed in popup
+*       content         : synonyme for text
+*       trigger         : how to open popup: true = immediately, false = not (i.e. opened elsewhere), string = selector of button or link
+*       closeOnBgClick  : [true,false] whether clicks on background shall close the popup
+*       buttons         : list of button texts (separated by ',')
+*       callbacks       : list of callback functions (separated by ',')
+*       popupclass      : class applied to popup container
+*       buttonClass     : class applied to buttons
+*/
 
 var lzyPopupInx = null;
+var transient = false;
 
 function lzyPopup( options ) {
-    var content = (typeof options.content !== 'undefined')? options.content : '';
-    if (typeof options.contentFrom !== 'undefined') {
-        content += $( options.contentFrom ).html();
-    }
-    var inx = (typeof options.index !== 'undefined') ? options.index : null;
+    var text  = (typeof options.text !== 'undefined')? options.text : '';               // text synonym for content
+    var content  = (typeof options.content !== 'undefined')? options.content : text;
+
     var trigger = (typeof options.trigger !== 'undefined') ? options.trigger : true;
-    var anker = (typeof options.anker !== 'undefined') ? options.anker : 'body';
+    var anker = 'body'; // (typeof options.anker !== 'undefined') ? options.anker : 'body';
     var closeOnBgClick = (typeof options.closeOnBgClick !== 'undefined') ? options.closeOnBgClick : true;
-    var buttons = (typeof options.buttons !== 'undefined') ? options.buttons.split(',') : [];
-    var callbacks = (typeof options.callbacks !== 'undefined') ? options.callbacks.split(',') : [];
+    var buttons = (typeof options.buttons === 'string') ? options.buttons.split(',') : [];
+    var callbacks = [];
+    if (typeof options.callbacks === 'string') {
+        callbacks =  options.callbacks.split(',');
+    } else if (typeof options.callbacks === 'function') {
+        callbacks[0] =  options.callbacks;
+    }
     var popupclass = (typeof options.class !== 'undefined') ? ' ' + options.class : '';
     if (closeOnBgClick) {
-        popupclass += ' lzy-popup-closebtn';
+        popupclass += ' lzy-js-popup-closebtn';
     }
     var buttonClass = (typeof options.buttonClass !== 'undefined') ? options.buttonClass : 'lzy-button';
 
-    if (inx === null) {
-        inx = (lzyPopupInx === null)? 1 : inx++;
-    }
+    inx = (lzyPopupInx === null)? 1 : inx++;
+
 
     // prepare buttons:
     var buttonHtml = '';
     for (var i in buttons) {
         var id = parseInt(i) + 1;
-        id = 'lzy-popup-btn' + id;
-        buttonHtml += '<button id="'+ id +'" class="lzy-popup-btn ' + buttonClass + '">' + buttons[i].trim() + '</button> ';
+        id = 'lzy-js-popup-btn' + id;
+        buttonHtml += '<button id="'+ id +'" class="lzy-js-popup-btn ' + buttonClass + '">' + buttons[i].trim() + '</button> ';
     }
     if (buttonHtml) {
-        buttonHtml = '<div class="lzy-popup-buttons">' + buttonHtml + '</div>';
+        buttonHtml = '<div class="lzy-js-popup-buttons">' + buttonHtml + '</div>';
     }
 
-    var style = '';
-    if (trigger !== true) {
-        style = ' style="display: none;"';
-    }
+    transient = true; // global var
 
-    // add popup HTML to DOM:
-    var html = '<div class="lzy-popup lzy-popup' + inx + popupclass + '"' + style + '>\n' +
-        '    <div class="lzy-popup-wrapper">\n' +
-        content + buttonHtml +
-        '    </div>\n' +
-        '</div>\n';
-    $( anker ).append( html );
+    if (content) {      // content supplied as literal:
+        // add popup HTML to DOM:
+        var style = '';
+        if (trigger !== true) {
+            style = ' style="display: none;"';
+        }
+        var html = '<div class="lzy-js-popup lzy-js-popup' + inx + popupclass + '"' + style + '>\n' +
+            '    <div class="lzy-js-popup-wrapper">\n' +
+            content + buttonHtml +
+            '    </div>\n' +
+            '</div>\n';
+        $(anker).append(html);
+
+    } else {
+        var contentRef = (typeof options.contentRef !== 'undefined') ? options.contentRef : '';
+        if (contentRef) {       // content as reference to DOM element:
+            transient = false;
+            contentRef = '#' + contentRef.replace(/^[.#]/, '');
+            var $popupElem = $( contentRef );
+            if (!$popupElem.hasClass('lzy-js-popup')) {
+                $popupElem.addClass('lzy-js-popup').addClass('lzy-js-popup' + inx);
+                if (popupclass) {
+                    $popupElem.addClass(popupclass);
+                }
+                var $popupContent = $('> div', $popupElem);
+                $popupContent.wrap('<div class="lzy-js-popup-wrapper">');
+                $popupContent.append(buttonHtml);
+            }
+            if (trigger === true) {
+                $popupElem.show();
+            }
+
+        } else {    // if no content specified
+            console.log('Error in lzyPopup: argument "text" or "contentRef" required.');
+            return false;
+        }
+    }
 
     // setup callback invokation:
     if (buttonHtml) {
-        $('.lzy-popup-btn').click(function () {
+        $('.lzy-js-popup-btn').click(function () {
             var id = $( this ).attr('id');
-            var i = parseInt( id.substr(13) ) - 1;
-            var cb = callbacks[ i ].trim();
-            if (typeof window[cb] === 'function') {
-                window[cb]( i,  buttons[i].trim());
+            var i = parseInt( id.substr(16) ) - 1;
+            if (typeof callbacks[ i ] === 'string') {
+                var cb = callbacks[i].trim();
+                var btn = (buttons[i] === 'string')? buttons[i].trim(): '';
+                if (typeof window[cb] === 'function') {
+                    window[cb](i, btn);
+                }
+            } else if (typeof callbacks[ i ] === 'function') {
+                var cb = callbacks[ i ];
+                var btn = (buttons[ i ] === 'string')? buttons[i].trim(): '';
+                cb(i, btn);
             }
-            $( this ).closest('.lzy-popup').hide();
+            lzyPopupClose( this );
         });
     }
 
     // setup close-on-bg-click:
     if (closeOnBgClick) {
-        $('.lzy-popup').click(function () {
-            $('.lzy-popup').hide();
+        $('.lzy-js-popup').click(function () {
+            lzyPopupClose( this );
         });
     }
     // setup close-button:
-    $('.lzy-popup-close-button').click(function(){
-        $('.lzy-popup').hide();
+    $('.lzy-js-popup-close-button').click(function(){
+        lzyPopupClose( this );
     });
 
     // setup trigger:
     if (trigger) {
         $(".trigger_popup").click(function(){
-            $('.lzy-popup1').show();
+            $('.lzy-js-popup').show();
         });
     }
 } // lzyPopup
 
+
+
+
+function lzyPopupClose( that ) {
+    if (transient) {
+        $( that ).closest('.lzy-js-popup').remove();
+    } else {
+        $( that ).closest('.lzy-js-popup').hide();
+    }
+}
