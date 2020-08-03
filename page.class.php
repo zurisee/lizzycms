@@ -673,6 +673,9 @@ EOT;
     public function applyMessage()
     {
         if ($msg = $this->message) {
+            if (strpos($msg, '{{') !== false) {
+                $msg = $this->trans->translate($msg);
+            }
             $msg = compileMarkdownStr($msg);
             $msg = createWarning($msg);
             $this->addBody($msg);
