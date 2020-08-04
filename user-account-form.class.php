@@ -998,7 +998,7 @@ EOT;
         }
 
         $logInVar = <<<EOT
-<div class="lzy-login-link"> <a href="#" title="{{ Logged in as }} $displayName">{{ lzy-login-icon }}</a></div>
+<div class="lzy-login-link"> <a href="#" title="{{ lzy-logged-in-as }} $displayName">{{ lzy-login-icon }}</a></div>
 
 EOT;
         return $logInVar;
@@ -1031,7 +1031,7 @@ EOT;
         $logInVar = <<<EOT
 <div class="lzy-login-link-menu">
     <div class="lzy-login-menu" style="display:none;">
-        <div>{{ User account }} <strong>$username</strong> [$groups]</div>
+        <div>{{ lzy-user-account }} <strong>$username</strong> [$groups]</div>
         <ol>
             <li><a href='$pageUrl?logout'>{{ Logout }}</a></li>$option
         </ol>

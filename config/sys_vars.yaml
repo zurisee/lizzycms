@@ -356,11 +356,11 @@ LoginLink:
     de: Anmelden
     en: Login
 
-Logged in as:
+lzy-logged-in-as:
     de: Angemeldet als
     _: Logged in as
 
-User account:
+lzy-user-account:
     de: Benutzerkonto
     _: User account
 
@@ -368,9 +368,9 @@ Open user popup:
     de: Benutzerkonto
     _: User account
 
-User account of:
-    de: Angemeldet als
-    _: Logged in as
+#User account of:
+#    de: Angemeldet als
+#    _: Logged in as
 
 page requires login:
     de: "Sie müssen angemeldet sein, um die gesuchte Seite sehen zu können."
