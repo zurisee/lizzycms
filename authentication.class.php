@@ -44,7 +44,7 @@ class Authentication
             $res = $this->handleOnetimeLoginRequest();
 
         } elseif (isset($_POST['lzy-onetime-code']) && isset($_POST['lzy-login-user'])) {    // user sent accessCode
-            $str = $this->validateOnetimeAccessCode( $_POST['lzy-onetime-code'] ); // reloads & never returns if login successful
+            $str = $this->handleAccessCodeInUrl( $_POST['lzy-onetime-code'], true ); // reloads & never returns if login successful
             $res = [false, $str, 'Message'];
         }
 
@@ -115,31 +115,30 @@ class Authentication
 
 
     //....................................................
-    public function handleAccessCodeInUrl($pagePath)
+    public function handleAccessCodeInUrl($codeCandidate, $oneTimeOnly = false)
     {
-        global $globalParams;
-        $codeCandidate = basename($pagePath);
-        if ($codeCandidate && preg_match('/^[A-Z][A-Z0-9]{4,}$/', $codeCandidate)) {
-            $res = $this->validateOnetimeAccessCode($codeCandidate);    // reloads on success, returns on failure
-            if ($res === 'ok') {
-                $pagePath = trunkPath($pagePath, 1, false);
-                return $pagePath;
-            }
+        $res = $this->validateOnetimeAccessCode($codeCandidate);    // reloads on success, returns on failure
+        if ($res === 'ok') {
+            return;
+        }
+        if ($oneTimeOnly) {
+            $this->handleFailedLoginAttempts($codeCandidate);
+            return $res;
+        }
 
-            $this->validateAccessCode($codeCandidate);   // check access code in user records and log in&reload if found
+        if ($this->validateAccessCode($codeCandidate)) {   // check access code in user records and log in if found
+            return;
+        }
+        $this->handleFailedLoginAttempts($codeCandidate);
 
-            $path = $globalParams['requestedUrl'];
-            $html = <<<EOT
-            <h1>{{ lzy-link-expired }}</h1>
-            <p>{{ lzy-link-expired-explanation }}</p>
-            <p style="padding: 1em 2em;">$path</p>
+        $path = $GLOBALS["globalParams"]["host"].$_SERVER["REQUEST_URI"];
+        $html = <<<EOT
+        <h1>{{ lzy-link-expired }}</h1>
+        <p>{{ lzy-link-expired-explanation }}</p>
+        <p style="padding: 1em 2em;">$path</p>
 
 EOT;
-            $this->lzy->page->addOverride($html);
-
-            $pagePath = trunkPath($pagePath, 1, false);
-        }
-        return $pagePath;   // access granted
+        $this->lzy->page->addOverride($html);
     } // handleAccessCodeInUrl
 
 
@@ -165,21 +164,12 @@ EOT;
             $user .= " ({$oneTimeRec['email']})";
             writeLog("one time link accepted: $user [".getClientIP().']', LOGIN_LOG_FILENAME);
 
-            // access granted, remove hash-code from url, if there is one:
-            $requestedUrl = $GLOBALS['globalParams']['requestedUrl'];
-            $requestedUrl = preg_replace('|/[A-Z][A-Z0-9]{4,}/?$|', '', $requestedUrl);
-            reloadAgent($requestedUrl, 'lzy-login-successful'); // access granted, remove hash-code from url
-
-        } else {
-            $rep = '';
-            if ($this->handleFailedLogins()) {
-                $rep = ' REPEATED';
+            if (!$this->lzy->keepAccessCode) {
+                // access granted, remove hash-code from url, if there is one:
+                $requestedUrl = $GLOBALS['globalParams']['requestedUrl'];
+                $requestedUrl = preg_replace('|/[A-Z][A-Z0-9]{4,}/?$|', '', $requestedUrl);
+                reloadAgent($requestedUrl, 'lzy-login-successful'); // access granted, remove hash-code from url
             }
-            $this->monitorFailedLoginAttempts();
-            if ($rep) {
-                writeLog("*** one time link rejected$rep: $code [" . getClientIP() . ']', LOGIN_LOG_FILENAME);
-            }
-            $getArg = 'login-failed';
         }
         return $getArg;
     } // validateOnetimeAccessCode
@@ -266,7 +256,12 @@ EOT;
                     $requestedUrl = $GLOBALS['globalParams']['requestedUrl'];
                     $requestedUrl = preg_replace('|/[A-Z][A-Z0-9]{4,}/?$|', '', $requestedUrl);
                     writeLog("*** user '$user' successfully logged in via access link ($codeCandidate).");
-                    reloadAgent($requestedUrl, 'lzy-login-successful');
+                    if (!$this->lzy->keepAccessCode) {
+                        reloadAgent($requestedUrl, 'lzy-login-successful');
+                    } else {
+                        $this->lzy->page->addMessage('{{ lzy-login-successful }}');
+                        return true;
+                    }
                 }
             }
         }
@@ -581,6 +576,21 @@ EOT;
 
 
     //-------------------------------------------------------------
+    private function handleFailedLoginAttempts($code = '')
+    {
+        $rep = '';
+        if ($this->handleFailedLogins()) {
+            $rep = ' REPEATED';
+        }
+        $this->monitorFailedLoginAttempts();
+        if ($rep) {
+            writeLog("*** one time link rejected$rep: $code [" . getClientIP() . ']', LOGIN_LOG_FILENAME);
+        }
+    } // handleFailedLoginAttempts
+
+
+
+    //-------------------------------------------------------------
     private function handleFailedLogins()
     {
         $repeated = false;
@@ -604,22 +614,57 @@ EOT;
 
 
 
+    private function monitorFailedLoginAttempts()
+    {
+        // More than HACKING_THRESHOLD failed login attempts within 15 minutes are considered a hacking attempt.
+        // If that is detected, we delay ALL login attempts by 5 seconds.
+        $tnow = time();
+        $tooOld = time() - 900;
+        $origin = $_SERVER["HTTP_HOST"];
+        $out = "$origin|$tnow\n";   // add this attempt
+        if (file_exists(HACK_MONITORING_FILE)) {
+            $lines = file(HACK_MONITORING_FILE);
+            $cnt = $allCnt = 0;
+            foreach ($lines as $l) {
+                list($o, $t) = explode('|', $l);
+                if (intval($t) < $tooOld) {   // drop old entries
+                    continue;
+                }
+                $allCnt++;
+                if (strpos($origin, $o) === 0) {
+                    $cnt++;
+                }
+                $out .= $l;
+            }
+            if (($cnt > HACKING_THRESHOLD) || ($allCnt > 4*HACKING_THRESHOLD)) {
+                writeLog("!!!!! Possible hacking attempt [".getClientIP().']', LOGIN_LOG_FILENAME);
+                sleep(5);
+            }
+        }
+        file_put_contents(HACK_MONITORING_FILE, $out);
+
+    } // monitorFailedLoginAttempts
+
+
+
     //-------------------------------------------------------------
     public function isValidPassword($password, $password2 = false)
     {
         if ($password2 && ($password !== $password2)) {
             return '{{ lzy-change-password-not-equal-response }}';
         }
-        if (strlen($password) < PW_MIN_LENGTH) {
-            return '{{ lzy-change-password-too-short-response }}';
-        }
-        if (!preg_match('/[A-Z]/', $password) ||
-            !preg_match('/\d/', $password) ||
-            !preg_match('/[^\w\d]/', $password)) {
-            return '{{ lzy-change-password-insufficient-response }}';
+        if ($this->config->admin_enforcePasswordQuality) {
+            if (strlen($password) < PW_MIN_LENGTH) {
+                return '{{ lzy-change-password-too-short-response }}';
+            }
+            if (!preg_match('/[A-Z]/', $password) ||
+                !preg_match('/\d/', $password) ||
+                !preg_match('/[^\w\d]/', $password)) {
+                return '{{ lzy-change-password-insufficient-response }}';
+            }
         }
         return '';
-    }
+    } // isValidPassword
 
 
 
@@ -863,38 +908,6 @@ EOT;
         }
     } // handleLoginUserNotification
 
-
-
-    private function monitorFailedLoginAttempts()
-    {
-        // More than HACKING_THRESHOLD failed login attempts within 15 minutes are considered a hacking attempt.
-        // If that is detected, we delay ALL login attempts by 5 seconds.
-        $tnow = time();
-        $tooOld = time() - 900;
-        $origin = $_SERVER["HTTP_HOST"];
-        $out = "$origin|$tnow\n";   // add this attempt
-        if (file_exists(HACK_MONITORING_FILE)) {
-            $lines = file(HACK_MONITORING_FILE);
-            $cnt = $allCnt = 0;
-            foreach ($lines as $l) {
-                list($o, $t) = explode('|', $l);
-                if (intval($t) < $tooOld) {   // drop old entries
-                    continue;
-                }
-                $allCnt++;
-                if (strpos($origin, $o) === 0) {
-                    $cnt++;
-                }
-                $out .= $l;
-            }
-            if (($cnt > HACKING_THRESHOLD) || ($allCnt > 4*HACKING_THRESHOLD)) {
-                writeLog("!!!!! Possible hacking attempt [".getClientIP().']', LOGIN_LOG_FILENAME);
-                sleep(5);
-            }
-        }
-        file_put_contents(HACK_MONITORING_FILE, $out);
-
-    } // monitorFailedLoginAttempts
 
 
 } // class Authentication
