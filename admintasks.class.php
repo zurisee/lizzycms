@@ -95,10 +95,10 @@ EOT;
                 }
 
                 if ($requestType === 'change-password') {           // user is changing his/her password:
-                    $password = get_post_data('lzy-change-password-password');
-                    $password2 = get_post_data('lzy-change-password2-password2');
+                    $password = get_post_data('lzy-change-password');
+                    $password2 = get_post_data('lzy-change-password22');
                     $res = $this->auth->isValidPassword($password, $password2);
-                    if ($res == '') {
+                    if ($res === '') {
                         $str = $this->changePassword($user, $password);
                         $res = [false, $str, 'Message'];
 
@@ -119,8 +119,13 @@ EOT;
 
                 } elseif ($requestType === 'lzy-change-email') {           // user changes mail address
                     $email = get_post_data('lzy-change-user-request-email');
-                    $str = $this->sendChangeMailAddress_Mail($email);
-                    $res = [false, $str, 'Override'];
+                    if ($this->auth->findUserRecKey($email, '*')) {
+                        $str = "{{ lzy-email-changed-email-in-use }}: $email";
+                        $res = [false, $str, 'Message'];
+                    } else {
+                        $str = $this->sendChangeMailAddress_Mail($email);
+                        $res = [false, $str, 'Override'];
+                    }
 
 
                 } elseif ($requestType === 'lzy-delete-account') {           // user deletes account
@@ -311,7 +316,7 @@ EOT;
         if (isset($rec['accessCode'])) {
             $userRec['accessCode'] = $rec['accessCode'];
             $href = $GLOBALS["globalParams"]["absAppRootUrl"].$rec['accessCode'];
-            $link = "<a class='lzy-user-self-signup-access-link' href='$href'>$href</a>";
+            $link = "<a class='lzy-user-self-signup-access-link' href='$href.'>$href</a>";  // trailing dot -> skip reload agend so user can see access link
             $acStr = "\t\t\t\t<div><span>{{ lzy-user-self-signup-access-link }}:</span><span>$link</span></div>\n";
             $acExplanation = "\t\t\t\t{{ lzy-user-self-signup-access-code1 }}\n";
         }

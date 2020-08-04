@@ -397,8 +397,12 @@ lzy-email-change-mail-subject:
     _:  "Confirmation Link for"
 
 lzy-email-change-mail-up1:
-    de: "Guten Tag\n\nSie haben bei der Website ??? die Änderung Ihrer E-Mail Adresse beantragt. Bitte bestätigen Sie jetzt Ihre neue E-Mail Adresse. Klicken Sie hierzu auf folgenden Link: \n\n\t"
-    _:  "Hello\n\nYou have requested to register a new e-mail address at website ???.\n\nPlease click on this link to confirm your e-mail address: \n\n\t"
+    de: |
+        Guten Tag\n\nSie haben bei der Website {{ appRootUrl }} die Änderung Ihrer E-Mail Adresse beantragt.
+        Bitte bestätigen Sie jetzt Ihre neue E-Mail Adresse. Klicken Sie hierzu auf folgenden Link: \n\n\t
+    _:  |
+        Hello\n\nYou have requested to register a new e-mail address at website {{ appRootUrl }}.\n\n
+        Please click on this link to confirm your e-mail address: \n\n\t
     
 lzy-email-change-mail-up2:
     de: "\n\nSie können auch den folgenden Code ins Eigabefeld in der Website eintragen:"
@@ -701,32 +705,17 @@ lzy-signup-access-code-label:
     de: 'Ihr Direktlink:'
     _:  'Your access-link:'
 
-#lzy-signup-access-code-explanation:
-#    de: |
-#        <h3>Erklärung:</h3>
-#        <p>Mit diesem <em>Direktlink</em> können Sie künftig die Webseite aufrufen und sich sofort anmelden.
-#        Bewahren Sie diesen Link gut auf, speichern Sie ihn als Favoriten, aber geben Sie ihn nicht weiter!</p>
-#    _:  |
-#        <h3>Explanation:</h3>
-#        <p>With this <em>direct access link</em> you can open this website and log in automatically.
-#        Save this link, e.g. as a favorit in your browser. But do not hand this link out to anyone else!</p>
-
 
 lzy-user-self-signup-access-code1:
     de: |
         <h2>Erklärung zum Zugangslink</h2>
         <p>Mit diesem Zugangslink können Sie die Website öffnen und sind sofort angemeldet.</p>
-        <p>Am einfachsten: klicken Sie auf den Link und speichern sie die geöffnete Seite als Lesezeichen.</p>
+        <p>Tipp: klicken Sie auf den Link und speichern sie die geöffnete Seite in Ihrem Browser als Lesezeichen.</p>
     _:  |
         <h2>Explanation regarding access-link</h2>
         <p>This link lets you open the website and autmatically sign in.</p>
-        <p>Easiest to handle: click on the link and then bookmark the opened page in your browser.</p>
+        <p>Hint: click on the link and then bookmark the opened page in your browser.</p>
 
-
-#lzy-user-self-signup-access-code2:
-#    de: |
-#        <p></p>
-#    _:  ''
 
 lzy-user-self-signup-email:
     _: 'E-Mail'

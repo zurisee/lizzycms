@@ -73,11 +73,11 @@ body {
 .lzy-signup-form  label {
     display: block;
 }
-.lzy-login-form  label,
-.lzy-signup-form  label,
-.lzy-form-show-password a {
-    margin: 2em 0 0 0;
-}
+/*.lzy-login-form  label,*/
+/*.lzy-signup-form  label,*/
+/*.lzy-form-show-password a {*/
+/*    margin: 2em 0 0 0;*/
+/*}*/
 
 .lzy-signup-form button,
 .lzy-login-form button,
@@ -157,7 +157,8 @@ input.lzy-form-checkbox {
     margin-top: 5px;
 }
 
-.lzy-form-element label {
+.lzy-form-element label,
+.lzy-form-show-password {
     margin: 1em 0 0.3em 0;
     display: inline-block;
 }

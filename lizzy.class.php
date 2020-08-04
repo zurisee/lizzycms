@@ -124,6 +124,7 @@ class Lizzy
         } else {
             $this->initializeAsOnePager();
         }
+        $this->keepAccessCode = false;
 
         $this->handleEditSaveRequests();
         $this->restoreEdition();  // if user chose to activate a previous edition of a page
@@ -315,7 +316,7 @@ class Lizzy
             }
             exit( $msg );
         }
-        if (!isset($_REQUEST['lzy-user-admin']) || !$this->auth->isAdmin()) {
+        if (!isset($_REQUEST['lzy-user-admin'])) {
             return false;   // nothing to do
         }
         require_once SYSTEM_PATH.'admintasks.class.php';
@@ -550,11 +551,16 @@ class Lizzy
 
         global $globalParams, $pathToRoot;
 
-//        $requestUri     = (isset($_SERVER["REQUEST_URI"])) ? rawurldecode($_SERVER["REQUEST_URI"]) : '';
         $absAppRoot     = dir_name($_SERVER['SCRIPT_FILENAME']);
         $scriptPath     = dir_name($_SERVER['SCRIPT_NAME']);
         // ignore filename part of request:
         $requestUri     = (isset($_SERVER["REQUEST_URI"])) ? rawurldecode($_SERVER["REQUEST_URI"]) : '';
+        $accessCode = '';
+        if (preg_match('|(.*)/([A-Z][A-Z0-9]{4,})(\.?)/?$|', $requestUri, $m)) {
+            $requestUri = $m[1].'/';
+            $accessCode = $m[2];
+            $this->keepAccessCode = ($m[3] !== '');
+        }
         if (fileExt($requestUri)) {
             $requestUri     = dir_name($requestUri);
         }
@@ -585,13 +591,6 @@ class Lizzy
         $this->pageUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestedPath;
         $globalParams['pageUrl'] = $this->pageUrl;
 
-        $pageHttpPath0 = $pageHttpPath;
-        if (preg_match('|[A-Z][A-Z0-9]{4,}/?$|', $pageHttpPath)) {
-            $pageHttpPath = trunkPath($pageHttpPath, 1, false);
-        }
-
-//        $pageHttpPath = $this->auth->handleAccessCodeInUrl( $pageHttpPath );
-
         $pageHttpPath       = strtolower($pageHttpPath);
         if ($this->config->feature_filterRequestString) {
             // Example: abc[2]/
@@ -612,9 +611,6 @@ class Lizzy
 
         $globalParams['host'] = $requestScheme.$_SERVER['HTTP_HOST'].'/';
         $this->appRootUrl = $requestScheme.$_SERVER['HTTP_HOST'] . $appRoot;
-//        $this->pageUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestedPath;
-//        $globalParams['pageUrl'] = $this->pageUrl;
-
 
         $globalParams['absAppRoot'] = $absAppRoot;  // path from FS root to base folder of app, e.g. /Volumes/...
         $globalParams['absAppRootUrl'] = $globalParams["host"] . substr($appRoot, 1);  // path from FS root to base folder of app, e.g. /Volumes/...
@@ -682,8 +678,9 @@ class Lizzy
             writeLog('[' . getClientIP(true) . "] $ua" . (($this->config->isLegacyBrowser) ? " (Legacy browser!)" : ''));
         }
 
-        $this->auth->handleAccessCodeInUrl( $pageHttpPath0 );
-
+        if ($accessCode) {
+            $this->auth->handleAccessCodeInUrl($accessCode);
+        }
     } // analyzeHttpRequest
 
 
@@ -832,6 +829,7 @@ class Lizzy
         <span class='lzy-icon-error'></span>
     </span>
     <div id="login-warning" style="display:none;">Warning:<br>no users defined - login mechanism is disabled.<br>&rarr; see config/users.yaml</div>
+
 EOT;
             $loginMenu = '';
             $this->page->addModules('TOOLTIPS');
@@ -1456,6 +1454,7 @@ EOT;
 <p>{{ Hashed Password }}:</p>
 <div id="lzy-hashed-password"></div>
 <div id="lzy-password-converter-help" style="display: none;">&rarr; {{ Copy-paste the selected line }}</div>
+
 EOT;
 
         $jq = <<<'EOT'
@@ -1550,6 +1549,7 @@ EOT;
 	    console.log('now adding buttons'); 
         $('body').append( "<div class='lzy-print-btns'><a href='$url' class='lzy-button' >{{ lzy-print-now }}</a><a href='./' onclick='window.close();' class='lzy-button' >{{ lzy-close }}</a></div>" ).addClass('lzy-print-preview');
 	}, 1200);
+
 EOT;
             $this->page->addJq($jq);
         }
@@ -1563,6 +1563,7 @@ EOT;
     setTimeout(function() {
         window.print();
     }, 2000);
+
 EOT;
 
             $this->page->addJq($jq);
@@ -2222,6 +2223,7 @@ Available URL-commands:
 Unset individually as ?xy=false or globally as ?reset
 
 </pre>
+
 EOT;
         // TODO: printall -> add above
         $this->page->addOverlay(['text' => $overlay, 'closable' => 'reload']);
