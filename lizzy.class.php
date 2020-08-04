@@ -302,10 +302,6 @@ class Lizzy
 
     private function handleAdminRequests()
     {
-        $userAdminInitialized = file_exists(CONFIG_PATH.$this->config->admin_usersFile);
-        if (!$userAdminInitialized) {
-            return false;
-        }
         if ($un = getUrlArg('lzy-check-username', true)) {
             $exists = $this->auth->findUserRecKey( $un );
             if ($exists) {
@@ -316,15 +312,13 @@ class Lizzy
             }
             exit( $msg );
         }
-        if (!isset($_REQUEST['lzy-user-admin'])) {
-            return false;   // nothing to do
+
+        if (isset($_REQUEST['lzy-user-admin'])) {
+            require_once SYSTEM_PATH.'admintasks.class.php';
+            $adm = new AdminTasks($this);
+            $adm->handleAdminRequests( $_REQUEST['lzy-user-admin'] );
         }
-        require_once SYSTEM_PATH.'admintasks.class.php';
-        $adm = new AdminTasks($this);
-        $adm->handleAdminRequests( $_REQUEST['lzy-user-admin'] );
-
     } // handleAdminRequests
-
 
 
 

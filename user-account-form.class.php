@@ -954,7 +954,6 @@ EOT;
         $linkToThisPage = $GLOBALS['globalParams']['pageUrl'];
         if ($this->loggedInUser) {
             $logInVar = $this->renderLoginAccountLink( $userRec );
-//            $this->page->addPopup(['contentFrom' => '.lzy-login-menu', 'triggerSource' => '.lzy-login-link > a']);
 
         } else {
             if ($this->config->isLocalhost) {
@@ -993,13 +992,7 @@ EOT;
 
     private function renderLoginAccountLink( $userRec )
     {
-        $pageUrl = $GLOBALS['globalParams']['pageUrl'];
         $displayName = $this->loggedInUser;
-        $locked = isset($userRec['locked']) && $userRec['locked'];
-//        $option = '';
-//        if ($this->config->admin_userAllowSelfAdmin && !$locked) {
-//            $option = "\t\t\t<li><a href='$pageUrl?admin=edit-profile'>{{ Your Profile }}</a></li>\n";
-//        }
         if (isset($userRec['groupAccount']) && $userRec['groupAccount'] && isset($_SESSION["lizzy"]["loginEmail"])) {
             $displayName = $_SESSION["lizzy"]["loginEmail"];
         }
@@ -1017,24 +1010,28 @@ EOT;
     private function renderLoginAccountMenu( $userRec )
     {
         $pageUrl = $GLOBALS['globalParams']['pageUrl'];
-//        $displayName = $this->getDisplayName();
-        $displayName = $this->loggedInUser;
+        $username = $this->loggedInUser;
         $locked = isset($userRec['locked']) && $userRec['locked'];
+        $groups = $userRec['groups'];
         $option = '';
         if ($this->config->admin_userAllowSelfAdmin && !$locked) {
             $option = "\t\t\t<li><a href='$pageUrl?admin=edit-profile'>{{ Your Profile }}</a></li>\n";
         }
         if ($GLOBALS["globalParams"]["isAdmin"]) {
-            $option .= "\t\t\t<li><a href='$pageUrl?admin=invite-new-user'>{{ lzy-adm-invite-new-user }}</a></li>\n";
+            if ($this->config->admin_enableSelfSignUp) {
+                $option .= "\t\t\t<li><a href='$pageUrl?admin=invite-new-user'>{{ lzy-adm-invite-new-user }}</a></li>\n";
+            } else {
+                $option .= "\t\t\t<li>(<span title='-> admin_enableSelfSignUp'>Option \"{{ lzy-adm-invite-new-user }}\" not enabled</span>)</li>\n";
+            }
         }
         if (isset($userRec['groupAccount']) && $userRec['groupAccount'] && isset($_SESSION["lizzy"]["loginEmail"])) {
-            $displayName = $_SESSION["lizzy"]["loginEmail"];
+            $username = $_SESSION["lizzy"]["loginEmail"];
         }
 
         $logInVar = <<<EOT
 <div class="lzy-login-link-menu">
     <div class="lzy-login-menu" style="display:none;">
-        <div>{{ User account }} <strong>$displayName</strong></div>
+        <div>{{ User account }} <strong>$username</strong> [$groups]</div>
         <ol>
             <li><a href='$pageUrl?logout'>{{ Logout }}</a></li>$option
         </ol>
@@ -1042,17 +1039,6 @@ EOT;
 </div>
 
 EOT;
-//        $logInVar = <<<EOT
-//<div class="lzy-login-link-menu"> <a href="#" title="{{ Logged in as }} $displayName">{{ lzy-login-icon }}</a>
-//    <div class="lzy-login-menu" style="display:none;">
-//        <div>{{ User account }} <strong>$displayName</strong></div>
-//        <ol>
-//            <li><a href='$pageUrl?logout'>{{ Logout }}</a></li>$option
-//        </ol>
-//    </div>
-//</div>
-//
-//EOT;
         return $logInVar;
     } // renderLoginAccountMenu
 
