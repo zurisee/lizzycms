@@ -1020,7 +1020,7 @@ EOT;
         if ($GLOBALS["globalParams"]["isAdmin"]) {
             if ($this->config->admin_enableSelfSignUp) {
                 $option .= "\t\t\t<li><a href='$pageUrl?admin=invite-new-user'>{{ lzy-adm-invite-new-user }}</a></li>\n";
-            } else {
+            } elseif ($GLOBALS["globalParams"]["localCall"]) {
                 $option .= "\t\t\t<li>(<span title='-> admin_enableSelfSignUp'>Option \"{{ lzy-adm-invite-new-user }}\" not enabled</span>)</li>\n";
             }
         }
