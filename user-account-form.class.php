@@ -780,14 +780,10 @@ EOT;
     private function createSubmitButton($prefix, $class = 'lzy-admin-submit-button')
     {
         return <<<EOT
-                    <input type="submit" id="lzy-login-submit-button{$this->inx}" class="$class {$prefix}submit-button lzy-button" value="{{ {$prefix}send }}" />
+                    <button type="submit" id="lzy-login-submit-button{$this->inx}" class="$class {$prefix}submit-button lzy-button">{{ {$prefix}send }}</button>
 
 EOT;
-        return <<<EOT
-                    <button id="lzy-login-submit-button{$this->inx}" class="$class {$prefix}submit-button lzy-button" name="btn_submit" value="submit">{{ {$prefix}send }}</button>
-
-EOT;
-    }
+    } // createSubmitButton
 
 
 
