@@ -715,7 +715,7 @@ EOT;
 
         foreach ($emails as $email) {
             $name = '';
-            if (preg_match('/^(.*)<(.*)>/', $email, $m)) {
+            if (preg_match('/^(.*)<(.*)>?/', $email, $m)) {
                 $name = trim($m[1]);
                 $email = $m[2];
             }
