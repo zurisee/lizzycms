@@ -683,3 +683,8 @@ lzy-link-expired-explanation:
 lzy-signup-username-not-available:
     de: 'Benutzername bereits vergeben - bitte wählen Sie einen anderen.'
     _:  'Username already taken - please chose another one.'
+
+lzy-email-change-successful:
+    de: 'Ihre neue E-Mail Adresse wurde gespeichert'
+    _:  'Your new e-mail address has been stored successfully'
+

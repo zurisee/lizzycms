@@ -213,7 +213,7 @@ EOT;
             require_once SYSTEM_PATH.'admintasks.class.php';
             $adm = new AdminTasks($this->lzy);
             $adm->changeEMail($oneTimeRec['email']);
-            reloadAgent(false, 'email-change-successful');
+            reloadAgent(false, 'lzy-email-change-successful');
 
         } elseif (($mode === 'user-signup-invitation') && isset($oneTimeRec['email'])) {
             require_once SYSTEM_PATH.'admintasks.class.php';

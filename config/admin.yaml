@@ -2,10 +2,10 @@
 
 # Login by password:
 
-lzy-email-change-successful:
-    de: 'Ihre neue E-Mail Adresse wurde gespeichert'
-    _:  'Your new e-mail address has been stored successfully'
-
+#lzy-email-change-successful:
+#    de: 'Ihre neue E-Mail Adresse wurde gespeichert'
+#    _:  'Your new e-mail address has been stored successfully'
+#
 # Login / onetime-link:
 lzy-onetimelogin-request-prompt:
     de: 'E-Mail Adresse'
@@ -399,22 +399,22 @@ lzy-email-change-mail-subject:
 lzy-email-change-mail-up1:
     de: |
         Guten Tag\n\nSie haben bei der Website {{ appRootUrl }} die Änderung Ihrer E-Mail Adresse beantragt.
-        Bitte bestätigen Sie jetzt Ihre neue E-Mail Adresse. Klicken Sie hierzu auf folgenden Link: \n\n\t
+        Bitte bestätigen Sie jetzt Ihre neue E-Mail Adresse. Klicken Sie hierzu auf folgenden Link: \n\t
     _:  |
         Hello\n\nYou have requested to register a new e-mail address at website {{ appRootUrl }}.\n\n
-        Please click on this link to confirm your e-mail address: \n\n\t
+        Please click on this link to confirm your e-mail address: \n\t
     
 lzy-email-change-mail-up2:
     de: "\n\nSie können auch den folgenden Code ins Eigabefeld in der Website eintragen:"
     _:  "\n\nOr you can enter the following code into the entry field in the webpage:"
 
-#lzy-email-change-mail-up3:
-#    de: |
-#        \n\nBitte beachten Sie, dass der Link und der Code nur einmal innerhalb der nächsten 15 Minuten funktioniert.\n\n
-#        Sollten nicht Sie die Änderung Ihrer E-Mail Adresse beantragt haben, ignorieren Sie diese Mail.
-#    _:  |
-#        \n\nPlease note that this link and this code only works once within the next 15 minutes.
-#        In case it wasn't you who requested this modification, you may ignore this e-mail.
+lzy-email-change-mail-up3:
+    de: |
+        \n\nBeachten Sie bitte, dass der Link und der Code nur einmal innerhalb der nächsten 15 Minuten funktioniert.\n\n
+        Sollten nicht Sie die Änderung Ihrer E-Mail Adresse beantragt haben, ignorieren Sie diese Mail.
+    _:  |
+        \n\nPlease note that this link and this code only works once within the next 15 minutes.
+        In case it wasn't you who requested this modification, you may ignore this e-mail.
 
 
 lzy-change-mail-link sent :

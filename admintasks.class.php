@@ -558,6 +558,7 @@ EOT;
         if (strpos($message, '{{') !== false) {
             $message = $this->lzy->trans->translate($message);
         }
+        $message = str_replace(['\\n', '\\t'], ["\n", "\t"], $message);
         return $this->lzy->sendMail($to, $subject, $message, false);
     } // sendMail
 
