@@ -168,6 +168,7 @@ class Lizzy
         $GLOBALS['globalParams']['errorLoggingEnabled'] = $this->config->debug_errorLogging;
 
         $this->trans = new Transvar($this);
+        $this->setTransvars0();
         $this->page = new Page($this);
 
         $this->trans->readTransvarsFromFiles([ SYSTEM_PATH.'config/sys_vars.yaml', CONFIG_PATH.'user_variables.yaml' ]);
@@ -808,6 +809,18 @@ class Lizzy
 
 
     //....................................................
+	private function setTransvars0()
+	{
+        $requestScheme = ((isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'])) ? $_SERVER['REQUEST_SCHEME'].'://' : 'HTTP://';
+        $requestUri     = (isset($_SERVER["REQUEST_URI"])) ? rawurldecode($_SERVER["REQUEST_URI"]) : '';
+        $appRoot        = fixPath(commonSubstr( dir_name($_SERVER['SCRIPT_NAME']), dir_name($requestUri), '/'));
+        $appRootUrl = $requestScheme.$_SERVER['HTTP_HOST'] . $appRoot;
+        $this->trans->addVariable('appRootUrl', $appRootUrl);
+
+    } // setTransvars0
+
+
+    //....................................................
 	private function setTransvars1()
 	{
 	    if ($this->auth->knownUsers) {
@@ -846,7 +859,7 @@ EOT;
             $this->trans->addVariable('lzy-fileadmin-button', "", false);
         }
 
-        $this->trans->addVariable('appRootUrl', $this->appRootUrl);
+//        $this->trans->addVariable('appRootUrl', $this->appRootUrl);
         $this->trans->addVariable('pageUrl', $this->pageUrl);
         $this->trans->addVariable('appRoot', $this->pathToRoot);			// e.g. '../'
         $this->trans->addVariable('systemPath', $this->systemPath);		// -> file access path
