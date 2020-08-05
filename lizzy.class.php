@@ -1840,12 +1840,15 @@ EOT;
                 $lang = $this->config->site_defaultLanguage;
             }
 
+        } elseif (isset($_SESSION['lizzy']['lang']) && $_SESSION['lizzy']['lang']) {
+            $lang = $_SESSION['lizzy']['lang'];
         } else {
             $lang = $this->config->site_defaultLanguage;
         }
 
         $this->config->lang = $lang;
         $globalParams['lang'] = $lang;
+        $_SESSION['lizzy']['lang'] = $lang;
         return $lang;
     } // selectLanguage
 
