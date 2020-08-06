@@ -33,6 +33,7 @@
 
 <!-- === page content =============== -->
 		<main id='main' class='main'>
+{{#^ nav( breadcrumb ) }}
 
 {{ content }}
 
@@ -45,12 +46,16 @@
 		<footer class='lzy-footer lzy-large-screen-footer'>
 			<div>
 {{^ footer }}{{^ large-screen-footer }} 
+{{# count( renderResult: true, label: '{{ lzy-page-hits }}' ) }}
+{{# last-modified() }}
 			</div>
             <div class='lzy-logged-in-user'>{{ lzy-lang-selection }}{{^ lzy-config--open-button }}{{ lzy-toggle-edit-mode }}{{ lzy-fileadmin-button }}{{ lzy-login-menu }}{{ lzy-login-button }}</div>
 		</footer>
 		<footer class='lzy-footer lzy-small-screen-footer'>
 			<div>
 {{^ footer }}{{^ small-screen-footer }}
+{{# count( renderResult: true, label: '{{ lzy-page-hits }}' ) }}
+{{# last-modified() }}
 			</div>
             <div class='lzy-logged-in-user'>{{ lzy-lang-selection }}{{^ lzy-config--open-button }}{{ lzy-toggle-edit-mode }}{{ lzy-fileadmin-button }}{{ lzy-login-button }}</div>
 		</footer>

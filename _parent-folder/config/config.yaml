@@ -3,10 +3,23 @@
 #--------------------------------------------------------------------------
 
 admin_autoAdminOnLocalhost: true
+
+__END__
+
+#=== Often used options ==============================================
+admin_enableSelfSignUp: true
+admin_userAllowSelfAdmin: true
+
+debug_enableDevMode: true
+debug_enableDevModeAutoOff: true
 debug_compileScssWithLineNumbers: true
+
+site_supportedLanguages: de,en
+site_enableCaching: true
 
 
 __END__
+
 #=== List of available configuration items ===========================
 
 admin_activityLogging: false                 # If true, logs activities to file .#logs/log.txt.
@@ -23,6 +36,7 @@ admin_enableFileManager: false               # If true, the file-manager (upload
 admin_enableScheduledTasks: true             # If true, a scheduler (cron) can invoke scheduled tasks by calling "?scheduled".
 admin_enableSelfSignUp: true                 # If true, visitors can create a guest account on their own.
 admin_enableServiceTasks: true               # If true, an external process can invoke service tasks by calling "?service=service-task".
+admin_enforcePasswordQuality: true           # If true, a minimum password quality is enforced when users create/change their password.
 admin_useRequestRewrite: false               # If true, assumes web-server supports request-rewrite (i.e. .htaccess).
 admin_userAllowSelfAdmin: true               # If true, user can modify their account after they logged in
 
@@ -63,6 +77,7 @@ feature_pageSwitcher: true                   # If true, code will be added to su
 feature_preloadLoginForm: true               # If true, code for login popup is preloaded and opens without page load.
 feature_quickview: false                     # If true, enables automatic Quickview of images
 feature_renderTxtFiles: true                 # If true, all .txt files in the pages folder are rendered (in <pre>-tags, i.e. as is). Otherwise they are ignored.
+feature_replaceNLandTabChars: true           # If true, "\n" and "\t" will be replaced to corresponding control characters.
 feature_screenSizeBreakpoint: 480            # [px] Determines the point where Lizzy switches from small to large screen mode.
 feature_selflinkAvoid: true                  # If true, the nav-link of the current page is replaced with a local page link (to satisfy a accessibility requirement).
 feature_sitemapFromFolders: true             # If true, the sitemap will be derived from the folder structure under pages/, rather than the config/sitemap.yaml file.
@@ -78,7 +93,8 @@ site_allowInsecureConnectionsTo: 192.*       # [domain(s)] Permit login over ins
 site_compiledStylesFilename: __styles.css    # Name of style sheet containing collection of compiled user style sheets
 site_dataPath: data/                         # Path to data/ folder.
 site_defaultLocale: en_US                    # Default local, e.g. "en_US" or "de_CH"
-site_enableCaching: true                     # If true, Lizzy's caching mechanism is activated. (not fully implemented yet)
+site_enableCaching: true                     # If true, Lizzy's caching mechanism is activated.
+site_enableMdCaching: true                   # If true, Lizzy's MD caching mechanism is activated. (not fully implemented yet)
 site_enableRelLinks: false                   # If true, injects "rel links" into header, e.g. "<link rel='next' title='Next' href='...'>"
 site_extractSelector: body main              # [selector] Lets an external js-app request an extract of the web-page
 site_pageTemplateFile: page_template.html    # Name of file that will be used as the template. Must be located in 'config/'
