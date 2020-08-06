@@ -66,7 +66,7 @@ $nav-top-horizontal-indent-step: 1.25em;
 $nav-accordion-trans-speed: 0.2s;
 
 // lzy-nav-indented-no-arrow:
-$nav-first-indent: 0em;
+$nav-first-indent: 1em;
 $nav-indent-step: 1.2em;
 
 //=== in-page nav:
@@ -330,88 +330,55 @@ $slidedownX6: calc(var(--lzy-nav-top-horizontal-first-indent, #{$nav-top-horizon
         padding-left: 2em;
         padding-left: var(--lzy-mobile-nav-title-indent, #{$mobile-nav-title-indent});
     }
-    .lzy-lvl1 {
-        > a {
+    .lzy-lvl1 > a {
             padding-left: 2em;
-//            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + #{$mxCorr});
             padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) );
             .lzy-nav-arrow {
                 left: 1em;
                 left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) - 1em );
                 top: 0.4em;
             }
-        }
-//        &.lzy-has-children > a {
-//            padding-left: 1em;    // for IE
-//            padding-left: var(--lzy-mobile-nav-first-indent, $mobile-nav-first-indent);
-//        }
     }
-    .lzy-lvl2 {
-        > a {
-//            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
-//        }
-//        &.lzy-has-children > a {
+    .lzy-lvl2 > a {
             padding-left: 3em;
             padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
             .lzy-nav-arrow {
                 left:     2em;
                 left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
             }
-        }
     }
-    .lzy-lvl3 {
-        > a {
-//            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 2 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
-//        }
-//        &.lzy-has-children > a {
+    .lzy-lvl3 > a {
             padding-left: 4em;
             padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 2 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
             .lzy-nav-arrow {
                 left:     3em;
                 left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 2 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
             }
-        }
     }
-    .lzy-lvl4 {
-        > a {
-//            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 3 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
-//        }
-//        &.lzy-has-children > a {
+    .lzy-lvl4 > a {
             padding-left: 5em;
             padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 3 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
             .lzy-nav-arrow {
                 left:     4em;
                 left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 3 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
             }
-        }
     }
-    .lzy-lvl5 {
-        > a {
-//            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 4 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
-//        }
-//        &.lzy-has-children > a {
+    .lzy-lvl5 > a {
             padding-left: 6em;
             padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 4 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
             .lzy-nav-arrow {
                 left:     5em;
                 left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 4 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
             }
-        }
     }
-    .lzy-lvl6 {
-        > a {
-//            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) + #{$mxCorr});
-//        }
-//        &.lzy-has-children > a {
+    .lzy-lvl6 > a {
             padding-left: 7em;
             padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
             .lzy-nav-arrow {
                 left:     6em;
                 left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
             }
-        }
     }
-
 } // mobile menu
 
 
@@ -448,6 +415,79 @@ $slidedownX6: calc(var(--lzy-nav-top-horizontal-first-indent, #{$nav-top-horizon
 } // lzy-nav-top-horizontal
 
 
+
+// === Vertical nav (side-accordion):
+#lzy .lzy-nav.lzy-nav-accordion {
+    a:visited,
+    a {
+        position: relative;
+        .lzy-nav-arrow {
+            position: absolute;
+            top: 0.4em;
+        }
+        .lzy-nav-label {
+            display: block;
+            hyphens: auto;
+            text-overflow: ellipsis;
+            overflow-x: hidden;
+            width: 100%;
+        }
+    }
+    .lzy-lvl1 > a {
+        padding-left: 2em;
+        padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$nav-first-indent}) );
+        .lzy-nav-arrow {
+            left: 1em;
+            left: calc(var(--lzy-mobile-nav-first-indent, #{$nav-first-indent}) - 1em );
+        }
+    }
+    .lzy-lvl2 > a {
+        padding-left: 3em;
+        padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$nav-first-indent}) + var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+        .lzy-nav-arrow {
+            left:     2em;
+            left:     calc(var(--lzy-mobile-nav-first-indent, #{$nav-first-indent}) + var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+        }
+    }
+    .lzy-lvl3 > a {
+        padding-left: 4em;
+        padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$nav-first-indent}) + 2 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+        .lzy-nav-arrow {
+            left:     3em;
+            left:     calc(var(--lzy-mobile-nav-first-indent, #{$nav-first-indent}) + 2 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+        }
+    }
+    .lzy-lvl4 > a {
+        padding-left: 5em;
+        padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$nav-first-indent}) + 3 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+        .lzy-nav-arrow {
+            left:     4em;
+            left:     calc(var(--lzy-mobile-nav-first-indent, #{$nav-first-indent}) + 3 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+        }
+    }
+    .lzy-lvl5 > a {
+        padding-left: 6em;
+        padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$nav-first-indent}) + 4 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+        .lzy-nav-arrow {
+            left:     5em;
+            left:     calc(var(--lzy-mobile-nav-first-indent, #{$nav-first-indent}) + 4 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+        }
+    }
+    .lzy-lvl6 > a {
+        padding-left: 7em;
+        padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+        .lzy-nav-arrow {
+            left:     6em;
+            left:     calc(var(--lzy-mobile-nav-first-indent, #{$nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+        }
+    }
+
+} // vertical nav
+
+
+
+
+
 // while in touch mode, the parent element can't be activated as it is reserved for opening/closing the accordion
 // thus we need to repeat that element in the text sub-menu, but hide it while not in touch mode:
 #lzy.lzy-large-screen {
@@ -468,10 +508,6 @@ $slidedownX6: calc(var(--lzy-nav-top-horizontal-first-indent, #{$nav-top-horizon
 
 
 
-#lzy .lzy-nav:not(.lzy-nav-top-horizontal) .lzy-nav-arrow {
-//    float: left;
-//    margin-right: 0.2em;
-}
 
 // horizontal nav:
 #lzy.lzy-large-screen {
@@ -804,21 +840,7 @@ body.lzy-small-screen {
             //width: 90%;
             //background: cyan;
         }
-        //.lzy-lvl1 .lzy-nav-label {
-        //    max-width: calc(60vw - #{$xCorr2} - (var(--lzy-nav-first-indent, #{$nav-first-indent})));
-        //}
-        //.lzy-lvl2 .lzy-nav-label {
-        //    max-width: calc(60vw - #{$xCorr2} - (var(--lzy-nav-first-indent, #{$nav-first-indent}) + var(--lzy-nav-indent-step, #{$nav-indent-step})));
-        //}
-        //.lzy-lvl3 .lzy-nav-label {
-        //    max-width: calc(60vw - #{$xCorr2} - (var(--lzy-nav-first-indent, #{$nav-first-indent}) + 2 * var(--lzy-nav-indent-step, #{$nav-indent-step})));
-        //}
-        //.lzy-lvl4 .lzy-nav-label {
-        //    max-width: calc(60vw - #{$xCorr2} - (var(--lzy-nav-first-indent, #{$nav-first-indent}) + 3 * var(--lzy-nav-indent-step, #{$nav-indent-step})));
-        //}
-        //.lzy-lvl5 .lzy-nav-label {
-        //    max-width: calc(60vw - #{$xCorr2} - (var(--lzy-nav-first-indent, #{$nav-first-indent}) + 4 * var(--lzy-nav-indent-step, #{$nav-indent-step})));
-        //}
+
         &.lzy-nav-primary a {
             background: #4f4f4f;
             margin-bottom: 1px !important;
