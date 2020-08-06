@@ -1880,7 +1880,9 @@ EOT;
         $out = "<h1>Lizzy Config-Items and their Purpose:</h1>\n";
         $out .= "<p>Settings stored in file <code>{$this->configFile}</code>.<br/>\n";
         $out .= "&rarr; Default values in (), values deviating from defaults are marked <span class='lzy-config-viewer-hl'>red</span>)</p>\n";
-        $out .= "<p class='lzy-config-select'>Select: <a href='$url?config=1'$level1Class>Essential</a> | <a href='$url?config=2'$level2Class>Common</a> | <a href='$url?config=3'$level3Class>All</a></p>\n";
+        $out .= "<p class='lzy-config-select'>Select: <a href='$url?config=1'$level1Class>Essential</a> ".
+            "| <a href='$url?config=2'$level2Class>Common</a> | <a href='$url?config=3'$level3Class>All</a> ".
+            "| <a href='$url?config=raw'$level3Class>raw</a></p>\n";
         $out .= "  <form class='lzy-config-form' action='$url?config=$level' method='post'>\n";
         $out .= "    <input class='lzy-button' type='submit' value='{{ lzy-config-save }}'>";
 
