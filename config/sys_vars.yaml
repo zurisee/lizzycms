@@ -688,3 +688,14 @@ lzy-email-change-successful:
     de: 'Ihre neue E-Mail Adresse wurde gespeichert'
     _:  'Your new e-mail address has been stored successfully'
 
+#--- User Admin ------------------------
+# Change PW:
+lzy-change-password-title:
+    de: Kennwort ändern
+    _: Change your password
+
+lzy-invalid-email-address:
+    de: 'Ungültige E-Mail Adresse'
+    _: 'Invalid e-mail address'
+
+

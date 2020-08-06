@@ -15,7 +15,7 @@ class AdminTasks
         $this->loggedInUser = $this->auth->getLoggedInUser();
 
         $this->trans->readTransvarsFromFile('~sys/config/admin.yaml');
-        $this->trans->readTransvarsFromFile('~sys/config/useradmin.yaml');
+//        $this->trans->readTransvarsFromFile('~sys/config/useradmin.yaml');
         $this->userAdminInitialized = file_exists(CONFIG_PATH.$this->lzy->config->admin_usersFile);
     }
 
@@ -35,24 +35,28 @@ class AdminTasks
         } elseif ($requestType === 'add-user') {           // admin is adding a user
             if (!$this->auth->isAdmin() && $this->userAdminInitialized) { return false; }
             $email = get_post_data('lzy-add-user-email');
-            $pw = get_post_data('lzy-add-user-password-password');
-            if ($pw) {
-                $pw = password_hash($pw, PASSWORD_DEFAULT);
+            if ($this->isInvalidEmailAddress($email)) {
+                $res = [false, '{{ lzy-invalid-email-address }}', 'Message'];
             } else {
-                $pw = '';
+                $pw = get_post_data('lzy-add-user-password-password');
+                if ($pw) {
+                    $pw = password_hash($pw, PASSWORD_DEFAULT);
+                } else {
+                    $pw = '';
+                }
+                $un = get_post_data('lzy-add-user-username');
+                $key = ($un) ? $un : $email;
+                $rec[$key] = [
+                    'email' => $email,
+                    'groups' => get_post_data('lzy-add-user-group'),
+                    'username' => $un,
+                    'password' => $pw,
+                    'displayName' => get_post_data('lzy-add-user-displayname'),
+                    'emaillist' => get_post_data('lzy-add-user-emaillist')
+                ];
+                $str = $this->addUser($rec);
+                $res = [false, $str, 'Message'];
             }
-            $un = get_post_data('lzy-add-user-username');
-            $key = ($un) ? $un : $email;
-            $rec[$key] = [
-                'email' => $email,
-                'groups' => get_post_data('lzy-add-user-group'),
-                'username' => $un,
-                'password' => $pw,
-                'displayName' => get_post_data('lzy-add-user-displayname'),
-                'emaillist' => get_post_data('lzy-add-user-emaillist')
-            ];
-            $str = $this->addUser($rec);
-            $res = [false, $str, 'Message'];
 
 
         } elseif ($requestType === 'lzy-invite-user-email') {           // admin requested invitation mail to new user:
