@@ -496,7 +496,7 @@ class Transvar
         if ($lang === false) {	// delete first
             $this->transvars[$key] = '';
         } else {
-            $lang = ($lang) ? $lang : $_SESSION["lizzy"]["lang"];
+            $lang = ($lang) ? $lang : '_'; // fallback language
         }
         if ($lang) {
             if (!isset($this->transvars[$key][$lang])) {
