@@ -85,6 +85,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'site_extractSelector'              => ['body main', '[selector] Lets an external js-app request an extract of the web-page', 3 ],
     'site_enableRelLinks'               => [true, 'If true, injects "rel links" into header, e.g. "&lt;link rel=\'next\' title=\'Next\' href=\'...\'>"', 3 ],
     'site_allowInsecureConnectionsTo'   => ['192.*', '[domain(s)] Permit login over insecure connections to webhost on stated domain/ip-address.', 1 ],
+    'site_onairDataPath'                => ['', 'Activates a mechanism that, onair-mode, switches ~data/ to given destination . Thus, you can savely develop and test in dev-mode without overwriting hot data. Typical example: "../db/".', 2 ],
     'site_pageTemplateFile'             => ['page_template.html', "Name of file that will be used as the template. Must be located in '".CONFIG_PATH."'", 3 ],
     'site_robots'                       => [false, 'If true, Lizzy will add a meta-tag to inform search engines, not to index this site.', 1 ],
     'site_sitemapFile'                  => ['sitemap.txt', 'Name of file that defines the site structure. Build hierarchy simply by indenting.', 3 ],
@@ -220,7 +221,7 @@ private $userConfigurableSettingsAndDefaults      = [
                 $defaultValue = $this->userConfigurableSettingsAndDefaults[$key][0];
                 $val = $configValues[$key];
                 if (stripos($key, 'Path') !== false) {
-                    if ($key !== 'site_dataPath') { // site_dataPath is the only exception that is allowed to use ../
+                    if (($key !== 'site_dataPath') && ($key !== 'site_onairDataPath')) { // site_dataPath and site_onairDataPath are the only exception allowed to use ../
                         $val = preg_replace('|/\.\.+|', '', $val);  // disallow ../
                         $val = fixPath(str_replace('/', '', $val));
                     }

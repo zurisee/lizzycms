@@ -22,6 +22,8 @@ define('USER_INIT_CODE_FILE',   USER_CODE_PATH.'init-code.php');
 define('USER_FINAL_CODE_FILE',  USER_CODE_PATH.'final-code.php');
 define('USER_VAR_DEF_FILE',     USER_CODE_PATH.'var-definitions.php');
 define('ICS_PATH',              'ics/'); // where .ics files are located
+define('PRODUCTION_PATH_PATTERN', 'onair'); // if this pattern is found in the appRoot path, Lizzy assumes we are
+                                            // running in production mode
 
 define('DAILY_PURGE_FILE',      CONFIG_PATH.'daily-purge.txt');
 define('USER_DAILY_CODE_FILE',  USER_CODE_PATH.'@daily-task.php');
@@ -170,6 +172,8 @@ class Lizzy
         $this->trans = new Transvar($this);
         $this->setTransvars0();
         $this->page = new Page($this);
+
+        $this->setDataPath();
 
         $this->trans->readTransvarsFromFiles([ SYSTEM_PATH.'config/sys_vars.yaml', CONFIG_PATH.'user_variables.yaml' ]);
 
@@ -597,7 +601,7 @@ class Lizzy
         $globalParams['pagesFolder'] = $this->config->path_pagesPath;
 
 
-        $globalParams['dataPath'] = $this->config->site_dataPath;
+//        $globalParams['dataPath'] = $this->config->site_dataPath;
 
         $globalParams['pathToRoot'] = $pathToRoot;  // path from requested folder to root (= ~/), e.g. ../
         $this->pageHttpPath = $pageHttpPath;
@@ -667,7 +671,7 @@ class Lizzy
         $baseUrl = $requestScheme.$_SERVER['SERVER_NAME'];
         $_SESSION['lizzy']['appRootUrl'] = $baseUrl.$appRoot; // https://domain.net/...
         $_SESSION['lizzy']['absAppRoot'] = $absAppRoot;
-        $_SESSION['lizzy']['dataPath'] = $this->config->site_dataPath;
+//        $_SESSION['lizzy']['dataPath'] = $this->config->site_dataPath;
 
         if ($this->config->debug_logClientAccesses) {
             writeLog('[' . getClientIP(true) . "] $ua" . (($this->config->isLegacyBrowser) ? " (Legacy browser!)" : ''));
@@ -816,6 +820,7 @@ class Lizzy
         $appRoot        = fixPath(commonSubstr( dir_name($_SERVER['SCRIPT_NAME']), dir_name($requestUri), '/'));
         $appRootUrl = $requestScheme.$_SERVER['HTTP_HOST'] . $appRoot;
         $this->trans->addVariable('appRootUrl', $appRootUrl);
+//        $this->trans->addVariable('dataPath', $this->config->site_dataPath);
 
     } // setTransvars0
 
@@ -2053,6 +2058,58 @@ EOT;
     {
         return $this->editingMode;
     } // getEditingMode
+
+
+
+
+    //....................................................
+    private function setDataPath()
+    {
+        $onairDataPath = $this->config->site_onairDataPath;
+        if (!$onairDataPath) {
+            return;
+        } elseif ($onairDataPath === true) {
+            $onairDataPath = '../db/';
+        }
+
+        $rootPath = dirname($_SERVER["SCRIPT_NAME"]);
+        $onair = (strpos($rootPath, PRODUCTION_PATH_PATTERN) !== false);      // production folder?
+        $testMode = getUrlArgStatic('debug');
+        if ($testMode || !$onair) {
+            if ($testMode) {
+                $this->page->addDebugMsg('"~data/" points to "data/" for debugging.');
+            }
+            $GLOBALS["globalParams"]["dataPath"] = $this->config->site_dataPath;
+            $_SESSION["lizzy"]["dataPath"] = $this->config->site_dataPath;
+            $this->trans->addVariable('dataPath', $this->config->site_dataPath);
+            return;
+        } else {
+            $this->config->site_dataPath = $onairDataPath;
+            $GLOBALS["globalParams"]["dataPath"] = $onairDataPath;
+            $_SESSION["lizzy"]["dataPath"] = $onairDataPath;
+            $this->trans->addVariable('dataPath', $onairDataPath);
+        }
+
+//        if ($testMode) {
+//            $this->page->addDebugMsg('"~data/" points to "data/" for debugging.');
+//
+//            $GLOBALS["globalParams"]["dataPath"] = $this->config->site_dataPath;
+//            $_SESSION["lizzy"]["dataPath"] = $this->config->site_dataPath;
+//            $this->trans->addVariable('dataPath', $this->config->site_dataPath);
+//            return;
+//        }
+//        if ($onair) {  // productive mode:
+//            $this->config->site_dataPath = $onairDataPath;
+//            $GLOBALS["globalParams"]["dataPath"] = $onairDataPath;
+//            $_SESSION["lizzy"]["dataPath"] = $onairDataPath;
+//            $this->trans->addVariable('dataPath', $onairDataPath);
+//            writeLog("dataPath (\"~data/\") => $onairDataPath");
+//        } else {
+//            $GLOBALS["globalParams"]["dataPath"] = $this->config->site_dataPath;
+//            $_SESSION["lizzy"]["dataPath"] = $this->config->site_dataPath;
+//            $this->trans->addVariable('dataPath', $this->config->site_dataPath);
+//        }
+    } // setDataPath
 
 
 
