@@ -769,3 +769,59 @@ lzy-weak-pw-warning:
             <li>At least one special character</li>
         </ul>
         </div>
+
+
+# add-user:
+
+lzy-add-user-prompt:
+    de: 'E-Mail Adresse (Benutzername)'
+    en: 'E-mail address (username)'
+
+lzy-add-user-username-prompt:
+    de: 'Benutzername (optional)'
+    en: 'Username (optional)'
+
+lzy-add-user-password-prompt:
+    de: 'Kennwort (optional)'
+    en: 'Password (optional)'
+
+lzy-add-user-displayname-prompt:
+    de: 'Anzeigename (optional)'
+    en: 'Display name (optional)'
+
+lzy-add-user-group-prompt:
+    de: 'Gruppe'
+    en: 'Group'
+
+lzy-add-user-emaillist-prompt:
+    de: 'E-Mail Liste (optional)'
+    en: 'E-mail list (optinal)'
+
+lzy-add-user-send:
+    de: Speichern
+    en: Save
+
+lzy-add-user-info-text:
+    de: 'Benutzernamen definieren. Typischerweise ist dies Ihre E-Mail Adresse.'
+    en: 'Define a username. This typically is your e-mail address.'
+
+lzy-add-user-username-login-info:
+    de: 'Benutzername ist optional - falls weggelassen, gilt die E-Mail Adresse'
+    en: 'Username is optional - if omitted, the e-mail address is used.'
+
+lzy-add-user-displayname-login-info:
+    de: 'Diese Eingabe ist optional - dieser Name wird anstelle des Benutzernamens dargestellt. Der Benutzer kann diesen aber nicht verwenden, um sich anzumelden.'
+    en: 'The display name is optional - it will be shown instead of the username. But it cannot be used to log in.'
+
+lzy-add-user-group-login-info:
+    de: 'Die Gruppenzugehörigkeit bestimmt, zu welchen Inhalten ein Benutzer Zugang erhält.'
+    en: 'Group membership defines which pages a user can access.'
+
+lzy-add-user-emaillist-login-info:
+    de: 'Geben Sie hier einen Dateinamen ein. Diese Datei (in config/) muss eine Liste von E-Mail Adressen enthalten (pro Zeile eine). Alle diese E-Mail Adressen erhalten damit Zugang zur Webseite.<br />Auf diese Weise erzeugen Sie eine Benutzergruppe.'
+    en: 'Enter the name of a file here. This file (in config/) must contain a list of e-mail addresses (one per line). All these addresses can then be used to gain access to this website.<br />By this you create a user group.'
+
+lzy-add-user-info-title:
+    de: Hilfe
+    en: Help
+
