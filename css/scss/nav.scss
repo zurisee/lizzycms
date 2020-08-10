@@ -416,8 +416,8 @@ $slidedownX6: calc(var(--lzy-nav-top-horizontal-first-indent, #{$nav-top-horizon
 
 
 
-// === Vertical nav (side-accordion):
-#lzy .lzy-nav.lzy-nav-accordion {
+// === Vertical nav:
+#lzy .lzy-nav.lzy-nav-vertical {
     a:visited,
     a {
         position: relative;

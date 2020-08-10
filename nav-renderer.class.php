@@ -70,24 +70,28 @@ class NavRenderer
             $options['options'] .= " editable $primaryClass";
 
         } elseif ($type === 'side') {
-            $options['navClass'] = trim($options['navClass'].' lzy-nav-indented lzy-nav-collapsible lzy-nav-open-current lzy-nav-animated lzy-encapsulated');
+            $options['navClass'] = trim($options['navClass'].' lzy-nav-vertical lzy-nav-indented lzy-nav-collapsible lzy-nav-open-current lzy-nav-animated lzy-encapsulated');
+//            $options['navClass'] = trim($options['navClass'].' lzy-nav-indented lzy-nav-collapsible lzy-nav-open-current lzy-nav-animated lzy-encapsulated');
             $options['options'] .= " editable $primaryClass";
 
         } elseif ($type === 'side-accordion') {
-            $options['navClass'] = trim($options['navClass'].' lzy-nav-indented lzy-nav-animated lzy-nav-accordion lzy-nav-collapsed lzy-nav-open-current lzy-encapsulated');
+            $options['navClass'] = trim($options['navClass'].' lzy-nav-vertical lzy-nav-indented lzy-nav-animated lzy-nav-accordion lzy-nav-collapsed lzy-nav-open-current lzy-encapsulated');
+//            $options['navClass'] = trim($options['navClass'].' lzy-nav-indented lzy-nav-animated lzy-nav-accordion lzy-nav-collapsed lzy-nav-open-current lzy-encapsulated');
             $options['options'] .= " editable $primaryClass";
 
         } elseif ($type === 'sitemap') {
-            $options['navClass'] = trim($options['navClass'].' lzy-nav-indented lzy-encapsulated');
+            $options['navClass'] = trim($options['navClass'].' lzy-nav-vertical lzy-nav-indented lzy-encapsulated');
+//            $options['navClass'] = trim($options['navClass'].' lzy-nav-indented lzy-encapsulated');
 
         } elseif ($type === 'sitemap-accordion') {
-            $options['navClass'] = trim($options['navClass'].'  lzy-nav-indented lzy-nav-animated lzy-nav-collapsed lzy-encapsulated');
+            $options['navClass'] = trim($options['navClass'].' lzy-nav-vertical lzy-nav-indented lzy-nav-animated lzy-nav-collapsed lzy-encapsulated');
+//            $options['navClass'] = trim($options['navClass'].'  lzy-nav-indented lzy-nav-animated lzy-nav-collapsed lzy-encapsulated');
 
         } elseif ($type === 'breadcrumb') {
             return $this->renderBreadcrumb($options);
 
         } elseif ($type !== '') {
-            return "<div style='background-color: yellow;'>Warning: <br />Nav-Renderer: unknown type '$type'.<br />Please chose one of [top, top-dropdown, side, sitemap-accordion, sitemap, breadcrumb, in-page]</div>";
+            return "<div style='background-color: yellow;'>Warning: <br />Nav-Renderer: unknown type '$type'.<br />Please chose one of [top, top-dropdown, side, side-accordion, sitemap-accordion, sitemap, breadcrumb, in-page]</div>";
 
         } else {
             $layout = $options['layout'] ? $options['layout'] : '';
