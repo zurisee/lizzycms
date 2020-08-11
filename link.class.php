@@ -160,12 +160,12 @@ class CreateLink
         if ($this->body) {
             $this->href .= "?&body={$this->body}";
         }
-        $this->target = " target='_blank' rel='noopener noreferrer'";
+        $this->target = '_blank';
         if (preg_match('|^(\w+:) ([^/]{2} .*)|x', $this->href, $m)) {
             $this->href = "{$m[1]}//{$m[2]}";
         }
         $this->href = "sms://{$this->href}";
-    }
+    } // renderSmsLink
 
 
 
@@ -182,12 +182,12 @@ class CreateLink
         if (!$this->text) {
             $this->text = preg_replace('|^.*:/?/? ([^\?\&]*) .*|x', "$1", $this->href);
         }
-        $this->target = " target='_blank' rel='noopener noreferrer'";
+        $this->target = '_blank';
         if (preg_match('|^(\w+:) ([^/]{2} .*)|x', $this->href, $m)) {
             $this->href = "{$m[1]}//{$m[2]}";
         }
         $this->href = "tel://{$this->href}";
-    }
+    } // renderTelLink
 
 
 
@@ -199,9 +199,9 @@ class CreateLink
         if (!$this->text) {
             $this->text = preg_replace('|^.*:/?/? ([^\?\&]*) .*|x', "$1", $this->href);
         }
-        $this->target = " target='_blank' rel='noopener noreferrer'";
+        $this->target = '_blank';
         $this->href = "geo://{$this->href}";
-    }
+    } // renderGeoLink
 
 
 
@@ -213,9 +213,9 @@ class CreateLink
         if (!$this->text) {
             $this->text = preg_replace('|^.*:/?/? ([^\?\&]*) .*|x', "$1", $this->href);
         }
-        $this->target = " target='_blank' rel='noopener noreferrer'";
+        $this->target = '_blank';
         $this->href = "slack://{$this->href}";
-    }
+    } // renderSlackLink
 
 
 
@@ -233,12 +233,12 @@ class CreateLink
         } else {
             $this->href = resolvePath($this->href, true, true);
         }
-        if ($this->target) {
-            $this->target = ($this->target === 'newwin') ? '_blank' : $this->target;
-            $this->target = " target='{$this->target}' rel='noopener noreferrer'";
-            // see: https://developers.google.com/web/tools/lighthouse/audits/noopener
-        }
-    }
+//        if ($this->target) {
+//            $this->target = ($this->target === 'newwin') ? '_blank' : $this->target;
+//            $this->target = " target='{$this->target}' rel='noopener noreferrer'";
+//            // see: https://developers.google.com/web/tools/lighthouse/audits/noopener
+//        }
+    } // renderPdfLink
 
 
 
@@ -272,14 +272,13 @@ class CreateLink
                 $this->text = $this->href;
             }
         }
-    }
+    } // renderFileLink
 
 
 
     private function renderRegularLink()
     {
         $this->class = trim("lzy-page-link $this->class");
-//        $c1 = $this->href[0];
         $rec = false;
 
         $href = $this->href;
