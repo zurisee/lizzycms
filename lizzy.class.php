@@ -2067,7 +2067,12 @@ EOT;
     {
         $onairDataPath = $this->config->site_onairDataPath;
         if (!$onairDataPath) {
+            $this->config->site_dataPath = DATA_PATH;
+            $GLOBALS["globalParams"]["dataPath"] = DATA_PATH;
+            $_SESSION["lizzy"]["dataPath"] = DATA_PATH;
+            $this->trans->addVariable('dataPath', DATA_PATH);
             return;
+
         } elseif ($onairDataPath === true) {
             $onairDataPath = '../db/';
         }
@@ -2089,26 +2094,6 @@ EOT;
             $_SESSION["lizzy"]["dataPath"] = $onairDataPath;
             $this->trans->addVariable('dataPath', $onairDataPath);
         }
-
-//        if ($testMode) {
-//            $this->page->addDebugMsg('"~data/" points to "data/" for debugging.');
-//
-//            $GLOBALS["globalParams"]["dataPath"] = $this->config->site_dataPath;
-//            $_SESSION["lizzy"]["dataPath"] = $this->config->site_dataPath;
-//            $this->trans->addVariable('dataPath', $this->config->site_dataPath);
-//            return;
-//        }
-//        if ($onair) {  // productive mode:
-//            $this->config->site_dataPath = $onairDataPath;
-//            $GLOBALS["globalParams"]["dataPath"] = $onairDataPath;
-//            $_SESSION["lizzy"]["dataPath"] = $onairDataPath;
-//            $this->trans->addVariable('dataPath', $onairDataPath);
-//            writeLog("dataPath (\"~data/\") => $onairDataPath");
-//        } else {
-//            $GLOBALS["globalParams"]["dataPath"] = $this->config->site_dataPath;
-//            $_SESSION["lizzy"]["dataPath"] = $this->config->site_dataPath;
-//            $this->trans->addVariable('dataPath', $this->config->site_dataPath);
-//        }
     } // setDataPath
 
 
