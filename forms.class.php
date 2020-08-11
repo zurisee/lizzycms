@@ -1114,7 +1114,9 @@ EOT;
 		$names = &$formData['names'];
 		$userSuppliedData = $this->userSuppliedData;
 
-		if ($userSuppliedData["lzy-form-name"] !== '') {
+		// check honey pot field (unless on local host):
+		if (($userSuppliedData["lzy-form-name"] !== '') &&
+            !$GLOBALS["globalParams"]["localCall"]) {
 		    $out = var_export($userSuppliedData, true);
             $out = str_replace("\n", ' ', $out);
             $out .= "\n[{$_SERVER['REMOTE_ADDR']}] {$_SERVER['HTTP_USER_AGENT']}\n";
