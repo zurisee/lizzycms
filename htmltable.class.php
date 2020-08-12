@@ -37,6 +37,7 @@ class HtmlTable
         $this->sort 		        = $this->getOption('sort', '(optional) Allows to sort the table on a given columns, e.g. "sort:3"');
         $this->sortExcludeHeader    = $this->getOption('sortExcludeHeader', '(optional) Allows to exclude the first row from sorting');
         $this->autoConvertLinks     = $this->getOption('autoConvertLinks', '(optional) If true, all data is scanned for patterns of URL, mail address or telephone numbers. If found the value is wrapped in a &lt;a> tag');
+        $this->autoConvertTimestamps= $this->getOption('autoConvertTimestamps', '(optional) If true, integer values that could be timestamps (= min. 10 digits) are converted to time strings.');
         $this->caption	            = $this->getOption('caption', '(optional) If set, a caption tag is added to the table. The caption text may contain the pattern "##" which will be replaced by a number.');
         $this->captionIndex         = $this->getOption('captionIndex', '(optional) If set, will override the automatically applied table counter');
         $this->headers	            = $this->getOption('headers', '(optional) Column headers may be supplied in the form [A|B|C...]');
@@ -81,6 +82,7 @@ class HtmlTable
         $this->applyProcessingToData();
 
         $this->convertLinks();
+        $this->convertTimestamps();
 
         if ($this->renderAsDiv) {
             return $this->renderDiv();
@@ -1060,6 +1062,56 @@ EOT;
         }
     } // convertLinks
 
+
+
+    private function convertTimestamps()
+    {
+        if (!$this->autoConvertTimestamps) {
+            return;
+        }
+        $data = &$this->data;
+
+        $autoConvertTimestamps = $this->autoConvertTimestamps;
+        if ($autoConvertTimestamps === true) {
+            foreach ($data as $r => $row) {
+                foreach ($data[$r] as $c => $col) {
+                    $d = trim($data[$r][$c]);
+                    if (preg_match('/^\d{9,}$/', $d)) {
+                        $d = date('Y-m-d H:i:s', intval($d));
+                        $data[$r][$c] = $d;
+                    }
+                }
+            }
+
+        } elseif (is_int($autoConvertTimestamps)) {
+            $cInx = $autoConvertTimestamps;
+            foreach ($data as $r => $row) {
+                $d = trim($data[$r][$cInx]);
+                if (preg_match('/^\d{9,}$/', $d)) {
+                    $d = date('Y-m-d H:i:s', intval($d));
+                    $data[$r][$cInx] = $d;
+                }
+            }
+
+        } elseif (is_string($autoConvertTimestamps)) {
+            $cInx = false;
+            foreach ($data[0] as $c => $col) {
+                if ($col === $autoConvertTimestamps) {
+                    $cInx = $c;
+                    break;
+                }
+            }
+            if ($cInx !== false) {
+                foreach ($data as $r => $row) {
+                    $d = trim($data[$r][$cInx]);
+                    if (preg_match('/^\d{9,}$/', $d)) {
+                        $d = date('Y-m-d H:i:s', intval($d));
+                        $data[$r][$cInx] = $d;
+                    }
+                }
+            }
+        }
+    } // convertTimestamps
 
 
 
