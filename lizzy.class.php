@@ -22,7 +22,8 @@ define('USER_INIT_CODE_FILE',   USER_CODE_PATH.'init-code.php');
 define('USER_FINAL_CODE_FILE',  USER_CODE_PATH.'final-code.php');
 define('USER_VAR_DEF_FILE',     USER_CODE_PATH.'var-definitions.php');
 define('ICS_PATH',              'ics/'); // where .ics files are located
-define('PRODUCTION_PATH_PATTERN', 'onair'); // if this pattern is found in the appRoot path, Lizzy assumes we are
+define('DEV_PATH_PATTERN',      'dev'); // if this pattern is found in the appRoot path, Lizzy assumes we are
+//define('PRODUCTION_PATH_PATTERN', 'onair'); // if this pattern is found in the appRoot path, Lizzy assumes we are
                                             // running in production mode
 
 define('DAILY_PURGE_FILE',      CONFIG_PATH.'daily-purge.txt');
@@ -2065,29 +2066,32 @@ EOT;
     //....................................................
     private function setDataPath()
     {
-        $onairDataPath = $this->config->site_onairDataPath;
-        if (!$onairDataPath) {
-            $this->config->site_dataPath = DATA_PATH;
-            $GLOBALS["globalParams"]["dataPath"] = DATA_PATH;
-            $_SESSION["lizzy"]["dataPath"] = DATA_PATH;
-            $this->trans->addVariable('dataPath', DATA_PATH);
+        $onairDataPath = $this->config->site_dataPath;
+        $devDataPath = $this->config->site_devDataPath;
+        if (!$devDataPath) {
+            $GLOBALS["globalParams"]["dataPath"] = $onairDataPath;
+            $_SESSION["lizzy"]["dataPath"] = $onairDataPath;
+            $this->trans->addVariable('dataPath', $onairDataPath);
             return;
 
-        } elseif ($onairDataPath === true) {
-            $onairDataPath = '../db/';
+        } elseif ($devDataPath === true) {
+            $devDataPath = 'data/';
         }
 
         $rootPath = dirname($_SERVER["SCRIPT_NAME"]);
-        $onair = (strpos($rootPath, PRODUCTION_PATH_PATTERN) !== false);      // production folder?
+        $dev = (strpos($rootPath, DEV_PATH_PATTERN) !== false);      // dev folder?
         $testMode = getUrlArgStatic('debug');
-        if ($testMode || !$onair) {
+
+        if ($testMode || $dev) {
             if ($testMode) {
                 $this->page->addDebugMsg('"~data/" points to "data/" for debugging.');
             }
-            $GLOBALS["globalParams"]["dataPath"] = $this->config->site_dataPath;
-            $_SESSION["lizzy"]["dataPath"] = $this->config->site_dataPath;
-            $this->trans->addVariable('dataPath', $this->config->site_dataPath);
+            $this->config->site_dataPath = $devDataPath;
+            $GLOBALS["globalParams"]["dataPath"] = $devDataPath;
+            $_SESSION["lizzy"]["dataPath"] = $devDataPath;
+            $this->trans->addVariable('dataPath', $devDataPath);
             return;
+
         } else {
             $this->config->site_dataPath = $onairDataPath;
             $GLOBALS["globalParams"]["dataPath"] = $onairDataPath;
