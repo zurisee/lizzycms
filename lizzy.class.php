@@ -22,9 +22,6 @@ define('USER_INIT_CODE_FILE',   USER_CODE_PATH.'init-code.php');
 define('USER_FINAL_CODE_FILE',  USER_CODE_PATH.'final-code.php');
 define('USER_VAR_DEF_FILE',     USER_CODE_PATH.'var-definitions.php');
 define('ICS_PATH',              'ics/'); // where .ics files are located
-define('DEV_PATH_PATTERN',      'dev'); // if this pattern is found in the appRoot path, Lizzy assumes we are
-//define('PRODUCTION_PATH_PATTERN', 'onair'); // if this pattern is found in the appRoot path, Lizzy assumes we are
-                                            // running in production mode
 
 define('DAILY_PURGE_FILE',      CONFIG_PATH.'daily-purge.txt');
 define('USER_DAILY_CODE_FILE',  USER_CODE_PATH.'@daily-task.php');
@@ -2079,12 +2076,14 @@ EOT;
         }
 
         $rootPath = dirname($_SERVER["SCRIPT_NAME"]);
-        $dev = (strpos($rootPath, DEV_PATH_PATTERN) !== false);      // dev folder?
+        $pat = '#'. $this->config->site_devDataPathPattern .'#i';
+        $isDev = preg_match($pat, $rootPath);      // dev folder?
+        $isDev &= !getUrlArg('forceOnair');
         $testMode = getUrlArgStatic('debug');
 
-        if ($testMode || $dev) {
+        if ($testMode || $isDev) {
             if ($testMode) {
-                $this->page->addDebugMsg('"~data/" points to "data/" for debugging.');
+                $this->page->addDebugMsg("\"&#126;data/\" points to \"$devDataPath\" for debugging.");
             }
             $this->config->site_dataPath = $devDataPath;
             $GLOBALS["globalParams"]["dataPath"] = $devDataPath;
@@ -2093,6 +2092,9 @@ EOT;
             return;
 
         } else {
+            if ($this->config->localCall) {
+                $this->page->addDebugMsg("\"&#126;data/\" points to productive path \"$onairDataPath\"!.");
+            }
             $this->config->site_dataPath = $onairDataPath;
             $GLOBALS["globalParams"]["dataPath"] = $onairDataPath;
             $_SESSION["lizzy"]["dataPath"] = $onairDataPath;
