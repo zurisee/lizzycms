@@ -34,7 +34,7 @@ $nav-focus-border-color: magenta;
 
 // mobile header:
 $mobile-header-font-size: 6vw;
-$mobile-header-height:    3em;;
+$mobile-header-height:    3rem;;
 $mobile-header-txt-color: #ddd;
 $mobile-header-bg-color:  #444;
 
@@ -50,7 +50,7 @@ $mobile-nav-title-bg-color: #ddd;
 $mxCorr: 1.8em;
 
 // mobile footer:
-$mobile-footer-height: 2em;
+$mobile-footer-height: 2rem;
 $mobile-footer-txt-color: #ddd;
 $mobile-footer-bg-color: #444;
 $mobile-footer-font-size: 5vw;
@@ -416,8 +416,8 @@ $slidedownX6: calc(var(--lzy-nav-top-horizontal-first-indent, #{$nav-top-horizon
 
 
 
-// === Vertical nav:
-#lzy .lzy-nav.lzy-nav-vertical {
+// === Vertical nav (side-accordion):
+#lzy .lzy-nav.lzy-nav-accordion {
     a:visited,
     a {
         position: relative;
