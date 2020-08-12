@@ -39,6 +39,7 @@ $this->addMacro($macroName, function () {
     $mailfrom = $this->getArg($macroName, 'mailfrom', '', '');
     $mailto = $this->getArg($macroName, 'mailto', '', '');
     $legend = $this->getArg($macroName, 'legend', '', '');
+    $showData = $this->getArg($macroName, 'showData', '', false);
 
     // create form head:
     $str = $this->form->render([
@@ -48,6 +49,7 @@ $this->addMacro($macroName, function () {
         'mailfrom' => $mailfrom,
         'file' => $file,
         'legend' => $legend,
+        'showData' => $showData,
     ]);
 
     // create form buttons:
@@ -76,7 +78,7 @@ $this->addMacro($macroName, function () {
             $buttons["value"] .= 'cancel,';
             $arg['type'] = 'button';
 
-        } elseif (strpos('formName,mailto,mailfrom,legend', $label) !== false) {
+        } elseif (strpos('formName,mailto,mailfrom,legend,showData', $label) !== false) {
         } else {
             $arg['label'] = $label;
             $str .= $this->form->render($arg);

@@ -590,4 +590,16 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
 }
 
 
-
+/* === Data-Preview ========================== */
+.lzy-forms-preview {
+    margin: 2em 0 1em;
+    border: 1px solid orange;
+    background: #fff5e1;
+    padding: 0 1em 1em 1em;
+    max-width: 100%;
+    overflow: auto;
+    td, th {
+        border: 1px dotted gray;
+        padding: 4px 8px;
+    }
+}

@@ -32,6 +32,7 @@ class Forms
 //-------------------------------------------------------------
 	public function __construct($lzy)
 	{
+	    $this->lzy = $lzy;
 		$this->transvar = $lzy->trans;
 		$this->page = $lzy->page;
 		$this->inx = -1;
@@ -745,6 +746,7 @@ EOT;
         if (isset($this->formEvalResult)) {
 			$out .= $this->formEvalResult;
 		}
+        $out .= $this->renderData();
         return $out;
 	} // formTail
 
@@ -842,6 +844,8 @@ EOT;
             }
             $this->currForm->replaceQuotes =  (isset($args['replaceQuotes']))? $args['replaceQuotes']: true;
             $this->currForm->antiSpam =  (isset($args['antiSpam']))? $args['antiSpam']: true;
+
+            $this->currForm->showData =  (isset($args['showData']))? $args['showData']: false;
 
             // options or option:
             $this->currForm->options = isset($args['options'])? $args['options']: (isset($args['option'])? $args['option']: '');
@@ -1427,6 +1431,9 @@ mailfrom:
 postprocess:
 : (optional) Name of php-script (in folder _code/) that will process submitted data.
 
+showData:
+: (optional) [false, true, loggedIn, privileged, localhost, {group}] Defines, to whom previously received data is presented (default: false).
+
 warnLeavingPage:
 : If true (=default), user will be warned if attempting to leave the page without submitting entries.
 
@@ -1612,6 +1619,68 @@ EOT;
         }
         return $value;
     } // getValueAttr
+
+
+
+    private function renderData()
+    {
+        global $globalParams;
+
+        $out = '';
+        $formId = $this->currForm->formId;
+        $currFormDescr = $this->formDescr[ $formId ];
+        $continue = false;
+        if (!$currFormDescr->showData) {
+            return '';
+        } elseif ($currFormDescr->showData !== true) {
+            // showData options: false, true, loggedIn, privileged, localhost, {group}
+            switch ($currFormDescr->showData) {
+                case 'logged-in':
+                case 'loggedin':
+                case 'loggedIn':
+                    $continue = (bool)$_SESSION["lizzy"]["user"] || $globalParams["isAdmin"];
+                    break;
+
+                case 'privileged':
+                    $continue = $this->lzy->config->isPrivileged;
+                    break;
+
+                case 'localhost':
+                    $continue = $globalParams["localCall"];
+                    break;
+
+                default:
+                    $continue = $this->lzy->auth->checkGroupMembership($currFormDescr->showData);
+            }
+        }
+
+        if (!$continue) {
+            return '';
+        }
+
+        if (isset($currFormDescr->file) && $currFormDescr->file) {
+            $fileName = resolvePath($currFormDescr->file, true);
+        } else {
+            $fileName = resolvePath("~page/{$formId}_data.csv");
+        }
+
+        $out .= <<<EOT
+<div class="lzy-forms-preview">
+<h2>{{ lzy-form-data-preview-title }}</h2>
+
+EOT;
+
+        require_once SYSTEM_PATH.'htmltable.class.php';
+        $options = [
+            'dataSource' => $fileName,
+            'headers' => true,
+            'autoConvertTimestamps' => 'timestamp',
+        ];
+        $tbl = new HtmlTable($this->lzy, 0, $options);
+        $out .= $tbl->render();
+        $out .= "</div>\n";
+        return $out;
+    } // renderData
 
 } // Forms
 

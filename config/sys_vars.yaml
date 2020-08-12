@@ -83,6 +83,9 @@ lzy-no:
     de: 'Nein'
     _:  'No'
 
+lzy-form-data-preview-title:
+    de: 'Bisher empfangene Daten:'
+    _:  'Data received until now:'
 
 
 #--- File Upload --------------------------
