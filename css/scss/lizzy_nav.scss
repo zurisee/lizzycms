@@ -170,40 +170,40 @@ $slidedownX6: calc(var(--lzy-nav-top-horizontal-first-indent, #{$nav-top-horizon
         display: inline-block;
     }
     .lzy-lvl1 {
-          > a {
-              padding-left: 1em;    // for IE
-              padding-left: var(--lzy-nav-first-indent, #{$nav-first-indent});
-          }
+        > a {
+            padding-left: 1em;    // for IE
+            padding-left: var(--lzy-nav-first-indent, #{$nav-first-indent});
+        }
     }
     .lzy-lvl2 {
-          > a {
-              padding-left: 2em;    // for IE
-              padding-left: calc(var(--lzy-nav-first-indent, #{$nav-first-indent}) + var(--lzy-nav-indent-step, #{$nav-indent-step}));
-          }
+        > a {
+            padding-left: 2em;    // for IE
+            padding-left: calc(var(--lzy-nav-first-indent, #{$nav-first-indent}) + var(--lzy-nav-indent-step, #{$nav-indent-step}));
+        }
     }
     .lzy-lvl3 {
-          > a {
-              padding-left: 3em;    // for IE
-              padding-left: calc(var(--lzy-nav-first-indent, #{$nav-first-indent}) + 2 * var(--lzy-nav-indent-step, #{$nav-indent-step}));
-          }
+        > a {
+            padding-left: 3em;    // for IE
+            padding-left: calc(var(--lzy-nav-first-indent, #{$nav-first-indent}) + 2 * var(--lzy-nav-indent-step, #{$nav-indent-step}));
+        }
     }
     .lzy-lvl4 {
-          > a {
-              padding-left: 4em;    // for IE
-              padding-left: calc(var(--lzy-nav-first-indent, #{$nav-first-indent}) + 3 * var(--lzy-nav-indent-step, #{$nav-indent-step}));
-          }
+        > a {
+            padding-left: 4em;    // for IE
+            padding-left: calc(var(--lzy-nav-first-indent, #{$nav-first-indent}) + 3 * var(--lzy-nav-indent-step, #{$nav-indent-step}));
+        }
     }
     .lzy-lvl5 {
-          > a {
-              padding-left: 5em;    // for IE
-              padding-left: calc(var(--lzy-nav-first-indent, #{$nav-first-indent}) + 4 * var(--lzy-nav-indent-step, #{$nav-indent-step}));
-          }
+        > a {
+            padding-left: 5em;    // for IE
+            padding-left: calc(var(--lzy-nav-first-indent, #{$nav-first-indent}) + 4 * var(--lzy-nav-indent-step, #{$nav-indent-step}));
+        }
     }
     .lzy-lvl6 {
-          > a {
-              padding-left: 6em;    // for IE
-              padding-left: calc(var(--lzy-nav-first-indent, #{$nav-first-indent}) + 5 * var(--lzy-nav-indent-step, #{$nav-indent-step}));
-          }
+        > a {
+            padding-left: 6em;    // for IE
+            padding-left: calc(var(--lzy-nav-first-indent, #{$nav-first-indent}) + 5 * var(--lzy-nav-indent-step, #{$nav-indent-step}));
+        }
     }
 } // indentation
 
@@ -331,53 +331,53 @@ $slidedownX6: calc(var(--lzy-nav-top-horizontal-first-indent, #{$nav-top-horizon
         padding-left: var(--lzy-mobile-nav-title-indent, #{$mobile-nav-title-indent});
     }
     .lzy-lvl1 > a {
-            padding-left: 2em;
-            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) );
-            .lzy-nav-arrow {
-                left: 1em;
-                left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) - 1em );
-                top: 0.4em;
-            }
+        padding-left: 2em;
+        padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) );
+        .lzy-nav-arrow {
+            left: 1em;
+            left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) - 1em );
+            top: 0.4em;
+        }
     }
     .lzy-lvl2 > a {
-            padding-left: 3em;
-            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
-            .lzy-nav-arrow {
-                left:     2em;
-                left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
-            }
+        padding-left: 3em;
+        padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+        .lzy-nav-arrow {
+            left:     2em;
+            left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+        }
     }
     .lzy-lvl3 > a {
-            padding-left: 4em;
-            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 2 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
-            .lzy-nav-arrow {
-                left:     3em;
-                left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 2 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
-            }
+        padding-left: 4em;
+        padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 2 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+        .lzy-nav-arrow {
+            left:     3em;
+            left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 2 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+        }
     }
     .lzy-lvl4 > a {
-            padding-left: 5em;
-            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 3 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
-            .lzy-nav-arrow {
-                left:     4em;
-                left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 3 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
-            }
+        padding-left: 5em;
+        padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 3 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+        .lzy-nav-arrow {
+            left:     4em;
+            left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 3 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+        }
     }
     .lzy-lvl5 > a {
-            padding-left: 6em;
-            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 4 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
-            .lzy-nav-arrow {
-                left:     5em;
-                left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 4 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
-            }
+        padding-left: 6em;
+        padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 4 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+        .lzy-nav-arrow {
+            left:     5em;
+            left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 4 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+        }
     }
     .lzy-lvl6 > a {
-            padding-left: 7em;
-            padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
-            .lzy-nav-arrow {
-                left:     6em;
-                left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
-            }
+        padding-left: 7em;
+        padding-left: calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}));
+        .lzy-nav-arrow {
+            left:     6em;
+            left:     calc(var(--lzy-mobile-nav-first-indent, #{$mobile-nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
+        }
     }
 } // mobile menu
 
@@ -416,8 +416,8 @@ $slidedownX6: calc(var(--lzy-nav-top-horizontal-first-indent, #{$nav-top-horizon
 
 
 
-// === Vertical nav (side-accordion):
-#lzy .lzy-nav.lzy-nav-accordion {
+// === Vertical nav:
+#lzy .lzy-nav.lzy-nav-vertical {
     a:visited,
     a {
         position: relative;
