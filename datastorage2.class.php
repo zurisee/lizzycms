@@ -1119,9 +1119,6 @@ class DataStorage2
         $this->openDbReadWrite();
 
         $json = $this->jsonEncode($newData, $isJson);
-        if (is_string($json)) {
-            $json = SQLite3::escapeString($json);
-        }
         $modifTime = microtime(true);
 
         $sql = <<<EOT
@@ -1472,7 +1469,7 @@ EOT;
         } else {
             $json = json_encode($data);
         }
-        $json = str_replace('"', '⌑⌇⌑', $json);
+        $json = str_replace(['"', "'"], ['⌑⌇⌑', '⌑⊹⌑'], $json);
         return $json;
     } // jsonEncode
 
@@ -1484,7 +1481,7 @@ EOT;
         if (!is_string($json)) {
             return null;
         }
-        $json = str_replace('⌑⌇⌑', '"', $json);
+        $json = str_replace(['⌑⌇⌑', '⌑⊹⌑'], ['"', "'"], $json);
         return json_decode($json, true);
     } // jsonDecode
 
