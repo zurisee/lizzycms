@@ -1323,7 +1323,7 @@ EOT;
                 $data[$r][$j++] = $value;
             }
         }
-        $data[$r][$j] = time();
+        $data[$r][$j] = date('Y-m-d H:i:s');
         if ($errors === 0) {
             $db->write($data);
             return false;
@@ -1674,7 +1674,6 @@ EOT;
         $options = [
             'dataSource' => $fileName,
             'headers' => true,
-            'autoConvertTimestamps' => 'timestamp',
         ];
         $tbl = new HtmlTable($this->lzy, 0, $options);
         $out .= $tbl->render();
