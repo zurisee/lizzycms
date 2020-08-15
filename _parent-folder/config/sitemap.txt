@@ -16,61 +16,66 @@ Optional Configuration Attributes:
 ----------------------------------
 
 folder: 
-	folder: foldername/	 
+	Example: folder: 'foldername/'	 
 	overrides the natural folder name (which is derived from the page name. 
-	Use &#126;/ to define a path starting at the root.
+	Use '~/' to define a path starting at the root.
 
 file: 
-	file: file.html	 
+	Example: file: file.html	 
 	if set, the specified file will be loaded, but no markdown files
 
 template: 
-	template: file.html 
+	Example: template: file.html 
 	specifies the template file, overriding the default which is set in 
 	'_config/config.yaml'
 
 alias: 
-	folder: foldername/  
+	Example: alias: foldername/  
 	defines an alternative folder name, under which the page can be reached 
 	Example: My Page: { alias: pg1/ } -> now this page may be opened with the 
 	alternative address [pg1/](~/pg1/).
 
 showThis:
-	showThis: foldername/ 
+	Example: showThis: foldername/ 
 	show content of some other page (but leave the nav position as is)
 
 goto: 
-	folder: foldername/  
+	Example: goto: foldername/  
 	directly open target folder, as if that was requested in the URL. 
 	BTW, goto is also the option you can use if you need to link to another site, 
 	such as https://github.com.
 
 restricted:
-	restricted: "testgroup, admin" 
-	If set, the page can only be accessed after loggin in to an account with the 
-	specified privileges.
+	Example: restricted: "testgroup, admin" 
+	[groupname(s), loggedin, privileged]
+		(where 'privileged' means member of the admins or editors group)
+	If set, the page can only be accessed by users matching the corresponding 
+	criteria.
 
 
 hide: 
-	hide: true 
-	[true,false,non-privileged] 
-	Hides the nav element from the navigation menu. The page itself still available 
-	if the URL is known. 
-	non-privileged means that the nav element is only presented if users are logged in. 
+	Example: hide: true 
+	[true,false,non-privileged, not-loggedin, groupname(s)]
+	Note: supported keywords: loggedin, privileged. They can be inverted by 
+	prepending "!", "non-" or "not-".
+
+	Hides the nav element from the navigation menu. The page itself can still 
+	be accessed if the user knows the page path.
+	'non-loggedin' means that the nav element is only presented if users are logged in. 
 	(Their user groups doesn't matter)
 
 hideFrom, hideTill, showFrom, showTill:
-	hideTill: 2020-01-01 
-	defines a point in time when a nav element will become visible, resp. when it 
+	Example: hideTill: 2020-01-01 
+	Defines a point in time when a nav element will become visible, resp. when it 
 	will disappear. 
 	The page will only disappear from the navigation tree, but can still be opened 
-	if its path is know. 
+	by whoever knows the path. 
 	Regarding acceptable formats, see examples below or 
 	http://php.net/manual/en/datetime.formats.php for reference.
 
 availableFrom, availableTill:
-	availableFrom: 2020-01-01 
-	defines a point in time when a page and its nav element will become available, 
+	Example: availableFrom: 2020-01-01 
+	Defines a point in time when a page and its nav element will become available, 
 	resp. when it will become inavailable. 
 	Note: unlike the hideTill-option, the page will be completely inaccessible 
 	outside the defined timeframe, even when the path is know.
@@ -81,5 +86,5 @@ Time Format Examples:
 
 - 2018-12-31
 - 21:12
-- 2018-01-01 06:00
+- 2018-01-01 06:00	(time only works if page logging is off!)
 

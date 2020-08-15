@@ -465,7 +465,14 @@ class Lizzy
     private function checkAdmissionToCurrentPage()
     {
         if ($reqGroups = $this->isRestrictedPage()) {     // handle case of restricted page
-            if (!$this->auth->checkGroupMembership( $reqGroups )) {
+            if ($reqGroups === 'privileged') {
+                $ok = $this->auth->isPrivileged();
+            } elseif ($reqGroups === 'loggedin') {
+                $ok = $this->auth->isLoggedIn();
+            } else {
+                $ok = $this->auth->checkGroupMembership( $reqGroups );
+            }
+            if (!$ok) {
                 $this->renderLoginForm();
                 return false;
             }
