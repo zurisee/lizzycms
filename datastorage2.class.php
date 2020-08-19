@@ -156,7 +156,7 @@ class DataStorage2
 
 
 
-    public function lockDB( $blocking = false )
+    public function lockDB( $blocking = true )
     {
         if ($blocking && !$this->_awaitDbLockEnd( $blocking )) {
             return false;
@@ -1018,9 +1018,9 @@ class DataStorage2
 
     private function fixRecId($recId, $allowNewRec = false, $supportedArgs = false)
     {
-        if (!$this->data) {
-            return false;
-        }
+//        if (!$this->data) {
+//            return false;
+//        }
         if (is_array($recId)) {
             return $this->parseRecModifArgs($recId, $supportedArgs);
         }
@@ -1028,6 +1028,9 @@ class DataStorage2
             return $recId;
         }
         if (is_int($recId)) { // in case it was an index:
+            if (!$this->data) {
+                return false;
+            }
             $n = sizeof($this->data);
             if (!$allowNewRec) {
                 $n -= 1;
