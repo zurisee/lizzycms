@@ -156,6 +156,15 @@ class Forms
         } elseif ($type === 'button') {
             $type = 'buttons';
         }
+
+        if (isset($args['layout'])) {
+            $layout = $args['layout'];
+            if ($layout[0] === 'v') {
+                $this->currRec->wrapperClass = isset($this->currRec->wrapperClass)? "{$this->currRec->wrapperClass} lzy-vertical": 'lzy-vertical';
+            } elseif ($layout[0] === 'h') {
+                $this->currRec->wrapperClass = isset($this->currRec->wrapperClass)? "{$this->currRec->wrapperClass} lzy-horizontal": 'lzy-horizontal';
+            }
+        }
         if (isset($this->currRec->wrapperClass) && ($this->currRec->wrapperClass)) {
 	        $class = "$wrapperClass lzy-form-field-type-$type {$this->currRec->wrapperClass}";
 		} else {
@@ -240,12 +249,15 @@ class Forms
         if (isset($args['legend']) && $args['legend']) {
             $out = "<div class='lzy-form-legend'>{$args['legend']}</div>\n\n";
         }
-        $novalidate = (stripos($this->currForm->options, 'validate') === false) ? ' novalidate': '';
+        $novalidate = (!$this->currForm->validate) ? ' novalidate': '';
+        if (!$novalidate) {
+            $novalidate = (stripos($this->currForm->options, 'validate') === false) ? ' novalidate' : '';
+        }
 
         $out .= "\t<form$id$_class$_method$_action$novalidate>\n";
 		$out .= "\t\t<input type='hidden' name='lizzy_form' value='{$this->currForm->formId}' />\n";
 		$out .= "\t\t<input type='hidden' class='lizzy_time' name='lizzy_time' value='$time' />\n";
-		$out .= "\t\t<input type='hidden' class='lizzy_next' value='{$this->currForm->next}' />\n";
+		$out .= "\t\t<input type='hidden' class='lizzy_next' name='lizzy_next' value='{$this->currForm->next}' />\n";
 
 		if ($this->currForm->antiSpam) {
             $out .= "\t\t<div class='fld-ch' aria-hidden='true'>\n";
@@ -703,7 +715,9 @@ EOT;
 				if (stripos($type, 'submit') !== false) {
 					$out .= "$indent<input type='submit' id='$id' value='$label' $class />\n";
 					
-				} elseif (stripos($type, 'reset') !== false) {
+				} elseif ((stripos($type, 'reset') !== false) ||
+                    (stripos($type, 'cancel') !== false)) {
+//				} elseif (stripos($type, 'reset') !== false) {
 				    if ($type[0] === '(') { // case: show reset button only if data has been supplied before:
 				        $type = 'reset';
 				        if ($this->userSuppliedData) {
@@ -845,6 +859,7 @@ EOT;
             $this->currForm->replaceQuotes =  (isset($args['replaceQuotes']))? $args['replaceQuotes']: true;
             $this->currForm->antiSpam =  (isset($args['antiSpam']))? $args['antiSpam']: true;
 
+            $this->currForm->validate =  (isset($args['validate']))? $args['validate']: false;
             $this->currForm->showData =  (isset($args['showData']))? $args['showData']: false;
 
             // options or option:
@@ -1084,7 +1099,12 @@ EOT;
         if ($postprocess) {
 			$result = $this->transvar->doUserCode($postprocess, null, true);
 			if (is_array($result)) {
-                fatalError($result[1]);
+			    if (!$result[0]) {
+                    fatalError($result[1]);
+                } else {
+                    $this->clearCache();
+                    return $result[1];
+                }
             }
 			if ($result) {
 				$str1 = evalForm($userSuppliedData, $currFormDescr, $msg, $this->page);
@@ -1258,6 +1278,9 @@ EOT;
                 $data = [];
                 $j = 0;
                 foreach ($labels as $l => $label) {
+                    if ($label[0] === '_') {
+                        continue;
+                    }
                     if (is_array($label)) { // checkbox returns array of values
                         $name = $names[$l];
                         $splitOutput = (isset($currFormDescr->formElements[$name]->splitOutput)) ? $currFormDescr->formElements[$name]->splitOutput : false;
@@ -1285,6 +1308,9 @@ EOT;
         $j = 0;
         $formElements = &$currFormDescr->formElements;
         foreach($names as $i => $name) {
+            if ($labels[$i][0] === '_') {
+                continue;
+            }
             $value = (isset($userSuppliedData[$name])) ? $userSuppliedData[$name] : '';
             if (@$currFormDescr->formElements[$name]->type === 'bypassed') {
                 if (@$currFormDescr->formElements[$name]->value[0] !== '$') {
@@ -1427,6 +1453,9 @@ mailto:
 
 mailfrom: 
 : The sender address of the mail above.
+
+validate:
+: (optional) If true, the browser's validation mechanism is active, e.g. checking for required fields. (default: false)
 
 postprocess:
 : (optional) Name of php-script (in folder _code/) that will process submitted data.
