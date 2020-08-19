@@ -16,8 +16,11 @@ define('LIZZY_DB',  PATH_TO_APP_ROOT.'data/_lzy_db.sqlite');
 if (!defined('LZY_LOCK_ALL_DURATION_DEFAULT')) {
     define('LZY_LOCK_ALL_DURATION_DEFAULT', 900.0); // 15 minutes
 }
-if (!defined('LZY_MAX_AWAIT_LOCK_END_TIME')) {
-    define('LZY_MAX_AWAIT_LOCK_END_TIME', 333000); // 1/3 sec
+if (!defined('LZY_DEFAULT_DB_TIMEOUT')) {
+    define('LZY_DEFAULT_DB_TIMEOUT', 0.333); // 1/3 sec
+}
+if (!defined('LZY_DB_POLLING_CYCLE_TIME')) {
+    define('LZY_DB_POLLING_CYCLE_TIME', 50000); // 50ms [us]
 }
 if (!defined('LZY_DEFAULT_FILE_TYPE')) {
     define('LZY_DEFAULT_FILE_TYPE', 'json');
@@ -40,7 +43,7 @@ class DataStorage2
 	private $format;
 	private $lockDB = false;
 	private $defaultTimeout = 30; // [s]
-	private $defaultPollingSleepTime = LZY_MAX_AWAIT_LOCK_END_TIME; // [us]
+	private $defaultPollingSleepTime = LZY_DB_POLLING_CYCLE_TIME; // [us]
 
 
     //--------------------------------------------------------------
@@ -89,22 +92,34 @@ class DataStorage2
     // === DB level operations ==========================
     public function read( $forceCacheRefresh = true )
     {
-        return $this->getData($forceCacheRefresh);
+        $data = $this->getData($forceCacheRefresh);
+        if (!$data) {
+            $data = [];
+        }
+        return $data;
     } // read
 
 
 
-
-    public function write($data, $replace = true)
+    // anybody usint write() should do DB-locking explizitly:
+    public function write($data, $replace = true, $locking = false, $blocking = true)
     {
-        if ($this->_isDbLocked()) {
+        if ($locking && !$this->lockDB( $blocking )) {
+            return false;
+        } elseif (!$this->_awaitDbLockEnd( $blocking )) {
             return false;
         }
+
         if ($replace) {
             $res = $this->lowLevelWrite($data);
         } else {
             $res = $this->_updateDB($data);
         }
+
+        if ($locking) {
+            $this->unlockDB();
+        }
+
         $this->getData(true);
         return $res;
     } // write
@@ -112,30 +127,41 @@ class DataStorage2
 
 
 
-    public function isDbLocked( $checkOnLockedRecords = true )
+    public function isDbLocked( $checkOnLockedRecords = true, $blocking = false )
     {
-        if ($this->_isDbLocked( $checkOnLockedRecords )) {
-            return true;
-        } elseif ($checkOnLockedRecords) {
-            return $this->_hasLockedRecords( false );
+        if ($blocking) {
+            return !$this->_awaitDbLockEnd( $blocking, $checkOnLockedRecords );
+
+        } else {
+            if ($this->_isDbLocked($checkOnLockedRecords)) {
+                return true;
+            } elseif ($checkOnLockedRecords) {
+                return $this->_hasLockedRecords(false);
+            }
+            return false;
         }
-        return false;
     } // isDbLocked
 
-    public function isLockDB( $checkOnLockedRecords = true )
+
+
+
+    public function isLockDB( $checkOnLockedRecords = true, $blocking = false )
     {
         // to be depricated!
         // die("Method isLockDB() has been depricated, use isLockDB() instead");
-        return $this->isDbLocked();
-    }
+        return $this->isDbLocked( $checkOnLockedRecords, $blocking);
+    } // isLockDB
 
 
 
 
 
-    public function lockDB()
+    public function lockDB( $blocking = false )
     {
-        if ($this->_isDbLocked()) {
+        if ($blocking && !$this->_awaitDbLockEnd( $blocking )) {
+            return false;
+
+        } elseif ($this->_isDbLocked()) {
             return false;
         }
         return $this->_lockDB();
@@ -159,7 +185,7 @@ class DataStorage2
 
     public function awaitChangedData($lastUpdate, $timeout = false, $pollingSleepTime = false /*us*/)
     {
-        $timeout = $timeout ? $timeout : LZY_MAX_AWAIT_LOCK_END_TIME;
+        $timeout = $timeout ? $timeout : LZY_DEFAULT_DB_TIMEOUT;
         $pollingSleepTime = $pollingSleepTime ? $pollingSleepTime : $this->defaultPollingSleepTime;
         $json = $this->checkNewData($lastUpdate, true);
         if ($json !== null) {
@@ -198,7 +224,7 @@ class DataStorage2
 
 
 
-    public function writeRecord($recId, $recData = null, $locking = false, $blocking = false)
+    public function writeRecord($recId, $recData = null, $locking = true, $blocking = true)
     {
         // $supportedArgs defines the expected args, their default values, where null means required arg.
         $supportedArgs = ['recId' => null, 'recData' => null, 'locking' => false, 'blocking' => false];
@@ -244,10 +270,10 @@ class DataStorage2
 
 
 
-    public function writeRecordElement($recId, $elemName = null, $value = null, $locking = false, $blocking = false, $append = false)
+    public function writeRecordElement($recId, $elemName = null, $value = null, $locking = true, $blocking = true, $append = false)
     {
         // like writeRecord but with separate args recId, elemName and value
-        $supportedArgs = ['recId' => null, 'elemName' => null, 'value' => null, 'locking' => false, 'blocking' => false, 'append' => false];
+        $supportedArgs = ['recId' => null, 'elemName' => null, 'value' => null, 'locking' => false, 'blocking' => true, 'append' => false];
         if (($recId = $this->fixRecId($recId, false, $supportedArgs)) === false) {
             return false;
         } elseif (is_array($recId)) {
@@ -291,7 +317,7 @@ class DataStorage2
 
 
 
-    public function deleteRecord($recId, $locking = false, $blocking = false)
+    public function deleteRecord($recId, $locking = true, $blocking = true)
     {
         if (($recId = $this->fixRecId($recId)) === false) {
             return false;
@@ -326,16 +352,16 @@ class DataStorage2
 
 
 
-    public function lockRec( $recId )
+    public function lockRec( $recId, $blocking = true )
     {
-        if ($this->isDbLocked( false )) {
+        if ($this->isDbLocked( false, $blocking )) {
             return false;
         }
         if (($recId = $this->fixRecId($recId)) === false) {
             return false;
         }
 
-        if ($this->isRecLocked( $recId )) { // rec already locked
+        if (!$this->_awaitRecLockEnd($recId, $blocking, true)) {
             return false;
         }
         return $this->_lockRec( $recId);
@@ -396,7 +422,7 @@ class DataStorage2
 
     public function hasDbLockedRecords( $checkDBlevel = true)
     {
-        if ($checkDBlevel && $this->isDbLocked()) {
+        if ($checkDBlevel && $this->isDbLocked(false)) {
             return true;
         }
         $recLocks = $this->lowlevelReadRecLocks();
@@ -484,9 +510,11 @@ class DataStorage2
 
 
 
-    public function writeElement($key, $value)
+    public function writeElement($key, $value, $locking = true, $blocking = true)
     {
-        if ($this->isDbLocked()) {
+        if ($locking && !$this->lockDB( $blocking )) {
+            return false;
+        } elseif ($this->isDbLocked()) {
             return false;
         }
         $data = $this->getData(true);
@@ -523,15 +551,21 @@ class DataStorage2
             $this->updateRecLastUpdate( $key0 );
         }
 
-        return $this->lowLevelWrite($data);
+        $res = $this->lowLevelWrite($data);
+        if ($locking) {
+            $this->ds->unlockDB();
+        }
+        return $res;
     } // writeElement
 
 
 
 
-    public function deleteElement($key)
+    public function deleteElement($key, $locking = true, $blocking = true)
     {
-        if ($this->isDbLocked()) {
+        if ($locking && !$this->lockDB( $blocking )) {
+            return false;
+        } elseif ($this->isDbLocked( false, true )) {
             return false;
         }
         $data = $this->getData(true);
@@ -539,6 +573,9 @@ class DataStorage2
             unset($data[$key]);
             $this->lowLevelWrite($data);
             return true;
+        }
+        if ($locking) {
+            $this->ds->unlockDB();
         }
         return false;
     } // delete
@@ -647,10 +684,10 @@ class DataStorage2
     public function getDbRef()
     {
         die("Method getDbRef() has been depricated");
-//        if (!$this->lzyDb) {
-//            $this->openDbReadWrite();
-//        }
-//        return $this->lzyDb;
+    //        if (!$this->lzyDb) {
+    //            $this->openDbReadWrite();
+    //        }
+    //        return $this->lzyDb;
     } // getDbRef
 
     
@@ -710,14 +747,18 @@ class DataStorage2
 
 
 
-    private function _awaitDbLockEnd($timeout, $checkOnLockedRecords = true)
+    private function _awaitDbLockEnd($timeout = true, $checkOnLockedRecords = true)
     {
         if (!$timeout) {
-            return !_isDbLocked($checkOnLockedRecords);
+            return !$this->_isDbLocked($checkOnLockedRecords);
         }
 
         // wait for DB to be unlocked:
-        $timeout = min(LZY_MAX_AWAIT_LOCK_END_TIME, $timeout);
+        if ($timeout === true) {
+            $timeout = LZY_DEFAULT_DB_TIMEOUT;
+        } else {
+            $timeout = min(LZY_LOCK_ALL_DURATION_DEFAULT, $timeout);
+        }
         $till = microtime(true) + $timeout;
         while (($locked = $this->_isDbLocked( $checkOnLockedRecords )) && $timeout && (microtime(true) < $till)) {
             usleep($this->defaultPollingSleepTime);
@@ -806,6 +847,9 @@ class DataStorage2
     private function _lockDB()
     {
         $rawData = $this->lowlevelReadRawData();
+        if ($rawData['lockedBy'] && ($rawData['lockedBy'] !== $this->sessionId)) {
+            return false;
+        }
         $rawData['lockedBy'] = $this->sessionId;
         $rawData['lockTime'] = microtime(true);
         $this->updateRawDbMetaData($rawData);
@@ -815,9 +859,12 @@ class DataStorage2
 
 
 
-    private function _unlockDB()
+    private function _unlockDB( $force = false )
     {
         $rawData = $this->lowlevelReadRawData();
+        if (!$force && ($rawData['lockedBy'] && ($rawData['lockedBy'] !== $this->sessionId))) {
+            return false;
+        }
         $rawData['lockedBy'] = '';
         $rawData['lockTime'] = 0.0;
         $this->updateRawDbMetaData($rawData);
@@ -833,7 +880,7 @@ class DataStorage2
         }
 
         // wait for DB to be unlocked:
-        if (!$this->_awaitDbLockEnd($timeout, $checkOnLockedRecords)) {
+        if (!$this->_awaitDbLockEnd($timeout, false)) {
             return false;
         }
         $till = microtime(true) + $timeout;
