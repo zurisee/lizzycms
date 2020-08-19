@@ -654,6 +654,13 @@ class Transvar
             } elseif ($breakOnError) {
                 return [false, "Requested file '$phpFile' not found."];
             }
+        } elseif (function_exists($name)) {
+            if (strpos(',header,', ",$name,") !== false) {
+                return '';
+            }
+            $res = $name();
+            return [true, $res];
+
         } elseif ($breakOnError) {
             return [false, "User-Code not enabled in config/config.yaml (option 'custom_permitUserCode')"];
         }
