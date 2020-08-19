@@ -89,7 +89,11 @@ class DataStorage2
     // === DB level operations ==========================
     public function read( $forceCacheRefresh = true )
     {
-        return $this->getData($forceCacheRefresh);
+        $data = $this->getData($forceCacheRefresh);
+        if (!$data) {
+            $data = [];
+        }
+        return $data;
     } // read
 
 
