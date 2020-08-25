@@ -97,6 +97,34 @@ class Page
 
 
 
+    public function update($values)
+    {
+        // merge given values into the page object's properties:
+        foreach ($values as $key => $value) {
+            if (isset($this->$key)) {
+                if (!$this->$key) {
+                    $this->$key = $value;
+                } else {
+                    if (is_array($this->$key) && is_array($value)) {
+                        $this->$key = array_merge($this->$key, $value);
+
+                    } elseif (is_string($this->$key) && is_string($value)) {
+                        $this->$key .= $value;
+
+                    } elseif (is_int($this->$key) && is_int($value)) {
+                        $this->$key += $value;
+
+                    } else {
+                        fatalError("page->update: type clash or unsupported type: $value");
+                    }
+                }
+            }
+        }
+    } // update
+
+
+
+
     private function appendValue($key, $value, $replace = false)
     {
         if ($replace) {
@@ -1271,5 +1299,86 @@ EOT;
         }
         return $headInjections;
     } // renderRelLinks
+
+
+
+    //....................................................
+    public function extractFrontmatter($str)
+    {
+        return $this->_extractFrontmatter($str);
+    } // extractFrontmatter
+
+
+
+    private function extractSettings( &$hdr )
+    {
+        if (!$this->config) {
+            return;
+        }
+        // directly apply any config properties 'feature_...' to the global config values:
+        $featureConfigProps = $this->config->getConfigProperties( 'feature' );
+        foreach ($featureConfigProps as $key => $value) {
+            $k = substr($key, 8);
+            if (isset($hdr[ $k ])) {
+                $this->config->setConfigValue($key, $hdr[ $k ]);
+                // special case 'dataPath': activate immediately (i.e. copy to S_SESSION and $GLOBALS):
+                if ($k === 'dataPath') {
+                    $_SESSION['lizzy']['dataPath'] = $hdr['dataPath'];
+                    $GLOBALS['globalParams']['dataPath'] = $hdr['dataPath'];
+                }
+            }
+        }
+    } // extractSettings
+
+
+
+    //....................................................
+    public function extractHtmlBody($html)
+    {
+        $html = $this->_extractFrontmatter($html);
+
+        if (($p1=strpos($html, '<body')) !== false) {
+            $p1 = strpos($html, '>', $p1);
+            if (($p2=strpos($html, '</body')) !== false) {
+                $html = trim(substr($html, $p1+1, $p2-$p1-1));
+            }
+        }
+        return $html;
+    } // extractHtmlBody
+
+
+
+    private function _extractFrontmatter($str) // $propagateToGlobalSettings = false
+    {
+        if (strpos($str, '---') !== 0) {
+            return [$str, ''];
+        }
+        $p1 = strpos($str, "\n")+1;
+        $p2 = strpos($str, "\n---", 4);
+        if (!$p2) {
+            return [$str, ''];
+        }
+        $yaml = substr($str, $p1, $p2-$p1);
+        $str = substr($str, strpos($str, "\n", $p2+4));
+
+        if ($yaml) {
+            $yaml = str_replace("\t", '    ', $yaml);
+            try {
+                $hdr = convertYaml($yaml);
+            } catch (Exception $e) {
+                fatalError("Error in Yaml-Code: <pre>\n$yaml\n</pre>\n" . $e->getMessage(), 'File: ' . __FILE__ . ' Line: ' . __LINE__);
+            }
+        }
+        if ($hdr && is_array($hdr)) {
+            $this->extractSettings($hdr);
+            $this->update($hdr);
+            $this->set('frontmatter', $hdr);
+
+            if ($this->trans && isset($hdr['variables'])) {
+                $this->trans->addVariables( $hdr['variables'] );
+            }
+        }
+        return $str;
+    } // _extractFrontmatter
 
 } // Page
