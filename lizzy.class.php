@@ -1073,7 +1073,8 @@ EOT;
 
 
 	//....................................................
-    private function loadFile($loadRaw = false)
+//    private function loadFile($loadRaw = false)
+    private function loadFile()
 	{
         global $globalParams;
 		$page = &$this->page;
@@ -1140,17 +1141,21 @@ EOT;
                 $mdStr = getFile($f, true);
             }
 
-			$mdStr = $this->extractFrontmatter($mdStr, $newPage);
+			$mdStr = $newPage->extractFrontmatter($mdStr);
+            $hdr = $newPage->get('frontmatter');
+            if (is_array($hdr)) {
+                $this->page->merge($hdr);
+                $frontmatter =  $this->page->get('frontmatter');
+                if ($frontmatter) {
+                    $hdr = array_merge($hdr, $frontmatter);
+                }
+                $this->page->set('frontmatter', $hdr);
+            }
 
             // frontmatter option 'visibility' -> reveal only to logged in users:
             $visibility = $newPage->get('visibility', true);
             if (($visibility) && !$this->auth->checkPrivilege($visibility)) {
                 continue;
-            }
-
-            $variables = $newPage->get('variables', true);
-            if ($variables) {
-                $this->trans->addVariables($variables);
             }
 
             if ($ext === 'md') {             // it's an MD file, convert it
@@ -1222,7 +1227,7 @@ EOT;
 		if ((isset($this->siteStructure->currPageRec['backTickVariables'])) &&
 			($this->siteStructure->currPageRec['backTickVariables'] === 'no')) {
 			$html = str_replace('`', '&#96;', $html);
-			$html = $this->extractHtmlBody($html);
+			$html = $this->page->extractHtmlBody($html);
 		}
 		$page->addContent($html, true);
         return $page;
@@ -1280,98 +1285,6 @@ EOT;
 
 
 
-	//....................................................
-    private function extractFrontmatter($str, $page)
-	{
-		$lines = explode(PHP_EOL, $str);
-		$yaml = '';
-		if (!preg_match('/^---/', $lines[0]) || (sizeof($lines) < 2)) {
-			return $str;
-		}
-		$i = 1;
-		$l = $lines[$i];
-		while (($i < sizeof($lines)-1) && (!preg_match('/---/', $l))) {
-			$yaml .= $l."\n";
-			$i++;
-			$l = $lines[$i];
-		}
-		if ($i === sizeof($lines)-1) {   // case '---' in first line, but no second instance
-		    return $str;
-        }
-
-		if (preg_match('/\S/', $yaml)) {
-			$yaml = str_replace("\t", '    ', $yaml);
-			try {
-				$hdr = convertYaml($yaml);
-			} catch(Exception $e) {
-                fatalError("Error in Yaml-Code: <pre>\n$yaml\n</pre>\n".$e->getMessage(), 'File: '.__FILE__.' Line: '.__LINE__);
-			}
-			if (is_array($hdr)) {
-			    $this->extractSettings($hdr);
-			    if ($hdr) {
-                    $page->merge($hdr);
-                    $frontmatter =  $this->page->get('frontmatter');
-                    if ($frontmatter) {
-                        $hdr = array_merge($hdr, $this->page->get('frontmatter'));
-                    }
-                    $this->page->set('frontmatter', $hdr);
-                }
-			} else {
-                fatalError("Error in Yaml-Code: <pre>\n$yaml\n</pre>\n", 'File: '.__FILE__.' Line: '.__LINE__);
-            }
-		}
-		$lines = array_slice($lines, $i+1);
-		$str = implode("\n",  $lines);
-
-		return $str;
-	} // extractFrontmatter
-
-
-
-    private function extractSettings( &$hdr )
-    {
-        foreach ($this->config as $key => $value) {
-            if (strpos($key, 'feature') !== 0) {
-                continue;
-            }
-            $k = substr($key, 8);
-            if (isset($hdr[ $k ])) {
-                $this->config->$key = $hdr[ $k ];
-            }
-        }
-        if (isset($hdr['dataPath'])) {  // special case: dataPath -> propagate immediately
-            $_SESSION['lizzy']['dataPath'] = $hdr['dataPath'];
-            $GLOBALS['globalParams']['dataPath'] = $hdr['dataPath'];
-            unset($hdr['dataPath']);
-        }
-    } // extractSettings
-
-
-
-	//....................................................
-    private function extractHtmlBody($html)
-    {
-		if (((($p1 = strpos($html, "---")) !== false) && (($p1 === 0) || (substr($html,$p1-1,1) === "\n")))) {
-			$p1 = strpos($html, "\n", $p1+3);
-			if ($p2 = strpos($html, "\n---", $p1+3)) {
-				$head = substr($html, $p1+1, $p2-$p1-1);
-				$values = convertYaml($head);
-				$this->page->merge($values);
-				$html = substr($html, $p2+4);
-			}
-		}
-		if (($p1=strpos($html, '<body')) !== false) {
-			$p1 = strpos($html, '>', $p1);
-			if (($p2=strpos($html, '</body')) !== false) {
-				$html = trim(substr($html, $p1+1, $p2-$p1-1));
-			}
-		}
-		return $html;
-	} // extractHtmlBody
-
-
-
-
     private function disableCaching()
     {
         $this->config->site_enableCaching = false;
@@ -1390,11 +1303,9 @@ EOT;
             $this->page->addMessage( $arg );
         }
 
-        if (getUrlArg('reset')) {			            // reset (cache)
-            $this->disableCaching();
-            clearCaches( $this, false );
-
-        }
+//        if (getUrlArg('reset')) {			            // reset (cache)
+//            clearCaches( $this, false );
+//        }
 
 
 		if (getUrlArg('logout')) {	// logout
@@ -1412,6 +1323,17 @@ EOT;
 
         $this->timer = getUrlArgStatic('timer');				// timer
 
+        if (($this->config->localCall) && getUrlArg('purge')) {     // empty recycleBins and caches
+            purgeAll( $this );
+//            purgeRecyleBins( $this );
+//            clearMdCache( $this );
+//            $this->purgePageCache();
+//            clearLogs();
+//            purgeDbCache();
+//            $_SESSION['lizzy'] = [];
+//            session_write_close();
+//            reloadAgent();
+        }
 
         //====================== the following is restricted to editors and admins:
         $userAdminInitialized = file_exists(CONFIG_PATH.$this->config->admin_usersFile);
@@ -1430,11 +1352,13 @@ EOT;
             }
 
             if (getUrlArg('purge')) {                        // empty recycleBins and caches
-                purgeRecyleBins( $this );
-                clearMdCache( $this );
-                $this->purgePageCache();
-                clearLogs();
-                reloadAgent();
+                purgeAll( $lzy );
+//                purgeRecyleBins( $this );
+//                clearMdCache( $this );
+//                purgePageCache();
+////                $this->purgePageCache();
+//                clearLogs();
+//                reloadAgent();
             }
 
             if (getUrlArg('lang', true) === 'none') {                  // force language
@@ -1537,8 +1461,11 @@ EOT;
 	private function handleUrlArgs2()
 	{
         if (getUrlArg('reset')) {			            // reset (cache)
-            $this->clearCaches(true);
-            reloadAgent();  //  reload to get rid of url-arg ?reset
+            resetLizzy( $this );
+//            clearCaches( $this, true );
+//            $_SESSION['lizzy'] = [];
+//            session_write_close();
+//            reloadAgent();  //  reload to get rid of url-arg ?reset
         }
 
         // user wants to login in and is not already logged in:
@@ -1979,7 +1906,7 @@ EOT;
 
 
     //....................................................
-    public function sendMail($to, $subject, $message, $from = false, $exitOnError = true)
+    public function sendMail($to, $subject, $message, $from = false, $html = false, $exitOnError = true)
     {
         if (!$from) {
             $from = $this->trans->getVariable('webmaster_email');
@@ -2000,7 +1927,7 @@ EOT;
             $this->page->addOverlay(['text' => $str, 'mdCompile' => false ]);
             return true;
         } else {
-            return sendMail($to, $from, $subject, $message, $exitOnError);
+            return sendMail($to, $from, $subject, $message, $html, $exitOnError);
         }
     } // sendMail
 
@@ -2427,7 +2354,8 @@ EOT;
     {
         $nc = getUrlArg('nc');
         if ($nc) {  // nc = no-caching -> when specified, make sure page cache is cleared
-            $this->purgePageCache();
+            purgePageCache();
+//            $this->purgePageCache();
         }
         if ($this->dailyPageCacheReset()) {
             return;
@@ -2487,11 +2415,13 @@ EOT;
             $fileTime = intval(filemtime(HOUSEKEEPING_FILE) / 86400);
             $today = intval(time() / 86400);
             if (($fileTime) !== $today) {
-                $this->purgePageCache();
+                purgePageCache();
+//                $this->purgePageCache();
                 return true;
             }
         } else {
-            $this->purgePageCache();
+            purgePageCache();
+//            $this->purgePageCache();
             return true;
         }
         return false;
@@ -2500,10 +2430,10 @@ EOT;
 
 
 
-    private function purgePageCache()
-    {
-        rrmdir(PAGE_CACHE_PATH);
-    } // purgePageCache
+//    private function purgePageCache()
+//    {
+//        rrmdir(PAGE_CACHE_PATH);
+//    } // purgePageCache
 } // class WebPage
 
 
