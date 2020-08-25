@@ -316,6 +316,20 @@ private $userConfigurableSettingsAndDefaults      = [
 
 
 
+    public function getConfigProperties( $category = '')
+    {
+        $pattern = $category? $category : '\w+_';
+        $array = (array) $this;
+        $array = array_filter($array, function () use (&$array, $pattern) {
+            $k = key($array);
+            next($array);
+            return (bool) preg_match("/^$pattern/", $k);
+        });
+        return $array;
+    } // getConfigProperties
+
+
+
     public function setConfigValue($key, $value) {
         if (isset($this->$key)) {
             $this->$key = $value;
