@@ -1513,6 +1513,22 @@ function strToASCII($str)
 
 
 
+//-------------------------------------------------------------------------
+function translateUmlauteToHtml($str)
+{
+// transliterate special characters (such as ä, ö, ü) into pure ASCII
+	$specChars = array('ä','ö','ü','Ä','Ö','Ü','é','â','á','à',
+		'ç','ñ','Ñ','Ç','É','Â','Á','À','ẞ','ß','ø','Ø','å','Å');
+	$specCodes2 = array('&auml;','&ouml;','&uuml;','&Auml;',
+		'&Ouml;','&Uuml;','&eacute;','&#226;','&aacute;','&agrave;','&ccedil;',
+		'&ntilde;','&Ntilde;','&Ccedil;','&Eacute;','&Acirc;','&Aacute;','&Agrave;',
+		'&Szlig;','&szlig;','&oslash;','&Oslash;','&aring;','&Aring;');
+	return str_replace($specChars, $specCodes2, $str);
+} // translateUmlauteToHtml
+
+
+
+
 //------------------------------------------------------------
 function timestamp($short = false)
 {
@@ -2079,9 +2095,13 @@ function fatalError($msg, $origin = '', $offendingFile = '')
 
 
 //-------------------------------------------------------------
-function sendMail($to, $from, $subject, $message, $exitOnError = true)
+function sendMail($to, $from, $subject, $message, $html = false, $exitOnError = true)
 {
     $headers = "From: $from\r\n" . 'X-Mailer: PHP/' . phpversion();
+    if ($html) {
+        $headers .= "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
+    }
 
     $res = mail($to, $subject, $message, $headers);
     if (!$res && $exitOnError) {
