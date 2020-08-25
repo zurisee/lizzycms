@@ -212,7 +212,7 @@ class Forms
         if (stripos($this->currForm->options, 'nocolor') === false) {
             $defaultClass .= ' lzy-form-colored';
         }
-		$this->currForm->class = $class = (isset($args['class'])) ? $args['class'] : $defaultClass;
+		$this->currForm->class = $class = (isset($args['class']) && $args['class']) ? $args['class'] : $defaultClass;
 		if ($this->currForm->formName) {
 		    $class .= ' '.str_replace('_', '-', translateToIdentifier($this->currForm->formName));
         }
@@ -828,7 +828,7 @@ EOT;
 	        $formId = (isset($args['id'])) ? $args['id'] : false;
 	        if (!$formId) {
                 $formElemId =  '';
-                $formId = (isset($args['class'])) ? $args['class'] : translateToIdentifier($label);
+                $formId = (isset($args['class']) && $args['class']) ? $args['class'] : translateToIdentifier($label);
                 $formId = str_replace('_', '-', $formId);
             } else {
                 $formElemId = $formId;
@@ -1658,7 +1658,7 @@ EOT;
         $out = '';
         $formId = $this->currForm->formId;
         $currFormDescr = $this->formDescr[ $formId ];
-        $continue = false;
+        $continue = true;
         if (!$currFormDescr->showData) {
             return '';
         } elseif ($currFormDescr->showData !== true) {
