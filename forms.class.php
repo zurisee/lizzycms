@@ -1661,6 +1661,7 @@ EOT;
         $continue = true;
         if (!$currFormDescr->showData) {
             return '';
+
         } elseif ($currFormDescr->showData !== true) {
             // showData options: false, true, loggedIn, privileged, localhost, {group}
             switch ($currFormDescr->showData) {
