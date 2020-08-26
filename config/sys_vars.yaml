@@ -73,7 +73,8 @@ lzy-required-value-missing:
     _:  'Please fill in this entry field:'
 
 lzy-form-required-comment:
-    de: 'Mit <span class="lzy-form-required-marker">*</span> bezeichnete Felder sind Pflichtfelder.'
+    de: '<span class="lzy-form-required-marker">*</span> Erforderliche Eingaben.'
+#    de: 'Mit <span class="lzy-form-required-marker">*</span> bezeichnete Felder sind Pflichtfelder.'
     _:  'Fields marked by <span class="lzy-form-required-marker">*</span> are mandatory.'
 
 lzy-yes:
