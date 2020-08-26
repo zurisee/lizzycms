@@ -23,7 +23,7 @@ class FormElement
 
 	public $label = '';		// some meaningful label used for the form element
 	
-	public $shortlabel = '';// some meaningful short-form of label used in e-mail and .cvs data-file
+	public $labelInOutput = '';// some meaningful short-form of label used in e-mail and .cvs data-file
 	
 	public $name = '';
 	

@@ -777,7 +777,8 @@ EOT;
 		if ($this->translateLabel) {
 		    $hasColon = (strpos($label, ':') !== false);
             $label = trim(str_replace([':', '*'], '', $label));
-            $label = "{{ $label }}";
+            $label = $this->transvar->translateVariable( $label, true );
+//            $label = "{{ $label }}";
             if ($hasColon) {
                 $label .= ':';
             }
@@ -982,13 +983,16 @@ EOT;
 			$this->currForm->formData['names'] = [];
 
 		} elseif (($type !== 'button') && ($type !== 'form-tail') && (strpos($type, 'fieldset') === false)) {
-			$rec->shortLabel = (isset($args['shortlabel'])) ? $args['shortlabel'] : $label;
+			$rec->labelInOutput = (isset($args['labelInOutput'])) ? $args['labelInOutput'] : $label;
+			$rec->labelInOutput = $this->transvar->translateVariable($rec->labelInOutput, true);
+			$rec->labelInOutput = str_replace(':', '', $rec->labelInOutput);
+
 			if (($type === 'checkbox') || ($type === 'radio') || ($type === 'dropdown')) {
 				$checkBoxLabels = ($rec->valueNames) ? preg_split('/\s* [\|,] \s*/x', $rec->valueNames) : [];
-				array_unshift($checkBoxLabels, $rec->shortLabel);
+				array_unshift($checkBoxLabels, $rec->labelInOutput);
 				$this->currForm->formData['labels'][] = $checkBoxLabels;
 			} else {
-				$this->currForm->formData['labels'][] = $rec->shortLabel;
+				$this->currForm->formData['labels'][] = $rec->labelInOutput;
 			}
 			$this->currForm->formData['names'][] = $name;
 		}
@@ -1223,7 +1227,7 @@ EOT;
         // send mail if requested:
 		if ($mailto) {
             $formName = str_replace(':', '', $formName);
-            $subject = $this->transvar->translateVariable('lzy-form-email-notification-subject');
+            $subject = $this->transvar->translateVariable('lzy-form-email-notification-subject', true);
             if (!$subject) {
                 $subject = 'user data received';
             }
@@ -1278,6 +1282,7 @@ EOT;
                 $data = [];
                 $j = 0;
                 foreach ($labels as $l => $label) {
+                    // skip column if label starts with '_':
                     if ($label[0] === '_') {
                         continue;
                     }
@@ -1298,7 +1303,8 @@ EOT;
                         $data[0][$j++] = $label;
                     }
                 }
-                $data[0][$j] = 'timestamp';
+                $data[0][$j] = $this->transvar->translateVariable( 'lzy-timestamp', true );
+//                $data[0][$j] = 'timestamp';
             }
         } else {
             $data = [];
@@ -1308,6 +1314,7 @@ EOT;
         $j = 0;
         $formElements = &$currFormDescr->formElements;
         foreach($names as $i => $name) {
+            // skip column if label starts with '_':
             if ($labels[$i][0] === '_') {
                 continue;
             }
@@ -1496,7 +1503,7 @@ required:
 placeholder:
 : Text displayed in empty field, disappears when user enters data.
 
-shortlabel:
+labelInOutput:
 : text to be used in mail and .csv data file.
 
 value:
