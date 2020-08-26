@@ -53,7 +53,7 @@ class Authentication
             $res = true;
 
             if ($user && ($msg = getNotificationMsg())) {
-                $msg = $this->lzy->trans->translateVariable($msg);
+                $msg = $this->lzy->trans->translateVariable($msg, true);
                 $res = [$user, "<p>{{ $msg }}</p>", 'Message' ];   //
             }
         }

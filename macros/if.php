@@ -158,7 +158,7 @@ function evalResult($trans, $code, $inx)
                 break;
 
             case 'variable' :
-                $out = $trans->translateVariable($arg);
+                $out = $trans->translateVariable($arg, true);
                 break;
 
             case 'macro' :

@@ -156,13 +156,17 @@ class Transvar
 
 
     //....................................................
-    public function translateVariable($varName)
+    public function translateVariable($varName, $returnKeyIfUnknown = false, $tryUserCodeIfUnknown = false)
     {
         $val = $this->getVariable($varName);
         if ($val === false) {
-            $val = $this->doUserCode($varName, $this->config->custom_permitUserCode);
-            if (is_array($val)) {
-                fatalError($val[1]);
+            if ($returnKeyIfUnknown) {
+                $val = $varName;
+            } elseif ($tryUserCodeIfUnknown) {
+                $val = $this->doUserCode($varName, $this->config->custom_permitUserCode);
+                if (is_array($val)) {
+                    fatalError($val[1]);
+                }
             }
         }
         return $val;

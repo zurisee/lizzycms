@@ -309,7 +309,7 @@ class Lizzy
             $exists = $this->auth->findUserRecKey( $un );
             if ($exists) {
                 $msg = 'lzy-signup-username-not-available';
-                $msg = $this->trans->translateVariable($msg);
+                $msg = $this->trans->translateVariable($msg, true);
             } else {
                 $msg = 'ok';
             }
@@ -1299,7 +1299,7 @@ EOT;
 	private function handleUrlArgs()
 	{
         if ($arg = getNotificationMsg()) {
-            $arg = $this->trans->translateVariable($arg);
+            $arg = $this->trans->translateVariable($arg, true);
             $this->page->addMessage( $arg );
         }
 
