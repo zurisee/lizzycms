@@ -716,8 +716,7 @@ EOT;
 					$out .= "$indent<input type='submit' id='$id' value='$label' $class />\n";
 					
 				} elseif ((stripos($type, 'reset') !== false) ||
-                    (stripos($type, 'cancel') !== false)) {
-//				} elseif (stripos($type, 'reset') !== false) {
+                        (stripos($type, 'cancel') !== false)) {
 				    if ($type[0] === '(') { // case: show reset button only if data has been supplied before:
 				        $type = 'reset';
 				        if ($this->userSuppliedData) {
@@ -765,6 +764,8 @@ EOT;
 	} // formTail
 
 
+
+
 //-------------------------------------------------------------
     private function getLabel($id = false, $wrapOutput = true)
     {
@@ -778,7 +779,6 @@ EOT;
 		    $hasColon = (strpos($label, ':') !== false);
             $label = trim(str_replace([':', '*'], '', $label));
             $label = $this->transvar->translateVariable( $label, true );
-//            $label = "{{ $label }}";
             if ($hasColon) {
                 $label .= ':';
             }
@@ -1075,7 +1075,7 @@ EOT;
 //-------------------------------------------------------------
     public function evaluate()
     {
-
+        // returns false on success, error msg otherwise:
         $this->userSuppliedData = $userSuppliedData = (isset($_GET['lizzy_form'])) ? $_GET : $_POST;
 		if (isset($userSuppliedData['lizzy_form'])) {
 			$this->formId = $formId = $userSuppliedData['lizzy_form'];
@@ -1094,10 +1094,14 @@ EOT;
 		}
 		$formDescr = $this->restoreFormDescr($formId);
 		$currFormDescr = &$formDescr[$formId];
+		if ($currFormDescr === null) {
+            $this->clearCache();
+		    return false;
+        }
 
 		$next = @$currFormDescr->next;
 		
-        list($str, $msg) = $this->defaultFormEvaluation($currFormDescr);
+        list($msgToClient, $msgToOwner) = $this->defaultFormEvaluation($currFormDescr);
 
         $postprocess = isset($currFormDescr->postprocess) ? $currFormDescr->postprocess : false;
         if ($postprocess) {
@@ -1111,22 +1115,29 @@ EOT;
                 }
             }
 			if ($result) {
-				$str1 = evalForm($userSuppliedData, $currFormDescr, $msg, $this->page);
+			    if (!function_exists('evalForm')) {
+                    fatalError("Warning: trying to execute evalForm(), but not defined in '$postprocess'.", 'File: '.__FILE__.' Line: '.__LINE__);
+                }
+				$str1 = evalForm($userSuppliedData, $currFormDescr, $msgToOwner, $this->page);
 				if (is_string($str1)) {
-				    $str .= $str1;
+				    $msgToClient .= $str1;
                 }
 			} else {
                 fatalError("Warning: executing code '$postprocess' has been blocked; modify 'config/config.yaml' to fix this.", 'File: '.__FILE__.' Line: '.__LINE__);
 			}
         }
 
-        if (!$this->errorDescr) {
+        if (!isset($this->errorDescr[$this->formId]) ||
+                    !$this->errorDescr[$this->formId] ) {
             $this->page->addCss(".$formId { display: none; }");
-            $str .= "<div class='lzy-form-continue'><a href='{$next}'>{{ lzy-form-continue }}</a></div>\n";
+            $msgToClient .= "<div class='lzy-form-continue'><a href='{$next}'>{{ lzy-form-continue }}</a></div>\n";
             $this->clearCache();
-            $this->formEvalResult = $str;
+            $this->formEvalResult = $msgToClient;
+
+        } elseif ($msgToClient === null) { // error condition:
+            return [$msgToOwner];
         }
-        return $str;
+        return $msgToClient;
     } // evaluate
 
 
@@ -1134,6 +1145,8 @@ EOT;
 //-------------------------------------------------------------
 	private function defaultFormEvaluation($currFormDescr)
 	{
+	    // returns: [$msgToClient, $msgToOwner]
+        // in error case: [null, null]
 		$formName = $currFormDescr->formName;
 		$mailto = $currFormDescr->mailto;
 		$mailfrom = $currFormDescr->mailfrom;
@@ -1152,7 +1165,7 @@ EOT;
             $GLOBALS["globalParams"]["errorLoggingEnabled"] = true;
             writeLog($out, 'spam-log.txt');
             $GLOBALS["globalParams"]["errorLoggingEnabled"] = $logState;
-            return;
+            return ['', null];
         }
 
 		// check required entries:
@@ -1176,10 +1189,10 @@ EOT;
         }
 
 
-        $str = "$formName\n===================\n\n";
+        $msgToOwner = "$formName\n===================\n\n";
 		$log = '';
 		$labelNames = '';
-		$out = $currFormDescr->confirmationText;
+		$msgToClient = $currFormDescr->confirmationText;
 		foreach($names as $i => $name) {
 			if (is_array($labels[$i])) {
 				$label = $labels[$i][0];
@@ -1208,21 +1221,21 @@ EOT;
                 $value = str_replace(['"', "'"], ['ʺ', 'ʹ'], $value);
             }
 
-			$str .= mb_str_pad($label, 22, '.').": $value\n\n";
+			$msgToOwner .= mb_str_pad($label, 22, '.').": $value\n\n";
 			$log .= "'$value'; ";
             $labelNames .= "'$name'; ";
 		}
-		$str = trim($str, "\n\n");
-		if ($res = $this->saveCsv($currFormDescr)) {
+		$msgToOwner = trim($msgToOwner, "\n\n");
+		if ($res = $this->saveCsv($currFormDescr)) { // false = ok
 		    $this->saveErrorDescr($res);
-		    return '';
+		    return [null, $res];
         }
 		
 		$serverName = (isset($_SERVER['SERVER_NAME'])) ? $_SERVER['SERVER_NAME'] : 'localhost';
 		$remoteAddress = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : '';
 		$localCall = (($serverName === 'localhost') || (strpos($remoteAddress, '192.') === 0) || ($remoteAddress === '::1'));
 
-        $out = "\n<div class='lzy-form-response'>\n$out\n</div><!-- /lzy-form-response -->\n";
+        $msgToClient = "\n<div class='lzy-form-response'>\n$msgToClient\n</div><!-- /lzy-form-response -->\n";
 
         // send mail if requested:
 		if ($mailto) {
@@ -1233,8 +1246,8 @@ EOT;
             }
             $subject = "[$formName] ".$subject;
             if ($localCall) {
-                $str1 = "-------------------------------\n$str\n\n-------------------------------\n(-> would be be sent to $mailto)\n";
-                $out .= <<<EOT
+                $str1 = "-------------------------------\n$msgToOwner\n\n-------------------------------\n(-> would be be sent to $mailto)\n";
+                $msgToClient .= <<<EOT
 
 <div class='lzy-localhost-response'>
     <p>{{ lzy-form-feedback-local }}</p>
@@ -1246,11 +1259,11 @@ $str1
 
 EOT;
             } else {
-                $this->sendMail($mailto, $mailfrom, $subject, $str);
+                $this->sendMail($mailto, $mailfrom, $subject, $msgToOwner);
             }
         }
         $this->writeLog($labelNames, $log, $formName, $mailto);
-        return [$out, $str];
+        return [$msgToClient, $msgToOwner];
 	} // defaultFormEvaluation()
 
 
@@ -1260,6 +1273,7 @@ EOT;
 //-------------------------------------------------------------
 	private function saveCsv($currFormDescr)
 	{
+	    // returns false if ok, err msg otherwise
 		$formId = $currFormDescr->formId;
 		$errorDescr = $this->errorDescr;
         $errors = (isset($errorDescr[$formId]) && $errorDescr[$formId]) ? sizeof($errorDescr[$formId]) : 0;
@@ -1276,6 +1290,10 @@ EOT;
 
         if (!$errors) {
             $db = new DataStorage2($fileName);
+            if (!$db->lockDB()) {   // DB locked successfully?
+                $_POST = [];
+                return 'lzy-forms-error-db-locked'; // ToDo: provide error message
+            }
             $data = $db->read();
 
             if (!$data) {   // no data yet -> prepend header row containing labels:
@@ -1304,7 +1322,6 @@ EOT;
                     }
                 }
                 $data[0][$j] = $this->transvar->translateVariable( 'lzy-timestamp', true );
-//                $data[0][$j] = 'timestamp';
             }
         } else {
             $data = [];
@@ -1312,6 +1329,7 @@ EOT;
 
         $r = sizeof($data);
         $j = 0;
+        $newRec = [];
         $formElements = &$currFormDescr->formElements;
         foreach($names as $i => $name) {
             // skip column if label starts with '_':
@@ -1321,23 +1339,23 @@ EOT;
             $value = (isset($userSuppliedData[$name])) ? $userSuppliedData[$name] : '';
             if (@$currFormDescr->formElements[$name]->type === 'bypassed') {
                 if (@$currFormDescr->formElements[$name]->value[0] !== '$') {
-                    $data[$r][$j++] = $currFormDescr->formElements[$name]->value;
+                    $newRec[$j++] = $currFormDescr->formElements[$name]->value;
                 } else {
-                    $data[$r][$j++] = $value;
+                    $newRec[$j++] = $value;
                 }
 
             } elseif (is_array($value)) { // checkbox returns array of values
                 $name = $names[$i];
                 $splitOutput = (isset($currFormDescr->formElements[$name]->splitOutput))? $currFormDescr->formElements[$name]->splitOutput: false ;
                 if (!$splitOutput) {
-                    $data[$r][$j++] = implode(', ', $value);
+                    $newRec[$j++] = implode(', ', $value);
 
                 } else {
                     $labs = $labels[$i];
                     for ($k=1; $k<sizeof($labs); $k++) {
                         $l = $labs[$k];
                         $val = (in_array($l, $value)) ? '1' : '0';
-                        $data[$r][$j++] = $val;
+                        $newRec[$j++] = $val;
                     }
                 }
             } else {        // normal value
@@ -1353,14 +1371,35 @@ EOT;
                         }
                     }
                 }
-                $data[$r][$j++] = $value;
+                $newRec[$j++] = $value;
             }
         }
-        $data[$r][$j] = date('Y-m-d H:i:s');
+        $newRec[$j] = date('Y-m-d H:i:s');
+
+        // check whether rec already saved:
+        $n = sizeof($newRec) - 1;
+        for ($k=sizeof($data)-1; $k>0; $k--) {
+            $rec = $data[$k];
+            $diffFound = false;
+            for ($i=0; $i<$n; $i++) {
+                if ($rec[$i] !== $newRec[$i]) {
+                    $diffFound = true;
+                    break;
+                }
+            }
+            if (!$diffFound) {
+                // if no diff found in one of the records, we skip saving it again:
+                $db->unlockDB();
+                return 'lzy-forms-error-data-rec-already-present';   // ToDo: provide error msg?
+            }
+        }
+        $data[$r] = $newRec;
         if ($errors === 0) {
             $db->write($data);
+            $db->unlockDB();
             return false;
         }
+        $db->unlockDB();
         return $errorDescr;
 	} // saveCsv
 
