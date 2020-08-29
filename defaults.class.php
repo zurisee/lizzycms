@@ -81,7 +81,6 @@ private $userConfigurableSettingsAndDefaults      = [
     'site_dataPath'                     => [DATA_PATH, 'Path to data/ folder.', 3 ],
     'site_devDataPath'                  => ['', 'Activates a mechanism that, in dev-mode, switches ~data/ to given destination. Thus, you can savely develop and test in dev-mode without overwriting hot data. Hint: set site_dataPath to "../db/".', 2 ],
     'site_devDataPathPattern'           => ['/-', 'Regex-pattern to match against appRoot path to identify, whether we are running on a dev site, e.g. "/(dev|-)". Default: "/-"', 3 ],
-    'site_defaultLocale'                => ['en_US', 'Default local, e.g. "en_US" or "de_CH"', 3 ],
     'site_enableCaching'                => [false, 'If true, Lizzy\'s caching mechanism is activated.', 1 ],
     'site_enableMdCaching'                => [false, 'If true, Lizzy\'s MD caching mechanism is activated. (not fully implemented yet)', 3 ],
     'site_extractSelector'              => ['body main', '[selector] Lets an external js-app request an extract of the web-page', 3 ],
@@ -91,6 +90,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'site_robots'                       => [false, 'If true, Lizzy will add a meta-tag to inform search engines, not to index this site.', 1 ],
     'site_sitemapFile'                  => ['sitemap.txt', 'Name of file that defines the site structure. Build hierarchy simply by indenting.', 3 ],
     'site_supportedLanguages'           => ['en', 'Defines which languages will be supported: comma-separated list of language-codes. E.g. "en, de, fr" (first elem => default lang)', 1 ],
+    'site_localeCodes'                  => ['en_GB,de_DE,fr_FR,it_IT', 'Defines prefered locale codes for supported languages. If not found, Lizzy assumes "xy_XY".', 3 ],
     'site_timeZone'                     => ['auto', 'Name of timezone, e.g. "UTC" or "CET". If auto, attempts to set it automatically.', 2 ],
 ];
 
