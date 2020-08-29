@@ -90,6 +90,20 @@ class Page
                 $this->$var = '';
             }
             return $val;
+        } elseif (strpos($var, '.') !== false) {
+            $a = explode('.', $var);
+            $r = &$this;
+            while ($a) {
+                $k = array_shift($a);
+                if (isset($r->$k)) {
+                    $r = $r->$k;
+                } elseif (isset($r[$k])) {
+                    $r = $r[$k];
+                } else {
+                    return null;
+                }
+            }
+            return $r;
         } else {
             return '';
         }
