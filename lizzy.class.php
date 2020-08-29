@@ -1144,9 +1144,11 @@ EOT;
 			$mdStr = $newPage->extractFrontmatter($mdStr);
 
             // frontmatter option 'visibility' -> reveal only to logged in users:
-            $visibility = $newPage->get('visibility', true);
-            if (($visibility) && !$this->auth->checkPrivilege($visibility)) {
-                continue;
+            $visibility = $newPage->get('frontmatter.visibility', true);
+            if ($visibility !== null) {
+                if ((!$visibility) || !$this->auth->checkPrivilege($visibility)) {
+                    continue;
+                }
             }
 
             if ($ext === 'md') {             // it's an MD file, convert it
