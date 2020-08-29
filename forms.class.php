@@ -253,6 +253,11 @@ class Forms
         if (!$novalidate) {
             $novalidate = (stripos($this->currForm->options, 'validate') === false) ? ' novalidate' : '';
         }
+        $honeyPotRequired = ' required aria-required="true"';
+        if (!$novalidate) {
+            $novalidate = (stripos($this->currForm->options, 'validate') === false) ? ' novalidate' : '';
+            $honeyPotRequired = '';
+        }
 
         $out .= "\t<form$id$_class$_method$_action$novalidate>\n";
 		$out .= "\t\t<input type='hidden' name='lizzy_form' value='{$this->currForm->formId}' />\n";
@@ -261,7 +266,7 @@ class Forms
 
 		if ($this->currForm->antiSpam) {
             $out .= "\t\t<div class='fld-ch' aria-hidden='true'>\n";
-            $out .= "\t\t\t<label for='fld_ch'>Name:</label><input id='fld_ch' type='text' class='lzy-form-check' name='lzy-form-name' value='' />\n";
+            $out .= "\t\t\t<label for='fld_ch{$this->inx}'>Name:</label><input id='fld_ch{$this->inx}' type='text' class='lzy-form-check' name='lzy-form-name' value=''$honeyPotRequired />\n";
             $out .= "\t\t</div>\n";
         }
 		return $out;
@@ -862,6 +867,7 @@ EOT;
 
             $this->currForm->validate =  (isset($args['validate']))? $args['validate']: false;
             $this->currForm->showData =  (isset($args['showData']))? $args['showData']: false;
+            $this->currForm->showDataMinRows =  (isset($args['showDataMinRows']))? $args['showDataMinRows']: false;
 
             // options or option:
             $this->currForm->options = isset($args['options'])? $args['options']: (isset($args['option'])? $args['option']: '');
@@ -1102,7 +1108,11 @@ EOT;
 		$next = @$currFormDescr->next;
 		
         list($msgToClient, $msgToOwner) = $this->defaultFormEvaluation($currFormDescr);
-
+        $errDescr = @$this->errorDescr[ $this->formId ];
+        if ($errDescr) {
+            $_POST = [];
+            return true;
+        }
         $postprocess = isset($currFormDescr->postprocess) ? $currFormDescr->postprocess : false;
         if ($postprocess) {
 			$result = $this->transvar->doUserCode($postprocess, null, true);
@@ -1148,8 +1158,8 @@ EOT;
 	    // returns: [$msgToClient, $msgToOwner]
         // in error case: [null, null]
 		$formName = $currFormDescr->formName;
-		$mailto = $currFormDescr->mailto;
-		$mailfrom = $currFormDescr->mailfrom;
+		$mailTo = $currFormDescr->mailto;
+		$mailFrom = $currFormDescr->mailfrom;
 		$formData = &$currFormDescr->formData;
 		$labels = &$formData['labels'];
 		$names = &$formData['names'];
@@ -1157,7 +1167,7 @@ EOT;
 
 		// check honey pot field (unless on local host):
 		if (($userSuppliedData["lzy-form-name"] !== '') &&
-            !$GLOBALS["globalParams"]["localCall"]) {
+                !$GLOBALS["globalParams"]["localCall"]) {
 		    $out = var_export($userSuppliedData, true);
             $out = str_replace("\n", ' ', $out);
             $out .= "\n[{$_SERVER['REMOTE_ADDR']}] {$_SERVER['HTTP_USER_AGENT']}\n";
@@ -1165,29 +1175,17 @@ EOT;
             $GLOBALS["globalParams"]["errorLoggingEnabled"] = true;
             writeLog($out, 'spam-log.txt');
             $GLOBALS["globalParams"]["errorLoggingEnabled"] = $logState;
-            return ['', null];
+            return ['', null]; // silently ignore entry
         }
 
 		// check required entries:
-        foreach ($currFormDescr->formElements as $name => $rec) {
-            if ($rec->requiredMarker) {
-                if ($g = isset($rec->requiredGroup)? $rec->requiredGroup : []) {
-                    $found = false;
-                    foreach ($g as $n) {
-                        if ($userSuppliedData[$n]) {
-                            $found = true;
-                            break;
-                        }
-                    }
-                    if (!$found) {
-                        $this->errorDescr[$this->formId][$name] = '{{ lzy-combined-required-value-missing }}';
-                    }
-                } elseif (!isset($userSuppliedData[$name]) || !$userSuppliedData[$name]) {
-                    $this->errorDescr[$this->formId][$name] = '{{ lzy-required-value-missing }}';
-                }
-            }
-        }
+        $this->checkSuppliedDataEntries($currFormDescr, $userSuppliedData);
 
+		$errDescr = @$this->errorDescr[ $this->formId ];
+		if ($errDescr) {
+            $this->saveErrorDescr($errDescr);
+            return [null, $errDescr];
+        }
 
         $msgToOwner = "$formName\n===================\n\n";
 		$log = '';
@@ -1230,39 +1228,20 @@ EOT;
 		    $this->saveErrorDescr($res);
 		    return [null, $res];
         }
-		
-		$serverName = (isset($_SERVER['SERVER_NAME'])) ? $_SERVER['SERVER_NAME'] : 'localhost';
-		$remoteAddress = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : '';
-		$localCall = (($serverName === 'localhost') || (strpos($remoteAddress, '192.') === 0) || ($remoteAddress === '::1'));
 
         $msgToClient = "\n<div class='lzy-form-response'>\n$msgToClient\n</div><!-- /lzy-form-response -->\n";
 
         // send mail if requested:
-		if ($mailto) {
-            $formName = str_replace(':', '', $formName);
+		if ($mailTo) {
             $subject = $this->transvar->translateVariable('lzy-form-email-notification-subject', true);
             if (!$subject) {
                 $subject = 'user data received';
             }
             $subject = "[$formName] ".$subject;
-            if ($localCall) {
-                $str1 = "-------------------------------\n$msgToOwner\n\n-------------------------------\n(-> would be be sent to $mailto)\n";
-                $msgToClient .= <<<EOT
 
-<div class='lzy-localhost-response'>
-    <p>{{ lzy-form-feedback-local }}</p>
-    <p>Subject: $subject</p>
-    <pre>
-$str1
-    </pre>
-</div> <!-- /lzy-localhost-response -->
-
-EOT;
-            } else {
-                $this->sendMail($mailto, $mailfrom, $subject, $msgToOwner);
-            }
+            $this->lzy->sendMail($mailTo, $mailFrom, $subject, $msgToOwner);
         }
-        $this->writeLog($labelNames, $log, $formName, $mailto);
+        $this->writeLog($labelNames, $log, $formName, $mailTo);
         return [$msgToClient, $msgToOwner];
 	} // defaultFormEvaluation()
 
@@ -1325,6 +1304,7 @@ EOT;
             }
         } else {
             $data = [];
+            return $errorDescr;
         }
 
         $r = sizeof($data);
@@ -1747,15 +1727,84 @@ EOT;
 EOT;
 
         require_once SYSTEM_PATH.'htmltable.class.php';
-        $options = [
-            'dataSource' => $fileName,
-            'headers' => true,
-        ];
+        $ds = new DataStorage2($fileName);
+        $data = $ds->read();
+        if (!$data) {
+            return '';
+        }
+        if ($currFormDescr->showDataMinRows) {
+            $nCols = @sizeof($data[0]);
+            $emptyRow = array_fill(0, $nCols, '&nbsp;');
+            $max = intval($currFormDescr->showDataMinRows) + 1;
+            for ($i = sizeof($data); $i < $max; $i++) {
+                $data[$i] = $emptyRow;
+            }
+            for ($i=0; $i < $max; $i++) {
+                $index = $i ? $i : '#';
+                $rec = $data[$i];
+                array_splice($rec, 0,0, [$index]);
+                $data[$i] = $rec;
+            }
+            $options = [
+                'dataSource' => $data,
+                'headers' => true,
+            ];
+        } else {
+            $options = [
+                'dataSource' => $fileName,
+                'headers' => true,
+            ];
+        }
         $tbl = new HtmlTable($this->lzy, 0, $options);
         $out .= $tbl->render();
         $out .= "</div>\n";
         return $out;
     } // renderData
+
+
+
+
+    private function checkSuppliedDataEntries($currFormDescr, $userSuppliedData)
+    {
+        foreach ($currFormDescr->formElements as $name => $rec) {
+            $type = $rec->type;
+            $value = isset($userSuppliedData[$name])? $userSuppliedData[$name]: '';
+
+            if ($rec->requiredMarker) {
+                if ($g = isset($rec->requiredGroup) ? $rec->requiredGroup : []) {
+                    $found = false;
+                    foreach ($g as $n) {
+                        if ($userSuppliedData[$n]) {
+                            $found = true;
+                            break;
+                        }
+                    }
+                    if (!$found) {
+                        $this->errorDescr[$this->formId][$name] = '{{ lzy-combined-required-value-missing }}';
+                    }
+                } elseif (!isset($userSuppliedData[$name]) || !$userSuppliedData[$name]) {
+                    $this->errorDescr[$this->formId][$name] = '{{ lzy-required-value-missing }}';
+                }
+            }
+            if ($value) {
+                if ($type === 'email') {
+                    if (!is_legal_email_address($value)) {
+                        $this->errorDescr[$this->formId][$name] = '{{ lzy-invalid-email-address }}';
+                    }
+                } elseif ($type === 'number') {
+                    if (preg_match('/[^\d.-]]/', $value)) {
+                        $this->errorDescr[$this->formId][$name] = '{{ lzy-invalid-number }}';
+                    }
+                } elseif ($type === 'url') {
+                    if (!isValidUrl($value)) {
+                        $this->errorDescr[$this->formId][$name] = '{{ lzy-invalid-url }}';
+                    }
+// ToDo:
+//            } else { // 'date','time','datetime','month','range','tel'
+                }
+            }
+        }
+    } // checkSuppliedDataEntries
 
 } // Forms
 
