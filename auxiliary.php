@@ -1464,6 +1464,11 @@ function is_legal_email_address($str)
 
 
 
+function isValidUrl( $url )
+{
+    return preg_match("/(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))/", $url);
+} // isValidUrl
+
 //------------------------------------------------------------
 function is_safe($str, $multiline = false)
 {
@@ -2095,19 +2100,104 @@ function fatalError($msg, $origin = '', $offendingFile = '')
 
 
 //-------------------------------------------------------------
-function sendMail($to, $from, $subject, $message, $html = false, $exitOnError = true)
+function sendMail($to, $from, $subject, $message, $options = null, $exitOnError = true)
 {
-    $headers = "From: $from\r\n" . 'X-Mailer: PHP/' . phpversion();
-    if ($html) {
-        $headers .= "MIME-Version: 1.0\r\n";
-        $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
+    $html = $options;
+    $base64_encode = false;
+    if (is_string($options)) {
+        $html = (stripos($options, 'html') !== false)? true: null;
+        $base64_encode = (stripos($options, 'encode') !== false) ||
+            (stripos($options, 'base64') !== false);
     }
 
-    $res = mail($to, $subject, $message, $headers);
-    if (!$res && $exitOnError) {
-        fatalError("Error: unable to send e-mail", 'File: '.__FILE__.' Line: '.__LINE__);
+    $name = '';
+    if (preg_match('/(.*?) \< ([\w\d\'-.@]+) \>/x', $to, $m)) {
+        $to = $m[2];
+        $name = $m[1];
+    }
+    $to = strtolower($to);
+    if (!is_legal_email_address($to)) {
+        return 'lzy-mail-invalid-to-address';
+    }
+
+    if ($name) {
+        if ($base64_encode) {
+            $to = '=?UTF-8?B?' . base64_encode($name) . "?= <$to>";
+        } else {
+            $to = "$name <$to>";
+        }
+    }
+
+    if ($from) {
+        $name = '';
+        if (preg_match('/(.*?) \< ([\w\d\'-.@]+) \>/x', $from, $m)) {
+            $from = $m[2];
+            $name = $m[1];
+        }
+        if (preg_match("/[^\w\d'-.@]/", $from)) {
+            return 'lzy-mail-invalid-from-address';
+        }
+        $from = strtolower($from);
+        if (!is_legal_email_address($from)) {
+            return 'lzy-mail-invalid-from-address';
+        }
+
+        if ($name) {
+            if ($base64_encode) {
+                $from = '=?UTF-8?B?' . base64_encode($name) . "?= <$from>";
+            } else {
+                $from = "$name <$from>";
+            }
+        }
+    }
+
+    // replace tabs:
+    $subject = str_replace("\t", '    ', $subject);
+    // strip non-printable chars incl. \n,\t etc.
+    $subject = preg_replace('/[\x00-\x1F\x7F-\xA0\xAD]/u', '', $subject);
+    if ($base64_encode) {
+        $subject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+    }
+
+
+    // replace tabs, shield nl:
+    $message = str_replace(["\t", "\n"], ['    ', '~~NL~~'], $message);
+    // strip non-printable chars etc.
+    $message = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/u', '', $message);
+    $message = str_replace('~~NL~~', "\n", $message);
+
+    // check for HTML:
+    if (($html === null) && preg_match('/^\<(html|!DOCTYPE)/i', $message)) {
+        $html = true;
+    }
+    if (!$html) {
+        $message = wordwrap($message, 70, "\r\n");
+    }
+    if ($base64_encode) {
+        $message = base64_encode($message);
+    }
+
+    $headers = "From: $from\r\n";
+    if ($html) {
+        $headers .= "MIME-Version: 1.0\r\n";
+        $headers .= 'Content-Type: text/html; charset=utf-8' . "\r\n";
     } else {
-        return $res;
+        $headers .= 'Content-Type: text/plain; charset=utf-8' . "\r\n";
+    }
+    if ($base64_encode) {
+        $headers .= 'Content-Transfer-Encoding: base64' . "\r\n";
+    }
+    $headers .= 'X-Mailer: PHP/' . phpversion();
+
+    $res = mail($to, $subject, $message, $headers);
+    if (!$res) { // error case
+        $err = error_get_last()['message'];
+        if ($exitOnError) {
+            fatalError("Error: unable to send e-mail ($err)", 'File: '.__FILE__.' Line: '.__LINE__);
+        }
+        return $err;
+    } else {
+        return false;
     }
 } // sendMail
 
