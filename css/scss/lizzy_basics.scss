@@ -128,14 +128,28 @@ figure a {
 	right: 0;
 	z-index: 999;
 }
-
+.lzy-focus-only {
+	display: none;
+	color: transparent;
+	background: transparent;
+	position: absolute;
+	right: -1000vw;
+}
+a:hover > .lzy-focus-only,
+a:focus > .lzy-focus-only {
+	display: inline-block;
+	color: black;
+	background: beige;
+	position: relative;
+	right: unset;
+}
 
 // Page Switcher Links
 .lzy-page-switcher-links a {
 	position: absolute;
 	top: 0;
 	border-bottom: none;
-	z-index: 100;
+	z-index: 10000;
 }
 .lzy-prev-page-link a {
 	left: 0;
@@ -143,14 +157,27 @@ figure a {
 .lzy-next-page-link a {
 	right: 0;
 }
+//.lzy-page-switcher-links a::before {
+//	content: ' ';
+//	position: absolute;
+//	top: -4px;
+//	right: -4px;
+//	bottom: -4px;
+//	left: -4px;
+//	z-index: -1;
+//}
 .lzy-page-switcher-links a::before {
 	content: ' ';
 	position: absolute;
-	top: -4px;
-	right: -4px;
-	bottom: -4px;
-	left: -4px;
+	top: -0.8rem;
+	left: 0;
+	bottom: 0;
 	z-index: -1;
+	width: 3rem;
+	height: 3rem;
+}
+.lzy-prev-page-link a::before {
+	right: 0;
 }
 .lzy-page-switcher-links a:hover::before {
 	background: rgba(169, 227, 255, 0.75);
