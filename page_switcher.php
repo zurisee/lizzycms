@@ -15,8 +15,8 @@ if (!$this->config->isLegacyBrowser) {
     }
 }
 
-$nextLabel = $this->trans->getVariable('nextPageLabel');
-$prevLabel = $this->trans->getVariable('prevPageLabel');
+$nextLabel = $this->trans->getVariable('lzy-next-page-label');
+$prevLabel = $this->trans->getVariable('lzy-prev-page-label');
 
 $str = <<<EOT
 

@@ -133,13 +133,17 @@ opens in new win:
     en: Opens in new window
 
 
-nextPageLabel: "<span class='nextLinkArrow' title='{{ to next page }}'></span>"
-prevPageLabel: "<span class='prevLinkArrow' title='{{ to prev page }}'></span>"
-to next page:
+lzy-next-page-link-label: "<span class='nextLinkArrow lzy-focus-only' title='{{ lzy-to-next-page-title }}'>{{ lzy-to-next-page-title }}$nextLabel</span>"
+lzy-prev-page-link-label: "<span class='prevLinkArrow lzy-focus-only' title='{{ lzy-to-prev-page-title }}'>$prevLabel{{ lzy-to-prev-page-title }}</span>"
+#lzy-next-page-link-label: "<span class='nextLinkArrow' title='{{ lzy-to-next-page-title }}'>$nextLabel</span><span class='lzy-focus-only'>{{ lzy-to-next-page-title }}</span>"
+#lzy-prev-page-link-label: "<span class='prevLinkArrow' title='{{ lzy-to-prev-page-title }}'>$prevLabel</span><span class='lzy-focus-only'>{{ lzy-to-prev-page-title }}</span>"
+#lzy-next-page-label: "<span class='nextLinkArrow' title='{{ lzy-to-next-page-title }}'></span>"
+#lzy-prev-page-label: "<span class='prevLinkArrow' title='{{ lzy-to-prev-page-title }}'></span>"
+lzy-to-next-page-title:
     de: zur nächsten Seite
     _: to next page
 
-to prev page:
+lzy-to-prev-page-title:
     de: zur vorherigen Seite
     _: to previous page
 
