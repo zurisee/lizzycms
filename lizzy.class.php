@@ -1142,15 +1142,6 @@ EOT;
             }
 
 			$mdStr = $newPage->extractFrontmatter($mdStr);
-            $hdr = $newPage->get('frontmatter');
-            if (is_array($hdr)) {
-                $this->page->merge($hdr);
-                $frontmatter =  $this->page->get('frontmatter');
-                if ($frontmatter) {
-                    $hdr = array_merge($hdr, $frontmatter);
-                }
-                $this->page->set('frontmatter', $hdr);
-            }
 
             // frontmatter option 'visibility' -> reveal only to logged in users:
             $visibility = $newPage->get('visibility', true);
@@ -1906,17 +1897,16 @@ EOT;
 
 
     //....................................................
-    public function sendMail($to, $subject, $message, $from = false, $html = false, $exitOnError = true)
+    public function sendMail($to, $subject, $message, $from = false, $options = null, $exitOnError = true)
     {
         if (!$from) {
             $from = $this->trans->getVariable('webmaster_email');
         }
-        $explanation = "<p><strong>Message sent by e-mail when not on localhost:</strong></p>";
 
         if ($this->localCall) {
             $str = <<<EOT
         <div class='lzy-local-mail-sent-overlay'>
-$explanation
+            <p><strong>Message sent to "$to" by e-mail when not on localhost:</strong></p>
             <pre class='debug-mail'>
                 <div>Subject: $subject</div>
                 <div>$message</div>
@@ -1926,8 +1916,9 @@ $explanation
 EOT;
             $this->page->addOverlay(['text' => $str, 'mdCompile' => false ]);
             return true;
+
         } else {
-            return sendMail($to, $from, $subject, $message, $html, $exitOnError);
+            return sendMail($to, $from, $subject, $message, $options, $exitOnError); // in auxiliary.php
         }
     } // sendMail
 
@@ -2042,12 +2033,18 @@ EOT;
     //....................................................
     private function setLocale()
     {
-        $locale = $this->config->site_defaultLocale;
-        if (preg_match('/^[a-z]{2}_[A-Z]{2}$/', $locale)) {
-            setlocale(LC_TIME, "$locale.utf-8");
-        } else {
-            setlocale(LC_TIME, "en_UK.utf-8");
+        $lang = $this->config->lang;
+        $locale = false;
+        foreach (explodeTrim(',', $this->config->site_localeCodes) as $code) {
+            if (strpos($code, $lang) === 0) {
+                $locale = $code;
+                break;
+            }
         }
+        if (!$locale)  {
+            $locale = $lang . '_' . strtoupper($lang);
+        }
+        $this->config->currLocale = setlocale(LC_TIME, "$locale.utf-8");
 
         $timeZone = ($this->config->site_timeZone === 'auto') ? $this->setDefaultTimezone() : $this->config->site_timeZone;
         setStaticVariable('systemTimeZone', $timeZone);
@@ -2139,12 +2136,16 @@ EOT;
     private function definePageSwitchLinks()
     {
         $nextLabel = $this->trans->getVariable('lzy-next-page-link-label');
-        if (!$nextLabel) {
-            $nextLabel = $this->config->isLegacyBrowser ? '&gt;' : '&#9002;';
+        if (strpos($nextLabel, '$nextLabel') !== false) {
+//        if (!$nextLabel) {
+            $nextLabelChar = $this->config->isLegacyBrowser ? '&gt;' : '&#9002;';
+            $nextLabel = str_replace('$nextLabel', $nextLabelChar, $nextLabel);
         }
         $prevLabel = $this->trans->getVariable('lzy-prev-page-link-label');
-        if (!$prevLabel) {
-            $prevLabel = $this->config->isLegacyBrowser ? '&lt;' : '&#9001;';
+        if (strpos($prevLabel, '$prevLabel') !== false) {
+//        if (!$prevLabel) {
+            $prevLabelChar = $this->config->isLegacyBrowser ? '&lt;' : '&#9001;';
+            $prevLabel = str_replace('$prevLabel', $prevLabelChar, $prevLabel);
         }
         $nextTitle = $this->trans->getVariable('lzy-next-page-link-title');
         if ($nextTitle) {
@@ -2302,8 +2303,8 @@ EOT;
         $this->pageRelativePath = $this->pathToRoot . $this->pagePath;
 
         $this->trans->loadStandardVariables($this->siteStructure);
-        $this->trans->addVariable('next_page', "<a href='~/{$this->siteStructure->nextPage}'>{{ nextPageLabel }}</a>");
-        $this->trans->addVariable('prev_page', "<a href='~/{$this->siteStructure->prevPage}'>{{ prevPageLabel }}</a>");
+        $this->trans->addVariable('next_page', "<a href='~/{$this->siteStructure->nextPage}'>{{ lzy-next-page-label }}</a>");
+        $this->trans->addVariable('prev_page', "<a href='~/{$this->siteStructure->prevPage}'>{{ lzy-prev-page-label }}</a>");
         $this->trans->addVariable('next_page_href', $this->siteStructure->nextPage);
         $this->trans->addVariable('prev_page_href', $this->siteStructure->prevPage);
     } // initializeSiteInfrastructure
@@ -2436,4 +2437,8 @@ EOT;
 //    } // purgePageCache
 } // class WebPage
 
+    function purgePageCache()
+    {
+        rrmdir(PAGE_CACHE_PATH);
+    } // purgePageCache
 
