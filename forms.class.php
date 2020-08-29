@@ -204,6 +204,246 @@ class Forms
 
 
 
+    //-------------------------------------------------------------
+    private function parseArgs($args)
+    {
+        if (!$this->currForm) {	// first pass -> must be type 'form-head' -> defines formId
+            $label = $this->parseHeadElemArgs($args);
+
+        } else {
+            $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form-Elem'.($this->inx + 1);
+            $this->translateLabel = (isset($args['translateLabel'])) ? $args['translateLabel'] : true;
+            $formId = $this->currForm->formId;
+            $this->currForm = &$this->formDescr[ $formId ];
+        }
+
+
+        $inpAttr = '';
+        $type = $args['type'] = (isset($args['type'])) ? $args['type'] : 'text';
+        if ($args['type'] === 'form-tail') {	// end-element is exception, doesn't need a label
+            $label = 'form-tail';
+        }
+        if ($type === 'form-head') {
+            $this->currRec = new FormElement;
+            $this->currRec->type = 'form-head';
+            return;
+        }
+
+        if (isset($args['name'])) {
+            $name = str_replace(' ', '_', $args['name']);
+        } else {
+            $name = translateToIdentifier($label);
+        }
+
+        while (isset($this->currForm->formElements[$name])) {
+            if (preg_match('/(.*?)(\d+)$/', $name, $m)) {
+                $name = $m[1] . (intval($m[2]) + 1);
+            } else {
+                $name .= '1';
+            }
+        }
+        if (isset($args['id'])) {
+            $elemId = $args['id'];
+        } else {
+            $elemId = translateToIdentifier($name);
+        }
+
+
+        $this->currForm->formElements[$name] = new FormElement;
+        $this->currRec = &$this->currForm->formElements[$name];
+        $rec = &$this->currRec;
+
+        $rec->type = $type;
+        $rec->elemId = $elemId;
+
+        if (strpos($label, '*')) {
+            $label = trim(str_replace('*', '', $label));
+            $args['required'] = true;
+        }
+        $rec->label = $label;
+
+        $this->name = $name;
+        $rec->name = $name;
+        $_name = " name='$name'";
+
+
+        if (isset($args['required']) && $args['required']) {
+            if (preg_match('/(.*)\s*\[(.*)\]/', $args['required'], $m)) {
+                $rec->required = false;
+                $rec->requiredGroup = explodeTrim(',', $m[2]);
+                $marker = $m[1];
+                $rec->requiredMarker = $marker ? "<span class='lzy-form-combined-required-marker' aria-hidden='true'>$marker</span>" : '';
+                $required = '';
+            } else {
+                $rec->required = true;
+                $rec->requiredMarker = (is_bool($args['required'])) ? '*' : $args['required'];
+                if ($rec->requiredMarker) {
+                    $rec->requiredMarker = "<span class='lzy-form-required-marker' aria-hidden='true'>$rec->requiredMarker</span>";
+                }
+                $required = " required aria-required='true'";
+            }
+        } else {
+            $rec->requiredMarker = false;
+            $rec->required = false;
+            $required = '';
+        }
+
+        if (isset($this->userSuppliedData[$name])) {
+            if (($type === 'checkbox') || ($type === 'dropdown')) {
+                $rec->val = $this->userSuppliedData[$name];
+                $rec->value = isset($args['value'])? $args['value']: '';
+            } elseif ($type === 'radio') {
+                $rec->val = $this->userSuppliedData[$name];
+                $rec->value = isset($args['value'])? $args['value']: '';
+            } else {
+                $rec->value = $this->userSuppliedData[$name];
+            }
+
+        } elseif (isset($args['value'])) {
+            $rec->value = $args['value'];
+
+        } else {
+            $rec->value = '';
+        }
+
+        if (isset($args['valueNames'])) {
+            $rec->valueNames = $args['valueNames'];
+        } else {
+            $rec->valueNames = $rec->value;
+        }
+
+        $rec->comment =  (isset($args['comment']))? $args['comment']: '';
+        $rec->fldPrefix =  (isset($args['elemPrefix']) && ($args['elemPrefix'] !== false))? $args['elemPrefix']: 'fld_';
+
+        if (isset($args['path'])) {
+            $rec->uploadPath = $args['path'];
+        } else {
+            $rec->uploadPath = '~/upload/';
+        }
+
+        if ($type === 'form-head') {
+            $this->currForm->formData['labels'][0] = 'Date';
+            $this->currForm->formData['names'] = [];
+
+        } elseif (($type !== 'button') && ($type !== 'form-tail') && (strpos($type, 'fieldset') === false)) {
+            $rec->labelInOutput = (isset($args['labelInOutput'])) ? $args['labelInOutput'] : $label;
+            $rec->labelInOutput = $this->transvar->translateVariable($rec->labelInOutput, true);
+            $rec->labelInOutput = str_replace(':', '', $rec->labelInOutput);
+
+            if (($type === 'checkbox') || ($type === 'radio') || ($type === 'dropdown')) {
+                $checkBoxLabels = ($rec->valueNames) ? preg_split('/\s* [\|,] \s*/x', $rec->valueNames) : [];
+                array_unshift($checkBoxLabels, $rec->labelInOutput);
+                $this->currForm->formData['labels'][] = $checkBoxLabels;
+            } else {
+                $this->currForm->formData['labels'][] = $rec->labelInOutput;
+            }
+            $this->currForm->formData['names'][] = $name;
+        }
+
+        $rec->placeholder = (isset($args['placeholder'])) ? $args['placeholder'] : '';
+        $rec->class = (isset($args['class'])) ? $args['class'] : '';
+        $rec->autocomplete = (isset($args['autocomplete'])) ? $args['autocomplete'] : '';
+        $rec->description = (isset($args['description'])) ? $args['description'] : '';
+        $rec->errorMsg = (isset($args['errorMsg'])) ? $args['errorMsg'] : '';
+
+        foreach (['min', 'max', 'pattern', 'placeholder'] as $attr) {
+            if (isset($args[$attr])) {
+                if (($type === 'checkbox') || ($type === 'radio') || ($type === 'dropdown')) {
+                    continue;
+                }
+                if ($type === 'textarea') {
+                    continue;
+                }
+                $inpAttr .= " $attr='{$args[$attr]}'";
+            }
+        }
+        $rec->inpAttr = $_name.$inpAttr.$required;
+
+        foreach($args as $key => $arg) {
+            if (!isset($rec->$key)) {
+                $rec->$key = $arg;
+            }
+        }
+    } // parseArgs
+
+
+//-------------------------------------------------------------
+    private function parseHeadElemArgs($args)
+    {
+        if (!isset($args['type'])) {
+            fatalError("Forms: mandatory argument 'type' missing.");
+        }
+        if ($args['type'] !== 'form-head') {
+            fatalError("Error: syntax error \nor form field definition encountered without previous element of type 'form-head'", 'File: ' . __FILE__ . ' Line: ' . __LINE__);
+        }
+
+        // Note: some head arguments are evaluated in renderFormHeader()
+
+        $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form' . ($this->inx + 1);
+        $formId = (isset($args['id'])) ? $args['id'] : false;
+        if (!$formId) {
+            $formElemId = '';
+            $formId = (isset($args['class']) && $args['class']) ? $args['class'] : translateToIdentifier($label);
+            $formId = str_replace('_', '-', $formId);
+        } else {
+            $formElemId = $formId;
+        }
+
+        $this->formId = $formId;
+        $this->formDescr[$formId] = new FormDescriptor;
+        $this->currForm = &$this->formDescr[$formId];
+        $this->currForm->formId = $formId;
+        $this->currForm->formElemId = $formElemId;
+
+        $this->currForm->formName = $label;
+
+        $this->currForm->formData['labels'] = [];
+        $this->currForm->formData['names'] = [];
+        $this->userSuppliedData = $this->getUserSuppliedData($formId);
+
+        if (!isset($args['warnLeavingPage']) || $args['warnLeavingPage']) {
+            $this->page->addModules('~sys/js/forms-leave-warning.js');
+        }
+
+        // activate 'prevent multiple submits':
+        $this->currForm->preventMultipleSubmit = false;
+        if (isset($args['preventMultipleSubmit']) && $args['preventMultipleSubmit']) {
+            $this->currForm->preventMultipleSubmit = true;
+            $GLOBALS["globalParams"]['preventMultipleSubmit'] = true;
+        }
+        $this->currForm->replaceQuotes = (isset($args['replaceQuotes'])) ? $args['replaceQuotes'] : true;
+        $this->currForm->antiSpam = (isset($args['antiSpam'])) ? $args['antiSpam'] : true;
+
+        $this->currForm->validate = (isset($args['validate'])) ? $args['validate'] : false;
+        $this->currForm->showData = (isset($args['showData'])) ? $args['showData'] : false;
+        $this->currForm->showDataMinRows = (isset($args['showDataMinRows'])) ? $args['showDataMinRows'] : false;
+
+        // options or option:
+        $this->currForm->options = isset($args['options']) ? $args['options'] : (isset($args['option']) ? $args['option'] : '');
+        $this->currForm->options = str_replace('-', '', $this->currForm->options);
+        return $label;
+    } // parseHeadElemArgs
+
+
+
+
+//-------------------------------------------------------------
+    private function extractArgs($args)
+    {// strip superfluous chars and json-decode data
+
+        $args = trim(html_entity_decode($args));	// translate html special chars
+        $args = preg_replace(['/\s*,+$/', '/^"/', '/"$/'], '', $args);// remove blanks, leading and trailing quotes
+        $args = preg_replace("/,\s*\}/", '}', $args);	// remove trailing ','
+        $args = preg_replace("/'/", '"', $args);	// make sure data is quoted with " (according to json standard)
+        $args = $this->args = json_decode($args, true); // json-decode
+
+        return $args;
+    } // extractArgs
+
+
+
+
+
 
 //-------------------------------------------------------------
     private function renderFormHead($args)
@@ -818,233 +1058,6 @@ EOT;
 
 
 //-------------------------------------------------------------
-    private function parseArgs($args)
-    {
-		if (!$this->currForm) {	// first pass -> must be type 'form-head' -> defines formId
-		    if (!isset($args['type'])) {
-		        fatalError("Forms: mandatory argument 'type' missing.");
-            }
-			if ($args['type'] !== 'form-head') {
-                fatalError("Error: syntax error \nor form field definition encountered without previous element of type 'form-head'", 'File: '.__FILE__.' Line: '.__LINE__);
-			}
-
-			// Note: some head arguments are evaluated in renderFormHeader()
-
-            $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form'.($this->inx + 1);
-	        $formId = (isset($args['id'])) ? $args['id'] : false;
-	        if (!$formId) {
-                $formElemId =  '';
-                $formId = (isset($args['class']) && $args['class']) ? $args['class'] : translateToIdentifier($label);
-                $formId = str_replace('_', '-', $formId);
-            } else {
-                $formElemId = $formId;
-            }
-
-	        $this->formId = $formId;
-			$this->formDescr[ $formId ] = new FormDescriptor;
-			$this->currForm = &$this->formDescr[ $formId ];
-			$this->currForm->formId = $formId;
-            $this->currForm->formElemId = $formElemId;
-
-            $this->currForm->formName = $label;
-
-			$this->currForm->formData['labels'] = [];
-			$this->currForm->formData['names'] = [];
-			$this->userSuppliedData = $this->getUserSuppliedData($formId);
-
-            if (!isset($args['warnLeavingPage']) || $args['warnLeavingPage']) {
-                $this->page->addModules('~sys/js/forms-leave-warning.js');
-            }
-
-            // activate 'prevent multiple submits':
-            $this->currForm->preventMultipleSubmit = false;
-            if (isset($args['preventMultipleSubmit']) && $args['preventMultipleSubmit']) {
-                $this->currForm->preventMultipleSubmit = true;
-                $GLOBALS["globalParams"]['preventMultipleSubmit'] = true;
-            }
-            $this->currForm->replaceQuotes =  (isset($args['replaceQuotes']))? $args['replaceQuotes']: true;
-            $this->currForm->antiSpam =  (isset($args['antiSpam']))? $args['antiSpam']: true;
-
-            $this->currForm->validate =  (isset($args['validate']))? $args['validate']: false;
-            $this->currForm->showData =  (isset($args['showData']))? $args['showData']: false;
-            $this->currForm->showDataMinRows =  (isset($args['showDataMinRows']))? $args['showDataMinRows']: false;
-
-            // options or option:
-            $this->currForm->options = isset($args['options'])? $args['options']: (isset($args['option'])? $args['option']: '');
-            $this->currForm->options = str_replace('-', '', $this->currForm->options);
-
-		} else {
-            $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form-Elem'.($this->inx + 1);
-            $this->translateLabel = (isset($args['translateLabel'])) ? $args['translateLabel'] : true;
-			$formId = $this->currForm->formId;
-			$this->currForm = &$this->formDescr[ $formId ];
-		}
-
-
-        $inpAttr = '';
-        $type = $args['type'] = (isset($args['type'])) ? $args['type'] : 'text';
-		if ($args['type'] === 'form-tail') {	// end-element is exception, doesn't need a label
-			$label = 'form-tail';
-		}
-		if ($type === 'form-head') {
-			$this->currRec = new FormElement;
-			$this->currRec->type = 'form-head';
-			return;
-		}
-
-        if (isset($args['name'])) {
-            $name = str_replace(' ', '_', $args['name']);
-        } else {
-            $name = translateToIdentifier($label);
-        }
-
-        while (isset($this->currForm->formElements[$name])) {
-            if (preg_match('/(.*?)(\d+)$/', $name, $m)) {
-                $name = $m[1] . (intval($m[2]) + 1);
-            } else {
-                $name .= '1';
-            }
-        }
-        if (isset($args['id'])) {
-            $elemId = $args['id'];
-        } else {
-            $elemId = translateToIdentifier($name);
-        }
-
-
-        $this->currForm->formElements[$name] = new FormElement;
-        $this->currRec = &$this->currForm->formElements[$name];
-        $rec = &$this->currRec;
-
-		$rec->type = $type;
-		$rec->elemId = $elemId;
-
-		if (strpos($label, '*')) {
-			$label = trim(str_replace('*', '', $label));
-			$args['required'] = true;
-		}
-		$rec->label = $label;
-
-		$this->name = $name;
-		$rec->name = $name;
-        $_name = " name='$name'";
-
-
-        if (isset($args['required']) && $args['required']) {
-            if (preg_match('/(.*)\s*\[(.*)\]/', $args['required'], $m)) {
-                $rec->required = false;
-                $rec->requiredGroup = explodeTrim(',', $m[2]);
-                $marker = $m[1];
-                $rec->requiredMarker = $marker ? "<span class='lzy-form-combined-required-marker' aria-hidden='true'>$marker</span>" : '';
-                $required = '';
-            } else {
-                $rec->required = true;
-                $rec->requiredMarker = (is_bool($args['required'])) ? '*' : $args['required'];
-                if ($rec->requiredMarker) {
-                    $rec->requiredMarker = "<span class='lzy-form-required-marker' aria-hidden='true'>$rec->requiredMarker</span>";
-                }
-                $required = " required aria-required='true'";
-            }
-        } else {
-            $rec->requiredMarker = false;
-            $rec->required = false;
-            $required = '';
-        }
-	
-        if (isset($this->userSuppliedData[$name])) {
-            if (($type === 'checkbox') || ($type === 'dropdown')) {
-                $rec->val = $this->userSuppliedData[$name];
-                $rec->value = isset($args['value'])? $args['value']: '';
-            } elseif ($type === 'radio') {
-                $rec->val = $this->userSuppliedData[$name];
-                $rec->value = isset($args['value'])? $args['value']: '';
-            } else {
-                $rec->value = $this->userSuppliedData[$name];
-            }
-
-		} elseif (isset($args['value'])) {
-            $rec->value = $args['value'];
-
-        } else {
-			$rec->value = '';
-		}
-
-        if (isset($args['valueNames'])) {
-            $rec->valueNames = $args['valueNames'];
-        } else {
-            $rec->valueNames = $rec->value;
-        }
-
-        $rec->comment =  (isset($args['comment']))? $args['comment']: '';
-        $rec->fldPrefix =  (isset($args['elemPrefix']) && ($args['elemPrefix'] !== false))? $args['elemPrefix']: 'fld_';
-
-        if (isset($args['path'])) {
-		    $rec->uploadPath = $args['path'];
-        } else {
-            $rec->uploadPath = '~/upload/';
-        }
-
-        if ($type === 'form-head') {
-			$this->currForm->formData['labels'][0] = 'Date';
-			$this->currForm->formData['names'] = [];
-
-		} elseif (($type !== 'button') && ($type !== 'form-tail') && (strpos($type, 'fieldset') === false)) {
-			$rec->labelInOutput = (isset($args['labelInOutput'])) ? $args['labelInOutput'] : $label;
-			$rec->labelInOutput = $this->transvar->translateVariable($rec->labelInOutput, true);
-			$rec->labelInOutput = str_replace(':', '', $rec->labelInOutput);
-
-			if (($type === 'checkbox') || ($type === 'radio') || ($type === 'dropdown')) {
-				$checkBoxLabels = ($rec->valueNames) ? preg_split('/\s* [\|,] \s*/x', $rec->valueNames) : [];
-				array_unshift($checkBoxLabels, $rec->labelInOutput);
-				$this->currForm->formData['labels'][] = $checkBoxLabels;
-			} else {
-				$this->currForm->formData['labels'][] = $rec->labelInOutput;
-			}
-			$this->currForm->formData['names'][] = $name;
-		}
-
-        $rec->placeholder = (isset($args['placeholder'])) ? $args['placeholder'] : '';
-        $rec->class = (isset($args['class'])) ? $args['class'] : '';
-        $rec->autocomplete = (isset($args['autocomplete'])) ? $args['autocomplete'] : '';
-        $rec->description = (isset($args['description'])) ? $args['description'] : '';
-        $rec->errorMsg = (isset($args['errorMsg'])) ? $args['errorMsg'] : '';
-
-        foreach (['min', 'max', 'pattern', 'placeholder'] as $attr) {
-            if (isset($args[$attr])) {
-                if (($type === 'checkbox') || ($type === 'radio') || ($type === 'dropdown')) {
-                    continue;
-                }
-                if ($type === 'textarea') {
-                    continue;
-                }
-                $inpAttr .= " $attr='{$args[$attr]}'";
-            }
-        }
-        $rec->inpAttr = $_name.$inpAttr.$required;
-		
-		foreach($args as $key => $arg) {
-			if (!isset($rec->$key)) {
-				$rec->$key = $arg;
-			}
-		}
-    } // parseArgs
-
-
-//-------------------------------------------------------------
-	private function extractArgs($args)
-	{// strip superfluous chars and json-decode data
-
-        $args = trim(html_entity_decode($args));	// translate html special chars
-        $args = preg_replace(['/\s*,+$/', '/^"/', '/"$/'], '', $args);// remove blanks, leading and trailing quotes
-        $args = preg_replace("/,\s*\}/", '}', $args);	// remove trailing ','
-        $args = preg_replace("/'/", '"', $args);	// make sure data is quoted with " (according to json standard)
-        $args = $this->args = json_decode($args, true); // json-decode
-		
-		return $args;
-	} // extractArgs
-	
-
-//-------------------------------------------------------------
 	private function saveFormDescr($formId = false, $formDescr = false)
 	{
 		$formId = $formId ? $formId : $this->currForm->formId;
@@ -1090,6 +1103,11 @@ EOT;
 			return false;
             //fatalError("ERROR: unexpected value received from browser", 'File: '.__FILE__.' Line: '.__LINE__);
 		}
+        if (@$userSuppliedData['lizzy_next'] === '_ignore_') { // case reload upon timeout:
+            $this->saveUserSuppliedData($formId, $userSuppliedData);
+            $_POST = [];
+            return;
+        }
 		$dataTime = (isset($userSuppliedData['lizzy_time'])) ? $userSuppliedData['lizzy_time'] : 0;
 		
 		if ($dataTime > 0) {
@@ -1267,44 +1285,19 @@ EOT;
         $names = $currFormDescr->formData['names'];
         $labels = $currFormDescr->formData['labels'];
 
-        if (!$errors) {
-            $db = new DataStorage2($fileName);
-            if (!$db->lockDB()) {   // DB locked successfully?
-                $_POST = [];
-                return 'lzy-forms-error-db-locked'; // ToDo: provide error message
-            }
-            $data = $db->read();
-
-            if (!$data) {   // no data yet -> prepend header row containing labels:
-                $data = [];
-                $j = 0;
-                foreach ($labels as $l => $label) {
-                    // skip column if label starts with '_':
-                    if ($label[0] === '_') {
-                        continue;
-                    }
-                    if (is_array($label)) { // checkbox returns array of values
-                        $name = $names[$l];
-                        $splitOutput = (isset($currFormDescr->formElements[$name]->splitOutput)) ? $currFormDescr->formElements[$name]->splitOutput : false;
-                        if (!$splitOutput) {
-                            $data[0][$j++] = $label[0];
-                        } else {
-                            for ($i = 1; $i < sizeof($label); $i++) {
-                                $data[0][$j++] = html_entity_decode($label[$i]);
-                            }
-                        }
-
-                    } else {        // normal value
-                        $label = html_entity_decode($label);
-                        $label = trim($label, ':');
-                        $data[0][$j++] = $label;
-                    }
-                }
-                $data[0][$j] = $this->transvar->translateVariable( 'lzy-timestamp', true );
-            }
-        } else {
-            $data = [];
+        if ($errors) {
             return $errorDescr;
+        }
+
+        $db = new DataStorage2($fileName);
+        if (!$db->lockDB()) {   // DB locked successfully?
+            $_POST = [];
+            return 'lzy-forms-error-db-locked'; // ToDo: provide error message
+        }
+        $data = $db->read();
+
+        if (!$data) {   // no data yet -> prepend header row containing labels:
+            $data = $this->prependHeaderRow($currFormDescr, $names, $labels);
         }
 
         $r = sizeof($data);
@@ -1324,17 +1317,25 @@ EOT;
                     $newRec[$j++] = $value;
                 }
 
-            } elseif (is_array($value)) { // checkbox returns array of values
+            } elseif (is_array($labels[$i])) { // checkbox returns array of values
                 $name = $names[$i];
                 $splitOutput = (isset($currFormDescr->formElements[$name]->splitOutput))? $currFormDescr->formElements[$name]->splitOutput: false ;
                 if (!$splitOutput) {
                     $newRec[$j++] = implode(', ', $value);
 
-                } else {
+                } elseif($formElements[$name]->type === 'radio') {     // radio:
                     $labs = $labels[$i];
                     for ($k=1; $k<sizeof($labs); $k++) {
                         $l = $labs[$k];
-                        $val = (in_array($l, $value)) ? '1' : '0';
+                        $val = ($l === $value) ? '1' : ' ';
+                        $newRec[$j++] = $val;
+                    }
+
+                } else {    // checkbox:
+                    $labs = $labels[$i];
+                    for ($k=1; $k<sizeof($labs); $k++) {
+                        $l = $labs[$k];
+                        $val = (in_array($l, $value)) ? '1' : ' ';
                         $newRec[$j++] = $val;
                     }
                 }
@@ -1383,6 +1384,37 @@ EOT;
         return $errorDescr;
 	} // saveCsv
 
+
+
+    private function prependHeaderRow($currFormDescr, $names, $labels)
+    {
+        $data = [];
+        $j = 0;
+        foreach ($labels as $l => $label) {
+            // skip column if label starts with '_':
+            if ($label[0] === '_') {
+                continue;
+            }
+            if (is_array($label)) { // checkbox returns array of values
+                $name = $names[$l];
+                $splitOutput = (isset($currFormDescr->formElements[$name]->splitOutput)) ? $currFormDescr->formElements[$name]->splitOutput : false;
+                if (!$splitOutput) {
+                    $data[0][$j++] = $label[0];
+                } else {
+                    for ($i = 1; $i < sizeof($label); $i++) {
+                        $data[0][$j++] = html_entity_decode($label[$i]);
+                    }
+                }
+
+            } else {        // normal value
+                $label = html_entity_decode($label);
+                $label = trim($label, ':');
+                $data[0][$j++] = $label;
+            }
+        }
+        $data[0][$j] = $this->transvar->translateVariable( 'lzy-timestamp', true );
+        return $data;
+    } // prependHeaderRow
 
 
     private function restoreErrorDescr()
@@ -1805,6 +1837,10 @@ EOT;
             }
         }
     } // checkSuppliedDataEntries
+
+
+
+
 
 } // Forms
 
