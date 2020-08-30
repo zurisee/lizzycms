@@ -182,7 +182,8 @@ EOT;
                     $jq .= <<<EOT
 $('{$this->triggerSource}')
     .bind('{$this->triggerEvent}', function(e) { 
-        e.preventDefault(); $('$_popupId').popup('show'); 
+        e.preventDefault(); 
+        $('$_popupId').popup('show'); 
     })
     .attr('aria-expanded', false);
 
