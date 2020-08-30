@@ -1237,7 +1237,9 @@ EOT;
                 $value = str_replace(['"', "'"], ['ʺ', 'ʹ'], $value);
             }
 
-			$msgToOwner .= mb_str_pad($label, 22, '.').": $value\n\n";
+            if ($label[0] !== '_') {
+                $msgToOwner .= mb_str_pad($label, 22, '.') . ": $value\n\n";
+            }
 			$log .= "'$value'; ";
             $labelNames .= "'$name'; ";
 		}
