@@ -978,7 +978,6 @@ EOT;
         if ($this->loggedInUser) {
             $logInVar = $this->renderLoginAccountMenu( $userRec );
             $this->page->addPopup(['contentFrom' => '.lzy-login-menu', 'triggerSource' => '.lzy-login-link > a']);
-
         }
         return $logInVar;
     } // renderLoginMenu
