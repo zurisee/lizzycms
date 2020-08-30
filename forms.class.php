@@ -1175,7 +1175,7 @@ EOT;
 	{
 	    // returns: [$msgToClient, $msgToOwner]
         // in error case: [null, null]
-		$formName = $currFormDescr->formName;
+		$formName = str_replace(':', '', $currFormDescr->formName);
 		$mailTo = $currFormDescr->mailto;
 		$mailFrom = $currFormDescr->mailfrom;
 		$formData = &$currFormDescr->formData;
@@ -1237,7 +1237,9 @@ EOT;
                 $value = str_replace(['"', "'"], ['ʺ', 'ʹ'], $value);
             }
 
-			$msgToOwner .= mb_str_pad($label, 22, '.').": $value\n\n";
+            if ($label[0] !== '_') {
+                $msgToOwner .= mb_str_pad($label, 22, '.') . ": $value\n\n";
+            }
 			$log .= "'$value'; ";
             $labelNames .= "'$name'; ";
 		}
@@ -1257,7 +1259,7 @@ EOT;
             }
             $subject = "[$formName] ".$subject;
 
-            $this->lzy->sendMail($mailTo, $mailFrom, $subject, $msgToOwner);
+            $this->lzy->sendMail($mailTo, $subject, $msgToOwner, $mailFrom);
         }
         $this->writeLog($labelNames, $log, $formName, $mailTo);
         return [$msgToClient, $msgToOwner];
