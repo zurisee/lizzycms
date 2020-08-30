@@ -97,7 +97,7 @@ class Page
                 $k = array_shift($a);
                 if (isset($r->$k)) {
                     $r = $r->$k;
-                } elseif (isset($r[$k])) {
+                } elseif (is_array($r) && isset($r[$k])) {
                     $r = $r[$k];
                 } else {
                     return null;
