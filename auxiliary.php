@@ -2106,6 +2106,7 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
     $base64_encode = false;
     if (is_string($options)) {
         $html = (stripos($options, 'html') !== false)? true: null;
+        $wrap = (stripos($options, 'wrap') !== false);
         $base64_encode = (stripos($options, 'encode') !== false) ||
             (stripos($options, 'base64') !== false);
     }
@@ -2170,7 +2171,7 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
     if (($html === null) && preg_match('/^\<(html|!DOCTYPE)/i', $message)) {
         $html = true;
     }
-    if (!$html) {
+    if ($wrap && !$html) {
         $message = wordwrap($message, 70, "\r\n");
     }
     if ($base64_encode) {
