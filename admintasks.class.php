@@ -647,7 +647,7 @@ EOT;
             $displayName = $submittedEmail;
         }
 
-        $tick = new Ticketing();
+        $tick = new Ticketing(['unambiguous' => true]);
 
         $otRec = ['username' => $user, 'email' => $submittedEmail,'mode' => $mode];
         $hash = $tick->createTicket($otRec, 1, $accessCodeValidyTime);

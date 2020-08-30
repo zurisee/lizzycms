@@ -3,6 +3,7 @@
 define ('DEFAULT_TICKET_STORAGE_FILE', DATA_PATH.'_tickets.yaml');
 define ('DEFAULT_TICKET_HASH_SIZE', 6);
 define ('DEFAULT_TICKET_VALIDITY_TIME', 900); // 15 min
+define ('UNAMBIGUOUS_CHARACTERS', '3479ACDEFHJKLMNPQRTUVWXY'); // -> excludes '0O2Z1I5S6G8B'
 
 /*
  * Purpose:
@@ -155,10 +156,18 @@ class Ticketing
 
     public function createHash()
     {
-        do {
+        if ($this->unambiguous) {
+            $chars = UNAMBIGUOUS_CHARACTERS;
+            $max = strlen(UNAMBIGUOUS_CHARACTERS) - 1;
+            $hash = $chars[ random_int(4, $max) ];  // first always a letter
+            for ($i=1; $i<$this->hashSize; $i++) {
+                $hash .= $chars[ random_int(0, $max) ];
+            }
+
+        } else {
             $hash = chr(random_int(65, 90));  // first always a letter
             $hash .= strtoupper(substr(sha1(random_int(0, PHP_INT_MAX)), 0, $this->hashSize - 1));  // letters and digits
-        } while ($this->unambiguous && strpbrk($hash, '0O'));
+        }
         return $hash;
     } // createHash
 
