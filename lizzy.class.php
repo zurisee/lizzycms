@@ -839,6 +839,7 @@ class Lizzy
             $login = $userAcc->renderLoginLink($rec);
             $loginMenu = $userAcc->renderLoginMenu($rec);
             $userName = $userAcc->getUsername();
+
         } else {
             $userName = '';
             $login = <<<EOT
