@@ -1175,7 +1175,7 @@ EOT;
 	{
 	    // returns: [$msgToClient, $msgToOwner]
         // in error case: [null, null]
-		$formName = $currFormDescr->formName;
+		$formName = str_replace(':', '', $currFormDescr->formName);
 		$mailTo = $currFormDescr->mailto;
 		$mailFrom = $currFormDescr->mailfrom;
 		$formData = &$currFormDescr->formData;
@@ -1257,7 +1257,7 @@ EOT;
             }
             $subject = "[$formName] ".$subject;
 
-            $this->lzy->sendMail($mailTo, $mailFrom, $subject, $msgToOwner);
+            $this->lzy->sendMail($mailTo, $subject, $msgToOwner, $mailFrom);
         }
         $this->writeLog($labelNames, $log, $formName, $mailTo);
         return [$msgToClient, $msgToOwner];
