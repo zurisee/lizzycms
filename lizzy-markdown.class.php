@@ -15,7 +15,7 @@ class LizzyMarkdown
 {
 	private $page = null;
 	private $md = null;
-	private $variable;
+	private $mdVariables = [];
 	
 	private $replaces = array(
 		'(?<![\-\\\])\-\>'  => '&rarr;', // unless it's '-->'
@@ -61,8 +61,10 @@ class LizzyMarkdown
 	public function parse($str, $page)
 	{
 		$this->page = $page;
+
+        $this->mdVariables = $this->page->mdVariables; // get mdVars defined in frontmatter
+
         $this->addReplacesFromFrontmatter($page);
-        $this->variable = array();
 
 		$str = $this->doMDincludes($str);
 		
@@ -220,16 +222,16 @@ class LizzyMarkdown
 		}
 
 		$str = str_replace("\\\n", "  \n", $str);       // \ at end of line -> convert to 2-blanks
-        $str = $this->convertLinks($str);
-        $str = $this->convertImages($str);
-		$str = $this->handleInTextVariableDefitions($str);
+        $str = $this->convertMdLinksToMacroCalls($str);
+        $str = $this->convertMdImagesToMacroCalls($str);
+        // $str = $this->handleInTextVariableDefinitions($str); // should be obsolete, remove later
 
 		$str = str_replace('\\<', '@/@\\lt@\\@', $str);       // shield \<
 		$str = str_replace('\\[[', '@/@[@\\@', $str);       // shield \[[
 		$str = str_replace(['\\{', '\\}'], ['&#123;', '&#125;'], $str);    // shield \{{
 		$str = preg_replace('/(\n\{\{.*\}\}\n)/U', "\n$1\n", $str); // {{}} alone on line -> add LFs
 		$str = stripNewlinesWithinTransvars($str);
-		$str = $this->handleVariables($str);
+		$str = $this->handleMdVariables($str);
 		if ($this->page && $this->page->shieldHtml) {	// hide '<' from MD compiler
 			$str = str_replace(['<', '>'], ['@/@lt@\\@', '@/@gt@\\@'], $str);
 		}
@@ -276,31 +278,31 @@ class LizzyMarkdown
 
 
 	//....................................................
-	private function handleInTextVariableDefitions($str)
-	{
-	    list($p1, $p2) = strPosMatching($str, '{{{', '}}}');
-	    if ($p1) {
-            $md = new MarkdownExtra;
-        }
-	    while ($p1) {
-            $before = substr($str, 0, $p1);
-            $val = substr($str, $p1+3, $p2-$p1-3);
-            if (preg_match('/^(.*)\b([\w\-]+)\s*$/ms', $before, $m)) {
-                $before = $m[1];
-                $var = $m[2];
-                if ($val[0] === '&') {   // option to send variable content through the md-parser
-                    $val = $md->parse($val);
-                    $val = preg_replace('/^\<p>(.*)\<\/p>\n$/', "$1", $val);
-                } else {
-                    $val = substr($val, 1);
-                }
-                $this->trans->addVariable($var, $val);
-            }
-            $str = $before.substr($str, $p2+3);
-            list($p1, $p2) = strPosMatching($str, '{{{', '}}}', $p1+1);
-        }
-	    return $str;
-    } // handleInTextVariableDefitions
+//	private function handleInTextVariableDefinitions($str)
+//	{
+//	    list($p1, $p2) = strPosMatching($str, '{{{', '}}}');
+//	    if ($p1) {
+//            $md = new MarkdownExtra;
+//        }
+//	    while ($p1) {
+//            $before = substr($str, 0, $p1);
+//            $val = substr($str, $p1+3, $p2-$p1-3);
+//            if (preg_match('/^(.*)\b([\w\-]+)\s*$/ms', $before, $m)) {
+//                $before = $m[1];
+//                $var = $m[2];
+//                if ($val[0] === '&') {   // option to send variable content through the md-parser
+//                    $val = $md->parse($val);
+//                    $val = preg_replace('/^\<p>(.*)\<\/p>\n$/', "$1", $val);
+//                } else {
+//                    $val = substr($val, 1);
+//                }
+//                $this->trans->addVariable($var, $val);
+//            }
+//            $str = $before.substr($str, $p2+3);
+//            list($p1, $p2) = strPosMatching($str, '{{{', '}}}', $p1+1);
+//        }
+//	    return $str;
+//    } // handleInTextVariableDefinitions
 
 
 
@@ -324,7 +326,7 @@ class LizzyMarkdown
 
 
 	//....................................................
-	private function handleVariables($str)
+	private function handleMdVariables($str)
 	{
 		$out = '';
 		$withinEot = false;
@@ -334,14 +336,14 @@ class LizzyMarkdown
 		    if ($withinEot) {
 		        if (preg_match('/^EOT\s*$/', $l)) {
 		            $withinEot = false;
-                    $textBlock = str_replace("'", '&apos;', $textBlock);
-                    $this->variable[$var] = $textBlock;
+                    $textBlock = str_replace("'", '&apos;', $textBlock); //??? check!
+                    $this->mdVariables[$var] = $textBlock;
                 } else {
                     $textBlock .= $l."\n";
                 }
                 continue;
             }
-			if (preg_match('/^\$(\w+)\s?=\s*(.*)/', $l, $m)) { // variable definition
+			if (preg_match('/^\$(\w+)\s?=\s*(.*)/', $l, $m)) { // mdVariables definition
 				$var = trim($m[1]);
 				$val = trim($m[2]);
 				if ($val === '<<<EOT') {         // handle <<<EOT
@@ -349,101 +351,139 @@ class LizzyMarkdown
                     $textBlock = '';
 				    continue;
                 }
-				$this->variable[$var] = $this->replaceVariables($val);
+				$this->mdVariables[$var] = $this->replaceMdVariables($val);
 				continue;
 			}
-			$l = $this->replaceVariables($l);
+            if ($l && (($p = strpos($l, '$')) !== false)) {
+                $l = $this->replaceMdVariables($l, $p);
+            }
 			$out .= $l."\n";
 		}
 		return $out;
-	} // handleVariables
+	} // handleMdVariables
 
 
 
 	//....................................................
-	private function replaceVariables($l)
+	private function replaceMdVariables($l, $p = false)
 	{
-	    if (!$this->variable) {
-	        return $l;
+	    // replaces $var or ${var} with its content, unless shielded as \$var
+        //  if variable is not defined, leaves source string untouched. exception: one of below
+        // additional functions:
+        //  ${var=value}    -> defines variable on the fly
+        //  $var++ or $var-- or ++$var or --$var    -> auto-increaces/decreaces numeric variable
+        //  ${var++} or ${var--} or ${++var} or ${--var} -> dito
+
+	    if ($p === false) {
+            $p = strpos($l, '$');
         }
-		foreach ($this->variable as $sym => $str) { // replace variables, supporting ++ and -- operators
-			if (strpos($str, '$' . $sym) !== false) {
-                fatalError("Warning: cyclic reference in variable '\$$sym'", 'File: '.__FILE__.' Line: '.__LINE__);
-			}
-			$p = 0;
-			while (($p = strpos($l, '$' . $sym, $p)) !== false) {
-				if (($p > 0) && (substr($l, $p-1, 1) === '\\') && (substr($l, $p-2, 1) !== '\\')) { // symbol shielded with \
-					$l = substr($l, 0, $p - 1) . substr($l, $p);
-					continue;
-				}
-			
-				if ($p > 1) { // get left operand
-					$op_l = substr($l, $p - 2, 2);
-				} else {
-					$op_l = false;
-				}
-				if ($p <= strlen($l) - strlen($sym) - 3) { // get right operand
-					$op_r = substr($l, $p + strlen($sym) + 1, 2);
-				} else {
-					$op_r = false;
-				}
-				$l1 = substr($l, 0, $p);	// leading text
-				$l2 = substr($l, $p + strlen($sym) + 1);	// trailing text
-				if ((substr($l1,-1) === '{') && (substr($l2,0,1) === '}')) {
-					$l1 = substr($l1,0,-1);
-					$l2 = substr($l2,1);
-				}
-				if ($op_l || $op_r) {
-					if (preg_match('/^(\D*)(\d+)$/', $str, $mm)) {
-						$mm2p = intval($mm[2]) + 1; // numerical
-						$mm2m = intval($mm[2]) - 1;
-					} else {
-						if (strlen($str) > 1) { // alpha
-							$mm2p = substr($str, 0, -1) . chr(ord(substr($str, -1)) + 1);
-							$mm2m = substr($str, 0, -1) . chr(ord(substr($str, -1)) - 1);
-						} else {
-							$mm2p = chr(ord($str) + 1);
-							$mm2m = chr(ord($str) - 1);
-						}
-						$mm = array(
-							$str,
-							''
-						);
-					}
-				} else {
-					$mm = array(
-						$str,
-						''
-					);
-				}
-			
-				if ($op_l === '++') {
-					$this->variable[$sym] = $str = $mm2p;
-					$l1             = substr($l1, 0, -2);
-				} elseif ($op_l === '--') {
-					$this->variable[$sym] = $str = $mm2m;
-					$l1             = substr($l1, 0, -2);
-				} elseif ($op_r === '++') {
-					$this->variable[$sym] = $mm2p;
-					$l2             = substr($l2, 2);
-				} elseif ($op_r === '--') {
-					$this->variable[$sym] = $mm2m;
-					$l2             = substr($l2, 2);
-				}
-				$str = str_replace("\n", ' ', $str);
-				$l   = $l1 . $str . $l2;
-				$str = $this->variable[$sym];
-			
-				$p++;
-			}
-		} // loop over variables
-		return $l;
-	} // replaceVariables
+	    while ($p !== false) {
+	        if (($p === 0) || ($l[$p-1] !== '\\')) {
+                $str = substr($l, $p);
+                if (preg_match('/^\$ (\w+) (.*)/x', $str, $m)) {
+                    $varName = $m[1];
+                    $rest = $m[2];
+                    if (isset($this->mdVariables[$varName])) {
+                        $val = $this->mdVariables[$varName];
+
+                        // ++ or -- in front of var:
+                        if (($p > 2) && (substr($l, $p-2, 2) === '++')) {
+                            $l = substr($l, 0, $p-2) . substr($l, $p);
+                            $p = $p - 2;
+                            if (preg_match('/^-?[\d.]$/', $val)) {
+                                $val = $this->mdVariables[$varName] = (string) (intval($val) + 1);
+                            }
+                        } elseif (($p > 2) && (substr($l, $p-2, 2) === '--')) {
+                            $l = substr($l, 0, $p-2) . substr($l, $p);
+                            $p = $p - 2;
+                            if (preg_match('/^-?[\d.]$/', $val)) {
+                                $val = $this->mdVariables[$varName] = (string) (intval($val) - 1);
+                            }
+                        }
+
+                        // ++ or -- trailing
+                        if (strpos($rest, '++') === 0) {
+                            $rest = substr($rest, 2);
+                            if (preg_match('/^-?[\d.]$/', $val)) {
+                                $this->mdVariables[$varName] = (string) (intval($val) + 1);
+                            }
+                        } elseif (strpos($rest, '--') === 0) {
+                            $rest = substr($rest, 2);
+                            if (preg_match('/^-?[\d.]$/', $val)) {
+                                $this->mdVariables[$varName] = (string) (intval($val) - 1);
+                            }
+                        }
+                        $l = substr($l, 0, $p) . $val . $rest;
+                    }
+
+                } elseif (preg_match('/^\$ \{ (.*?) \} (.*)/x', $str, $mm)) {
+                    $t = $mm[1];
+                    if (preg_match('/^ (\w+?) \s* = \s* (.*)/x', $t, $mmm)) {
+                        $varName = $mmm[1];
+                        $this->mdVariables[$varName] = $val = $mmm[2];
+
+                    } elseif (preg_match('/^\$ \{ (\+\+|--)? (\w+) (\+\+|--)? \} (.*)/x', $str, $mm)) {
+                        $varName = $mm[2];
+                        if (isset($this->mdVariables[$varName])) {
+                            $val = intval($this->mdVariables[$varName]);
+                        } else {
+                            $val = 0;
+                        }
+                        $op1 = $mm[1];
+                        $op2 = $mm[3];
+                        $rest = $mm[4];
+                        if ($op1 === '++') {
+                            $this->mdVariables[$varName] = $val = (string)($val + 1);
+                        } elseif ($op1 === '--') {
+                            $this->mdVariables[$varName] = $val = (string)($val - 1);
+                        }
+
+                        if ($op2 === '++') {
+                            $this->mdVariables[$varName] = (string)($val + 1);
+
+                        } elseif ($op2 === '--') {
+                            $this->mdVariables[$varName] = (string)($val - 1);
+                        }
+                    }
+                    $l = substr($l, 0, $p) . $val . $rest;
+                }
+//                } elseif (preg_match('/^\$ \{ (\+\+|--)? (\w+) (\+\+|--)? \} (.*)/x', $str, $mm)) {
+//                    $varName = $mm[2];
+//                    if (isset($this->mdVariables[$varName])) {
+//                        $val = intval($this->mdVariables[$varName]);
+//                    } else {
+//                        $val = 0;
+//                    }
+//                    $op1 = $mm[1];
+//                    $op2 = $mm[3];
+//                    $rest = $mm[4];
+//                    if ($op1 === '++') {
+//                        $this->mdVariables[$varName] = $val = (string)($val + 1);
+//                    } elseif ($op1 === '--') {
+//                        $this->mdVariables[$varName] = $val = (string)($val - 1);
+//                    }
+//
+//                    if ($op2 === '++') {
+//                        $this->mdVariables[$varName] = (string)($val + 1);
+//
+//                    } elseif ($op2 === '--') {
+//                        $this->mdVariables[$varName] = (string)($val - 1);
+//                    }
+//                    $l = substr($l, 0, $p) . $val . $rest;
+//                }
+
+            } else {
+                $l = substr($l, 0, $p-1) . substr($l, $p);
+            }
+            $p = strpos($l, '$', $p+1);
+        }
+        return $l;
+	} // replaceMdVariables
 
 
 
     //....................................................
-    private function convertImages($str)
+    private function convertMdImagesToMacroCalls($str)
     {
         // extracts MD style images and transforms it into macro calls {{ img() }}
         // takes into account optional dimension information as produced by pandoc
@@ -465,13 +505,13 @@ class LizzyMarkdown
             }
         }
         return $str;
-    } // convertImages
+    } // convertMdImagesToMacroCalls
 
 
 
 
     //....................................................
-    private function convertLinks($str)
+    private function convertMdLinksToMacroCalls($str)
     {
         $enabled = false;
         if (isset($this->page->autoConvertLinks)) {
@@ -507,7 +547,7 @@ class LizzyMarkdown
             $str = implode("\n", $lines);
         }
         return $str;
-    } // convertLinks
+    } // convertMdLinksToMacroCalls
 
 
 
