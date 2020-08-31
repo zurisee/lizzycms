@@ -50,6 +50,7 @@ class Page
     private $overlay = [];    // if set, will add an overlay while the original page gets fully rendered
     private $debugMsg = false;
     private $redirect = false;
+    public  $mdVariables = [];
 
     private $mdCompileModifiedContent = false;
     private $wrapperTag = 'section';
@@ -1342,6 +1343,52 @@ EOT;
                 }
             }
         }
+
+        // runPHP:
+        if (isset($hdr['runPHP'])) {
+            if (!$this->config->custom_permitUserCode) {
+                fatalError("Trying to use 'runPHP' in frontmatter, but config option 'custom_permitUserCode' is not enabled.");
+            }
+            $phpFile = USER_CODE_PATH.$hdr['runPHP'];
+            if (file_exists($phpFile)) {
+                require $phpFile;
+            } else {
+                fatalError("Trying to use 'runPHP' in frontmatter, but file '$phpFile' not found.");
+            }
+            unset($hdr['runPHP']);
+        }
+
+        // mdVariables:
+        $mdVariables = [];
+        if (isset($hdr['mdVariables'])) {
+            foreach ($hdr['mdVariables'] as $key => $value) {
+                $key = str_replace('$', '', $key);
+                if (preg_match('/^ \s* (\w [\w\d]*) \( (.*?) \) $/x', $value, $m)) {
+                    $funName = $m[1];
+                    if (!$this->config->custom_permitUserCode) {
+                        fatalError("Trying to use function '$funName()' in frontmatter, but config option 'custom_permitUserCode' is not enabled.");
+                    }
+                    if (function_exists($funName)) {
+                        $value = $funName($m[2]);
+                    } else {
+                        fatalError("Trying to use function, '$funName()' is not defined.");
+                    }
+                }
+                $mdVariables[$key] = $value;
+            }
+            unset($hdr['mdVariables']);
+            $this->mdVariables = $mdVariables;
+
+        } else {
+            foreach ($hdr as $key => $value) {
+                if ($key[0] !== '$') {
+                    continue;
+                }
+                $mdVariables[substr($key, 1)] = $value;
+                unset($hdr[$key]);
+            }
+            $this->mdVariables = $mdVariables;
+        }
     } // extractSettings
 
 
@@ -1365,12 +1412,12 @@ EOT;
     private function _extractFrontmatter($str) // $propagateToGlobalSettings = false
     {
         if (strpos($str, '---') !== 0) {
-            return [$str, ''];
+            return $str;
         }
         $p1 = strpos($str, "\n")+1;
         $p2 = strpos($str, "\n---", 4);
         if (!$p2) {
-            return [$str, ''];
+            return $str;
         }
         $yaml = substr($str, $p1, $p2-$p1);
         $str = substr($str, strpos($str, "\n", $p2+4));
