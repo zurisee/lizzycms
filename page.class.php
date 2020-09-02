@@ -1349,7 +1349,11 @@ EOT;
             if (!$this->config->custom_permitUserCode) {
                 fatalError("Trying to use 'runPHP' in frontmatter, but config option 'custom_permitUserCode' is not enabled.");
             }
-            $phpFile = USER_CODE_PATH.$hdr['runPHP'];
+            $phpFile = $hdr['runPHP'];
+            if ($phpFile[0] !== '-') {
+                $phpFile = '-' . $phpFile;
+            }
+            $phpFile = USER_CODE_PATH . $phpFile;
             if (file_exists($phpFile)) {
                 require $phpFile;
             } else {
