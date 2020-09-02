@@ -223,6 +223,20 @@ class DataStorage2
     } // readRecord
 
 
+// ToDo: $locking and $blocking
+//    public function appendRecord($recData = null, $locking = true, $blocking = true)
+//    {
+//        $data = $this->getData();
+//        $inx = 0;
+//        foreach ($data as $key => $rec) {
+//            if (is_int($key)) {
+//                $inx = max($inx, $key);
+//            }
+//        }
+//        $this->writeRecord($inx, $recData, $locking, $blocking);
+//    } // appendRecord
+
+
 
     public function writeRecord($recId, $recData = null, $locking = true, $blocking = true)
     {
@@ -604,15 +618,18 @@ class DataStorage2
         // find rec for which key AND value match
         // returns the record unless $returnKey is true, then it returns the key
         $data = $this->getData();
-
+        if (!$data) {
+            return null;
+        }
+        if (!isset($data[0][$key])) {
+            return null;
+        }
         foreach ($data as $datakey => $rec) {
-            foreach ($rec as $k => $v) {
-                if (($key === $k) && ($value === $v)) {
-                    if ($returnKey) {
-                        return $datakey;
-                    } else {
-                        return $rec;
-                    }
+            if ($value === $rec[$key]) {
+                if ($returnKey) {
+                    return $datakey;
+                } else {
+                    return $rec;
                 }
             }
         }
@@ -622,10 +639,15 @@ class DataStorage2
 
 
 
+    //---------------------------------------------------------------------------
     public function getDbRecStructure()
     {
         $rawData = $this->lowlevelReadRawData();
         $structure = $this->jsonDecode($rawData['structure']);
+        if (!$structure) {
+            $data = $this->getData();
+            $structure = $this->analyseStructure($data,$rawData);
+        }
         return $structure;
     } // getDbRecStructure
 
