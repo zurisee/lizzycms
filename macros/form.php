@@ -1,8 +1,5 @@
 <?php
 
-// @info: Renders components of online forms.
-
-
 require_once SYSTEM_PATH.'forms.class.php';
 
 
@@ -15,48 +12,46 @@ $this->addMacro($macroName, function () {
 	$inx = $this->invocationCounter[$macroName] + 1;
 
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(false) Enables page caching (which is disabled for this macro by default). Note: only active if system-wide caching is enabled.', true);
-    $args = $this->getArgsArray($macroName);
-    if (isset($args['disableCaching'])) {
-        unset($args['disableCaching']);
+    $headArgs = $this->getArgsArray($macroName);
+    if (isset($headArgs['disableCaching'])) {
+        unset($headArgs['disableCaching']);
+    }
+
+    if (@$headArgs[0] === 'help') {
+        $this->compileMd = true;
+        return renderHelp();
     }
 
 
     if ($inx === 1) {
-        $this->form = new Forms($this->lzy);
-
-        // Evaluate if form data received
-//        if (isset($_GET['lizzy_form']) || isset($_POST['lizzy_form'])) {	// we received data:
-//            $this->form->evaluate();
-//        }
+        $this->form = new Forms($this->lzy, $inx);
     }
 
+    $headElements = ['formName', 'id', 'mailto', 'mailfrom', 'mailTo', 'mailFrom', 'legend', 'customResponseEvaluation', 'next',
+        'confirmationText', 'file', 'warnLeavingPage', 'options', 'formTimeout', 'export', 'prefill',
+        'preventMultipleSubmit', 'replaceQuotes', 'antiSpam', 'validate', 'showData',
+        'showDataMinRows', 'encapsulate', 'disableCaching'];
 
-    if (isset($args[0]) && ($args[0] === 'help')) {
-        return $this->form->renderHelp();
+    // separate arguments for header and fields:
+    $headArgs = $this->getArgsArray($macroName);
+    $formElems = [];
+    foreach ($headArgs as $key => $value) {
+        if (!in_array($key, $headElements)) {
+            $formElems[$key] = $value;
+            unset($headArgs[$key]);
+        }
     }
-    $label = $this->getArg($macroName, 'formName', '', '');
-    $file = ($label) ? translateToFilename($label, 'csv') : '';
-    $mailfrom = $this->getArg($macroName, 'mailfrom', '', '');
-    $mailto = $this->getArg($macroName, 'mailto', '', '');
-    $legend = $this->getArg($macroName, 'legend', '', '');
-    $showData = $this->getArg($macroName, 'showData', '', false);
+
 
     // create form head:
-    $str = $this->form->render([
-        'type' => 'form-head',
-        'label' => $label,
-        'mailto' => $mailto,
-        'mailfrom' => $mailfrom,
-        'file' => $file,
-        'legend' => $legend,
-        'showData' => $showData,
-    ]);
+    $headArgs['type'] = 'form-head';
+    $str = $this->form->render( $headArgs );
 
     // create form buttons:
     $buttons = [ 'label' => '', 'type' => 'button', 'value' => '' ];
 
     // parse further arguments, interpret as form field definitions:
-    foreach ($args as $label => $arg) {
+    foreach ($formElems as $label => $arg) {
         if (is_string($arg)) {
             $arg = ['type' => $arg ? $arg : 'text'];
         }
@@ -92,3 +87,40 @@ $this->addMacro($macroName, function () {
 
 	return $str;
 });
+
+
+
+function renderHelp()
+{
+    return <<<EOT
+## Help on macro form()
+form() is a short-hand for invoking form-head() and multiple form-elem(), terminated by form-tail().
+
+All arguments that do not apply to the form-head() element will be interpreted as further form-elements.  
+Use the following syntax:
+
+    label: { argName: value, ... }
+
+{{ vgap }}
+Example:
+
+	'Name:': { type:text, required:true },
+	'E-Mail:': { email },    &#47;/ 'type' may be omitted
+
+{{ vgap }}
+
+Use pseudo-labels "submit" and "cancel" to define buttons like this:
+
+    submit: { label:"Submit" },
+    cancel: { label:"Cancel" },
+
+{{ vgap }}
+
+Find details about arguments of form-head() and form-elem() below:
+
+{{ formhead( help ) }}
+{{ vgap }}
+{{ formelem( help ) }}
+EOT;
+
+}
