@@ -405,8 +405,8 @@ class Forms
             if ($rec->value && !$rec->options) {
                 $rec->options = $rec->value;
             }
-            $rec->options = explodeTrim('|', $rec->options);
-            $rec->optionNames = explodeTrim('|', $rec->optionNames);
+            $rec->options = explodeTrim('|,', $rec->options);
+            $rec->optionNames = explodeTrim('|,', $rec->optionNames);
             foreach ($rec->options as $key => $option) {
                 if ((@$option[0] === '-') || $this->currForm->translateLabels) {
                     $rec->options[$key] = $this->trans->translateVariable($option, true);
