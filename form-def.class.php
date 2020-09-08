@@ -12,7 +12,14 @@ class FormDescriptor
 	public $method = '';	
 	public $action = '';
 	public $class = '';
-	
+	public $options = '';
+	public $ticketHash = '';
+	public $preventMultipleSubmit = false;
+	public $validate = false;
+	public $antiSpam = true;
+	public $showData = true;
+	public $replaceQuotes = true;
+
 	public $labels = [];		// list of labels of form-elems, special case checkbox -> array
 	public $names = [];			// list of names of form-elems
 }

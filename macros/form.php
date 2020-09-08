@@ -25,9 +25,9 @@ $this->addMacro($macroName, function () {
         $this->form = new Forms($this->lzy);
 
         // Evaluate if form data received
-        if (isset($_GET['lizzy_form']) || isset($_POST['lizzy_form'])) {	// we received data:
-            $this->form->evaluate();
-        }
+//        if (isset($_GET['lizzy_form']) || isset($_POST['lizzy_form'])) {	// we received data:
+//            $this->form->evaluate();
+//        }
     }
 
 

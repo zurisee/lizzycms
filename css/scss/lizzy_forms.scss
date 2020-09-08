@@ -87,6 +87,7 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         top: -0.25em;
     }
 
+
     /* === Placeholders =================================== */
     ::-webkit-input-placeholder { /* Chrome/Opera/Safari */
         text-align: right;
@@ -414,6 +415,9 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
 
 } // lzy-form
 
+.lzy-form-legend {
+    margin: 1em 0;
+}
 
 
 /* === Color ========================================== */
@@ -423,8 +427,10 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         color: red;
     }
     .lzy-form-error {
-        box-shadow: 0 0 10px red;
+        //box-shadow: 0 0 10px red;
+        border: 1px dotted red;
         padding: 5px !important;
+        margin: 2px 0;
     }
 
     .lzy-form-error textarea,
@@ -435,6 +441,10 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         background-color: #f1f1f1;
         color: #666;
         box-shadow: inset 0 0 0 1px #bbb;
+    }
+    &.lzy-form-legend {
+        border: 1px dotted orange;
+        padding: 0.5em 1em;
     }
 }
 

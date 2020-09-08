@@ -88,6 +88,10 @@ lzy-form-data-preview-title:
     de: 'Bisher empfangene Daten:'
     _:  'Data received until now:'
 
+lzy-form-expired:
+    de: 'Dieses Formular war zu lange offen,<br>Ihre Eingaben konnten nicht mehr akzeptiert werden.<br>Bitte versuchen Sie es erneut.'
+    _:  'Sorry, this form expired.<br>Please try again.'
+
 
 #--- File Upload --------------------------
 lzy-fileadmin-button-tooltip:
