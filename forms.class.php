@@ -1379,8 +1379,7 @@ EOT;
             if (($type === 'checkbox') || ($type === 'radio') || ($type === 'dropdown')) {
                 $value = $userSuppliedData[$key];
                 $userSuppliedData[$key] = [];
-                $isCheckbox = ($type === 'checkbox');
-                if ($isCheckbox) {
+                if (is_array($value)) {
                     $userSuppliedData[$key][0] = implode(',', $value);
                 } else {
                     $userSuppliedData[$key][0] = $value;
@@ -1388,7 +1387,7 @@ EOT;
                 for ($i=1; $i<sizeof($elemDef->optionNames); $i++) {
                     $option = $elemDef->optionNames[$i];
                     if (!$option) { continue; }
-                    if ($isCheckbox) {
+                    if (is_array($value)) {
                         $userSuppliedData[$key][] = (bool) in_array($option, $value);
                     } else {
                         $userSuppliedData[$key][] = ($option === $value);
