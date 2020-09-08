@@ -9,7 +9,7 @@ $macroName = basename(__FILE__, '.php');
 $this->addMacro($macroName, function () {
 	$macroName = basename(__FILE__, '.php');
 	$this->invocationCounter[$macroName] = (!isset($this->invocationCounter[$macroName])) ? 0 : ($this->invocationCounter[$macroName]+1);
-//	$inx = $this->invocationCounter[$macroName] + 1;
+	$inx = $this->invocationCounter[$macroName] + 1;
 
     $label = $this->getArg($macroName, 'label', 'Label in front of the form field (mandatory).', '');
 
@@ -48,7 +48,7 @@ $this->addMacro($macroName, function () {
     $type = @$args['type'];
 
 	if ($type === 'form-head') {
-		$this->form = new Forms($this->lzy);
+		$this->form = new Forms($this->lzy, $inx);
     } elseif (!isset($this->form)) {
 	    die('Error: forms must be initiated with type:"form-head"');
     }
