@@ -124,6 +124,7 @@ class Transvar
                     // ----------------------------------------------------------------------- translate now:
                     if (preg_match('/^([\w\-]+)\((.*)\)/', $var, $m)) {    // macro
                         $macro = $m[1];
+                        $macro = str_replace('-', '', $macro);
                         $argStr = $m[2];
                         $val = $this->translateMacro($macro, $argStr);
 
@@ -247,6 +248,11 @@ class Transvar
     public function getArg($macroName, $name, $help = '', $default = null, $removeNl = true /*, $dynamic = false*/)
     {
         $inx = $this->macroInx++;
+        if (!$name) {
+            $name = ' ';
+//            return 'help';
+        }
+
         $this->macroFieldnames[$macroName][$inx] = $name;
         if (preg_match('/^\d/', $name)) {
             $index = intval($name);
@@ -323,11 +329,14 @@ class Transvar
         if (!$argsHelp) {       // don't show anything if there are no arguments listed
             return '';
         }
-        $out = '';
-        foreach ($argsHelp as $name => $text) {
-            $out .= "\t<dt>$name:</dt>\n\t\t<dd>$text</dd>\n";
+        $out = "<h2>Options for macro <em>$macroName()</em></h2>\n";
+        if (!isset($argsHelp["noArguments"])) {       // don't show anything if there are no arguments listed
+            $out .= "<dl>\n";
+            foreach ($argsHelp as $name => $text) {
+                $out .= "\t<dt>$name:</dt>\n\t\t<dd>$text</dd>\n";
+            }
+            $out .= "</dl>\n";
         }
-        $out = "<h2>Options for macro <em>$macroName()</em></h2>\n<dl>\n$out</dl>\n";
         return $out;
     } // getMacroHelp
 
@@ -643,7 +652,8 @@ class Transvar
                         foreach ($res as $key => $value) {
                             $this->addVariable($key, $value);
                         }
-                    } elseif (is_string($res)) {
+                    } else {
+//                    } elseif (is_string($res)) {
                         $out = $res;
                     }
                 } else {
