@@ -1233,6 +1233,7 @@ EOT;
         if ($noError ) {
             $this->saveAndWrapUp($msgToClient, $msgToOwner);
         }
+        $this->page->addCss(".{$this->currForm->formId} { display: none; }");
         return $msgToClient; // -> to be presented in webpage
     } // evaluateUserSuppliedData
 
@@ -1247,7 +1248,6 @@ EOT;
         }
         $this->clearCache();
 
-        $this->page->addCss(".{$this->currForm->formId} { display: none; }");
         $next = @$this->currForm->next? $this->currForm->next : './';
         $msgToClient .= "<div class='lzy-form-continue'><a href='{$next}'>{{ lzy-form-continue }}</a></div>\n";
 
