@@ -1723,13 +1723,12 @@ function explodeTrim($sep, $str)
     if (!$str) {
         return [];
     }
-    if (strpos($str, $sep) === false) {
+    if (strpbrk($str, $sep) === false) {
         return [ $str ];
     }
     if (strlen($sep) > 1) {
         $sep = preg_quote($sep);
-        $out = array_map('trim', preg_split("/[$sep]/", $str));
-        return $out;
+        return array_map('trim', preg_split("/[$sep]/", $str));
     } else {
         return array_map('trim', explode($sep, $str));
     }
