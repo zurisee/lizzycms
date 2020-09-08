@@ -416,12 +416,21 @@ class LizzyMarkdown
                         $l = substr($l, 0, $p) . $val . $rest;
                     }
 
+                // format variant ${}:
                 } elseif (preg_match('/^\$ \{ (.*?) \} (.*)/x', $str, $mm)) {
                     $t = $mm[1];
-                    if (preg_match('/^ (\w+?) \s* = \s* (.*)/x', $t, $mmm)) {
+
+                    if ((strpos($t, '++') === false) && (strpos($t, '--') === false) && (strpos($t, '=') === false)) {
+                        $val = $this->mdVariables[$t];
+                        $rest = $mm[2];
+
+                    // on the spot assignment:
+                    } elseif (preg_match('/^ (\w+?) \s* = \s* (.*)/x', $t, $mmm)) {
                         $varName = $mmm[1];
                         $this->mdVariables[$varName] = $val = $mmm[2];
+                        $rest = $mm[2];
 
+                    // increment/decrement:
                     } elseif (preg_match('/^\$ \{ (\+\+|--)? (\w+) (\+\+|--)? \} (.*)/x', $str, $mm)) {
                         $varName = $mm[2];
                         if (isset($this->mdVariables[$varName])) {
@@ -447,30 +456,6 @@ class LizzyMarkdown
                     }
                     $l = substr($l, 0, $p) . $val . $rest;
                 }
-//                } elseif (preg_match('/^\$ \{ (\+\+|--)? (\w+) (\+\+|--)? \} (.*)/x', $str, $mm)) {
-//                    $varName = $mm[2];
-//                    if (isset($this->mdVariables[$varName])) {
-//                        $val = intval($this->mdVariables[$varName]);
-//                    } else {
-//                        $val = 0;
-//                    }
-//                    $op1 = $mm[1];
-//                    $op2 = $mm[3];
-//                    $rest = $mm[4];
-//                    if ($op1 === '++') {
-//                        $this->mdVariables[$varName] = $val = (string)($val + 1);
-//                    } elseif ($op1 === '--') {
-//                        $this->mdVariables[$varName] = $val = (string)($val - 1);
-//                    }
-//
-//                    if ($op2 === '++') {
-//                        $this->mdVariables[$varName] = (string)($val + 1);
-//
-//                    } elseif ($op2 === '--') {
-//                        $this->mdVariables[$varName] = (string)($val - 1);
-//                    }
-//                    $l = substr($l, 0, $p) . $val . $rest;
-//                }
 
             } else {
                 $l = substr($l, 0, $p-1) . substr($l, $p);
