@@ -88,11 +88,9 @@ class PopupWidget
     vertical: 'top',
     horizontal: 'center',
 EOT;
-//                    $type = 'type: tooltip,';
                     break;
             }
             $this->getArg('contentFrom');
-//            $this->getArg('id', "lzy-popup$popupInx");
             $this->getArg('class', "lzy-popup$popupInx");
             $class = $this->class;
             $this->getArg('autoOpen');
@@ -152,7 +150,6 @@ EOT;
                 $onOpen = $this->onOpen;
                 $onOpen = str_replace('&#34;', '"', $onOpen);
                 $onOpen = "\n\t$onOpen";
-//                $this->argStr .= $onOpen;
             }
 
 
