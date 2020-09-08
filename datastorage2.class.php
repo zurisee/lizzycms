@@ -223,21 +223,6 @@ class DataStorage2
     } // readRecord
 
 
-// ToDo: $locking and $blocking
-//    public function appendRecord($recData = null, $locking = true, $blocking = true)
-//    {
-//        $data = $this->getData();
-//        $inx = 0;
-//        foreach ($data as $key => $rec) {
-//            if (is_int($key)) {
-//                $inx = max($inx, $key);
-//            }
-//        }
-//        $this->writeRecord($inx, $recData, $locking, $blocking);
-//    } // appendRecord
-
-
-
     public function writeRecord($recId, $recData = null, $locking = true, $blocking = true)
     {
         // $supportedArgs defines the expected args, their default values, where null means required arg.
@@ -280,6 +265,41 @@ class DataStorage2
         $this->getData(true);
         return true;
     } // writeRecord
+
+
+
+    public function appendRecord($recId, $recData, $locking = true, $blocking = true)
+    {
+        if (!$this->_awaitRecLockEnd($recId, $blocking, false)) {
+            return false;
+        }
+        if ($locking && !$this->lockRec($recId)) {
+            return false;
+        }
+        $data = $this->getData();
+        if (($recId !== false) && ($recId !== null)) {  // case recId defined
+            if (isset($data[ $recId ])) {
+                if ($locking) {
+                    $this->unlockRec($recId);
+                }
+                return false;   // record already in DB
+            }
+            $inx = $recId;
+
+        } else {    // case recId undefined -> find next numeric index:
+            $inx = 0;
+            foreach ($data as $key => $rec) {
+                if (is_int($key)) {
+                    $inx = max($inx, $key);
+                }
+            }
+        }
+        $res = $this->writeRecord($inx, $recData, false, false);
+        if ($locking) {
+            $this->unlockRec($recId);
+        }
+        return $res;
+    } // appendRecord
 
 
 
