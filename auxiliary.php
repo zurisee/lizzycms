@@ -1644,11 +1644,13 @@ function translateToIdentifier($str, $removeDashes = false, $removeNonAlpha = fa
 //-------------------------------------------------------------------------
 function translateToClassName($str)
 {
-    $str = preg_replace('/[^a-zA-Z0-9 ]/ms', '', $str);
 	$str = strToASCII(mb_strtolower($str));		// replace special chars
 	$str = strip_tags($str);							// strip any html tags
 	$str = preg_replace('/\s+/', '-', $str);			// replace blanks with _
 	$str = preg_replace("/[^[:alnum:]_-]/m", '', $str);	// remove any non-letters, except _ and -
+    if (!preg_match('/[a-z]/', @$str[0])) {
+        $str = "_$str";
+    }
 	return $str;
 } // translateToClassName
 
