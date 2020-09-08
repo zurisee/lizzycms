@@ -1333,10 +1333,19 @@ function setStaticVariable($varName, $value, $append = false)
     if ($value === null) {
         unset($_SESSION['lizzy'][$varName]);
     } else {
-        if ($append) {
-            $_SESSION['lizzy'][$varName] = isset($_SESSION['lizzy'][$varName]) ? $_SESSION['lizzy'][$varName].$value : $value;
+        if (strpos($varName, '.') === false) {
+            if ($append) {
+                $_SESSION['lizzy'][$varName] = isset($_SESSION['lizzy'][$varName]) ? $_SESSION['lizzy'][$varName].$value : $value;
+            } else {
+                $_SESSION['lizzy'][$varName] = $value;
+            }
         } else {
-            $_SESSION['lizzy'][$varName] = $value;
+            $a = explode('.', $varName);
+            if ($append) {
+                $_SESSION['lizzy'][ $a[0] ][ $a[1] ] = isset($_SESSION['lizzy'][ $a[0] ][ $a[1] ]) ? $_SESSION['lizzy'][ $a[0] ][ $a[1] ].$value : $value;
+            } else {
+                $_SESSION['lizzy'][ $a[0] ][ $a[1] ] = $value;
+            }
         }
     }
 } // setStaticVariable
@@ -1346,11 +1355,20 @@ function setStaticVariable($varName, $value, $append = false)
 //-------------------------------------------------------------------------
 function getStaticVariable($varName)
 {
-	if (isset($_SESSION['lizzy'][$varName])) {
-		return $_SESSION['lizzy'][$varName];
-	} else {
-		return null;
-	}
+    if (strpos($varName, '.') === false) {
+        if (isset($_SESSION['lizzy'][$varName])) {
+            return $_SESSION['lizzy'][$varName];
+        } else {
+            return null;
+        }
+    } else {
+        $a = explode('.', $varName);
+        if (isset($_SESSION['lizzy'][ $a[0] ][ $a[1] ])) {
+            return $_SESSION['lizzy'][ $a[0] ][ $a[1] ];
+        } else {
+            return null;
+        }
+    }
 } // getStaticVariable
 
 
@@ -1620,6 +1638,19 @@ function translateToIdentifier($str, $removeDashes = false, $removeNonAlpha = fa
 	}
 	return $str;
 } // translateToIdentifier
+
+
+
+//-------------------------------------------------------------------------
+function translateToClassName($str)
+{
+    $str = preg_replace('/[^a-zA-Z0-9 ]/ms', '', $str);
+	$str = strToASCII(mb_strtolower($str));		// replace special chars
+	$str = strip_tags($str);							// strip any html tags
+	$str = preg_replace('/\s+/', '-', $str);			// replace blanks with _
+	$str = preg_replace("/[^[:alnum:]_-]/m", '', $str);	// remove any non-letters, except _ and -
+	return $str;
+} // translateToClassName
 
 
 
@@ -2301,3 +2332,23 @@ function readFromCache($cacheFileName = CACHE_FILENAME)
 
     return unserialize(file_get_contents($cacheFile));
 } // readFromCache
+
+
+
+
+function createHash( $hashSize = 8, $unambiguous = false )
+{
+    if ($unambiguous) {
+        $chars = UNAMBIGUOUS_CHARACTERS;
+        $max = strlen(UNAMBIGUOUS_CHARACTERS) - 1;
+        $hash = $chars[ random_int(4, $max) ];  // first always a letter
+        for ($i=1; $i<$this->hashSize; $i++) {
+            $hash .= $chars[ random_int(0, $max) ];
+        }
+
+    } else {
+        $hash = chr(random_int(65, 90));  // first always a letter
+        $hash .= strtoupper(substr(sha1(random_int(0, PHP_INT_MAX)), 0, $hashSize - 1));  // letters and digits
+    }
+    return $hash;
+} // createHash
