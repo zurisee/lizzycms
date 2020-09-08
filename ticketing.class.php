@@ -65,7 +65,6 @@ class Ticketing
         $ticketHash = $this->createHash();
 
         $this->ds->writeRecord($ticketHash, $ticketRec);
-//        $this->ds->writeElement($ticketHash, $ticketRec);
 
         return $ticketHash;
     } // createTicket
@@ -81,7 +80,6 @@ class Ticketing
             return $this->ds->findRecByContent($key, $value, true);
         } else {
             return $this->ds->readRecord($value); // $value assumed to be the hash
-//            return $this->ds->readElement($value); // $value assumed to be the hash
         }
     } // findTicket
 
@@ -91,12 +89,10 @@ class Ticketing
     public function updateTicket($ticketHash, $data, $overwrite = false)
     {
         $ticketRec = $this->ds->readRecord($ticketHash);
-//        $ticketRec = $this->ds->readElement($ticketHash);
         if (!$overwrite && $ticketRec) {
             $data = array_merge($ticketRec, $data);
         }
         $this->ds->writeRecord($ticketHash, $data);
-//        $this->ds->writeElement($ticketHash, $data);
     } // updateTicket
 
 
@@ -105,7 +101,6 @@ class Ticketing
     public function consumeTicket($ticketHash, $type = false)
     {
         $ticketRec = $this->ds->readRecord($ticketHash);
-//        $ticketRec = $this->ds->readElement($ticketHash);
 
         if (!$ticketRec) {
             $this->lastError = 'code not recognized';
@@ -118,7 +113,6 @@ class Ticketing
 
         } elseif (isset($ticketRec['lzy_ticketValidTill']) && ($ticketRec['lzy_ticketValidTill'] < time())) {      // ticket expired
             $this->ds->deleteRecord($ticketHash);
-//            $this->ds->deleteElement($ticketHash);
             $ticketRec = false;
             $this->lastError = 'code timed out';
 
@@ -127,10 +121,8 @@ class Ticketing
             if ($n > 1) {
                 $ticketRec['lzy_maxConsumptionCount'] = $n - 1;
                 $this->ds->writeRecord($ticketHash, $ticketRec);
-//                $this->ds->writeElement($ticketHash, $ticketRec);
             } else {
                 $this->ds->deleteRecord($ticketHash);
-//                $this->ds->deleteElement($ticketHash);
             }
 
             $lzy_ticketType = $ticketRec['lzy_ticketType'];
@@ -148,6 +140,21 @@ class Ticketing
 
 
 
+    public function deleteTicket( $ticketHash )
+    {
+        @$this->ds->deleteRecord($ticketHash);
+    }
+
+
+
+    public function ticketExists( $ticketHash )
+    {
+        $ticketRec = $this->ds->readRecord($ticketHash);
+        return (bool) $ticketRec;
+    }
+
+
+
     public function getLastError()
     {
         return $this->lastError;
@@ -156,19 +163,7 @@ class Ticketing
 
     public function createHash()
     {
-        if ($this->unambiguous) {
-            $chars = UNAMBIGUOUS_CHARACTERS;
-            $max = strlen(UNAMBIGUOUS_CHARACTERS) - 1;
-            $hash = $chars[ random_int(4, $max) ];  // first always a letter
-            for ($i=1; $i<$this->hashSize; $i++) {
-                $hash .= $chars[ random_int(0, $max) ];
-            }
-
-        } else {
-            $hash = chr(random_int(65, 90));  // first always a letter
-            $hash .= strtoupper(substr(sha1(random_int(0, PHP_INT_MAX)), 0, $this->hashSize - 1));  // letters and digits
-        }
-        return $hash;
+        return createHash( $this->hashSize, $this->unambiguous );
     } // createHash
 
 
