@@ -1014,30 +1014,33 @@ EOT;
         if ($this->currRec->errorMsg) {
             $out .= "\t\t\t<div class='lzy-form-field-errorMsg' aria-hidden='true'>{$this->currRec->errorMsg}</div>\n";
         }
-        $out .= "\t\t\t\t<input id='$id' class='lzy-form-reveal-checkbox' type='checkbox' data-reveal-target='$target' /><label for='$id'>$label</label>\n";
+        $out .= "\t\t\t\t<input id='$id' class='lzy-reveal-checkbox' type='checkbox' data-reveal-target='$target' /><label for='$id'>$label</label>\n";
 
-        $out = "\t\t\t<div class='lzy-form-field-type-choice lzy-form-field-type-checkbox'>$out</div>\n";
+        $out = "\t\t\t<div class='lzy-reveal-controller'>$out</div>\n";
 
         $jq = <<<'EOT'
 
-    $('.lzy-form-reveal-checkbox').each(function() {
+    $('.lzy-reveal-checkbox').each(function() {
+        $(this).attr('aria-expanded', 'false');
         var $target = $( $( this ).attr('data-reveal-target') );
-        if ( !$target.parent().hasClass('lzy-form-reveal-container') ) {
-            $target.wrap("<div class='lzy-form-reveal-container'></div>").show();
+        if ( !$target.parent().hasClass('lzy-reveal-container') ) {
+            $target.wrap("<div class='lzy-reveal-container'></div>").show();
             var boundingBox = $target[0].getBoundingClientRect();
             $target.css('margin-top', (boundingBox.height * -1 - 10) + 'px');
         }
     });
     
-    $('.lzy-form-reveal-checkbox').change(function() {
+    $('.lzy-reveal-checkbox').change(function() {
         var $target = $( $( this ).attr('data-reveal-target') );
         var boundingBox = $target[0].getBoundingClientRect();
         $target.css('margin-top', (boundingBox.height * -1 - 10) + 'px');
         var $container = $target.parent();
         if ( $( this ).prop('checked') ) {
-            $container.addClass('lzy-form-elem-revealed');
+            $(this).attr('aria-expanded', 'true');
+            $container.addClass('lzy-elem-revealed');
         } else {
-            $container.removeClass('lzy-form-elem-revealed');
+            $(this).attr('aria-expanded', 'false');
+            $container.removeClass('lzy-elem-revealed');
         }
     });
 
@@ -1047,7 +1050,7 @@ EOT;
         return $out;
     } // renderReveal
 
-//#lzy .lzy-form.lzy-encapsulated .lzy-form-field-type-checkbox input, .lzy-form .lzy-form-field-type-checkbox input
+
 
     //-------------------------------------------------------------
     private function renderButtons()
