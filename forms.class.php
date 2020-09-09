@@ -270,6 +270,8 @@ class Forms
         $currForm->encapsulate = (isset($args['encapsulate'])) ? $args['encapsulate'] : true;
         $currForm->formTimeout = (isset($args['formTimeout'])) ? $args['formTimeout'] : false;
         $currForm->export = (isset($args['export'])) ? $args['export'] : false;
+        $currForm->confirmationEmail = (isset($args['confirmationEmail'])) ? $args['confirmationEmail'] : false;
+        $currForm->confirmationEmailTemplate = (isset($args['confirmationEmailTemplate'])) ? $args['confirmationEmailTemplate'] : false;
         if ($currForm->export === true) {
             $currForm->export = DEFAULT_EXPORT_FILE;
         }
@@ -1322,6 +1324,11 @@ EOT;
         if ($noError ) {
             $this->saveAndWrapUp($msgToClient, $msgToOwner);
         }
+
+        if ($this->currForm->confirmationEmail) {
+            $this->sendConfirmationMail( $userSuppliedData );
+        }
+
         $this->page->addCss(".{$this->currForm->formId} { display: none; }");
         return $msgToClient; // -> to be presented in webpage
     } // evaluateUserSuppliedData
@@ -1863,6 +1870,96 @@ EOT;
             }
         }
     } // checkSuppliedDataEntries
+
+
+
+    private function sendConfirmationMail( $rec )
+    {
+        $isHtml = false;
+        $emailFieldName = $this->currForm->confirmationEmail;
+        $to = false;
+        foreach ($rec as $key => $value) {
+            $key1 = preg_replace('/_\d+$/', '', $key);
+            if ($emailFieldName === $key1) {
+                $to = $value;
+            }
+            if (is_array($value)) {
+                $value = $value[0];
+            }
+            $this->trans->addVariable("{$key1}_value", $value);
+        }
+        if ($this->currForm->confirmationEmailTemplate === true) {
+            $subject = '{{ lzy-confirmation-response-subject }}';
+            $message = '{{ lzy-confirmation-response-message }}';
+
+        } else {
+            $file = resolvePath($this->currForm->confirmationEmailTemplate, true);
+            if (!file_exists($file)) {
+                $this->response = 'lzy-reservation-email-template-not-found';
+                return;
+            }
+
+            $ext = fileExt($file);
+            $tmpl = file_get_contents($file);
+
+            if (stripos($ext, 'md') !== false) {
+                $page = new Page();
+                $tmpl = $page->extractFrontmatter($tmpl);
+                $css = $page->get('css');
+                $fm = $page->get('frontmatter');
+                $subject = isset($fm['subject']) ? $fm['subject'] : '';
+                if ($css) {
+                    $css = <<<EOT
+	<style>
+$css
+	</style>
+
+EOT;
+                }
+                $message = compileMarkdownStr($tmpl);
+                $message = <<<EOT
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8" />
+$css
+</head>
+<body>
+$message
+</body>
+</html>
+
+EOT;
+                $message = translateUmlauteToHtml( ltrim($message) );
+                $isHtml = true;
+
+            } elseif ((stripos($ext, 'htm') !== false)) {
+                $page = new Page();
+                $tmpl = $this->lzy->page->extractHtmlBody($tmpl);
+                $css = $page->get('css');
+                $fm = $page->get('frontmatter');
+                $subject = isset($fm['subject']) ? $fm['subject'] : '';
+                $message = extractHtmlBody($tmpl);
+                $message = translateUmlauteToHtml( ltrim($message) );
+                $isHtml = true;
+
+            } else {    // .txt
+                if (preg_match('/^subject: (.*?)\n(.*)/ims', $tmpl, $m)) {
+                    $subject = $m[1];
+                    $message = $m[2];
+                } else {
+                    $this->response = 'lzy-reservation-email-template-syntax-error';
+                    return;
+                }
+            }
+        }
+
+        $subject = $this->trans->translate($subject);
+        $message = $this->trans->translate($message);
+
+        $this->lzy->sendMail($to, $subject, $message, $this->mailfrom, $isHtml);
+    } // sendConfirmationMail
+
 
 
 
