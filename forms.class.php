@@ -88,7 +88,11 @@ class Forms
             case 'checkbox':
                 $elem = $this->renderCheckbox();
                 break;
-            
+
+            case 'dropdown':
+                $elem = $this->renderDropdown();
+                break;
+
             case 'button':
                 $elem = $this->renderButtons();
                 $wrapperClass = '';
@@ -128,10 +132,6 @@ class Forms
 
             case 'file':
                 $elem = $this->renderFileUpload();
-                break;
-
-            case 'dropdown':
-                $elem = $this->renderDropdown();
                 break;
 
             case 'fieldset':
@@ -351,6 +351,7 @@ class Forms
         }
 
         $rec->elemId = $elemId;
+        $rec->elemInx = $this->inx . '_' . $this->formsCount;
 
         if (strpos($label, '*')) {
             $label = trim(str_replace('*', '', $label));
@@ -418,6 +419,24 @@ class Forms
             }
         }
 
+        // initialize "info-icon" feature:
+        $rec->info =  (isset($args['info']))? $args['info']: '';
+        if ($rec->info && !@$this->infoInitialized) {
+            $this->infoInitialized = true;
+            $jq = <<<EOT
+$('.lzy-formelem-show-info').tooltipster({
+    trigger: 'click',
+    contentCloning: true,
+    animation: 'fade',
+    delay: 200,
+    animation: 'grow',
+    maxWidth: 420,
+});
+
+EOT;
+            $this->page->addJq( $jq );
+            $this->page->addModules( 'TOOLTIPSTER' );
+        }
         $rec->comment =  (isset($args['comment']))? $args['comment']: '';
         $rec->fldPrefix =  (isset($args['elemPrefix']) && ($args['elemPrefix'] !== false))? $args['elemPrefix']: 'fld_';
 
@@ -1071,10 +1090,27 @@ EOT;
             $label .= ' '.$requiredMarker;
         }
 
+        $infoIcon = $infoText = '';
+        if ($this->currRec->info) {
+            $elemInx = $this->currRec->elemInx;
+            $icon = '<span class="lzy-icon-info"></span>';
+            $infoIcon = <<<EOT
+        <a href="#" class="lzy-formelem-show-info" title="{{ lzy-formelem-info-title }}" aria-label="{{ lzy-formelem-info-title }}" data-tooltip-content="#lzy-formelem-info-text-$elemInx">{$icon}</a> 
+
+EOT;
+            $infoIconText = <<<EOT
+    <span  style="display: none;">
+		<span id="lzy-formelem-info-text-$elemInx" class="lzy-formelem-info-text lzy-formelem-info-text-$elemInx">{$this->currRec->info}</span>
+	</span>
+
+EOT;
+
+        }
+
         if ($wrapOutput) {
-            return "\t\t\t<label for='$id'>$label</label>";
+            return "\t\t\t<label for='$id'>$label$infoIcon$infoIconText</label>";
         } else {
-            return $label;
+            return "$label$infoIcon$infoIconText";
         }
     } // getLabel
 
