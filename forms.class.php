@@ -140,6 +140,10 @@ class Forms
             case 'fieldset-end':
                 return "\t\t\t\t</fieldset>\n";
 
+            case 'reveal':
+                $elem = $this->renderReveal();
+                break;
+
             case 'hidden':
                 $elem = $this->renderHidden();
                 break;
@@ -397,6 +401,7 @@ class Forms
             $rec->prefill = $this->userSuppliedData[$name];
         }
 
+        $rec->target = @$args['target']? $args['target']: '';
         $rec->value = @$args['value']? $args['value']: '';
         $rec->options = @$args['options']? $args['options']: '';
         $rec->optionNames = @$args['optionNames']? $args['optionNames']: (@$args['valueNames']? $args['valueNames']: '');
@@ -998,6 +1003,51 @@ EOT;
     } // renderHidden
 
 
+
+    //-------------------------------------------------------------
+    private function renderReveal()
+    {
+        $id = "lzy-form-reveal_{$this->currRec->elemInx}";
+        $label = $this->getLabel(false, false);
+        $target = $this->currRec->target;
+        $out = '';
+        if ($this->currRec->errorMsg) {
+            $out .= "\t\t\t<div class='lzy-form-field-errorMsg' aria-hidden='true'>{$this->currRec->errorMsg}</div>\n";
+        }
+        $out .= "\t\t\t\t<input id='$id' class='lzy-form-reveal-checkbox' type='checkbox' data-reveal-target='$target' /><label for='$id'>$label</label>\n";
+
+        $out = "\t\t\t<div class='lzy-form-field-type-choice lzy-form-field-type-checkbox'>$out</div>\n";
+
+        $jq = <<<'EOT'
+
+    $('.lzy-form-reveal-checkbox').each(function() {
+        var $target = $( $( this ).attr('data-reveal-target') );
+        if ( !$target.parent().hasClass('lzy-form-reveal-container') ) {
+            $target.wrap("<div class='lzy-form-reveal-container'></div>").show();
+            var boundingBox = $target[0].getBoundingClientRect();
+            $target.css('margin-top', (boundingBox.height * -1 - 10) + 'px');
+        }
+    });
+    
+    $('.lzy-form-reveal-checkbox').change(function() {
+        var $target = $( $( this ).attr('data-reveal-target') );
+        var boundingBox = $target[0].getBoundingClientRect();
+        $target.css('margin-top', (boundingBox.height * -1 - 10) + 'px');
+        var $container = $target.parent();
+        if ( $( this ).prop('checked') ) {
+            $container.addClass('lzy-form-elem-revealed');
+        } else {
+            $container.removeClass('lzy-form-elem-revealed');
+        }
+    });
+
+EOT;
+        $this->page->addJq($jq);
+
+        return $out;
+    } // renderReveal
+
+//#lzy .lzy-form.lzy-encapsulated .lzy-form-field-type-checkbox input, .lzy-form .lzy-form-field-type-checkbox input
 
     //-------------------------------------------------------------
     private function renderButtons()

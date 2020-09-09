@@ -44,7 +44,6 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
     }
 
 
-
     /* === form-field-wrapper ========================== */
     .lzy-form-field-wrapper {
         min-height: 2.5em;
@@ -620,3 +619,24 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         padding: 4px 8px;
     }
 }
+
+
+/* === Reveal =============================== */
+.lzy-form-reveal-container.lzy-form-elem-revealed {
+    margin-bottom: 1em;
+    transition: margin-bottom 0.3s;
+}
+.lzy-form-reveal-container {
+    overflow: hidden;
+}
+.lzy-form-reveal-container > div {
+    margin-top: -100vh;
+    transition: margin-top 0.3s;
+}
+.lzy-form-reveal-container.lzy-form-elem-revealed > div {
+    margin-top: 0 !important;
+    transition: margin-top 0.3s;
+}
+
+
+
