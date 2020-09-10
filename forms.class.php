@@ -34,6 +34,7 @@ class Forms
 		$this->formsCount = $GLOBALS['lzyFormsCount']++;
         $this->currForm = new FormDescriptor; // object as will be saved in DB
         $this->formEvalResult = false;
+        $this->skipRenderingForm = false;
 
         $this->tck = new Ticketing([
             'defaultType' => 'lzy-form',
@@ -61,6 +62,9 @@ class Forms
         $wrapperClass = 'lzy-form-field-wrapper';
 
         $type = $this->parseArgs();
+        if ($this->skipRenderingForm && ($type !== 'form-tail')) {
+            return '';
+        }
         switch ($type) {
             case 'form-head':
                 return $this->renderFormHead();
@@ -1343,7 +1347,7 @@ EOT;
             $this->sendConfirmationMail( $userSuppliedData );
         }
 
-        $this->page->addCss(".{$this->currForm->formId} { display: none; }");
+        $this->skipRenderingForm = true;
         return $msgToClient; // -> to be presented in webpage
     } // evaluateUserSuppliedData
 
