@@ -254,7 +254,7 @@ class Forms
         $currForm->formId = $formId;
 
         $currForm->formName = $label;
-        $currForm->translateLabels = (isset($args['translateLabels'])) ? $args['translateLabels'] : true;
+        $currForm->translateLabels = (isset($args['translateLabels'])) ? $args['translateLabels'] : false;
 
         $currForm->class = (isset($args['class'])) ? $args['class'] : 'lzy-form';
         $currForm->method = (isset($args['method'])) ? $args['method'] : 'post';
@@ -348,7 +348,8 @@ class Forms
         $rec->name = $name;
         $_name = " name='$name'";
 
-        $rec->translateLabel = $this->currForm->translateLabels || ($label[0] === '-') || ((isset($args['translateLabel'])) ? $args['translateLabel'] : false);
+        // whether to translate a label: form-wide translateLabels or per-element translateLabel or '-' in front of label:
+        $rec->translateLabel = $this->currForm->translateLabels || ($label[0] === '-') || (@$args['translateLabel'] ? $args['translateLabel'] : false);
 
         if (isset($args['id'])) {
             $elemId = $args['id'];
@@ -405,22 +406,30 @@ class Forms
 
         $rec->target = @$args['target']? $args['target']: '';
         $rec->value = @$args['value']? $args['value']: '';
-        $rec->options = @$args['options']? $args['options']: '';
-        $rec->optionNames = @$args['optionNames']? $args['optionNames']: (@$args['valueNames']? $args['valueNames']: '');
 
-        // for radio, checkbox and dropdown: 'options' serves as synonyme for 'value'
+        // for radio, checkbox and dropdown: options define the values available
+        //  optionLabels are optional and used in the page, e.g. if you need a longish formulation to describe the option
+        //  (for backward compatibility, value is accepted in place of options)
+        $rec->options = @$args['options']? $args['options']: $rec->value;
+        $rec->optionLabels = @$args['optionLabels']? $args['optionLabels']: $rec->options;
+
+        // for backward compatibility:
+        //  valueNames used to have the meaning of today's option
+        if (@$args['valueNames']) { // if supplied, swap arguments:
+            $rec->optionLabels = $rec->options;
+            $rec->options = $args['valueNames'];
+        }
+
+        // for radio, checkbox and dropdown:
         if (($type === 'radio') || ($type === 'checkbox') || ($type === 'dropdown')) {
-            if ($rec->value && !$rec->options) {
-                $rec->options = $rec->value;
-            }
-            $rec->options = explodeTrim('|,', $rec->options);
-            $rec->optionNames = explodeTrim('|,', $rec->optionNames);
-            foreach ($rec->options as $key => $option) {
-                if ((@$option[0] === '-') || $this->currForm->translateLabels) {
-                    $rec->options[$key] = $this->trans->translateVariable($option, true);
+            $rec->optionNames = explodeTrim('|,', $rec->options);
+            $rec->optionLabels = explodeTrim('|,', $rec->optionLabels);
+            foreach ($rec->optionLabels as $key => $oLabel) {
+                if ((@$oLabel[0] === '-') || $this->currForm->translateLabels) {
+                    $rec->optionLabels[$key] = $this->trans->translateVariable($oLabel, true);
                 }
                 if (!@$rec->optionNames[$key]) {
-                    $s = (@$option[0] === '-')? substr($option,1): $option;
+                    $s = (@$oLabel[0] === '-')? substr($oLabel,1): $oLabel;
                     $rec->optionNames[$key] = str_replace('!', '', $s);
                 }
             }
@@ -461,6 +470,7 @@ EOT;
             $rec->labelInOutput = str_replace(':', '', $rec->labelInOutput);
 
             if (($type === 'checkbox') || ($type === 'radio') || ($type === 'dropdown')) {
+                array_unshift($rec->optionLabels, $rec->labelInOutput);
                 array_unshift($rec->optionNames, $rec->labelInOutput);
             }
         }
@@ -648,20 +658,21 @@ EOT;
         $checkedElem = isset($this->currRec->prefill)? $this->currRec->prefill: false;
         $label = $this->getLabel(false, false);
         $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-radio-label'><div class='lzy-legend'><legend>{$label}</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
-        foreach($rec->options as $i => $option) {
+        foreach($rec->optionLabels as $i => $optionLabel) {
+            if ($i === 0) { continue; } // skip group name
             $preselectedValue = false;
-            $name = $rec->optionNames[$i+1];
+            $name = @$rec->optionNames[$i]? $rec->optionNames[$i]: $optionLabel;
             $id = "lzy-radio_{$groupName}_$i";
 
-            if (strpos($option, '!') !== false) {
-                $option = str_replace('!', '', $option);
+            if (strpos($optionLabel, '!') !== false) {
+                $optionLabel = str_replace('!', '', $optionLabel);
                 if ($checkedElem === false) {
                     $preselectedValue = true;
                 }
             }
             $checked = ($checkedElem && $checkedElem[$i+1]) || $preselectedValue ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-radio-elem lzy-form-choice-elem'>\n";
-            $out .= "\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked$cls /><label for='$id'>$option</label>\n";
+            $out .= "\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked$cls /><label for='$id'>$optionLabel</label>\n";
             $out .= "\t\t\t</div>\n";
         }
         $out .= "\t\t\t  </div><!--/lzy-fieldset-body -->\n\t\t\t</fieldset>\n";
@@ -680,12 +691,13 @@ EOT;
         $label = $this->getLabel(false, false);
         $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-checkbox-label'><div class='lzy-legend'><legend>$label</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
 
-        foreach($rec->options as $i => $option) {
+        foreach($rec->optionLabels as $i => $optionLabel) {
+            if ($i === 0) { continue; } // skip group name
             $preselectedValue = false;
-            $name = $rec->optionNames[$i+1];
+            $name = @$rec->optionNames[$i]? $rec->optionNames[$i]: $optionLabel;
             $id = "lzy-chckb_{$groupName}_$i";
-            if (strpos($option, '!') !== false) {
-                $option = str_replace('!', '', $option);
+            if (strpos($optionLabel, '!') !== false) {
+                $optionLabel = str_replace('!', '', $optionLabel);
                 if ($presetValues === false) {
                     $preselectedValue = true;
                 }
@@ -693,7 +705,7 @@ EOT;
 
             $checked = (($presetValues !== false) && $presetValues[$i+1]) || $preselectedValue ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-checkbox-elem lzy-form-choice-elem'>\n";
-            $out .= "\t\t\t\t<input id='$id' type='checkbox' name='{$groupName}[]' value='$name'$checked$cls /><label for='$id'>$option</label>\n";
+            $out .= "\t\t\t\t<input id='$id' type='checkbox' name='{$groupName}[]' value='$name'$checked$cls /><label for='$id'>$optionLabel</label>\n";
             $out .= "\t\t\t</div>\n";
         }
         $out .= "\t\t\t  </div><!--/lzy-fieldset-body -->\n\t\t\t</fieldset>\n";
@@ -713,18 +725,19 @@ EOT;
         $out = $this->getLabel();
         $out .= "<select id='{$rec->fldPrefix}{$rec->elemId}' name='{$rec->name}'$cls>\n";
 
-        foreach ($rec->options as $i => $option) {
+        foreach ($rec->optionLabels as $i => $optionLabel) {
+            if ($i === 0) { continue; } // skip group name
             $preselectedValue = false;
-            $val = $rec->optionNames[$i+1];
+            $val = @$rec->optionNames[$i]? $rec->optionNames[$i]: $optionLabel;
             $selected = '';
-            if ($option) {
-                if (strpos($option, '!') !== false) {
+            if ($optionLabel) {
+                if (strpos($optionLabel, '!') !== false) {
                     $preselectedValue = true;
-                    $option = str_replace('!', '', $option);
+                    $optionLabel = str_replace('!', '', $optionLabel);
                 }
                 $selected = ($val === $selectedElem) || $preselectedValue ? ' selected' : '';
             }
-            $out .= "\t\t\t\t<option value='$val'$selected>$option</option>\n";
+            $out .= "\t\t\t\t<option value='$val'$selected>$optionLabel</option>\n";
         }
         $out .= "\t\t\t</select>\n";
 
@@ -1145,16 +1158,16 @@ EOT;
             $label .= ' '.$requiredMarker;
         }
 
-        $infoIcon = $infoText = '';
+        $infoIcon = $infoText = $infoIconText = '';
         if ($this->currRec->info) {
             $elemInx = $this->currRec->elemInx;
             $icon = '<span class="lzy-icon-info"></span>';
             $infoIcon = <<<EOT
-        <a href="#" class="lzy-formelem-show-info" title="{{ lzy-formelem-info-title }}" aria-label="{{ lzy-formelem-info-title }}" data-tooltip-content="#lzy-formelem-info-text-$elemInx">{$icon}</a> 
+        <a href="#" class="lzy-formelem-show-info" aria-label="{{ lzy-formelem-info-title }}" data-tooltip-content="#lzy-formelem-info-text-$elemInx">{$icon}</a> 
 
 EOT;
             $infoIconText = <<<EOT
-    <span  style="display: none;">
+    <span  class="sr-only">
 		<span id="lzy-formelem-info-text-$elemInx" class="lzy-formelem-info-text lzy-formelem-info-text-$elemInx">{$this->currRec->info}</span>
 	</span>
 
@@ -1743,7 +1756,6 @@ EOT;
         global $globalParams;
 
         $out = '';
-        $formId = $this->currForm->formId;
         $currForm = $this->currForm;
         $continue = true;
 

@@ -93,6 +93,9 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         vertical-align: baseline;
         top: -0.25em;
     }
+    .lzy-formelem-show-info ::before {
+        color: gray;
+    }
 
 
     /* === Placeholders =================================== */

@@ -93,6 +93,23 @@ lzy-form-expired:
     _:  'Sorry, this form expired.<br>Please try again.'
 
 
+lzy-formelem-info-title:
+    de: 'Erläuterungen: '
+    _:  'Explanations: '
+
+lzy-form-data-received-ok:
+    de: "<p>Ihre Eingaben wurden übermittelt. Besten Dank.</p>"
+    _: "<p>Your entries have been successfully transmitted. Thank you.</p>"
+
+lzy-form-feedback-local: "<strong>Feedback on localhost only:</strong>"
+
+lzy-form-continue:
+    de: Weiter...
+    en: Continue...
+
+
+
+
 #--- File Upload --------------------------
 lzy-fileadmin-button-tooltip:
     de: 'Dateinverwaltung anzeigen'
@@ -670,17 +687,6 @@ lzy-config-button:
     _: |
         This field is currently locked because somebody else is editing it.\n\n
         Please try again in a few minutes. (Remember to reload the page when trying again.)
-
-#--- Forms ----------------------------------------
-lzy-form-data-received-ok:
-    de: "<p>Ihre Eingaben wurden übermittelt. Besten Dank.</p>"
-    _: "<p>Your entries have been successfully transmitted. Thank you.</p>"
-
-lzy-form-feedback-local: "<strong>Feedback on localhost only:</strong>"
-
-lzy-form-continue:
-    de: Weiter...
-    en: Continue...
 
 
 #--- magic links ---------------------
