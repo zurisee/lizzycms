@@ -1532,7 +1532,7 @@ EOT;
 
                 $fldName = @$fldDescr->name;
                 $fldType = @$fldDescr->type;
-                if (!$fldType || ($fldType === 'button')) {
+                if (!$fldType || ($fldType === 'reveal') || ($fldType === 'button')) {
                     continue;
                 } elseif (($fldType === 'checkbox') || ($fldType === 'radio') || ($fldType === 'dropdown')) {
                     if ($fldDescr->splitOutput) {
@@ -1568,7 +1568,7 @@ EOT;
         foreach ($this->currForm->formElements as $fldDescr) {
             if (!$fldDescr) { continue; }
             $fldType = @$fldDescr->type;
-            if (!$fldType || ($fldType === 'button')) {
+            if (!$fldType || ($fldType === 'reveal') || ($fldType === 'button')) {
                 continue;
             } elseif (($fldType === 'checkbox') || ($fldType === 'radio') || ($fldType === 'dropdown')) {
                 if ($fldDescr->splitOutput) {
