@@ -1041,14 +1041,14 @@ EOT;
         if ( !$target.parent().hasClass('lzy-reveal-container') ) {
             $target.wrap("<div class='lzy-reveal-container'></div>").show();
             var boundingBox = $target[0].getBoundingClientRect();
-            $target.css('margin-top', (boundingBox.height * -1 - 10) + 'px');
+            $target.css('margin-top', (boundingBox.height * -1 - 20) + 'px');
         }
     });
     
     $('.lzy-reveal-checkbox').change(function() {
         var $target = $( $( this ).attr('data-reveal-target') );
         var boundingBox = $target[0].getBoundingClientRect();
-        $target.css('margin-top', (boundingBox.height * -1 - 10) + 'px');
+        $target.css('margin-top', (boundingBox.height * -1 - 20) + 'px');
         var $container = $target.parent();
         if ( $( this ).prop('checked') ) {
             $(this).attr('aria-expanded', 'true');
@@ -1087,6 +1087,7 @@ EOT;
 
 			foreach ($types as $i => $type) {
 			    if (!$type) { continue; }
+                $class = " class='".trim($this->currRec->class ." lzy-form-button lzy-form-button-$type"). "'";
 				$id = 'btn_'.$this->currForm->formId.'_'.translateToIdentifier($type);
 				$label = (isset($labels[$i])) ? $labels[$i] : $type;
 				if (stripos($type, 'submit') !== false) {
@@ -1377,7 +1378,7 @@ EOT;
 		$msgToClient = $currForm->confirmationText;
 
 		foreach ($currForm->formElements as $element) {
-		    if ($element->type === 'button') {
+		    if (($element->type === 'reveal') || ($element->type === 'button')) {
                 continue;
             }
             $label = $element->labelInOutput;
@@ -1477,6 +1478,7 @@ EOT;
             }
             $key = $elemDef->name;
             $type = $elemDef->type;
+            if ($type === 'reveal') { continue; }
             if (!isset($userSuppliedData[ $key ])) {
                 if ($type === 'bypassed') {
                     $userSuppliedData[$key] = $elemDef->value;
