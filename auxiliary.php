@@ -2136,6 +2136,7 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
 {
     $html = $options;
     $base64_encode = false;
+    $wrap = false;
     if (is_string($options)) {
         $html = (stripos($options, 'html') !== false)? true: null;
         $wrap = (stripos($options, 'wrap') !== false);
