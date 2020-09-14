@@ -21,7 +21,7 @@ class Forms
     private $inx;
 	private $currForm = null;		// shortcut to $formDescr[ $currFormIndex ]
 	private $currRec = null;		// shortcut to $currForm->formElements[ $currRecIndex ]
-    public $errorDescr = [];
+    public  $errorDescr = [];
 
 //-------------------------------------------------------------
 	public function __construct($lzy, $inx)
@@ -314,6 +314,8 @@ class Forms
         if (($currForm->showData) && !$currForm->export) {
             $currForm->export = DEFAULT_EXPORT_FILE;
         }
+        $currForm->export = resolvePath($currForm->export, true);
+
         $currForm->showDataMinRows = (isset($args['showDataMinRows'])) ? $args['showDataMinRows'] : false;
 
         // options or option:
@@ -1132,6 +1134,11 @@ EOT;
 			$out .= $this->formEvalResult;
 		}
 
+        // refresh export if necessary:
+        if ($this->currForm->export) {
+            $this->export();
+        }
+
         // present previously received data to form owner:
         if ($this->currForm->showData) {
             $out .= $this->renderData();
@@ -1423,6 +1430,9 @@ EOT;
     //-------------------------------------------------------------
     private function checkHoneyPot()
     {
+        if (!$this->currForm->antiSpam) {
+            return false;
+        }
         // check honey pot field (unless on local host):
         if (($this->userSuppliedData["_lizzy-form-name"] !== '') &&
             !$GLOBALS["globalParams"]["localCall"]) {
@@ -1521,6 +1531,14 @@ EOT;
 	private function export()
 	{
         $currForm = $this->currForm;
+
+        // check whether export is required:
+        $t1 = filemtime($currForm->file);
+        $t2 = filemtime($outFile = $currForm->export);
+        if (file_exists($currForm->export) && ($t1 < $t2)) {
+            return;
+        }
+
         $ds = new DataStorage2( $currForm->file );
         $srcData = $ds->read();
         unset($srcData['_meta_']);
@@ -1557,7 +1575,6 @@ EOT;
             $r++;
         }
         $outFile = $currForm->export;
-        $outFile = resolvePath($outFile, true);
         $ds2 = new DataStorage2($outFile);
         $ds2->write( $data );
     } // export
@@ -1791,7 +1808,8 @@ EOT;
             return '';
         }
 
-        $fileName = resolvePath($currForm->export, true);
+        $fileName = $currForm->export;
+//        $fileName = resolvePath($currForm->export, true);
 
         $out .= <<<EOT
 <div class="lzy-forms-preview">
