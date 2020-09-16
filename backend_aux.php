@@ -3,8 +3,9 @@
 define('EXTENSIONS_PATH', 	SYSTEM_PATH.'extensions/');		        //
 define('DATA_PATH', 		PATH_TO_APP_ROOT.'data/');		        // must correspond to lizzy app
 define('CACHE_PATH',        PATH_TO_APP_ROOT.'.#cache/');           // required by Ticketing class
-define('SERVICE_LOG',       PATH_TO_APP_ROOT.'.#logs/backend-log.txt');	    //
-define('ERROR_LOG',         PATH_TO_APP_ROOT.'.#logs/errlog.txt');	//
+define('LOG_PATH',          PATH_TO_APP_ROOT.'.#logs/');	        //
+define('SERVICE_LOG',       LOG_PATH.'backend-log.txt');	        //
+define('ERROR_LOG',         LOG_PATH.'errlog.txt');	                //
 define('RECYCLE_BIN',           '.#recycleBin/');
 define('RECYCLE_BIN_PATH',      '~page/'.RECYCLE_BIN);
 if (!defined('MKDIR_MASK')) {

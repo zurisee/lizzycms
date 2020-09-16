@@ -133,7 +133,8 @@ class AjaxServer
     {
         if (isset($_GET['log'])) {                                // remote log, write to backend's log
             $msg = $this->get_request_data('text');
-            $this->mylog("Client: $msg");
+            $file = $this->get_request_data('file');
+            $this->mylog("Client: $msg", $file);
             exit;
         }
         if ($this->get_request_data('info') !== null) {    // respond with info-msg
@@ -421,12 +422,17 @@ class AjaxServer
 
 
     //---------------------------------------------------------------------------
-    private function mylog($str)
+    private function mylog($str, $file = false)
     {
-        if (!file_exists(dirname(SERVICE_LOG))) {
-            mkdir(dirname(SERVICE_LOG), MKDIR_MASK, true);
+        if ($file) {
+            $file = LOG_PATH.$file;
+        } else {
+            $file = SERVICE_LOG;
         }
-        file_put_contents(SERVICE_LOG, $this->timestamp()." {$this->clientID}{$this->user}:  $str\n", FILE_APPEND);
+        if (!file_exists(dirname($file))) {
+            mkdir(dirname($file), MKDIR_MASK, true);
+        }
+        file_put_contents($file, $this->timestamp()." {$this->clientID}{$this->user}:  $str\n\n", FILE_APPEND);
     } // mylog
 
 
