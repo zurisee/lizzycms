@@ -46,6 +46,10 @@ submit:
     de: absenden
     en: send
 
+Reset:
+    de: Zurücksetzen
+    en: Reset
+
 Confirm:
     de: Bestätigen
     en: Confirm
@@ -105,7 +109,27 @@ lzy-form-feedback-local: "<strong>Feedback on localhost only:</strong>"
 
 lzy-form-continue:
     de: Weiter...
-    en: Continue...
+    _:  Continue...
+
+lzy-form-empty-form-warning:
+    de: Sie haben noch keine Eingaben gemacht.
+    _:  You have not entered any data yet.
+
+lzy-form-empty-rec-received:
+    de: '<h2>Hinweis</h2><p>Es wurden keine Daten empfangen.<br>Entsprechend wurde nichts abgespeichert.</p>'
+    _:  '<h2>Note</h2><p>No input has be received on the server.</p><p>Therefore, nothing has been stored.</p>'
+
+lzy-form-override-honeypot:
+    de: '<h3>Vorsichtsmassnahme gegen Spam</h3><p>Bitte geben Sie Ihren Familienname erneut ein, diesmal in GROSSBUCHSTABEN:</p>'
+    _:  '<h3>As a measure of precaution against spam</h3><p>Please enter your last name again, this time in CAPITAL LETTERS:</p>'
+
+lzy-form-override-honeypot-label:
+    de: 'Nachname in <strong>Grossbuchstaben</strong>:'
+    _:  'Last name in <strong>capital letters</strong>:'
+
+lzy-form-duplicate-data:
+    de: '<h2>Hinweis</h2><p>Ihre Eingaben haben wir bereits früher empfangen.<br>Entsprechend wurde jetzt nichts abgespeichert.</p>'
+    _:  '<h2>Note</h2><p>Your input has been received before.</p><p>Therefore, nothing has been stored this time.</p>'
 
 
 

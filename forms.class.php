@@ -13,7 +13,8 @@ define('DEFAULT_EXPORT_FILE', 	'~page/form-export.csv');
 mb_internal_encoding("utf-8");
 
 
-$GLOBALS['lzyFormsCount'] = 1;
+$GLOBALS["globalParams"]['lzyFormsCount'] = 1;
+$GLOBALS["globalParams"]['warnLeavingPageInitialized'] = false;
 
 class Forms
 {
@@ -31,7 +32,7 @@ class Forms
 		$this->page = $lzy->page;
 		$this->inx = -1;
 		$this->formInx = $inx;
-		$this->formsCount = $GLOBALS['lzyFormsCount']++;
+		$this->formsCount = $GLOBALS["globalParams"]['lzyFormsCount']++;
         $this->currForm = new FormDescriptor; // object as will be saved in DB
         $this->formEvalResult = false;
         $this->skipRenderingForm = false;
@@ -273,6 +274,7 @@ class Forms
         $currForm->warnLeavingPage = (isset($args['warnLeavingPage'])) ? $args['warnLeavingPage'] : true;
         $currForm->encapsulate = (isset($args['encapsulate'])) ? $args['encapsulate'] : true;
         $currForm->formTimeout = (isset($args['formTimeout'])) ? $args['formTimeout'] : false;
+        $currForm->avoidDuplicates = (isset($args['avoidDuplicates'])) ? $args['avoidDuplicates'] : true;
         $currForm->export = (isset($args['export'])) ? $args['export'] : false;
         $currForm->confirmationEmail = (isset($args['confirmationEmail'])) ? $args['confirmationEmail'] : false;
         $currForm->confirmationEmailTemplate = (isset($args['confirmationEmailTemplate'])) ? $args['confirmationEmailTemplate'] : false;
@@ -534,16 +536,36 @@ EOT;
             setStaticVariable( 'forms.'.$currForm->formId, $currForm->ticketHash );
         }
 
-        if ($currForm->warnLeavingPage) {
-            $this->page->addModules('~sys/js/forms-leave-warning.js');
+        if ($currForm->warnLeavingPage && !$GLOBALS["globalParams"]['warnLeavingPageInitialized']) {
+            $GLOBALS["globalParams"]['warnLeavingPageInitialized'] = true;
+            $js = <<<EOT
+function onUnloadPage() {
+    if ( lzyFormUnsaved ) {
+        return true;
+    }
+}
+var lzyFormUnsaved = false;
+window.onbeforeunload = onUnloadPage;
+
+EOT;
+            $this->page->addJs( $js );
+            $js = <<<EOT
+$(":input").change(function () {
+    lzyFormUnsaved = true;
+});
+
+EOT;
+            $this->page->addJq( $js );
         }
 
         $id = " id='{$this->formId}'";
 
         $legendClass = 'lzy-form-legend';
+        $announcementClass = 'lzy-form-announcement';
         if (stripos($currForm->options, 'nocolor') === false) {
             $currForm->class .= ' lzy-form-colored';
             $legendClass .= ' lzy-form-colored';
+            $announcementClass .= ' lzy-form-colored';
         }
         $class = &$currForm->class;
         $class = "$formId $class";
@@ -571,12 +593,20 @@ EOT;
         }
 
 
+
         // now assemble output, i.e. <form> element:
 		$out = '';
         if ($currForm->legend) {
             $out = "<div class='$legendClass {$currForm->formId}'>{$currForm->legend}</div>\n\n";
         }
-        $out .= "\t<form$id$_class method='post' $_action$novalidate>\n";
+
+        // handle general error feedback:
+        if (@$this->errorDescr[$this->currForm->formId]['_announcement_']) {
+            $msg = $this->errorDescr[$this->currForm->formId]['_announcement_'];
+            $out .= "\t<div class='$announcementClass'>$msg</div>\n";
+        }
+
+        $out .= "\t<form$id$_class$_method$_action$novalidate>\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form-id' value='{$this->formInx}' />\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form' value='{$currForm->ticketHash}' />\n";
 		$out .= "\t\t<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-cmd' value='' />\n";
@@ -1095,7 +1125,14 @@ EOT;
 			    if (!$type) { continue; }
                 $class = " class='".trim($this->currRec->class ." lzy-form-button lzy-form-button-$type"). "'";
 				$id = 'btn_'.$this->currForm->formId.'_'.translateToIdentifier($type);
-				$label = (isset($labels[$i])) ? $labels[$i] : $type;
+				$label = $labels[$i];
+				if (isset($label) && $label) {
+				    if ($label[0] === '-') {
+                        $label = $this->trans->translateVariable(substr($label,1), true);
+                    }
+                } else {
+                    $label = $type;
+                }
 				if (stripos($type, 'submit') !== false) {
 					$out .= "$indent<input type='submit' id='$id' value='$label' $class />\n";
 					
@@ -1124,9 +1161,12 @@ EOT;
     //-------------------------------------------------------------
 	private function renderFormTail()
     {
-		$out = "\t</form>\n";
+        if ($this->currForm->antiSpam) {
+            $this->initAntiSpam();
+        }
+        $out = "\t</form>\n";
 
-		// save form data to DB:
+        // save form data to DB:
         $this->saveFormDescr();
 
         // append possible text from user-data evaluation:
@@ -1220,7 +1260,7 @@ EOT;
     public function restoreFormDescr($ticketHash)
 	{
         $rec = $this->tck->consumeTicket($ticketHash);
-        if ($rec !== false) {
+        if (isset($rec['form'])) {
             return unserialize(base64_decode($rec['form']));
         } else {
             return null;
@@ -1288,7 +1328,7 @@ EOT;
 
         // check required entries:
         $this->checkSuppliedDataEntries();
-        if ($this->errorDescr) {
+        if ( @$this->errorDescr[$formId] ) {
             $this->cacheUserSuppliedData($formId, $userSuppliedData);
             return false;
         }
@@ -1354,7 +1394,11 @@ EOT;
             $this->sendConfirmationMail( $userSuppliedData );
         }
 
-        $this->skipRenderingForm = true;
+        if (@$this->errorDescr[$this->formId]['_announcement_']) {
+            $msgToClient = '';
+        } else {
+            $this->skipRenderingForm = true;
+        }
         return $msgToClient; // -> to be presented in webpage
     } // evaluateUserSuppliedData
 
@@ -1363,7 +1407,9 @@ EOT;
     //-------------------------------------------------------------
 	private function saveAndWrapUp($msgToClient, $msgToOwner)
 	{
-        $this->saveUserSuppliedDataToDB();
+        if (!$this->saveUserSuppliedDataToDB()) {
+            return;
+        }
         if ($this->currForm->export) {
             $this->export();
         }
@@ -1457,6 +1503,26 @@ EOT;
         $recKey = $currForm->ticketHash;
         $ds = new DataStorage2( $currForm->file );
 
+        if ($currForm->avoidDuplicates) {
+            $data = $ds->read();
+            foreach ($data as $hash => $rec) {
+                if ($hash === '_meta_') { continue; }
+                $identical = true;
+                foreach ($rec as $key => $value) {
+                    $v1 = $this->userSuppliedData[ $key ];
+                    $v2 = $rec[ $key ];
+                    if ($v1 !== $v2) {
+                        $identical = false;
+                        break;
+                    }
+                }
+                if ($identical) {
+                    $this->errorDescr[$this->formId]['_announcement_'] = '{{ lzy-form-duplicate-data }}';
+                    return false;
+                }
+            }
+        }
+
         // prepend meta data if DB is empty:
         $n = $ds->getNoOfRecords();
         if ($n === 0) {
@@ -1533,8 +1599,8 @@ EOT;
         $currForm = $this->currForm;
 
         // check whether export is required:
-        $t1 = filemtime($currForm->file);
-        $t2 = filemtime($outFile = $currForm->export);
+        $t1 = @filemtime($currForm->file);
+        $t2 = @filemtime($outFile = $currForm->export);
         if (file_exists($currForm->export) && ($t1 < $t2)) {
             return;
         }
@@ -1655,13 +1721,104 @@ EOT;
 
 
 
+
+    private function initAntiSpam()
+    {
+        $id = "fld_ch{$this->inx}";
+        $nameFldId = '#fld_'.$this->currForm->antiSpam;
+        $html = <<<EOT
+        <div id="lzy-ch-wrapper-{$this->formInx}" class="lzy-ch-wrapper">
+            {{ lzy-form-override-honeypot }}
+            <div class="lzy-ch-input-wrapper">
+                <label for="$id">{{ lzy-form-override-honeypot-label }}</label>
+                <input id="$id" type="text" name="lzy-ch-name" />
+            </div>
+        </div>
+
+EOT;
+        $html = str_replace(["\n", '  '], ' ', $html);
+
+        // submit: check honey pot
+        $js = <<<EOT
+
+function lzyChContinue( i, btn, callbackArg ) {
+    lzyFormUnsaved = false;
+    var val = $( '#$id' ).val();
+    var origFld = $( '$nameFldId' ).val();
+    if (val === origFld.toUpperCase()) {
+        $( '#' + callbackArg )[0].submit();
+    } else {
+        lzyPopupClose();
+        setTimeout(function() {
+            initAntiSpamPopup();
+        }, 800);
+    }
+}
+
+function lzyChAbort() {
+    return false;
+}
+
+function initAntiSpamPopup() {
+    lzyPopup({
+        text: '$html',
+        trigger: true,
+        class: 'lzy-popup-leftaligned',
+        buttons: '{{ Continue }},{{ Cancel }}',
+        callbacks: 'lzyChContinue,lzyChAbort',
+        callbackArg: '{$this->currForm->formId}',
+        buttonClass: 'lzy-button lzy-button-submit, lzy-button ',
+        closeButton: false,
+    });
+    $( '#$id' ).focus();
+}
+
+function noInputPopup() {
+    lzyPopup({
+        text: '{{ lzy-form-empty-form-warning }}',
+        trigger: true,
+        buttons: '{{ Continue }}',
+        closeButton: false,
+    });
+    $( '#$id' ).focus();
+}
+
+EOT;
+        $this->page->addJs($js);
+
+    } // initAntiSpam
+
+
+
+
     private function initButtonHandlers()
     {
-        $jq = <<<'EOT'
-		
+        $jq = <<<EOT
+
+	$('input[type=submit]').click(function(e) {
+		var \$form = $(this).closest('form');
+		if (lzyFormUnsaved === false) {
+            e.preventDefault();
+		    noInputPopup();
+		    return;
+        }
+		if (!$('.lzy-form-check', \$form ).val()) {
+            lzyFormUnsaved = false;
+    		\$form[0].submit();
+		    return;
+		}
+        e.preventDefault();
+        initAntiSpamPopup();
+	});
+
+EOT;
+
+        $jq .= <<<'EOT'
+
 	$('input[type=reset]').click(function(e) {  // reset: clear all entries
 		var $form = $(this).closest('form');
 		$('.lzy-form-cmd', $form ).val('_reset_');
+        lzyFormUnsaved = false;
 		$form[0].submit();
 	});
 	
@@ -1809,7 +1966,6 @@ EOT;
         }
 
         $fileName = $currForm->export;
-//        $fileName = resolvePath($currForm->export, true);
 
         $out .= <<<EOT
 <div class="lzy-forms-preview">
@@ -1859,6 +2015,7 @@ EOT;
     {
         $currForm = $this->currForm;
         $userSuppliedData = $this->userSuppliedData;
+        $formEmpty = true;
 
         foreach ($currForm->formElements as $rec) {
             if (!$rec) {
@@ -1888,6 +2045,7 @@ EOT;
                 }
             }
             if ($value) {
+                $formEmpty = false;
                 if ($type === 'email') {
                     if (!is_legal_email_address($value)) {
                         $this->errorDescr[$this->formId][$name] = '{{ lzy-invalid-email-address }}';
@@ -1904,6 +2062,10 @@ EOT;
                 //            } else { // 'date','time','datetime','month','range','tel'
                 }
             }
+        }
+
+        if ($formEmpty) {
+            $this->errorDescr[$this->formId]['_announcement_'] = '{{ lzy-form-empty-rec-received }}';
         }
     } // checkSuppliedDataEntries
 
