@@ -1659,6 +1659,9 @@ function translateToClassName($str)
 //------------------------------------------------------------
 function mylog($str, $destination = false)
 {
+    if (!is_string( $str )) {
+        $str = var_r($str);
+    }
 	writeLog($str, $destination);
 } // mylog
 
