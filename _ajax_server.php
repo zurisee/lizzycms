@@ -424,6 +424,9 @@ class AjaxServer
     //---------------------------------------------------------------------------
     private function mylog($str, $file = false)
     {
+        if (!is_string( $str )) {
+            $str = var_r($str);
+        }
         if ($file) {
             $file = LOG_PATH.$file;
         } else {
