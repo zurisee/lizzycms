@@ -679,7 +679,7 @@ EOT;
 
     private function getDataElem($row, $col, $tag = 'td', $hdrElem = false)
     {
-        $cell = $this->data[$row][$col];
+        $cell = @$this->data[$row][$col];
 
         $col1 = $col + 1;
         if ($hdrElem) {
