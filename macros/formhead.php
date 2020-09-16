@@ -62,8 +62,11 @@ $this->addMacro($macroName, function () {
         $this->getArg($macroName, 'replaceQuotes', 'If true, quote characters (\' and ") contained in user\'s '.
             'entries will be converted to lookalikes, which cannot interfere with data-file-formats (yaml, json, csv).', true);
 
-        $this->getArg($macroName, 'antiSpam', 'If true, a invisible "honey-pot" field is added to the form. '.
-            'Spam-attacks typically try to fill in data and thus can be identified on the server.', true);
+        $this->getArg($macroName, 'antiSpam', '[false,field-ID] If true, an invisible "honey-pot" field is added '.
+            'to the form. Spam-attacks typically try to fill in data and thus can be identified on the server. '.
+            'To use, provide the id of the input field that accepts "last-name" input. The user can then override the '.
+            'mechanism by re-entering his/her last name in UPPERCASE letters. You could use any other input field, '.
+            'but need to modify the text resource "lzy-form-override-honeypot" accordingly. (default: false)', false);
 
         $this->getArg($macroName, 'validate', 'If true, the browser\'s validation mechanism is activated, '.
             'e.g. checking for required fields and compliance with field types. Note: this may conflict with '.

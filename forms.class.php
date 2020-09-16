@@ -310,7 +310,11 @@ class Forms
         $GLOBALS["globalParams"]['preventMultipleSubmit'] = $currForm->preventMultipleSubmit;
 
         $currForm->replaceQuotes = (isset($args['replaceQuotes'])) ? $args['replaceQuotes'] : true;
-        $currForm->antiSpam = (isset($args['antiSpam'])) ? $args['antiSpam'] : true;
+        $currForm->antiSpam = (isset($args['antiSpam'])) ? $args['antiSpam'] : false;
+        if (!$currForm->antiSpam && $this->lzy->localCall) {    // disable antiSpam on localhost for convenient testing of forms
+            $currForm->antiSpam = false;
+            $this->page->addDebugMsg('"antiSpam" disabled on localhost');
+        }
 
         $currForm->validate = (isset($args['validate'])) ? $args['validate'] : false;
         $currForm->showData = (isset($args['showData'])) ? $args['showData'] : false;
@@ -1760,7 +1764,7 @@ EOT;
                 die("AntiSpam: no text field found that could be used for antiSpam-mechanism.");
             }
         }
-        
+
         $html = <<<EOT
         <div id="lzy-ch-wrapper-{$this->formInx}" class="lzy-ch-wrapper">
             {{ lzy-form-override-honeypot }}
