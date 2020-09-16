@@ -148,17 +148,18 @@ function mylog(txt)
 	}
 
     if ($('body').hasClass('logging-to-server')) {
-        serverLog(txt)
+        serverLog(txt);
     }
 } // mylog
 
 
 
 //--------------------------------------------------------------
-function serverLog(text)
+function serverLog(text, file)
 {
+    file = (typeof file !== 'undefined')? file: '';
     if (text) {
-        $.post( systemPath+'_ajax_server.php?log', { text: text } );
+        $.post( systemPath+'_ajax_server.php?log', { text: text, file: file } );
     }
 } // serverLog
 
