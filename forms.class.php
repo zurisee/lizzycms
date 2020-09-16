@@ -9,6 +9,7 @@ define('CSV_QUOTE', 	'"');
 define('DATA_EXPIRATION_TIME', false);
 define('THUMBNAIL_PATH', 	'_/thumbnails/');
 define('DEFAULT_EXPORT_FILE', 	'~page/form-export.csv');
+define('SPAM_LOG_FILE', 	'spam-log.txt');
 
 mb_internal_encoding("utf-8");
 
@@ -584,11 +585,11 @@ EOT;
 
         $novalidate = (!$currForm->validate) ? ' novalidate': '';
         if (!$novalidate) { // also possible as option:
-            $novalidate = (stripos($currForm->options, 'validate') === false) ? ' novalidate' : '';
+            $novalidate = (stripos($currForm->options, 'novalidate') !== false) ? ' novalidate' : '';
         }
         $honeyPotRequired = ' required aria-required="true"';
         if (!$novalidate) {
-            $novalidate = (stripos($currForm->options, 'validate') === false) ? ' novalidate' : '';
+            $novalidate = (stripos($currForm->options, 'novalidate') !== false) ? ' novalidate' : '';
             $honeyPotRequired = '';
         }
 
@@ -608,6 +609,7 @@ EOT;
 
         $out .= "\t<form$id$_class$_method$_action$novalidate>\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form-id' value='{$this->formInx}' />\n";
+		$out .= "\t\t<input type='hidden' name='_lizzy-form-label' value='{$currForm->formName}' />\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form' value='{$currForm->ticketHash}' />\n";
 		$out .= "\t\t<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-cmd' value='' />\n";
 
@@ -1291,6 +1293,7 @@ EOT;
     {
         // returns false on success, error msg otherwise:
         $this->userSuppliedData = $_POST;
+        $this->userSuppliedData0 = $_POST;
         $userSuppliedData = &$this->userSuppliedData;
 		if (!isset($userSuppliedData['_lizzy-form-id'])) {
 			$this->clearCache();
@@ -1308,6 +1311,7 @@ EOT;
             return false;
         }
 
+        // anti-spam check:
         if ($this->checkHoneyPot()) {
             $this->clearCache();
             return false;
@@ -1315,13 +1319,19 @@ EOT;
 
         $this->formId = $formId = $currForm->formId;
 
-        if (@$userSuppliedData['_lizzy-form-cmd'] === '_ignore_') { // case reload upon timeout:
+        $cmd = @$userSuppliedData['_lizzy-form-cmd'];
+        if ($cmd === '_ignore_') {     // _ignore_
             $this->cacheUserSuppliedData($formId, $userSuppliedData);
             return;
 
-        } elseif (@$userSuppliedData['_lizzy-form-cmd'] === '_reset_') { // case reload upon timeout:
+        } elseif ($cmd === '_reset_') { // _reset_
             $this->clearCache();
             reloadAgent();
+
+        } elseif ($cmd === '_log_') { // _log_
+            $out = @$userSuppliedData['_lizzy-form-log'];
+            writeLog($out, SPAM_LOG_FILE);
+            exit;
         }
 
         $this->prepareUserSuppliedData(); // handles radio and checkboxes
@@ -1601,7 +1611,7 @@ EOT;
         // check whether export is required:
         $t1 = @filemtime($currForm->file);
         $t2 = @filemtime($outFile = $currForm->export);
-        if (file_exists($currForm->export) && ($t1 < $t2)) {
+        if (file_exists($currForm->export) && ($t1 !== false) && ($t1 < $t2)) {
             return;
         }
 
@@ -1725,7 +1735,32 @@ EOT;
     private function initAntiSpam()
     {
         $id = "fld_ch{$this->inx}";
-        $nameFldId = '#fld_'.$this->currForm->antiSpam;
+        if ($this->currForm->antiSpam !== true) {   // field for antiSpam explicitly defined:
+            $nameFldId = str_replace('#fld_', '', $this->currForm->antiSpam);
+            $found = false;
+            foreach ($this->currForm->formElements as $rec) {
+                if ($rec->elemId === $nameFldId) {
+                    $nameFldId = '#fld_' . $nameFldId;
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                die("AntiSpam: field '{$this->currForm->antiSpam}' not found for using in antiSpam.");
+            }
+        } else {        // no field for antiSpam check given, find first text field:
+            $nameFldId = false;
+            foreach ($this->currForm->formElements as $rec) {
+                if ($rec->type === 'text') {
+                    $nameFldId = '#fld_' . $rec->elemId;
+                    break;
+                }
+            }
+            if (!$nameFldId) {
+                die("AntiSpam: no text field found that could be used for antiSpam-mechanism.");
+            }
+        }
+        
         $html = <<<EOT
         <div id="lzy-ch-wrapper-{$this->formInx}" class="lzy-ch-wrapper">
             {{ lzy-form-override-honeypot }}
@@ -1745,6 +1780,9 @@ function lzyChContinue( i, btn, callbackArg ) {
     lzyFormUnsaved = false;
     var val = $( '#$id' ).val();
     var origFld = $( '$nameFldId' ).val();
+    if (!origFld) {
+        origFld = '';
+    }
     if (val === origFld.toUpperCase()) {
         $( '#' + callbackArg )[0].submit();
     } else {
@@ -1793,6 +1831,7 @@ EOT;
 
     private function initButtonHandlers()
     {
+        $logFile = SPAM_LOG_FILE;
         $jq = <<<EOT
 
 	$('input[type=submit]').click(function(e) {
@@ -1808,6 +1847,8 @@ EOT;
 		    return;
 		}
         e.preventDefault();
+        var data = JSON.stringify( \$form.serializeArray() );
+        serverLog('suspicious form data: ' + data, '$logFile');
         initAntiSpamPopup();
 	});
 
@@ -1869,21 +1910,6 @@ $('form').preventDoubleSubmission();
 EOT;
         $this->page->addJq($jq);
     } // activatePreventMultipleSubmit
-
-
-
-//    private function writeLog($labels, $log, $formName, $mailto)
-//    {
-//        writeLog("Form '$formName' response to: '$mailto'; body: '$log'");
-//
-//        $timeStamp = timestamp();
-//        $logFile = LOGS_PATH."$formName.csv";
-//        if (!file_exists($logFile)) {
-//            file_put_contents($logFile, "{$labels}Timestamp\n");
-//        }
-//        file_put_contents($logFile, "$log$timeStamp\n", FILE_APPEND);
-//    } // writeLog
-
 
 
 
@@ -2067,6 +2093,12 @@ EOT;
         if ($formEmpty) {
             $this->errorDescr[$this->formId]['_announcement_'] = '{{ lzy-form-empty-rec-received }}';
         }
+
+        $log = str_replace(["\n", '  '], ' ', var_export($this->userSuppliedData0, true));
+        if (@$this->errorDescr[$this->formId]) {
+            $log .= "\nError Msg: ".str_replace(["\n", '  '], ' ', var_export($this->errorDescr[$this->formId], true));
+        }
+        writeLog("New form data [{$currForm->formName}]:\n$log\n");
     } // checkSuppliedDataEntries
 
 
