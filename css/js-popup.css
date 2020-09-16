@@ -21,6 +21,7 @@
 	min-height: 100px;
 	vertical-align: middle;
 	width: 60%;
+	z-index:10001;
 	border-radius: 8px;
 	padding: 15px 5%;
 	position: relative;
@@ -44,4 +45,7 @@
 }
 .lzy-js-popup-buttons {
 	margin: 1em 0;
+}
+.lzy-ch-input-wrapper {
+	padding: 1em 0 0.5em 0;
 }
