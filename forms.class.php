@@ -741,7 +741,7 @@ EOT;
                 }
             }
 
-            $checked = (($presetValues !== false) && $presetValues[$i+1]) || $preselectedValue ? ' checked' : '';
+            $checked = (($presetValues !== false) && @$presetValues[$i+1]) || $preselectedValue ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-checkbox-elem lzy-form-choice-elem'>\n";
             $out .= "\t\t\t\t<input id='$id' type='checkbox' name='{$groupName}[]' value='$name'$checked$cls /><label for='$id'>$optionLabel</label>\n";
             $out .= "\t\t\t</div>\n";
@@ -1784,7 +1784,9 @@ function lzyChContinue( i, btn, callbackArg ) {
         origFld = '';
     }
     if (val === origFld.toUpperCase()) {
-        $( '#' + callbackArg )[0].submit();
+        var \$form = $( '#' + callbackArg );
+        $( '.lzy-form-check', \$form ).val('');
+        \$form[0].submit();
     } else {
         lzyPopupClose();
         setTimeout(function() {
@@ -1836,12 +1838,13 @@ EOT;
 
 	$('input[type=submit]').click(function(e) {
 		var \$form = $(this).closest('form');
-		if (lzyFormUnsaved === false) {
-            e.preventDefault();
-		    noInputPopup();
-		    return;
-        }
 		if (!$('.lzy-form-check', \$form ).val()) {
+            if (lzyFormUnsaved === false) {
+                e.preventDefault();
+                noInputPopup();
+                return;
+            }
+
             lzyFormUnsaved = false;
     		\$form[0].submit();
 		    return;
