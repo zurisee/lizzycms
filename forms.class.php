@@ -24,8 +24,10 @@ class Forms
 	private $currForm = null;		// shortcut to $formDescr[ $currFormIndex ]
 	private $currRec = null;		// shortcut to $currForm->formElements[ $currRecIndex ]
     public  $errorDescr = [];
+    private $responseToClient = false;
+    private $skipRenderingForm = false;
 
-//-------------------------------------------------------------
+    //-------------------------------------------------------------
 	public function __construct($lzy, $inx)
 	{
 	    $this->lzy = $lzy;
@@ -35,8 +37,6 @@ class Forms
 		$this->formInx = $inx;
 		$this->formsCount = $GLOBALS["globalParams"]['lzyFormsCount']++;
         $this->currForm = new FormDescriptor; // object as will be saved in DB
-        $this->formEvalResult = false;
-        $this->skipRenderingForm = false;
 
         $this->tck = new Ticketing([
             'defaultType' => 'lzy-form',
@@ -52,7 +52,7 @@ class Forms
     } // __construct
 
     
-//-------------------------------------------------------------
+    //-------------------------------------------------------------
     public function render($args)
     {
         $this->args = $args;
@@ -311,7 +311,7 @@ class Forms
 
         $currForm->replaceQuotes = (isset($args['replaceQuotes'])) ? $args['replaceQuotes'] : true;
         $currForm->antiSpam = (isset($args['antiSpam'])) ? $args['antiSpam'] : false;
-        if (!$currForm->antiSpam && $this->lzy->localCall) {    // disable antiSpam on localhost for convenient testing of forms
+        if ($currForm->antiSpam && $this->lzy->localCall) {    // disable antiSpam on localhost for convenient testing of forms
             $currForm->antiSpam = false;
             $this->page->addDebugMsg('"antiSpam" disabled on localhost');
         }
@@ -608,6 +608,7 @@ EOT;
         // handle general error feedback:
         if (@$this->errorDescr[$this->currForm->formId]['_announcement_']) {
             $msg = $this->errorDescr[$this->currForm->formId]['_announcement_'];
+            $this->errorDescr[$this->currForm->formId]['_announcement_'] = false;
             $out .= "\t<div class='$announcementClass'>$msg</div>\n";
         }
 
@@ -1167,6 +1168,7 @@ EOT;
     //-------------------------------------------------------------
 	private function renderFormTail()
     {
+        $formId = $this->currForm->formId;
         if ($this->currForm->antiSpam) {
             $this->initAntiSpam();
         }
@@ -1176,9 +1178,30 @@ EOT;
         $this->saveFormDescr();
 
         // append possible text from user-data evaluation:
-        if (isset($this->formEvalResult)) {
-			$out .= $this->formEvalResult;
-		}
+        $msgToClient = '';
+        $msgToClientClass = '';
+        if (stripos($this->currForm->options, 'nocolor') === false) {
+            $msgToClientClass = 'lzy-form-colored ';
+        }
+
+        // check _announcement_ and responseToClient, inject msg if present:
+        if (@$this->errorDescr[$formId]['_announcement_']) { // is errMsg, takes precedence over responseToClient
+            $msgToClient = $this->errorDescr[$formId]['_announcement_'];
+            $this->errorDescr[$formId]['_announcement_'] = false;
+            $msgToClientClass .= 'lzy-form-announcement';
+
+        } elseif (@$this->responseToClient) {
+            $msgToClient = $this->responseToClient;
+            $msgToClientClass .= 'lzy-form-response';
+        }
+        if ($msgToClient) {
+            // append 'continue...' if form was omitted:
+            if ($this->skipRenderingForm) {
+                $next = @$this->currForm->next ? $this->currForm->next : './';
+                $msgToClient .= "<div class='lzy-form-continue'><a href='{$next}'>{{ lzy-form-continue }}</a></div>\n";
+            }
+            $out .= "\t<div class='$msgToClientClass'>$msgToClient</div>\n";
+        }
 
         // refresh export if necessary:
         if ($this->currForm->export) {
@@ -1295,6 +1318,8 @@ EOT;
     //-------------------------------------------------------------
     public function evaluateUserSuppliedData()
     {
+        $msgToClient = '';
+
         // returns false on success, error msg otherwise:
         $this->userSuppliedData = $_POST;
         $this->userSuppliedData0 = $_POST;
@@ -1365,7 +1390,7 @@ EOT;
             return true;
         }
 
-        list($msgToClient, $msgToOwner) = $this->assembleResponses();
+        $msgToOwner = $this->assembleResponses();
 
 
         $customResponseEvaluation = @$currForm->customResponseEvaluation;
@@ -1383,7 +1408,7 @@ EOT;
 			    if (!function_exists('evalForm')) {
                     fatalError("Warning: trying to execute evalForm(), but not defined in '$customResponseEvaluation'.", 'File: '.__FILE__.' Line: '.__LINE__);
                 }
-				$res = evalForm( $this, $msgToClient);
+				$res = evalForm( $this);
                 if (is_array($res)) {
                     $msgToClient = $res[0];
                     if (is_array($res[1])) {
@@ -1401,42 +1426,39 @@ EOT;
 
         $noError = !@$this->errorDescr[ $this->formId ];
         if ($noError ) {
-            $this->saveAndWrapUp($msgToClient, $msgToOwner);
+            $cont = $this->saveAndWrapUp($msgToOwner);
         }
 
-        if ($this->currForm->confirmationEmail) {
-            $this->sendConfirmationMail( $userSuppliedData );
+        if ($cont && $this->currForm->confirmationEmail) {
+            $msgToClient .= $this->sendConfirmationMail( $userSuppliedData );
         }
 
-        if (@$this->errorDescr[$this->formId]['_announcement_']) {
-            $msgToClient = '';
-        } else {
+        if ($noError ) {
+            if (!$msgToClient) {
+                $msgToClient = $this->currForm->confirmationText;
+            }
+            $this->responseToClient = $msgToClient . $this->responseToClient;
             $this->skipRenderingForm = true;
         }
-        return $msgToClient; // -> to be presented in webpage
     } // evaluateUserSuppliedData
 
 
 
     //-------------------------------------------------------------
-	private function saveAndWrapUp($msgToClient, $msgToOwner)
+	private function saveAndWrapUp($msgToOwner)
 	{
         if (!$this->saveUserSuppliedDataToDB()) {
-            return;
+            return false;
         }
         if ($this->currForm->export) {
             $this->export();
         }
         $this->clearCache();
 
-        $next = @$this->currForm->next? $this->currForm->next : './';
-        $msgToClient .= "<div class='lzy-form-continue'><a href='{$next}'>{{ lzy-form-continue }}</a></div>\n";
-
-        $this->formEvalResult = $msgToClient;
-
         if ($msgToOwner && $this->currForm->mailTo) {
             $this->lzy->sendMail($this->currForm->mailTo, $msgToOwner['subject'], $msgToOwner['body'], $this->currForm->mailFrom);
         }
+        return true;
     } // saveAndWrapUp
 
 
@@ -1446,7 +1468,6 @@ EOT;
 	    // returns: [$msgToClient, $msgToOwner]
         $currForm = $this->currForm;
         $msgToOwner = "{$currForm->formName}\n===================\n\n";
-		$msgToClient = $currForm->confirmationText;
 
 		foreach ($currForm->formElements as $element) {
 		    if (($element->type === 'reveal') || ($element->type === 'button')) {
@@ -1469,7 +1490,6 @@ EOT;
             $msgToOwner .= mb_str_pad($label, 22, '.') . ": $value\n\n";
         }
         $msgToOwner = trim($msgToOwner, "\n\n");
-        $msgToClient = "\n<div class='lzy-form-response'>\n$msgToClient\n</div><!-- /lzy-form-response -->\n";
 
         // prepare default mail to owner if arg 'mailTo' is defined:
         if ($currForm->mailTo) {
@@ -1481,7 +1501,7 @@ EOT;
 
             $msgToOwner = ['subject' => $subject, 'body' => $msgToOwner];
         }
-        return [$msgToClient, $msgToOwner];
+        return $msgToOwner;
 	} // assembleResponses
 
 
@@ -1531,7 +1551,9 @@ EOT;
                     }
                 }
                 if ($identical) {
+                    $this->clearCache();
                     $this->errorDescr[$this->formId]['_announcement_'] = '{{ lzy-form-duplicate-data }}';
+                    $this->skipRenderingForm = true;
                     return false;
                 }
             }
@@ -1817,6 +1839,18 @@ function initAntiSpamPopup() {
     $( '#$id' ).focus();
 }
 
+EOT;
+        $this->page->addJs($js);
+    } // initAntiSpam
+
+
+
+
+    private function initButtonHandlers()
+    {
+        $id = "fld_ch{$this->inx}";
+        $js = <<<EOT
+
 function noInputPopup() {
     lzyPopup({
         text: '{{ lzy-form-empty-form-warning }}',
@@ -1830,20 +1864,19 @@ function noInputPopup() {
 EOT;
         $this->page->addJs($js);
 
-    } // initAntiSpam
-
-
-
-
-    private function initButtonHandlers()
-    {
         $logFile = SPAM_LOG_FILE;
         $jq = <<<EOT
 
 	$('input[type=submit]').click(function(e) {
 		var \$form = $(this).closest('form');
 		if (!$('.lzy-form-check', \$form ).val()) {
-            if (lzyFormUnsaved === false) {
+            var s = '';
+            $( 'input,textarea', \$form).each(function() {
+                if ($(this).attr('type') !== 'hidden') {
+                    s += $(this).val();
+                }
+            });
+            if (!s) {
                 e.preventDefault();
                 noInputPopup();
                 return;
@@ -2132,8 +2165,8 @@ EOT;
         } else {
             $file = resolvePath($this->currForm->confirmationEmailTemplate, true);
             if (!file_exists($file)) {
-                $this->response = 'lzy-reservation-email-template-not-found';
-                return;
+                $this->responseToClient = 'lzy-reservation-email-template-not-found';
+                return '';
             }
 
             $ext = fileExt($file);
@@ -2185,16 +2218,19 @@ EOT;
                     $subject = $m[1];
                     $message = $m[2];
                 } else {
-                    $this->response = 'lzy-reservation-email-template-syntax-error';
-                    return;
+                    $this->responseToClient = 'lzy-reservation-email-template-syntax-error';
+                    return '';
                 }
             }
         }
 
         $subject = $this->trans->translate($subject);
         $message = $this->trans->translate($message);
-
-        $this->lzy->sendMail($to, $subject, $message, $this->mailfrom, $isHtml);
+        if ($to) {
+            $mailfrom = @$this->mailfrom? $this->mailfrom: $this->trans->getVariable('webmaster_email');
+            $this->lzy->sendMail($to, $subject, $message, $mailfrom, $isHtml);
+            $this->responseToClient = '{{ lzy-reservation-email-sent }}';
+        }
     } // sendConfirmationMail
 
 
