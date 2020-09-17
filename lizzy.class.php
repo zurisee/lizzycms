@@ -2081,7 +2081,7 @@ EOT;
         $html = $accForm->renderLoginForm($this->auth->message, false, true);
         $this->page->addModules('PANELS');
         if ($asPopup) {
-            $this->page->addBodyEndInjections("\t<div class='invisible'><div id='lzy-login-form'>\n$html\t  </div>\n\t</div><!-- /login form wrapper -->\n");
+            $this->page->addBodyEndInjections("\t<div class='lzy-dispno'>\n\t  <div id='lzy-login-form'>\n$html\n\t  </div><!-- /#lzy-login-form -->\n\t</div><!-- /login form wrapper -->\n");
             return '';
         } else {
             return $html;
