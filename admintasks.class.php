@@ -735,11 +735,10 @@ EOT;
                 $otRec['accessCode'] = $tick->createHash();
             }
             $hash = $tick->createTicket($otRec, 1, $accessCodeValidyTime);
-//$hash = $tick->createTicket($otRec, 100, $accessCodeValidyTime);
 
             $url = $globalParams['pageUrl'] . $hash . '/';
-            $subject = str_replace(['{site_title}', '{lzy-invitation-default-subject}', '{lzy-invitation-host}'],
-                    ['{{ site_title }}', '{{ lzy-signup-invitation-subject }}', $globalParams['host']], $subject);
+            $subject = str_replace(['{site_title}', '{lzy-invitation-host}'],
+                    ['{{ site_title }}', $globalParams['host']], $subject);
             $message = str_replace(['{lzy-invitation-link}', '{lzy-invitation-expiry-date}'], [$url, $validUntilStr], $text);
 
             $ok = $this->sendMail($email, $subject, $message);

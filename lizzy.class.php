@@ -605,9 +605,6 @@ class Lizzy
         $globalParams['pageHttpPath'] = $pageHttpPath;
         $globalParams['pagesFolder'] = $this->config->path_pagesPath;
 
-
-//        $globalParams['dataPath'] = $this->config->site_dataPath;
-
         $globalParams['pathToRoot'] = $pathToRoot;  // path from requested folder to root (= ~/), e.g. ../
         $this->pageHttpPath = $pageHttpPath;
         $this->pathToRoot = $pathToRoot;
@@ -676,7 +673,6 @@ class Lizzy
         $baseUrl = $requestScheme.$_SERVER['SERVER_NAME'];
         $_SESSION['lizzy']['appRootUrl'] = $baseUrl.$appRoot; // https://domain.net/...
         $_SESSION['lizzy']['absAppRoot'] = $absAppRoot;
-//        $_SESSION['lizzy']['dataPath'] = $this->config->site_dataPath;
 
         if ($this->config->debug_logClientAccesses) {
             writeLog('[' . getClientIP(true) . "] $ua" . (($this->config->isLegacyBrowser) ? " (Legacy browser!)" : ''));
@@ -825,7 +821,7 @@ class Lizzy
         $appRoot        = fixPath(commonSubstr( dir_name($_SERVER['SCRIPT_NAME']), dir_name($requestUri), '/'));
         $appRootUrl = $requestScheme.$_SERVER['HTTP_HOST'] . $appRoot;
         $this->trans->addVariable('appRootUrl', $appRootUrl);
-//        $this->trans->addVariable('dataPath', $this->config->site_dataPath);
+        $this->trans->addVariable('lzy-password-min-length', $this->config->admin_minPasswordLength);
 
     } // setTransvars0
 
@@ -870,7 +866,6 @@ EOT;
             $this->trans->addVariable('lzy-fileadmin-button', "", false);
         }
 
-//        $this->trans->addVariable('appRootUrl', $this->appRootUrl);
         $this->trans->addVariable('pageUrl', $this->pageUrl);
         $this->trans->addVariable('appRoot', $this->pathToRoot);			// e.g. '../'
         $this->trans->addVariable('systemPath', $this->systemPath);		// -> file access path
@@ -1074,7 +1069,6 @@ EOT;
 
 
 	//....................................................
-//    private function loadFile($loadRaw = false)
     private function loadFile()
 	{
         global $globalParams;
@@ -1297,11 +1291,6 @@ EOT;
             $this->page->addMessage( $arg );
         }
 
-//        if (getUrlArg('reset')) {			            // reset (cache)
-//            clearCaches( $this, false );
-//        }
-
-
 		if (getUrlArg('logout')) {	// logout
             $this->userRec = false;
             $this->auth->logout();
@@ -1319,14 +1308,6 @@ EOT;
 
         if (($this->config->localCall) && getUrlArg('purge')) {     // empty recycleBins and caches
             purgeAll( $this );
-//            purgeRecyleBins( $this );
-//            clearMdCache( $this );
-//            $this->purgePageCache();
-//            clearLogs();
-//            purgeDbCache();
-//            $_SESSION['lizzy'] = [];
-//            session_write_close();
-//            reloadAgent();
         }
 
         //====================== the following is restricted to editors and admins:
@@ -1346,13 +1327,8 @@ EOT;
             }
 
             if (getUrlArg('purge')) {                        // empty recycleBins and caches
-                purgeAll( $lzy );
-//                purgeRecyleBins( $this );
-//                clearMdCache( $this );
-//                purgePageCache();
-////                $this->purgePageCache();
-//                clearLogs();
-//                reloadAgent();
+                purgeAll( $this );
+//                purgeAll( $lzy );
             }
 
             if (getUrlArg('lang', true) === 'none') {                  // force language
@@ -1456,10 +1432,6 @@ EOT;
 	{
         if (getUrlArg('reset')) {			            // reset (cache)
             resetLizzy( $this );
-//            clearCaches( $this, true );
-//            $_SESSION['lizzy'] = [];
-//            session_write_close();
-//            reloadAgent();  //  reload to get rid of url-arg ?reset
         }
 
         // user wants to login in and is not already logged in:
@@ -2140,13 +2112,11 @@ EOT;
     {
         $nextLabel = $this->trans->getVariable('lzy-next-page-link-label');
         if (strpos($nextLabel, '$nextLabel') !== false) {
-//        if (!$nextLabel) {
             $nextLabelChar = $this->config->isLegacyBrowser ? '&gt;' : '&#9002;';
             $nextLabel = str_replace('$nextLabel', $nextLabelChar, $nextLabel);
         }
         $prevLabel = $this->trans->getVariable('lzy-prev-page-link-label');
         if (strpos($prevLabel, '$prevLabel') !== false) {
-//        if (!$prevLabel) {
             $prevLabelChar = $this->config->isLegacyBrowser ? '&lt;' : '&#9001;';
             $prevLabel = str_replace('$prevLabel', $prevLabelChar, $prevLabel);
         }
@@ -2359,7 +2329,6 @@ EOT;
         $nc = getUrlArg('nc');
         if ($nc) {  // nc = no-caching -> when specified, make sure page cache is cleared
             purgePageCache();
-//            $this->purgePageCache();
         }
         if ($this->dailyPageCacheReset()) {
             return;
@@ -2420,24 +2389,15 @@ EOT;
             $today = intval(time() / 86400);
             if (($fileTime) !== $today) {
                 purgePageCache();
-//                $this->purgePageCache();
                 return true;
             }
         } else {
             purgePageCache();
-//            $this->purgePageCache();
             return true;
         }
         return false;
     } // dailyPageCacheReset
 
-
-
-
-//    private function purgePageCache()
-//    {
-//        rrmdir(PAGE_CACHE_PATH);
-//    } // purgePageCache
 } // class WebPage
 
     function purgePageCache()

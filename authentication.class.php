@@ -1,7 +1,5 @@
 <?php
 
-define('PW_MIN_LENGTH', 10);
-
 
 class Authentication
 {
@@ -654,7 +652,7 @@ EOT;
             return '{{ lzy-change-password-not-equal-response }}';
         }
         if ($this->config->admin_enforcePasswordQuality) {
-            if (strlen($password) < PW_MIN_LENGTH) {
+            if (strlen($password) < $this->config->admin_minPasswordLength) {
                 return '{{ lzy-change-password-too-short-response }}';
             }
             if (!preg_match('/[A-Z]/', $password) ||

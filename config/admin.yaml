@@ -146,7 +146,7 @@ lzy-change-e-mail:
     _:  'Change e-mail address'
 
 lzy-delete-profile:
-    de: 'Profil löschen'
+    de: 'Profil &laquo;{{ user }}&raquo; löschen'
     _:  'Delete Profile'
 
 lzy-login-problems:
@@ -197,8 +197,8 @@ lzy-change-password-info-title:
     _:  'Help on password'
 
 lzy-change-password-info:
-    de: Das Kennwort muss mindestens 8 Zeichen lang sein und Grossbuchstaben, Ziffern und Sonderzeichen enthalten.
-    _:  The password must be at least 8 characters long and must contain uppercase letters, digits and special characters.
+    de: Das Kennwort muss mindestens {{ lzy-password-min-length }} Zeichen lang sein und Grossbuchstaben, Ziffern und Sonderzeichen enthalten.
+    _:  The password must be at least {{ lzy-password-min-length }} characters long and must contain uppercase letters, digits and special characters.
 
 
 lzy-change-password2-info-title:
@@ -260,16 +260,16 @@ lzy-change-password-not-equal-response:
     _:  The entered passwords were not identical.
 
 lzy-change-password-too-short-response:
-    de: Die eingegebenen Kennwörter waren zu kurz, sie müssen mindestens 10 Zeichen lang sein.
-    _:  The entered passwords were too short, they must be at least 10 characters long.
+    de: Das eingegebene Kennwort ist zu kurz, es muss mindestens {{ lzy-password-min-length }} Zeichen lang sein.<br> Ausserdem muss es Grossbuchstaben, Ziffern und Sonderzeichen enthalten.
+    _:  The entered password is too short, it must be at least {{ lzy-password-min-length }} characters long.<br>Furthermore it must contain uppercase letters, digits and special characters.
 
 lzy-change-password-insufficient-response:
     de: |
         Das neue Kennwort entsprecht nicht den Minimalanforderungen: <br /><br />
-        Es muss mindestens 8 Zeichen lang sein und <br />Grossbuchstaben, Ziffern und Sonderzeichen enthalten.
+        Es muss mindestens {{ lzy-password-min-length }} Zeichen lang sein und <br />Grossbuchstaben, Ziffern und Sonderzeichen enthalten.
     _:  |
         The new password does not meet our security requirements:<br /><br />
-        It must be at least 8 characters long and <br />must contain uppercase letters, digits and special characters.
+        It must be at least {{ lzy-password-min-length }} characters long and <br />must contain uppercase letters, digits and special characters.
 
 lzy-error-email-required:
     de: 'Eingabe einer E-Mail Adresse ist notwendig'
@@ -372,6 +372,19 @@ lzy-add-users-none-added2:
 lzy-change-username-send:
     de: Speichern
     _:  Save
+
+lzy-accound-form-old-username:
+    de: Bisher:
+    _:  Currently:
+
+
+lzy-accound-form-old-displayname:
+    de: Bisher:
+    _:  Currently:
+
+lzy-accound-form-old-email:
+    de: Bisher:
+    _:  Currently:
 
 
 lzy-username-changed-response:
@@ -493,6 +506,10 @@ lzy-invite-user-email-send:
     de: 'Einladung(en) versenden'
     _:  'Send invitation(s)'
 
+lzy-invite-new-user-edit-email-header:
+    de: 'Einladungs-Mails bearbeiten:'
+    _:  'Edit Invitation E-Mail:'
+
 lzy-invite-user-request-info-text:
     de: 'E-Mail Adresse, an welche die Einladung gesendet wird.'
     _:  'E-mail address to which the invitation will be sent.'
@@ -505,25 +522,25 @@ lzy-invite-user-request-description:
             <li>Jede Mail enthält einen individuellen <strong>Link</strong>. Der Link führt zu einem
                 Registrierungsformular dieser Website. <br />Aus Sicherheitsgründen können diese Links nur einmal verwendet werden.
                 Sie verfallen nach spätestens einer Woche.</li>
-            <li>Die eingeladene Person kann dort ihr <strong>Kennwort</strong> definieren. </li>
-            <li>Zudem kann sie einen <strong>Benutzernamen</strong> definieren.</li>
+            <li>Die eingeladene Person kann dort ihren <strong>Benutzernamen</strong> und ihr geheimes <strong>Kennwort</strong> definieren. 
+            Damit kann sich sie oder er später anmelden.</li>
         </ul>
         <h3>Beachte:</h3>
-        <p>&rarr; Anmelden kann man sich wahlweise mittels E-Mail Adresse oder Benutzername.<br />
+        <p>&rarr; Anmelden kann man sich wahlweise mittels E-Mail Adresse oder Benutzername & Kennwort.<br />
            &rarr; Auch das Anfordern eines Zugangs-Links ist mit beiden möglich (falls diese Option freigeschaltet ist).
         </p>
     _:  |
         <h3>Explanations</h3>
          <ul>
              <li>Invitation e-mails will be sent to the addresses entered above.</li>
-             <li>These mails contains individual Links which leads back to the registration form of this website.<br />
+             <li>These mails contains individual Links which lead back to the registration form of this website.<br />
                 For security reasons these links are valid only once. And they expire after one week if not used.</li>
-             <li>In this registration form the invited person can define a <strong>password</strong>.</li>
-             <li>Furthermore it is possible to define a <strong>username</strong>.</li>
+             <li>In this registration form the invited person can define a <strong>username</strong> and a <strong>password</strong>
+             width which to log in in the future.</li>
          </ul>
          <h3>Note:</h3>
          <p>
-         &rarr; Users can login in using their e-mail address or username.<br />
+         &rarr; Users can login in using their e-mail address or username & password.<br />
          &rarr; Alternatively, users can login by requesting a one-time access link, again by suppplying e-mail address or username (if that feature is enabled).
          </p>
 
@@ -532,42 +549,26 @@ guest:
     _:  guest
 
 
-# ---
-#lzy-signup-invitation-email-prompt:
-#    de: 'Ihre E-Mail Adresse'
-#    _:  'Your e-mail address'
-#
-#lzy-signup-invitation-email-info-title:
-#    de: Hilfe zur Selbstregistrierung
-#    _:  Help on self registration
-#
-#lzy-signup-invitation-email-info-text:
-#    de: "Sie können sich bei dieser Website selbständig registerien, d.h. ein Profil eröffnen. Geben Sie zunächst Ihre E-Mail Adresse bekannt. Sie werden daraufhin eine E-Mail erhalten. Öffnen Sie diese und folgen Sie den Anweisungen."
-#    _:  "You can register with this website (i.e. create a profile). Enter your e-mail address here. You will then receive an e-mail. Open it and follow the instructions."
-#
-#lzy-signup-invitation-send:
-#    de: Registrierungs-E-Mail senden
-#    _:  Send registration e-mail
-#
+
 lzy-signup-invitation-subject:
-    de: "Einladung für Webzugang"
-    _:  "Invitation to access website"
+    de: "[{site_title}] Einladung für Webzugang {lzy-invitation-host}"
+    _:  "[{site_title}] Invitation to access website {lzy-invitation-host}"
 
 lzy-invite-user-mailtext-prompt:
     de: 'Einladungs-Mail'
     _:  'Invitation Mail'
 
 lzy-invite-user-mailtext-info:
-    de: 'Platzhalter: {lzy-invitation-link}, {lzy-invitation-expiry-date}'
-    _:  'Placeholder:  {lzy-invitation-link}, {lzy-invitation-expiry-date}'
+    de: 'Verfügbare Platzhalter: {lzy-invitation-link}, {lzy-invitation-expiry-date}'
+    _:  'Available placeholders:  {lzy-invitation-link}, {lzy-invitation-expiry-date}'
 
 lzy-invite-user-subject-prompt:
     de: 'Betreff'
     _:  'Subject'
 
 lzy-invite-user-subject-login-info:
-    de: 'Platzhalter: {site_title}, {lzy-invitation-default-subject}, {lzy-invitation-host}'
-    _:  'Placeholder:  {site_title}, {lzy-invitation-default-subject}, {lzy-invitation-host}'
+    de: 'Verfügbare Platzhalter: {site_title}, {lzy-invitation-host}'
+    _:  'Available placeholders:  {site_title}, {lzy-invitation-host}'
 
 lzy-signup-invitation:
     de: |
@@ -581,17 +582,6 @@ lzy-signup-invitation:
         Open the following link: \n\n\t{lzy-invitation-link}\n
         Please note that this link only works once and only before {lzy-invitation-expiry-date}.
 
-#lzy-signup-invitation1:
-#    de: "Guten Tag\n\nWir laden Sie ein, bei unserer Website {{ site_title }} ein Konto zu eröffnen.\nDamit erhalten Sie Zugang zu unseren nicht-öffentlichen Inhalten.\nÖffnen Sie den folgenden Link:\n\n\t"
-#    _:  "Hello\n\nWe invite your to open an account on our Website {{ site_title }}.\nThis let's you access our non-public pages. Open the following link: \n\n\t"
-#
-#lzy-signup-invitation2:
-#    de: "\n\nBitte beachten Sie, dass der Link aus Sicherheitsgründen nur einmal und nur bis am "
-#    _:  "\n\nPlease note that this link only works once and only before "
-#
-#lzy-signup-invitation3:
-#    de: " funktioniert."
-#    _:  ""
 
 lzy-signup-invitation-greeting:
     de: "Beste Grüsse vom Webmaster {{ site_title }}"
@@ -691,11 +681,11 @@ lzy-invite-user-create-hash-prompt:
 
 lzy-invite-user-create-hash-info:
     de: |
-        Wenn aktiviert, erzeugt diese Option einen Access-Code, bzw. Zugangslink, für den neuen Benutzer.
-        Damit kann dieser die Website öffnen und sich auch gleich anmelden.
+        Wenn aktiviert, erzeugt diese Option einen Access-Code (bzw. Zugangslink) für den neuen Benutzer.
+        Damit kann dieser die Website öffnen und sich direkt anmelden, ohne Benutzername und Kennwort einzugeben.
     _:  |
         If enabled, this option will generate access-code (resp. access-link) for the new user.
-        With such a link the user can open this website and automatically log in.
+        With such a link the user can open this website and automatically be logged in without entering username and password.
 
 lzy-add-user-data-missing:
     de: 'Registrierung misslungen: es fehlt Benutzername und/oder Kennwort.'
@@ -753,7 +743,7 @@ lzy-weak-pw-warning:
         <h1>Warnung</h1>
         <div style='text-align:left;'>
         <p>Das gewählte Kennwort ist sehr schwach, Sie sollten ein stärkeres wählen:</p>
-        <ul><li>Mindestens 10 Zeichen</li>
+        <ul><li>Mindestens {{ lzy-password-min-length }} Zeichen</li>
             <li>Mindestens ein Grossbuchstabe</li>
             <li>Mindestens eine Ziffer</li>
             <li>Mindestens ein Sonderzeichen</li>
@@ -763,7 +753,7 @@ lzy-weak-pw-warning:
         <h1>Warning</h1>
         <div style='text-align:left;'>
         <p>The password you chose is very weak, you should define a stronger one:</p>
-        <ul><li>At least 10 characters</li>
+        <ul><li>At least {{ lzy-password-min-length }} characters</li>
             <li>At least one upper case letter</li>
             <li>At least one digit</li>
             <li>At least one special character</li>

@@ -27,6 +27,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'admin_useRequestRewrite'           => [true, 'If true, assumes web-server supports request-rewrite (i.e. .htaccess).', 3 ],
     'admin_userAllowSelfAdmin'          => [false, 'If true, user can modify their account after they logged in', 3 ],
     'admin_enableFileManager'           => [true, 'If true, the file-manager (upload, rename, delete) is enabled for privileged users.', 2 ],
+    'admin_minPasswordLength'           => [10, '[integer] Minimum length of passwords if "admin_enforcePasswordQuality" is enabled.', 3 ],
 
     'custom_relatedGitProjects'         => ['', "Git Project(s) to be included in ?getstat command", 3 ],
     'custom_permitServiceCode'          => [false, "Enables the 'service routine' mechanism: run PHP code in '".USER_CODE_PATH."' (filename starting with '@')", 1 ],

@@ -429,9 +429,16 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
 
 } // lzy-form
 
+
+
+/* === misc =========================================== */
 .lzy-form-legend {
     margin: 1em 0;
 }
+.lzy-form-label-hint {
+    color: #777;
+}
+
 
 
 /* === Color ========================================== */

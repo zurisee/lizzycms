@@ -577,6 +577,10 @@ lzy-adm-invite-new-user:
     de: 'Neuen Benutzer einladen'
     _:  'Invite new user'
 
+lzy-add-users-send:
+    de: 'Konto eröffnen'
+    _:  'Create account'
+
 
 #--- Insecure Connection ----------------------------
 Warning insecure connection:
