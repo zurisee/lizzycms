@@ -1867,59 +1867,59 @@ EOT;
         $logFile = SPAM_LOG_FILE;
         $jq = <<<EOT
 
-	$('input[type=submit]').click(function(e) {
-		var \$form = $(this).closest('form');
-		if (!$('.lzy-form-check', \$form ).val()) {
-            var s = '';
-            $( 'input,textarea', \$form).each(function() {
-                if ($(this).attr('type') !== 'hidden') {
-                    s += $(this).val();
-                }
-            });
-            if (!s) {
-                e.preventDefault();
-                noInputPopup();
-                return;
+$('input[type=submit]').click(function(e) {
+    var \$form = $(this).closest('form');
+    if (!$('.lzy-form-check', \$form ).val()) {
+        var s = '';
+        $( 'input,textarea', \$form).each(function() {
+            if ($(this).attr('type') !== 'hidden') {
+                s += $(this).val();
             }
+        });
+        if (!s) {
+            e.preventDefault();
+            noInputPopup();
+            return;
+        }
 
-            lzyFormUnsaved = false;
-    		\$form[0].submit();
-		    return;
-		}
-        e.preventDefault();
-        var data = JSON.stringify( \$form.serializeArray() );
-        serverLog('suspicious form data: ' + data, '$logFile');
-        initAntiSpamPopup();
-	});
+        lzyFormUnsaved = false;
+        \$form[0].submit();
+        return;
+    }
+    e.preventDefault();
+    var data = JSON.stringify( \$form.serializeArray() );
+    serverLog('suspicious form data: ' + data, '$logFile');
+    initAntiSpamPopup();
+});
 
 EOT;
 
         $jq .= <<<'EOT'
 
-	$('input[type=reset]').click(function(e) {  // reset: clear all entries
-		var $form = $(this).closest('form');
-		$('.lzy-form-cmd', $form ).val('_reset_');
-        lzyFormUnsaved = false;
-		$form[0].submit();
-	});
-	
-	$('input[type=button]').click(function(e) { // cancel: reload page (or goto 'next' if provided
-		var $form = $(this).closest('form');
-		var next = $('.lzy-form-cmd', $form ).val();
-		window.location.href = next;
-	});
-    $('.lzy-form-pw-toggle').click(function(e) {
-        e.preventDefault();
-		var $form = $(this).closest('form');
-		var $pw = $('.lzy-form-password', $form);
-        if ($pw.attr('type') === 'text') {
-            $pw.attr('type', 'password');
-            $('.lzy-form-login-form-icon', $form).attr('src', systemPath+'rsc/show.png');
-        } else {
-            $pw.attr('type', 'text');
-            $('.lzy-form-login-form-icon', $form).attr('src', systemPath+'rsc/hide.png');
-        }
-    });
+$('input[type=reset]').click(function(e) {  // reset: clear all entries
+    var $form = $(this).closest('form');
+    $('.lzy-form-cmd', $form ).val('_reset_');
+    lzyFormUnsaved = false;
+    $form[0].submit();
+});
+
+$('input[type=button]').click(function(e) { // cancel: reload page (or goto 'next' if provided
+    var $form = $(this).closest('form');
+    var next = $('.lzy-form-cmd', $form ).val();
+    window.location.href = next;
+});
+$('.lzy-form-pw-toggle').click(function(e) {
+    e.preventDefault();
+    var $form = $(this).closest('form');
+    var $pw = $('.lzy-form-password', $form);
+    if ($pw.attr('type') === 'text') {
+        $pw.attr('type', 'password');
+        $('.lzy-form-login-form-icon', $form).attr('src', systemPath+'rsc/show.png');
+    } else {
+        $pw.attr('type', 'text');
+        $('.lzy-form-login-form-icon', $form).attr('src', systemPath+'rsc/hide.png');
+    }
+});
 
 EOT;
         $this->page->addJq($jq);
