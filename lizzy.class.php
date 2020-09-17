@@ -1145,6 +1145,25 @@ EOT;
                     continue;
                 }
             }
+            
+            // frontmatter options 'showFrom' and 'showTill':
+            $showFrom = $newPage->get('showFrom', true);
+            if (is_string($showFrom)) {
+                $showFrom = strtotime($showFrom);
+            }
+            if ($showFrom && ($showFrom > time())) {
+                continue;
+            }
+            $showTill = $newPage->get('showTill', true);
+            if (is_string($showTill)) {
+                $showTill = strtotime($showTill);
+                if ($showTill && ($showTill < time())) {
+                    continue;
+                }
+            } elseif ($showTill && (($showTill + 86400) < time())) {
+                continue;
+            }
+
 
             if ($ext === 'md') {             // it's an MD file, convert it
 
