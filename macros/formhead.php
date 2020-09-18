@@ -19,13 +19,19 @@ $this->addMacro($macroName, function () {
 
         $this->getArg($macroName, 'class', 'Class applied to the form element.', '');
 
-        $this->getArg($macroName, 'action', 'Action applied to the form element.', '');
+        $this->getArg($macroName, 'method', '[post|get] Argument applied to the form element\'s "method"-attribute.', '');
+
+        $this->getArg($macroName, 'action', 'Argument applied to the form element\'s "action"-attribute.', '');
 
         $this->getArg($macroName, 'mailTo', 'If set, an email will be sent to this address each time the form is filled in.', '');
 
         $this->getArg($macroName, 'mailFrom', 'The address from which above email is sent. (default: "{{ webmaster_email }}").', '');
 
-        $this->getArg($macroName, 'legend', 'Text rendered above the form. Will be hidden upon successful completion of form entry.', '');
+        $this->getArg($macroName, 'formHeader', 'Text rendered above the form. Will be hidden upon successful completion of form entry.', '');
+
+        $this->getArg($macroName, 'formHint', 'Text rendered above the form buttons. Will be hidden upon successful completion of form entry.', '');
+
+        $this->getArg($macroName, 'formFooter', 'Text rendered below the form buttons. Will be hidden upon successful completion of form entry.', '');
 
         $this->getArg($macroName, 'customResponseEvaluation', 'Name of a PHP function to be called when user submitted form data.', '');
 
@@ -56,8 +62,8 @@ $this->addMacro($macroName, function () {
             'existing form-data-record. Hash can either be applied directly in this argument or indirectly via an '.
             'URL-argument of given name. E.g. ?key=ABCDEF.', '');
 
-        $this->getArg($macroName, 'preventMultipleSubmit', 'If true and if a user has started entering data, he/she '.
-            'will be warned when trying to leave the page without submiting the form. Default: true.', true);
+        //$this->getArg($macroName, 'preventMultipleSubmit', 'If true and if a user has started entering data, he/she '.
+        //    'will be warned when trying to leave the page without submiting the form. Default: true.', true);
 
         $this->getArg($macroName, 'replaceQuotes', 'If true, quote characters (\' and ") contained in user\'s '.
             'entries will be converted to lookalikes, which cannot interfere with data-file-formats (yaml, json, csv).', true);
