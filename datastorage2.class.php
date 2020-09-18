@@ -1539,8 +1539,15 @@ EOT;
     private function writeToCsvFile($filename, $array, $quote = '"', $delim = ',', $forceQuotes = true)
     {
         $out = '';
+        if (!is_array($array)) {
+            return false;
+        }
         foreach ($array as $row) {
+            if (!is_array($row)) { continue; }
             foreach ($row as $i => $elem) {
+                if (is_array($elem)) {
+                    $elem = @$elem[0];
+                }
                 if ($forceQuotes || strpbrk($elem, "$quote$delim")) {
                     $row[$i] = $quote . str_replace($quote, $quote.$quote, $elem) . $quote;
                 }
