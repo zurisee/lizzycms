@@ -25,7 +25,7 @@ class Forms
 	private $currRec = null;		// shortcut to $currForm->formElements[ $currRecIndex ]
     public  $errorDescr = [];
     private $responseToClient = false;
-    private $skipRenderingForm = false;
+    protected $skipRenderingForm = false;
 
     //-------------------------------------------------------------
 	public function __construct($lzy, $inx)
@@ -1670,7 +1670,7 @@ EOT;
                     }
 
                 } else {
-                    $value = $row[$fldName];
+                    $value = @$row[$fldName];
                 }
                 $data[$r][$c++] = $value;
             }
@@ -1741,7 +1741,7 @@ EOT;
     //-------------------------------------------------------------
 	public function clearCache()
 	{
-	    $formId = $this->currForm->formId;
+	    $formId = @$this->currForm->formId;
 	    if ($formId) {
             unset($_SESSION['lizzy']['formData'][$formId]);
             unset($_SESSION['lizzy']['formErrDescr'][$formId]);

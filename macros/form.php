@@ -42,20 +42,34 @@ class Form extends Forms
 
     public function render( $headArgs )
     {
-        $headElements = ['formName', 'id', 'mailto', 'mailfrom', 'mailTo', 'mailFrom', 'legend', 'customResponseEvaluation', 'next',
+        $headElements = ['formName', 'id', 'mailto', 'mailfrom', 'mailTo', 'mailFrom',
+            'legend', 'formHeader', 'customResponseEvaluation', 'next',
             'confirmationText', 'file', 'warnLeavingPage', 'options', 'formTimeout', 'export', 'prefill',
             'preventMultipleSubmit', 'replaceQuotes', 'antiSpam', 'validate', 'showData',
             'showDataMinRows', 'encapsulate', 'disableCaching'];
 
         // separate arguments for header and fields:
         $formElems = [];
+        $formHint = '';
+        $formFooter = '';
         foreach ($headArgs as $key => $value) {
-            if (!in_array($key, $headElements)) {
+            if ($key === 'formHint') {
+                $formHint = $value;
+                unset($headArgs[$key]);
+
+            } elseif ($key === 'formFooter') {
+                $formFooter = $value;
+                unset($headArgs[$key]);
+
+            } elseif (!in_array($key, $headElements)) {
                 $formElems[$key] = $value;
                 unset($headArgs[$key]);
             }
         }
 
+        if ($formHint) {
+            $headArgs['options'] = @$headArgs['options']? $headArgs['options'].' norequiredcomment': 'norequiredcomment';
+        }
 
         // create form head:
         $headArgs['type'] = 'form-head';
@@ -99,8 +113,25 @@ class Form extends Forms
                 $str .= parent::render($arg);
             }
         }
+
+        // inject formHint:
+        if ($formHint && !$this->skipRenderingForm) {
+            if (!preg_match('/\<.+\>/', $formHint)) {
+                $formHint = "\t<div class='lzy-form-footer'>$formHint</div>\n";
+            }
+            $str .= str_replace(['&#39;','&#34;'], ['"', "'"], $formHint );
+        }
+
         if ($buttons["label"]) {
             $str .= parent::render($buttons);
+        }
+
+        // inject formFooter:
+        if ($formFooter && !$this->skipRenderingForm) {
+            if (!preg_match('/\<.+\>/', $formFooter)) {
+                $formFooter = "\t<div class='lzy-form-footer'>$formFooter</div>\n";
+            }
+            $str .= str_replace(['&#39;','&#34;'], ['"', "'"], $formFooter );
         }
 
         $str .= parent::render([ 'type' => 'form-tail' ]);
@@ -135,6 +166,18 @@ Use pseudo-labels "submit" and "cancel" to define buttons like this:
     cancel: { label:"Cancel" },
 
 {{ vgap }}
+
+###  Arguments specific to form():
+
+-> These arguments are supported in addition to those normally accepted by form().
+
+formHint:
+: (string) If supplied, the given text will be inserted just before the submit buttons.  
+: Note: the automatic comment regarding required fields will be omitted, so you may need to provide explicitly.
+
+formTail:
+: (string) If supplied, the given text will be inserted after the submit buttons.  
+
 
 Find details about arguments of form-head() and form-elem() below:
 
