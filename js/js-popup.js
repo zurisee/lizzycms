@@ -66,6 +66,7 @@ function lzyPopup( options ) {
 
     if (content) {      // content supplied as literal:
         // add popup HTML to DOM:
+        transient = true;
         var style = '';
         if (trigger !== true) {
             style = ' style="display: none;"';

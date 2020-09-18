@@ -47,9 +47,7 @@ class Forms
         if (isset($_POST['_lizzy-form'])) {	// we received data:
             $this->evaluateUserSuppliedData();
         }
-
-        $this->initButtonHandlers();
-    } // __construct
+	} // __construct
 
     
     //-------------------------------------------------------------
@@ -311,7 +309,7 @@ class Forms
 
         $currForm->replaceQuotes = (isset($args['replaceQuotes'])) ? $args['replaceQuotes'] : true;
         $currForm->antiSpam = (isset($args['antiSpam'])) ? $args['antiSpam'] : false;
-        if ($currForm->antiSpam && $this->lzy->localCall) {    // disable antiSpam on localhost for convenient testing of forms
+        if ($currForm->antiSpam && $this->lzy->localCall && !$_SESSION["lizzy"]["debug"]) {    // disable antiSpam on localhost for convenient testing of forms
             $currForm->antiSpam = false;
             $this->page->addDebugMsg('"antiSpam" disabled on localhost');
         }
@@ -525,6 +523,8 @@ EOT;
         $formId = $this->formId;
         $currForm = $this->currForm;
 
+        $this->initButtonHandlers();
+
         $this->userSuppliedData = $this->getUserSuppliedDataFromCache($formId);
         $currForm->creationTime = time();
 
@@ -616,7 +616,7 @@ EOT;
 		$out .= "\t\t<input type='hidden' name='_lizzy-form-id' value='{$this->formInx}' />\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form-label' value='{$currForm->formName}' />\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form' value='{$currForm->ticketHash}' />\n";
-		$out .= "\t\t<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-cmd' value='' />\n";
+		$out .= "\t\t<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-cmd' value='{$currForm->next}' />\n";
 
 		if ($currForm->antiSpam) {
             $out .= "\t\t<div class='fld-ch' aria-hidden='true'>\n";
@@ -1144,10 +1144,8 @@ EOT;
 				if (stripos($type, 'submit') !== false) {
 					$out .= "$indent<input type='submit' id='$id' value='$label' $class />\n";
 					
-				} elseif ((stripos($type, 'reset') !== false) ||
-                        (stripos($type, 'cancel') !== false)) {
+				} elseif (stripos($type, 'reset') !== false) {
 				    if ($type[0] === '(') { // case: show reset button only if data has been supplied before:
-				        $type = 'reset';
 				        if ($this->userSuppliedData) {
                             $out .= "$indent<input type='reset' id='$id' value='$label' $class />\n";
                         }
@@ -1155,7 +1153,7 @@ EOT;
                         $out .= "$indent<input type='reset' id='$id' value='$label' $class />\n";
                     }
 					
-				} else {
+				} else { // $type === cancel
 					$out .= "$indent<input type='button' id='$id' value='$label' $class />\n";
 				}
 			}
@@ -1515,8 +1513,7 @@ EOT;
             return false;
         }
         // check honey pot field (unless on local host):
-        if (($this->userSuppliedData["_lizzy-form-name"] !== '') &&
-            !$GLOBALS["globalParams"]["localCall"]) {
+        if ($this->userSuppliedData["_lizzy-form-name"] !== '') {
             $out = var_export($this->userSuppliedData, true);
             $out = str_replace("\n", ' ', $out);
             $out .= "\n[{$_SERVER['REMOTE_ADDR']}] {$_SERVER['HTTP_USER_AGENT']}\n";
@@ -1865,16 +1862,30 @@ function noInputPopup() {
 EOT;
         $this->page->addJs($js);
 
+        $formId = '#'.$this->currForm->formId;
+
         $logFile = SPAM_LOG_FILE;
         $jq = <<<EOT
 
-$('input[type=submit]').click(function(e) {
-    var \$form = $(this).closest('form');
+$('$formId input[type=submit]').click(function(e) {
+    var \$form = $('$formId');
     if (!$('.lzy-form-check', \$form ).val()) {
         var s = '';
         $( 'input,textarea', \$form).each(function() {
-            if ($(this).attr('type') !== 'hidden') {
+            var type = $(this).attr('type');
+            if ((type === 'hidden') || (type === 'submit') || (type === 'reset') || (type === 'button')) {
+                return;
+            } else if ((type === 'radio') || (type === 'checkbox')) {
+                if ($(this).prop('checked') || $(this).prop('selected')) {
+                    s = 'X';
+                }
+            } else {
                 s += $(this).val();
+            }
+        });
+        $( 'option', \$form).each(function() {
+            if ( $(this).prop('selected') && $(this).val() ) {
+                s += 'Y';
             }
         });
         if (!s) {
@@ -1895,30 +1906,31 @@ $('input[type=submit]').click(function(e) {
 
 EOT;
 
-        $jq .= <<<'EOT'
+        $jq .= <<<EOT
 
-$('input[type=reset]').click(function(e) {  // reset: clear all entries
-    var $form = $(this).closest('form');
-    $('.lzy-form-cmd', $form ).val('_reset_');
+$('$formId input[type=reset]').click(function(e) {  // reset: clear all entries
+    var \$form = $('$formId');
+    $('.lzy-form-cmd', \$form ).val('_reset_');
     lzyFormUnsaved = false;
-    $form[0].submit();
+    \$form[0].submit();
 });
 
-$('input[type=button]').click(function(e) { // cancel: reload page (or goto 'next' if provided
-    var $form = $(this).closest('form');
-    var next = $('.lzy-form-cmd', $form ).val();
+$('$formId input[type=button]').click(function(e) { // cancel: reload page (or goto 'next' if provided
+    var \$form = $('$formId');
+    var next = $('.lzy-form-cmd', \$form ).val();
     window.location.href = next;
 });
-$('.lzy-form-pw-toggle').click(function(e) {
+
+$('$formId .lzy-form-pw-toggle').click(function(e) {
     e.preventDefault();
-    var $form = $(this).closest('form');
-    var $pw = $('.lzy-form-password', $form);
-    if ($pw.attr('type') === 'text') {
-        $pw.attr('type', 'password');
-        $('.lzy-form-login-form-icon', $form).attr('src', systemPath+'rsc/show.png');
+    var \$form = $('$formId');
+    var \$pw = $('.lzy-form-password', \$form);
+    if (\$pw.attr('type') === 'text') {
+        \$pw.attr('type', 'password');
+        $('.lzy-form-login-form-icon', \$form).attr('src', systemPath+'rsc/show.png');
     } else {
-        $pw.attr('type', 'text');
-        $('.lzy-form-login-form-icon', $form).attr('src', systemPath+'rsc/hide.png');
+        \$pw.attr('type', 'text');
+        $('.lzy-form-login-form-icon', \$form).attr('src', systemPath+'rsc/hide.png');
     }
 });
 
