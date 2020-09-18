@@ -87,7 +87,13 @@ class Form extends Forms
                 $buttons["value"] .= 'cancel,';
                 $arg['type'] = 'button';
 
+            } elseif ($label === 'reset') {
+                $buttons["label"] .= isset($arg['label']) ? $arg['label'].',': '{{ Reset }},';
+                $buttons["value"] .= 'reset,';
+                $arg['type'] = 'button';
+
             } elseif (strpos('formName,mailto,mailfrom,legend,showData', $label) !== false) {
+                // nothing to do
             } else {
                 $arg['label'] = $label;
                 $str .= parent::render($arg);
