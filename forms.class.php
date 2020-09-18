@@ -1145,8 +1145,9 @@ EOT;
 					$out .= "$indent<input type='submit' id='$id' value='$label' $class />\n";
 					
 				} elseif (stripos($type, 'reset') !== false) {
-				    if ($type[0] === '(') { // case: show reset button only if data has been supplied before:
+				    if (($label[0] === '(') || ($type[0] === '(')) { // case: show reset button only if data has been supplied before:
 				        if ($this->userSuppliedData) {
+				            $label = str_replace(['(', ')'], '', $label);
                             $out .= "$indent<input type='reset' id='$id' value='$label' $class />\n";
                         }
                     } else {
