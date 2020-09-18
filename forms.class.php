@@ -1055,8 +1055,9 @@ EOT;
     {
         $name = " name='{$this->currRec->name}'";
         $value = " value='{$this->currRec->value}'";
+        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
 
-        $out = "<input type='hidden' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'$name$value />\n";
+        $out = "<input type='hidden' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'$cls$name$value />\n";
         return $out;
     } // renderHidden
 
