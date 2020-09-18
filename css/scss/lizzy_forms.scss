@@ -127,11 +127,14 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
 
     /* === Password ================================ */
     .lzy-form-field-type-password {
-        input {
-            width: calc(100% - var(--lzy-label-width, #{$label-width}) - 2em - 10px);
-        }
+        position: relative;
 
         .lzy-form-pw-toggle {
+            position: absolute;
+            top: 0.8em;
+            right: 0.5em;
+            font-size: 80%;
+            opacity: 0.5;
             img {
                 width: 2em;
             }
@@ -140,6 +143,9 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
                 position: absolute;
                 left: -1000vw;
             }
+        }
+        .lzy-form-pw-toggle:hover {
+            opacity: 1;
         }
     }
 
