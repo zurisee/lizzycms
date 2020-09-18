@@ -265,7 +265,8 @@ class Forms
         $currForm->action = (isset($args['action'])) ? $args['action'] : '';
         $currForm->mailTo = (isset($args['mailto'])) ? $args['mailto'] : ((isset($args['mailTo'])) ? $args['mailTo'] : '');
         $currForm->mailFrom = (isset($args['mailfrom'])) ? $args['mailfrom'] : ((isset($args['mailFrom'])) ? $args['mailFrom'] : '');
-        $currForm->legend = (isset($args['legend'])) ? $args['legend'] : '';
+        $currForm->legend = (isset($args['formHeader'])) ? $args['formHeader'] : ''; // synonyme for 'legend'
+        $currForm->legend = (isset($args['legend'])) ? $args['legend'] : $currForm->legend;
         $currForm->customResponseEvaluation = (isset($args['customResponseEvaluation'])) ? $args['customResponseEvaluation'] : '';
         $currForm->next = (isset($args['next'])) ? $args['next'] : './';
         $currForm->file = (isset($args['file'])) ? $args['file'] : '';
