@@ -42,11 +42,12 @@ class Form extends Forms
 
     public function render( $headArgs )
     {
-        $headElements = ['formName', 'id', 'mailto', 'mailfrom', 'mailTo', 'mailFrom',
-            'legend', 'formHeader', 'customResponseEvaluation', 'next',
-            'confirmationText', 'file', 'warnLeavingPage', 'options', 'formTimeout', 'export', 'prefill',
-            'preventMultipleSubmit', 'replaceQuotes', 'antiSpam', 'validate', 'showData',
-            'showDataMinRows', 'encapsulate', 'disableCaching'];
+        $headElements = ',label,id,translateLabels,class,method,action,mailto,mailfrom,formHeader,'.
+            'legend,customResponseEvaluation,next,file,confirmationText,warnLeavingPage,'.
+            'encapsulate,formTimeout,avoidDuplicates,export,confirmationEmail,'.
+            'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,'.
+            'validate,showData,showDataMinRows,options,encapsulate,disableCaching,'.
+            'translateLabel,';
 
         // separate arguments for header and fields:
         $formElems = [];
@@ -61,7 +62,7 @@ class Form extends Forms
                 $formFooter = $value;
                 unset($headArgs[$key]);
 
-            } elseif (!in_array($key, $headElements)) {
+            } elseif (strpos($headElements, ",$key,") === false) {
                 $formElems[$key] = $value;
                 unset($headArgs[$key]);
             }
