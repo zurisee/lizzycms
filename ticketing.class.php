@@ -200,7 +200,7 @@ class Ticketing
         $data = $this->ds->read();
         $count = 0;
         foreach ($data as $key => $rec) {
-            if ($rec['lzy_ticketType'] === $this->defaultType) {
+            if (@$rec['lzy_ticketType'] === $this->defaultType) {
                 $count++;
             }
         }
@@ -215,7 +215,7 @@ class Ticketing
         $data = $this->ds->read();
         if ($data) {
             foreach ($data as $key => $rec) {
-                if ($this->defaultType !== $rec['lzy_ticketType']) {
+                if ($this->defaultType !== @$rec['lzy_ticketType']) {
                     continue;
                 }
                 if (isset($rec[$fieldName])) {
