@@ -4,9 +4,6 @@
 */
 
 define('UPLOAD_SERVER', '~sys/_upload_server.php');
-//define('CSV_SEPARATOR', ',');
-//define('CSV_QUOTE', 	'"');
-//define('DATA_EXPIRATION_TIME', false);
 define('THUMBNAIL_PATH', 	'_/thumbnails/');
 define('DEFAULT_EXPORT_FILE', 	'~page/form-export.csv');
 define('SPAM_LOG_FILE', 	'spam-log.txt');
@@ -28,16 +25,12 @@ class Forms
     protected $skipRenderingForm = false;
 
     //-------------------------------------------------------------
-//	public function __construct($lzy, $ticketCustomAttr = null, $skipUserDataEval = false)
 	public function __construct($lzy, $skipUserDataEval = false)
-//	public function __construct($lzy, $inx, $doEvalUserSuppliedData = true)
 	{
 	    $this->lzy = $lzy;
 		$this->trans = $lzy->trans;
 		$this->page = $lzy->page;
 		$this->inx = -1;    // = elemInx
-//		$this->formInx = $inx;
-//		$this->formsCount = $GLOBALS["globalParams"]['lzyFormsCount']++;
         $GLOBALS["globalParams"]['lzyFormsCount']++;
 		$this->formInx = $GLOBALS["globalParams"]['lzyFormsCount'];
         $this->currForm = new FormDescriptor; // object as will be saved in DB
@@ -49,7 +42,6 @@ class Forms
         ]);
 
         if (isset($_POST['_lizzy-form']) && !$skipUserDataEval) {	// we received data:
-//        if (isset($_POST['_lizzy-form'])) {	// we received data:
             $this->evaluateUserSuppliedData();
         }
 	} // __construct
@@ -255,7 +247,6 @@ class Forms
         // Note: some head arguments are evaluated in renderFormHeader()
 
         $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form' . $this->formInx;
-//        $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form' . $this->formsCount;
         $formId = (isset($args['id'])) ? $args['id'] : false;
         if (!$formId) {
             $formId = translateToClassName($label);
@@ -313,12 +304,12 @@ class Forms
 
 
         // activate 'prevent multiple submits':
-        $currForm->preventMultipleSubmit = (@$args['preventMultipleSubmit'] !== null)? $args['preventMultipleSubmit'] : true;
+        $currForm->preventMultipleSubmit = isset($args['preventMultipleSubmit'])? $args['preventMultipleSubmit'] : true;
         $GLOBALS["globalParams"]['preventMultipleSubmit'] = $currForm->preventMultipleSubmit;
 
         $currForm->replaceQuotes = (isset($args['replaceQuotes'])) ? $args['replaceQuotes'] : true;
         $currForm->antiSpam = (isset($args['antiSpam'])) ? $args['antiSpam'] : false;
-        if ($currForm->antiSpam && $this->lzy->localCall && !$_SESSION["lizzy"]["debug"]) {    // disable antiSpam on localhost for convenient testing of forms
+        if ($currForm->antiSpam && $this->lzy->localCall && !@$_SESSION["lizzy"]["debug"]) {    // disable antiSpam on localhost for convenient testing of forms
             $currForm->antiSpam = false;
             $this->page->addDebugMsg('"antiSpam" disabled on localhost');
         }
@@ -375,12 +366,10 @@ class Forms
             $elemId = $args['id'];
         } else {
             $elemId = translateToIdentifier($name) . '_' . $this->formInx;
-//            $elemId = translateToIdentifier($name) . '_' . $this->formsCount;
         }
 
         $rec->elemId = $elemId;
         $rec->elemInx = $this->inx . '_' . $this->formInx;
-//        $rec->elemInx = $this->inx . '_' . $this->formsCount;
 
         if (strpos($label, '*')) {
             $label = trim(str_replace('*', '', $label));
@@ -539,20 +528,7 @@ EOT;
         $this->userSuppliedData = $this->getUserSuppliedDataFromCache($formId);
         $currForm->creationTime = time();
 
-        $currForm->ticketHash = $this->tck->createTicket([]);
-
-//        $ticketHash = getStaticVariable( 'forms.'.$currForm->formId );
-//        if ($ticketHash) {
-//            if ($this->tck->ticketExists($ticketHash)) {
-//                $currForm->ticketHash = $ticketHash;
-//            } else {
-//                $ticketHash = false;
-//            }
-//        }
-//        if (!$ticketHash) {
-//            $currForm->ticketHash = $this->tck->createTicket([]);
-//            setStaticVariable( 'forms.'.$currForm->formId, $currForm->ticketHash, true );
-//        }
+        $currForm->formHash = $this->tck->createTicket();
 
         if ($currForm->warnLeavingPage && !$GLOBALS["globalParams"]['warnLeavingPageInitialized']) {
             $GLOBALS["globalParams"]['warnLeavingPageInitialized'] = true;
@@ -628,13 +604,12 @@ EOT;
         $out .= "\t<form$id$_class$_method$_action$novalidate>\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form-id' value='{$this->formInx}' />\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form-label' value='{$currForm->formName}' />\n";
-		$out .= "\t\t<input type='hidden' name='_lizzy-form' value='{$currForm->ticketHash}' />\n";
+		$out .= "\t\t<input type='hidden' name='_lizzy-form' value='{$currForm->formHash}' />\n";
 		$out .= "\t\t<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-cmd' value='{$currForm->next}' />\n";
 
 		if ($currForm->antiSpam) {
             $out .= "\t\t<div class='fld-ch' aria-hidden='true'>\n";
             $out .= "\t\t\t<label for='fld_ch{$this->formInx}{$this->inx}'>Name:</label><input id='fld_ch{$this->formInx}{$this->inx}' type='text' class='lzy-form-check' name='_lizzy-form-name' value=''$honeyPotRequired />\n";
-//            $out .= "\t\t\t<label for='fld_ch{$this->formsCount}{$this->inx}'>Name:</label><input id='fld_ch{$this->formsCount}{$this->inx}' type='text' class='lzy-form-check' name='_lizzy-form-name' value=''$honeyPotRequired />\n";
             $out .= "\t\t</div>\n";
         }
 		return $out;
@@ -954,7 +929,7 @@ EOT;
             'appRootUrl' => $GLOBALS['globalParams']['absAppRootUrl'],
             'user'      => $_SESSION["lizzy"]["user"],
         ];
-        $tick = new Ticketing();
+        $tick = new Ticketing(['defaultType' => 'lzy-upload']);
         $this->ticket = $tick->createTicket($rec, 25);
 
 
@@ -1296,14 +1271,14 @@ EOT;
 	    $form = $this->currForm;
 	    $form->bypassedValues = @$this->bypassedValues;
         $str = base64_encode( serialize( $form) );
-        $this->tck->updateTicket( $this->currForm->ticketHash, ['form' => $str] );
+        $this->tck->updateTicket( $this->currForm->formHash, ['form' => $str] );
 	} // saveFormDescr
 
 
     //-------------------------------------------------------------
-    public function restoreFormDescr($ticketHash)
+    public function restoreFormDescr($formHash)
 	{
-        $rec = $this->tck->consumeTicket($ticketHash);
+        $rec = $this->tck->consumeTicket($formHash);
         if (isset($rec['form'])) {
             return unserialize(base64_decode($rec['form']));
         } else {
@@ -1347,8 +1322,8 @@ EOT;
 		    return false;
         }
 
-        $ticketHash = $this->ticketHash = $userSuppliedData['_lizzy-form'];
-        $this->currForm = $this->restoreFormDescr( $ticketHash );
+        $formHash = $this->formHash = $userSuppliedData['_lizzy-form'];
+        $this->currForm = $this->restoreFormDescr( $formHash );
         $currForm = $this->currForm;
         if ($currForm === null) {   // ticket timed out:
             $this->clearCache();
@@ -1548,7 +1523,7 @@ EOT;
 	private function saveUserSuppliedDataToDB()
 	{
         $currForm = $this->currForm;
-        $recKey = $currForm->ticketHash;
+        $recKey = createHash();
         $ds = new DataStorage2( $currForm->file );
 
         if ($currForm->avoidDuplicates) {
@@ -1671,7 +1646,6 @@ EOT;
                 $fldName = @$fldDescr->name;
                 $fldType = @$fldDescr->type;
                 if (!$fldType || ($fldType === 'reveal') || ($fldType === 'button') || ($fldName[0] === '_')) {
-//                if (!$fldType || ($fldType === 'reveal') || ($fldType === 'button')) {
                     continue;
                 } elseif (($fldType === 'checkbox') || ($fldType === 'radio') || ($fldType === 'dropdown')) {
                     if ($fldDescr->splitOutput) {
@@ -1707,7 +1681,6 @@ EOT;
             if (!$fldDescr) { continue; }
             $fldType = @$fldDescr->type;
             if (!$fldType || ($fldType === 'reveal') || ($fldType === 'button') || ($fldDescr->name[0] === '_')) {
-//            if (!$fldType || ($fldType === 'reveal') || ($fldType === 'button')) {
                 continue;
             } elseif (($fldType === 'checkbox') || ($fldType === 'radio') || ($fldType === 'dropdown')) {
                 if ($fldDescr->splitOutput) {
@@ -1768,7 +1741,7 @@ EOT;
             unset($_SESSION["lizzy"]['forms']);
         }
         $this->errorDescr = null;
-	    @$this->tck->deleteTicket( @$this->ticketHash );
+	    @$this->tck->deleteTicket( @$this->formHash );
 	} // clearCache
 
 
@@ -2286,7 +2259,7 @@ class FormDescriptor
     public $action = '';
     public $class = '';
     public $options = '';
-    public $ticketHash = '';
+    public $formHash = '';
     public $preventMultipleSubmit = false;
     public $validate = false;
     public $antiSpam = true;
