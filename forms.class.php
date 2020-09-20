@@ -4,9 +4,9 @@
 */
 
 define('UPLOAD_SERVER', '~sys/_upload_server.php');
-define('CSV_SEPARATOR', ',');
-define('CSV_QUOTE', 	'"');
-define('DATA_EXPIRATION_TIME', false);
+//define('CSV_SEPARATOR', ',');
+//define('CSV_QUOTE', 	'"');
+//define('DATA_EXPIRATION_TIME', false);
 define('THUMBNAIL_PATH', 	'_/thumbnails/');
 define('DEFAULT_EXPORT_FILE', 	'~page/form-export.csv');
 define('SPAM_LOG_FILE', 	'spam-log.txt');
@@ -14,13 +14,13 @@ define('SPAM_LOG_FILE', 	'spam-log.txt');
 mb_internal_encoding("utf-8");
 
 
-$GLOBALS["globalParams"]['lzyFormsCount'] = 1;
+$GLOBALS["globalParams"]['lzyFormsCount'] = 0;
 $GLOBALS["globalParams"]['warnLeavingPageInitialized'] = false;
 
 class Forms
 {
 	private $page;
-    private $inx;
+    protected $inx;
 	private $currForm = null;		// shortcut to $formDescr[ $currFormIndex ]
 	private $currRec = null;		// shortcut to $currForm->formElements[ $currRecIndex ]
     public  $errorDescr = [];
@@ -28,14 +28,18 @@ class Forms
     protected $skipRenderingForm = false;
 
     //-------------------------------------------------------------
-	public function __construct($lzy, $inx)
+//	public function __construct($lzy, $ticketCustomAttr = null, $skipUserDataEval = false)
+	public function __construct($lzy, $skipUserDataEval = false)
+//	public function __construct($lzy, $inx, $doEvalUserSuppliedData = true)
 	{
 	    $this->lzy = $lzy;
 		$this->trans = $lzy->trans;
 		$this->page = $lzy->page;
-		$this->inx = -1;
-		$this->formInx = $inx;
-		$this->formsCount = $GLOBALS["globalParams"]['lzyFormsCount']++;
+		$this->inx = -1;    // = elemInx
+//		$this->formInx = $inx;
+//		$this->formsCount = $GLOBALS["globalParams"]['lzyFormsCount']++;
+        $GLOBALS["globalParams"]['lzyFormsCount']++;
+		$this->formInx = $GLOBALS["globalParams"]['lzyFormsCount'];
         $this->currForm = new FormDescriptor; // object as will be saved in DB
 
         $this->tck = new Ticketing([
@@ -44,7 +48,8 @@ class Forms
             'defaultValidityPeriod' => 86400,
         ]);
 
-        if (isset($_POST['_lizzy-form'])) {	// we received data:
+        if (isset($_POST['_lizzy-form']) && !$skipUserDataEval) {	// we received data:
+//        if (isset($_POST['_lizzy-form'])) {	// we received data:
             $this->evaluateUserSuppliedData();
         }
 	} // __construct
@@ -162,7 +167,9 @@ class Forms
 
             default:
                 $type = isset($this->type)? $this->type : '';
-                $elem = "<p>Error: form type unknown: '$type'</p>\n";
+                if ($type) {
+                    $elem = "<p>Error: form type unknown: '$type'</p>\n";
+                }
         }
 
         $type = $this->currRec->type;
@@ -247,7 +254,8 @@ class Forms
 
         // Note: some head arguments are evaluated in renderFormHeader()
 
-        $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form' . $this->formsCount;
+        $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form' . $this->formInx;
+//        $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form' . $this->formsCount;
         $formId = (isset($args['id'])) ? $args['id'] : false;
         if (!$formId) {
             $formId = translateToClassName($label);
@@ -366,11 +374,13 @@ class Forms
         if (isset($args['id'])) {
             $elemId = $args['id'];
         } else {
-            $elemId = translateToIdentifier($name) . '_' . $this->formsCount;
+            $elemId = translateToIdentifier($name) . '_' . $this->formInx;
+//            $elemId = translateToIdentifier($name) . '_' . $this->formsCount;
         }
 
         $rec->elemId = $elemId;
-        $rec->elemInx = $this->inx . '_' . $this->formsCount;
+        $rec->elemInx = $this->inx . '_' . $this->formInx;
+//        $rec->elemInx = $this->inx . '_' . $this->formsCount;
 
         if (strpos($label, '*')) {
             $label = trim(str_replace('*', '', $label));
@@ -529,18 +539,20 @@ EOT;
         $this->userSuppliedData = $this->getUserSuppliedDataFromCache($formId);
         $currForm->creationTime = time();
 
-        $ticketHash = getStaticVariable( 'forms.'.$currForm->formId );
-        if ($ticketHash) {
-            if ($this->tck->ticketExists($ticketHash)) {
-                $currForm->ticketHash = $ticketHash;
-            } else {
-                $ticketHash = false;
-            }
-        }
-        if (!$ticketHash) {
-            $currForm->ticketHash = $this->tck->createTicket([]);
-            setStaticVariable( 'forms.'.$currForm->formId, $currForm->ticketHash );
-        }
+        $currForm->ticketHash = $this->tck->createTicket([]);
+
+//        $ticketHash = getStaticVariable( 'forms.'.$currForm->formId );
+//        if ($ticketHash) {
+//            if ($this->tck->ticketExists($ticketHash)) {
+//                $currForm->ticketHash = $ticketHash;
+//            } else {
+//                $ticketHash = false;
+//            }
+//        }
+//        if (!$ticketHash) {
+//            $currForm->ticketHash = $this->tck->createTicket([]);
+//            setStaticVariable( 'forms.'.$currForm->formId, $currForm->ticketHash, true );
+//        }
 
         if ($currForm->warnLeavingPage && !$GLOBALS["globalParams"]['warnLeavingPageInitialized']) {
             $GLOBALS["globalParams"]['warnLeavingPageInitialized'] = true;
@@ -621,7 +633,8 @@ EOT;
 
 		if ($currForm->antiSpam) {
             $out .= "\t\t<div class='fld-ch' aria-hidden='true'>\n";
-            $out .= "\t\t\t<label for='fld_ch{$this->formsCount}{$this->inx}'>Name:</label><input id='fld_ch{$this->formsCount}{$this->inx}' type='text' class='lzy-form-check' name='_lizzy-form-name' value=''$honeyPotRequired />\n";
+            $out .= "\t\t\t<label for='fld_ch{$this->formInx}{$this->inx}'>Name:</label><input id='fld_ch{$this->formInx}{$this->inx}' type='text' class='lzy-form-check' name='_lizzy-form-name' value=''$honeyPotRequired />\n";
+//            $out .= "\t\t\t<label for='fld_ch{$this->formsCount}{$this->inx}'>Name:</label><input id='fld_ch{$this->formsCount}{$this->inx}' type='text' class='lzy-form-check' name='_lizzy-form-name' value=''$honeyPotRequired />\n";
             $out .= "\t\t</div>\n";
         }
 		return $out;
@@ -1117,7 +1130,8 @@ EOT;
     {
         $indent = "\t\t";
 		$label = $this->currRec->label;
-		$value = (isset($this->currRec->value) && $this->currRec->value) ? $this->currRec->value : $label;
+		$options = (isset($this->currRec->options) && $this->currRec->options) ? $this->currRec->options : $label;
+		$value = (isset($this->currRec->value) && $this->currRec->value) ? $this->currRec->value : $options;
 		$out = '';
 
         $class = " class='".trim($this->currRec->class .' lzy-form-button'). "'";
@@ -1656,7 +1670,8 @@ EOT;
 
                 $fldName = @$fldDescr->name;
                 $fldType = @$fldDescr->type;
-                if (!$fldType || ($fldType === 'reveal') || ($fldType === 'button')) {
+                if (!$fldType || ($fldType === 'reveal') || ($fldType === 'button') || ($fldName[0] === '_')) {
+//                if (!$fldType || ($fldType === 'reveal') || ($fldType === 'button')) {
                     continue;
                 } elseif (($fldType === 'checkbox') || ($fldType === 'radio') || ($fldType === 'dropdown')) {
                     if ($fldDescr->splitOutput) {
@@ -1691,7 +1706,8 @@ EOT;
         foreach ($this->currForm->formElements as $fldDescr) {
             if (!$fldDescr) { continue; }
             $fldType = @$fldDescr->type;
-            if (!$fldType || ($fldType === 'reveal') || ($fldType === 'button')) {
+            if (!$fldType || ($fldType === 'reveal') || ($fldType === 'button') || ($fldDescr->name[0] === '_')) {
+//            if (!$fldType || ($fldType === 'reveal') || ($fldType === 'button')) {
                 continue;
             } elseif (($fldType === 'checkbox') || ($fldType === 'radio') || ($fldType === 'dropdown')) {
                 if ($fldDescr->splitOutput) {
