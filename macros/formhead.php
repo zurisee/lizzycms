@@ -109,7 +109,7 @@ $this->addMacro($macroName, function () {
     }
 
     // create form head:
-    $this->form = new Forms($this->lzy, $inx);
+    $this->form = new Forms($this->lzy);
     $str = $this->form->render( $args );
 
     $this->optionAddNoComment = true;
