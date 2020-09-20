@@ -78,8 +78,9 @@ require_once SYSTEM_PATH.'service-tasks.php';
 
 $globalParams = array(
 	'pathToRoot' => null,			// ../../
-	'pageHttpPath' => null,				// pages/xy/
-	'pagePath' => null,				// pages/xy/    -> may differ from pageHttpPath in case 'showThis' is used
+	'pageHttpPath' => null,			// xy/  ???
+	'pagePath' => null,				// xy/    -> may differ from pageHttpPath in case 'showThis' is used
+	'pathToPage' => null,			// pages/xy/    -> may differ from pageHttpPath in case 'showThis' is used
     'path_logPath' => null,
     'activityLoggingEnabled' => false,
     'errorLoggingEnabled' => false,
@@ -544,7 +545,7 @@ class Lizzy
     private function analyzeHttpRequest()
     {
     // appRoot:         path from docRoot to base folder of app, mostly = ''; appRoot == '~/'
-    // pageHttpPath:        forward-path from appRoot to requested folder, e.g. 'contact/ (-> excludes pages/)
+    // pageHttpPath:    forward-path from appRoot to requested folder, e.g. 'contact/ (-> excludes pages/)
     // pagePath:        forward-path from appRoot to requested folder, e.g. 'contact/ (-> excludes pages/)
     // pathToPage:      filesystem forward-path from appRoot to requested folder, e.g. 'pages/contact/ (-> includes pages/)
     // pathToRoot:      upward-path from requested folder to appRoot, e.g. ../
