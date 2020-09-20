@@ -91,7 +91,7 @@ $this->addMacro($macroName, function () {
     $type = @$args['type'];
 
 	if ($type === 'form-head') {
-		$this->form = new Forms($this->lzy, $inx);
+		$this->form = new Forms($this->lzy);
     } elseif (!isset($this->form)) {
 	    die('Error: forms must be initiated with type:"form-head"');
     }
