@@ -1,6 +1,6 @@
 <?php
 /*
- * Lizzy maintains *one* SQlite DB (located in 'data/.lzy_db.sqlite')
+ * Lizzy maintains *one* SQlite DB (located in 'CACHE_PATH/.lzy_db.sqlite')
  * So, all data managed by DataStorage2 is stored in there.
  * However, shadow data files in yaml, json or cvs format may be maintained:
  *      they are imported at construction and exported at deconstruction time
@@ -11,7 +11,8 @@
 */
 
 
-define('LIZZY_DB',  PATH_TO_APP_ROOT.'data/_lzy_db.sqlite');
+define('LIZZY_DB',  PATH_TO_APP_ROOT . CACHE_PATH . '_lzy_db.sqlite');
+//define('LIZZY_DB',  PATH_TO_APP_ROOT.'data/_lzy_db.sqlite');
 
 if (!defined('LZY_LOCK_ALL_DURATION_DEFAULT')) {
     define('LZY_LOCK_ALL_DURATION_DEFAULT', 900.0); // 15 minutes

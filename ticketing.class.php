@@ -1,6 +1,7 @@
 <?php
 
-define ('DEFAULT_TICKET_STORAGE_FILE', DATA_PATH.'_tickets.yaml');
+define ('DEFAULT_TICKET_STORAGE_FILE', CACHE_PATH.'_tickets.yaml');
+//define ('DEFAULT_TICKET_STORAGE_FILE', DATA_PATH.'_tickets.yaml');
 define ('DEFAULT_TICKET_HASH_SIZE', 6);
 define ('DEFAULT_TICKET_VALIDITY_TIME', 900); // 15 min
 define ('UNAMBIGUOUS_CHARACTERS', '3479ACDEFHJKLMNPQRTUVWXY'); // -> excludes '0O2Z1I5S6G8B'
