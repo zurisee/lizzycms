@@ -1,7 +1,6 @@
 <?php
 
 define ('DEFAULT_TICKET_STORAGE_FILE', CACHE_PATH.'_tickets.yaml');
-//define ('DEFAULT_TICKET_STORAGE_FILE', DATA_PATH.'_tickets.yaml');
 define ('DEFAULT_TICKET_HASH_SIZE', 6);
 define ('DEFAULT_TICKET_VALIDITY_TIME', 900); // 15 min
 define ('UNAMBIGUOUS_CHARACTERS', '3479ACDEFHJKLMNPQRTUVWXY'); // -> excludes '0O2Z1I5S6G8B'
@@ -65,10 +64,10 @@ class Ticketing
 
 
 
-    private function _createTicket($rec, $maxConsumptionCount = false, $validityPeriod = null, $type = false)
+    public function _createTicket($rec, $maxConsumptionCount = false, $validityPeriod = null, $type = false)
     {
         $ticketRec = $rec;
-        $ticketRec['lzy_maxConsumptionCount'] = ($maxConsumptionCount !== false) ?$maxConsumptionCount : $this->defaultMaxConsumptionCount;
+        $ticketRec['lzy_maxConsumptionCount'] = $maxConsumptionCount ?$maxConsumptionCount : $this->defaultMaxConsumptionCount;
         $ticketRec['lzy_ticketType'] = $type ? $type : $this->defaultType;
 
         if ($validityPeriod === null) {
