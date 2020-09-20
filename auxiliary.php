@@ -1330,45 +1330,61 @@ function getUrlArgStatic($tag, $stringMode = false, $varName = false)
 //-------------------------------------------------------------------------
 function setStaticVariable($varName, $value, $append = false)
 {
-    if ($value === null) {
-        unset($_SESSION['lizzy'][$varName]);
-    } else {
-        if (strpos($varName, '.') === false) {
-            if ($append) {
-                $_SESSION['lizzy'][$varName] = isset($_SESSION['lizzy'][$varName]) ? $_SESSION['lizzy'][$varName].$value : $value;
-            } else {
-                $_SESSION['lizzy'][$varName] = $value;
+    if (strpos($varName, '.') === false) {  // scalar static var:
+        if (!isset($_SESSION['lizzy'][$varName])) {
+            $_SESSION['lizzy'][$varName] = null;
+        }
+        $var = &$_SESSION['lizzy'][$varName];
+
+    } else {                                        // nested static var:
+        $a = explode('.', $varName);
+        $var = &$_SESSION['lizzy'];
+        foreach ($a as $item) {
+            if (!isset($var[ $item ])) {
+                $var[ $item ] = false;
+            } elseif (!is_array($var[ $item ])) {
+                unset( $var[ $item ] );
+                $var[ $item ] = false;
             }
-        } else {
-            $a = explode('.', $varName);
-            if ($append) {
-                $_SESSION['lizzy'][ $a[0] ][ $a[1] ] = isset($_SESSION['lizzy'][ $a[0] ][ $a[1] ]) ? $_SESSION['lizzy'][ $a[0] ][ $a[1] ].$value : $value;
-            } else {
-                $_SESSION['lizzy'][ $a[0] ][ $a[1] ] = $value;
-            }
+            $var = &$var[ $item ];
         }
     }
+
+    if ($append) {
+        $var .= $value;
+    } else {
+        $var = $value;
+    }
 } // setStaticVariable
+
 
 
 
 //-------------------------------------------------------------------------
 function getStaticVariable($varName)
 {
-    if (strpos($varName, '.') === false) {
+    if (strpos($varName, '.') === false) {  // scalar static var:
         if (isset($_SESSION['lizzy'][$varName])) {
             return $_SESSION['lizzy'][$varName];
         } else {
             return null;
         }
-    } else {
-        $a = explode('.', $varName);
-        if (isset($_SESSION['lizzy'][ $a[0] ][ $a[1] ])) {
-            return $_SESSION['lizzy'][ $a[0] ][ $a[1] ];
-        } else {
+
+    }
+
+    // nested static var:
+    $a = explode('.', $varName);
+    if (!isset($_SESSION['lizzy'])) {
+        $_SESSION['lizzy'] = [];
+    }
+    $var = &$_SESSION['lizzy'];
+    foreach ($a as $item) {
+        if (!isset($var[ $item ])) {
             return null;
         }
+        $var = &$var[ $item ];
     }
+    return $var;
 } // getStaticVariable
 
 
