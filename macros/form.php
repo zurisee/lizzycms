@@ -145,6 +145,7 @@ class Form extends Forms
     public function renderHelp()
     {
         return <<<EOT
+
 ## Help on macro form()
 form() is a short-hand for invoking form-head() and multiple form-elem(), terminated by form-tail().
 
