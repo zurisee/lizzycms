@@ -22,6 +22,7 @@ class Forms
 	private $currRec = null;		// shortcut to $currForm->formElements[ $currRecIndex ]
     public  $errorDescr = [];
     private $responseToClient = false;
+    private $submitButtonRendered = false;
     protected $skipRenderingForm = false;
 
     //-------------------------------------------------------------
@@ -207,8 +208,9 @@ class Forms
         }
 
         // add comment regarding required fields:
-        if (($this->currRec->type === 'button') &&
+        if ($this->submitButtonRendered &&
                 (stripos($this->currForm->options, 'norequiredcomment') === false)) {
+            $this->submitButtonRendered = false;
             if (isset($this->currForm->hasRequiredFields) && $this->currForm->hasRequiredFields) {
                 $out = "\t<div class='lzy-form-required-comment'>{{ lzy-form-required-comment }}</div>\n$out";
             }
@@ -1132,20 +1134,15 @@ EOT;
                     $label = $type;
                 }
 				if (stripos($type, 'submit') !== false) {
+				    $this->submitButtonRendered = true;
 					$out .= "$indent<input type='submit' id='$id' value='$label' $class />\n";
-					
-				} elseif (stripos($type, 'reset') !== false) {
-				    if (($label[0] === '(') || ($type[0] === '(')) { // case: show reset button only if data has been supplied before:
-				        if ($this->userSuppliedData) {
-				            $label = str_replace(['(', ')'], '', $label);
-                            $out .= "$indent<input type='reset' id='$id' value='$label' $class />\n";
-                        }
-                    } else {
-                        $out .= "$indent<input type='reset' id='$id' value='$label' $class />\n";
-                    }
-					
-				} else { // $type === cancel
-					$out .= "$indent<input type='button' id='$id' value='$label' $class />\n";
+
+                } elseif ((stripos($type, 'reset') !== false) || (stripos($type, 'cancel') !== false)) {
+                    $out .= "$indent<input type='reset' id='$id' value='$label' $class />\n";
+
+// Todo: replace leavePageWarning with ajax-send-to-cache -> requires serviceTask module
+				} else { // custome button
+					$out .= "$indent<button id='$id' $class>$label</button>\n";
 				}
 			}
 		}
