@@ -44,7 +44,7 @@ class Ticketing
 
 
 
-    public function createTicket($rec, $maxConsumptionCount = false, $validityPeriod = null, $type = false)
+    public function createTicket($rec = [], $maxConsumptionCount = false, $validityPeriod = null, $type = false)
     {
         $type = $type? $type : $this->defaultType;
         $pathToPage = @$GLOBALS['globalParams']['pathToPage'];
