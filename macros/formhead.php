@@ -40,8 +40,9 @@ $this->addMacro($macroName, function () {
 
         $this->getArg($macroName, 'confirmationText', 'The text rendered upon completion of a form entry.', '');
         $this->getArg($macroName, 'file', 'File where to store data submitted by users. E.g. "&#126;data/form.yaml"', '');
-        $this->getArg($macroName, 'warnLeavingPage', 'If true, issues a warning if a user tries to leave the page when '.
-            'already entered data into the form (Default: true).', true);
+        $this->getArg($macroName, 'formDataCaching', 'If the user enters data into the form an leaves the page, '.
+            ' without submitting, values will be cached on the server and prefilled upon returning to the page. '.
+            'This can be disabled by setting this option to false (Default: true).', true);
 
         $this->getArg($macroName, 'options', '[nocolor,validate,norequiredcomment] "nocolor" disables default coloring '.
             'of form elements; "validate" enables form validation by browser; "norequiredcomment" suppresses the explation of *=required', '');
