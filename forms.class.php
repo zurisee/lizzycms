@@ -8,12 +8,12 @@ define('THUMBNAIL_PATH', 	    '_/thumbnails/');
 define('DEFAULT_EXPORT_FILE', 	'~page/form-export.csv');
 define('SPAM_LOG_FILE', 	    'spam-log.txt');
 
-define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,formHeader,'.
-    'legend,customResponseEvaluation,next,file,confirmationText,warnLeavingPage,'.
+define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,'.
+    'legend,customResponseEvaluation,next,file,confirmationText,formDataCaching,'.
     'encapsulate,formTimeout,avoidDuplicates,export,confirmationEmail,'.
     'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,'.
     'validate,showData,showDataMinRows,options,encapsulate,disableCaching,'.
-    'translateLabel,');
+    'translateLabel,formName,formHeader,formHint,formFooter,');
 
 define('ELEM_ATTRIBUTES', 	    ',label,type,id,class,wrapperClass,name,required,value,'.
 	'options,optionLabels,layout,info,comment,translateLabel,'.
@@ -25,13 +25,14 @@ define('UNARY_ELEM_ATTRIBUTES', ',required,translateLabel,splitOutput,autocomple
 define('SUPPORTED_TYPES', 	    ',text,password,email,textarea,radio,checkbox,'.
     'dropdown,button,url,date,time,datetime,month,number,range,tel,file,'.
     'fieldset,fieldset-end,reveal,hidden,literal,bypassed,');
+    // 'fieldset,fieldset-end,reveal,hidden,literal,bypassed,render-data,');
 
 
 mb_internal_encoding("utf-8");
 
 
 $GLOBALS["globalParams"]['lzyFormsCount'] = 0;
-$GLOBALS["globalParams"]['warnLeavingPageInitialized'] = false;
+$GLOBALS["globalParams"]['formDataCachingInitialized'] = false;
 
 class Forms
 {
@@ -70,21 +71,69 @@ class Forms
     //-------------------------------------------------------------
     public function render( $args )
     {
-        // check for implicit syntax:
-        $keys = array_keys($args);
-        $out = '';
-        foreach ($keys as $key) {
-            if (!$this->isElementAttribute( $key )) {
-                $args1 = $args[ $key ];
-                $args1['label'] = $key;
-                $out .= $this->_render( $args1 );
-            } else {
-                $out .= $this->_render( $args );
-                return $out;
+        $type = @$args['type'];
+        if (($type === 'form-head') || ($type === 'form-tail')) {
+            return $this->_render($args);
+
+        } else {
+            // check for implicit syntax:
+            $keys = array_keys($args);
+            $out = '';
+            $buttons = [ 'label' => '', 'type' => 'button', 'value' => '' ];
+            foreach ($keys as $key) {
+                if (!$this->isElementAttribute($key)) {
+                    if ($key === 'submit') {
+                        $buttons["label"] .= isset($args[$key]['label']) ? $args[$key]['label'].',': 'Submit,';
+                        $buttons["value"] .= 'submit,';
+                        continue;
+
+                    } elseif (($key === 'reset') || ($key === 'cancel')) {
+                        $buttons["label"] .= isset($args[$key]['label']) ? $args[$key]['label'].',': 'Cancel,';
+                        $buttons["value"] .= 'cancel,';
+                        continue;
+
+                    } else {
+                        $args1 = $args[$key];
+                        $args1['label'] = $key;
+                    }
+                    $out .= $this->_render($args1);
+                    $args1 = false;
+                } else {
+                    $out .= $this->_render($args);
+                    return $out;
+                }
+            }
+            if ($buttons['value'] !== '') {
+                $buttons["label"] = rtrim($buttons["label"], ',');
+                $buttons["value"] = rtrim($buttons["value"], ',');
+                $out .= $this->_render($buttons);
             }
         }
         return $out;
     } // render
+
+
+
+
+    public function renderForm( $args )
+    {
+        $headArgs = ['type' => 'form-head'];
+        $formElems = [];
+        foreach ($args as $key => $value) {
+            if ($this->isHeadAttribute( $key )) {
+                $headArgs[$key] = $value;
+
+            } else {
+                $formElems[$key] = $value;
+            }
+        }
+        $out  = $this->_render( $headArgs );
+        $out .= $this->render( $formElems );
+        $out .= $this->_render([ 'type' => 'form-tail' ]);
+
+        return $out;
+    } // renderForm
+
 
 
     //-------------------------------------------------------------
@@ -192,6 +241,10 @@ class Forms
             case 'literal':
                 $elem = $this->renderLiteral();
                 break;
+
+            //case 'render-data':
+            //    $elem = $this->renderData();
+            //    break;
 
             case 'bypassed':
                 $elem = '';
@@ -317,7 +370,7 @@ class Forms
         $currForm->next = (isset($args['next'])) ? $args['next'] : './';
         $currForm->file = (isset($args['file'])) ? $args['file'] : '';
         $currForm->confirmationText = (isset($args['confirmationText'])) ? $args['confirmationText'] : '{{ lzy-form-data-received-ok }}';
-        $currForm->warnLeavingPage = (isset($args['warnLeavingPage'])) ? $args['warnLeavingPage'] : true;
+        $currForm->formDataCaching = (isset($args['formDataCaching'])) ? $args['formDataCaching'] : true;
         $currForm->encapsulate = (isset($args['encapsulate'])) ? $args['encapsulate'] : true;
         $currForm->formTimeout = (isset($args['formTimeout'])) ? $args['formTimeout'] : false;
         $currForm->avoidDuplicates = (isset($args['avoidDuplicates'])) ? $args['avoidDuplicates'] : true;
@@ -366,7 +419,9 @@ class Forms
         if (($currForm->showData) && !$currForm->export) {
             $currForm->export = DEFAULT_EXPORT_FILE;
         }
-        $currForm->export = resolvePath($currForm->export, true);
+        if ($currForm->export) {
+            $currForm->export = resolvePath($currForm->export, true);
+        }
 
         $currForm->showDataMinRows = (isset($args['showDataMinRows'])) ? $args['showDataMinRows'] : false;
 
@@ -590,12 +645,17 @@ EOT;
 
         $currForm->formHash = $this->tck->createTicket( $currForm->ticketPayload );
 
-        if ($currForm->warnLeavingPage && !$GLOBALS["globalParams"]['warnLeavingPageInitialized']) {
-            $GLOBALS["globalParams"]['warnLeavingPageInitialized'] = true;
+        if ($currForm->formDataCaching && !$GLOBALS["globalParams"]['formDataCachingInitialized']) {
+            $GLOBALS["globalParams"]['formDataCachingInitialized'] = true;
             $js = <<<EOT
+
 function onUnloadPage() {
     if ( lzyFormUnsaved ) {
-        return true;
+        $('form').each(function( e ) {
+            $('.lzy-form-cmd').val('_cache_');
+            var data = $( this ).serialize();
+            $.post( './', data );
+        });
     }
 }
 var lzyFormUnsaved = false;
@@ -762,7 +822,7 @@ EOT;
                     $preselectedValue = true;
                 }
             }
-            $checked = ($checkedElem && $checkedElem[$i+1]) || $preselectedValue ? ' checked' : '';
+            $checked = ($checkedElem && $checkedElem[$i]) || $preselectedValue ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-radio-elem lzy-form-choice-elem'>\n";
             $out .= "\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked$cls /><label for='$id'>$optionLabel</label>\n";
             $out .= "\t\t\t</div>\n";
@@ -795,7 +855,7 @@ EOT;
                 }
             }
 
-            $checked = (($presetValues !== false) && @$presetValues[$i+1]) || $preselectedValue ? ' checked' : '';
+            $checked = (($presetValues !== false) && @$presetValues[$i]) || $preselectedValue ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-checkbox-elem lzy-form-choice-elem'>\n";
             $out .= "\t\t\t\t<input id='$id' type='checkbox' name='{$groupName}[]' value='$name'$checked$cls /><label for='$id'>$optionLabel</label>\n";
             $out .= "\t\t\t</div>\n";
@@ -1130,6 +1190,15 @@ EOT;
 
 
     //-------------------------------------------------------------
+    //private function renderData()
+    //{
+    //    $out = $this->renderDataTable();
+    //    return $out;
+    //} // renderLiteral
+
+
+
+    //-------------------------------------------------------------
     private function renderReveal()
     {
         $id = "lzy-form-reveal_{$this->currRec->elemInx}";
@@ -1215,7 +1284,6 @@ EOT;
                 } elseif ((stripos($type, 'reset') !== false) || (stripos($type, 'cancel') !== false)) {
                     $out .= "$indent<input type='reset' id='$id' value='$label' $class />\n";
 
-// Todo: replace leavePageWarning with ajax-send-to-cache -> requires serviceTask module
 				} else { // custome button
 					$out .= "$indent<button id='$id' $class>$label</button>\n";
 				}
@@ -1248,7 +1316,7 @@ EOT;
 
         // check _announcement_ and responseToClient, inject msg if present:
         if (@$this->errorDescr[$formId]['_announcement_']) { // is errMsg, takes precedence over responseToClient
-            $msgToClient = $this->errorDescr[$formId]['_announcement_'];
+            $msgToClient = @$this->errorDescr[$formId]['_announcement_'];
             $this->errorDescr[$formId]['_announcement_'] = false;
             $msgToClientClass .= 'lzy-form-announcement';
 
@@ -1272,7 +1340,7 @@ EOT;
 
         // present previously received data to form owner:
         if ($this->currForm->showData) {
-            $out .= $this->renderData();
+            $out .= $this->renderDataTable();
         }
         return $out;
 	} // renderFormTail
@@ -1363,7 +1431,8 @@ EOT;
     //-------------------------------------------------------------
 	private function cacheUserSuppliedData($formId, $userSuppliedData)
 	{
-		$_SESSION['lizzy']['formData'][$formId] = serialize($userSuppliedData);
+        $pathToPage = $GLOBALS["globalParams"]["pathToPage"];
+        $_SESSION['lizzy']['formData'][ $pathToPage ][$formId] = serialize($userSuppliedData);
 	} // cacheUserSuppliedData
 
 
@@ -1371,7 +1440,9 @@ EOT;
     //-------------------------------------------------------------
 	private function getUserSuppliedDataFromCache($formId)
 	{
-		return (isset($_SESSION['lizzy']['formData'][$formId])) ? unserialize($_SESSION['lizzy']['formData'][$formId]) : null;
+        $pathToPage = $GLOBALS["globalParams"]["pathToPage"];
+		return (isset($_SESSION['lizzy']['formData'][ $pathToPage ][$formId])) ?
+            unserialize($_SESSION['lizzy']['formData'][ $pathToPage ][$formId]) : null;
 	} // getUserSuppliedDataFromCache
 
 
@@ -1419,7 +1490,12 @@ EOT;
             $this->clearCache();
             reloadAgent();
 
-        } elseif ($cmd === '_log_') { // _log_
+        } elseif ($cmd === '_cache_') { // _cache_
+            $this->prepareUserSuppliedData(); // handles radio and checkboxes
+            $this->cacheUserSuppliedData($formId, $userSuppliedData);
+            exit;
+
+        } elseif ($cmd === '_log_') {   // _log_
             $out = @$userSuppliedData['_lizzy-form-log'];
             writeLog($out, SPAM_LOG_FILE);
             exit;
@@ -1803,12 +1879,13 @@ EOT;
 	public function clearCache()
 	{
 	    $formId = @$this->currForm->formId;
+        $pathToPage = $GLOBALS["globalParams"]["pathToPage"];
 	    if ($formId) {
-            unset($_SESSION['lizzy']['formData'][$formId]);
+            unset($_SESSION['lizzy']['formData'][ $pathToPage ][$formId]);
             unset($_SESSION['lizzy']['formErrDescr'][$formId]);
             unset($_SESSION["lizzy"]['forms'][$formId]);
         } else {
-            unset($_SESSION['lizzy']['formData']);
+            unset($_SESSION['lizzy']['formData'][ $pathToPage ]);
             unset($_SESSION['lizzy']['formErrDescr']);
             unset($_SESSION["lizzy"]['forms']);
         }
@@ -2075,6 +2152,9 @@ EOT;
 
     protected function isHeadAttribute( $attr )
     {
+        if (!$attr) {
+            return false;
+        }
         return (strpos(HEAD_ATTRIBUTES, ",$attr,") !== false);
     }
 
@@ -2082,22 +2162,26 @@ EOT;
 
     protected function isElementAttribute( $attr )
     {
+        if (!$attr) {
+            return false;
+        }
         return (strpos(ELEM_ATTRIBUTES, ",$attr,") !== false);
     }
 
 
 
-    private function renderData()
+    protected function renderDataTable()
     {
         global $globalParams;
 
         $out = '';
         $currForm = $this->currForm;
         $continue = true;
+        $showData = $currForm->showData? $currForm->showData: ($this->currRec->showData? $this->currRec->showData: true);
 
-        if ($currForm->showData !== true) {
+        if ($showData !== true) {
             // showData options: false, true, loggedIn, privileged, localhost, {group}
-            switch ($currForm->showData) {
+            switch ($showData) {
                 case 'logged-in':
                 case 'loggedin':
                 case 'loggedIn':
@@ -2113,7 +2197,7 @@ EOT;
                     break;
 
                 default:
-                    $continue = $this->lzy->auth->checkGroupMembership($currForm->showData);
+                    $continue = $this->lzy->auth->checkGroupMembership($showData);
             }
         }
 
@@ -2121,7 +2205,13 @@ EOT;
             return '';
         }
 
-        $fileName = $currForm->export;
+        $fileName = @$currForm->export;
+        if (!$fileName) {
+            $fileName = resolvePath( DEFAULT_EXPORT_FILE );
+        }
+        if (!file_exists($fileName) || !is_file($fileName)) {
+            die("Error in renderDataTable(): file '$fileName' not found.");
+        }
 
         $out .= <<<EOT
 <div class="lzy-forms-preview">
@@ -2135,10 +2225,12 @@ EOT;
         if (!$data) {
             return '';
         }
-        if ($currForm->showDataMinRows) {
+        $showDataMinRows = isset($currForm->showDataMinRows)? $currForm->showDataMinRows:
+            (isset($this->currRec->showDataMinRows)? $this->currRec->showDataMinRows : false);
+        if (@$showDataMinRows) {
             $nCols = @sizeof($data[0]);
             $emptyRow = array_fill(0, $nCols, '&nbsp;');
-            $max = intval($currForm->showDataMinRows) + 1;
+            $max = intval($showDataMinRows) + 1;
             for ($i = sizeof($data); $i < $max; $i++) {
                 $data[$i] = $emptyRow;
             }
@@ -2162,7 +2254,7 @@ EOT;
         $out .= $tbl->render();
         $out .= "</div>\n";
         return $out;
-    } // renderData
+    } // renderDataTable
 
 
 
@@ -2336,6 +2428,11 @@ EOT;
     {
         return preg_replace('/^.*_(\d+)$/', "$1", $name);
     } // elementInx
+
+
+    protected function getFormProp( $propName ) {
+	    return $this->currForm->$propName;
+    }
 } // Forms
 
 
