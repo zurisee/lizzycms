@@ -230,13 +230,18 @@ class Ticketing
 
 
 
-    public function sum( $fieldName = false )
+    public function sum( $fieldName = false, $ignoreKey = false )
     {
         $sum = 0;
         $data = $this->ds->read();
         if ($data) {
             foreach ($data as $key => $rec) {
+                // skip tickets of other type:
                 if ($this->defaultType !== @$rec['lzy_ticketType']) {
+                    continue;
+                }
+                // skip user's own tickets:
+                if ($ignoreKey && (strpos($ignoreKey, $key) !== false)) {
                     continue;
                 }
                 if (isset($rec[$fieldName])) {
