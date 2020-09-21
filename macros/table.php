@@ -18,7 +18,7 @@ $this->addMacro($macroName, function () {
 
     $dataSource = $this->getArg($macroName, 'dataSource', '(optional if nCols is set) Name of file containing data. Format may be .cvs or .yaml and is expected be local to page folder.', '');
     if ($dataSource === 'help') {
-        return renderHelp($this, $macroName);
+        return renderTableHelp($this, $macroName);
     }
 
     $suppressError = $this->getArg($macroName, 'suppressError', '', false);
@@ -48,7 +48,7 @@ $this->addMacro($macroName, function () {
 
 
 
-function renderHelp($trans, $macroName)
+function renderTableHelp($trans, $macroName)
 {
     $dataTable = new HtmlTable($trans->lzy, 0, 'help');
     $help = $dataTable->render('help');
@@ -57,5 +57,5 @@ function renderHelp($trans, $macroName)
         $trans->getArg($macroName, $rec['option'], $rec['text']);
     }
     return '';
-}
+} // renderTableHelp
 
