@@ -3,10 +3,29 @@
  *	Lizzy - forms rendering module
 */
 
-define('UPLOAD_SERVER', '~sys/_upload_server.php');
-define('THUMBNAIL_PATH', 	'_/thumbnails/');
+define('UPLOAD_SERVER',         '~sys/_upload_server.php');
+define('THUMBNAIL_PATH', 	    '_/thumbnails/');
 define('DEFAULT_EXPORT_FILE', 	'~page/form-export.csv');
-define('SPAM_LOG_FILE', 	'spam-log.txt');
+define('SPAM_LOG_FILE', 	    'spam-log.txt');
+
+define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,formHeader,'.
+    'legend,customResponseEvaluation,next,file,confirmationText,warnLeavingPage,'.
+    'encapsulate,formTimeout,avoidDuplicates,export,confirmationEmail,'.
+    'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,'.
+    'validate,showData,showDataMinRows,options,encapsulate,disableCaching,'.
+    'translateLabel,');
+
+define('ELEM_ATTRIBUTES', 	    ',label,type,id,class,wrapperClass,name,required,value,'.
+	'options,optionLabels,layout,info,comment,translateLabel,'.
+	'labelInOutput,splitOutput,placeholder,autocomplete,'.
+	'description,pattern,min,max,path,target,');
+
+define('UNARY_ELEM_ATTRIBUTES', ',required,translateLabel,splitOutput,autocomplete,');
+
+define('SUPPORTED_TYPES', 	    ',text,password,email,textarea,radio,checkbox,'.
+    'dropdown,button,url,date,time,datetime,month,number,range,tel,file,'.
+    'fieldset,fieldset-end,reveal,hidden,literal,bypassed,');
+
 
 mb_internal_encoding("utf-8");
 
@@ -49,7 +68,27 @@ class Forms
 
     
     //-------------------------------------------------------------
-    public function render($args)
+    public function render( $args )
+    {
+        // check for implicit syntax:
+        $keys = array_keys($args);
+        $out = '';
+        foreach ($keys as $key) {
+            if (!$this->isElementAttribute( $key )) {
+                $args1 = $args[ $key ];
+                $args1['label'] = $key;
+                $out .= $this->_render( $args1 );
+            } else {
+                $out .= $this->_render( $args );
+                return $out;
+            }
+        }
+        return $out;
+    } // render
+
+
+    //-------------------------------------------------------------
+    private function _render($args)
     {
         $this->args = $args;
         $this->inx++;
@@ -150,6 +189,10 @@ class Forms
                 $elem = $this->renderHidden();
                 break;
 
+            case 'literal':
+                $elem = $this->renderLiteral();
+                break;
+
             case 'bypassed':
                 $elem = '';
                 $this->bypassedValues[ $this->currRec->name ] = $this->currRec->value;
@@ -197,7 +240,9 @@ class Forms
             $class .= ' lzy-form-error';
         }
         $class = $this->classAttr($class);
-        if (($this->currRec->type !== 'hidden') && ($this->currRec->type !== 'bypassed')) {
+        if (($this->currRec->type !== 'hidden') &&
+                ($this->currRec->type !== 'bypassed') &&
+                ($this->currRec->type !== 'literal')) {
             $comment = '';
             if ($this->currRec->comment) {
                 $comment = "\t\t\t<span class='lzy-form-elem-comment'>{$this->currRec->comment}\n\t\t</span>";
@@ -329,6 +374,8 @@ class Forms
         $currForm->options = isset($args['options']) ? $args['options'] : (isset($args['option']) ? $args['option'] : '');
         $currForm->options = str_replace('-', '', $currForm->options);
 
+        $currForm->ticketPayload = (isset($args['ticketPayload'])) ? $args['ticketPayload'] : null;
+
         return 'form-head';
     } // parseHeadElemArgs
 
@@ -339,6 +386,17 @@ class Forms
     private function parseElemArgs()
     {
         $args = $this->args;
+
+        foreach ($args as $key => $value) {
+            if (is_int($key)) {
+                if (strpos(SUPPORTED_TYPES, ",$value,") !== false) {
+                    $args[ 'type' ] = $value;
+                } elseif (strpos(UNARY_ELEM_ATTRIBUTES, ",$value,") !== false) {
+                    $args[ $value ] = true;
+                }
+                unset( $args[ $key ]);
+            }
+        }
 
         $label = (isset($args['label'])) ? $args['label'] : 'Lizzy-Form-Elem'.($this->inx + 1);
 
@@ -530,7 +588,7 @@ EOT;
         $this->userSuppliedData = $this->getUserSuppliedDataFromCache($formId);
         $currForm->creationTime = time();
 
-        $currForm->formHash = $this->tck->createTicket();
+        $currForm->formHash = $this->tck->createTicket( $currForm->ticketPayload );
 
         if ($currForm->warnLeavingPage && !$GLOBALS["globalParams"]['warnLeavingPageInitialized']) {
             $GLOBALS["globalParams"]['warnLeavingPageInitialized'] = true;
@@ -1051,6 +1109,23 @@ EOT;
         $out = "<input type='hidden' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'$cls$name$value />\n";
         return $out;
     } // renderHidden
+
+
+
+    //-------------------------------------------------------------
+    private function renderLiteral()
+    {
+        $out = '';
+        if (isset($this->currRec->html)) {
+            $out = $this->currRec->html;
+            $out = str_replace(['&#39;', '&#34;'], ["'", '"'], $out);
+        }
+        if (isset($this->currRec->md)) {
+            $md = $this->currRec->md;
+            $out .= compileMarkdownStr( $md );
+        }
+        return $out;
+    } // renderLiteral
 
 
 
@@ -1998,6 +2073,20 @@ EOT;
 
 
 
+    protected function isHeadAttribute( $attr )
+    {
+        return (strpos(HEAD_ATTRIBUTES, ",$attr,") !== false);
+    }
+
+
+
+    protected function isElementAttribute( $attr )
+    {
+        return (strpos(ELEM_ATTRIBUTES, ",$attr,") !== false);
+    }
+
+
+
     private function renderData()
     {
         global $globalParams;
@@ -2234,6 +2323,12 @@ EOT;
         }
     } // sendConfirmationMail
 
+
+
+    protected function getFormHash()
+    {
+        return $this->currForm->formHash;
+    }
 
 
 
