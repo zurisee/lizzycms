@@ -35,10 +35,11 @@ define('RECYCLE_BIN_PATH',      '~page/'.RECYCLE_BIN);
 define('LOG_FILE',              LOGS_PATH.'log.txt');
 define('ERROR_LOG',             LOGS_PATH.'errlog.txt');
 define('ERROR_LOG_ARCHIVE',     LOGS_PATH.'errlog_archive.txt');
-define('VERSION_CODE_FILE',     LOGS_PATH.'version-code.txt');
 define('BROWSER_SIGNATURES_FILE', LOGS_PATH.'browser-signatures.txt');
 define('UNKNOWN_BROWSER_SIGNATURES_FILE',     LOGS_PATH.'unknown-browser-signatures.txt');
 define('LOGIN_LOG_FILENAME',    LOG_FILE);
+
+define('VERSION_CODE_FILE',     CACHE_PATH.'version-code.txt');
 define('UNDEFINED_VARS_FILE',   CACHE_PATH.'undefinedVariables.yaml');
 define('FAILED_LOGIN_FILE',     CACHE_PATH.'_failed-logins.yaml');
 define('HACK_MONITORING_FILE',  CACHE_PATH.'_hack_monitoring.yaml');
