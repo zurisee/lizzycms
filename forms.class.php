@@ -44,6 +44,7 @@ class Forms
     protected $errorDescr = [];
     protected $responseToClient = false;
     protected $skipRenderingForm = false;
+    protected $formId = false;
 
     //-------------------------------------------------------------
 	public function __construct($lzy, $skipUserDataEval = false)
@@ -1609,7 +1610,7 @@ EOT;
         }
 
         if ($cont && $this->currForm->confirmationEmail) {
-            $msgToClient .= $this->sendConfirmationMail( $userSuppliedData );
+            $this->sendConfirmationMail( $userSuppliedData );
         }
 
         if ($noError ) {
@@ -1745,6 +1746,7 @@ EOT;
         }
 
         // add new record:
+        $this->userSuppliedData['timestamp'] = date('Y-m-d H:i:s');
         $ds->writeRecord($recKey, $this->userSuppliedData);
         return true;
 	} // saveUserSuppliedDataToDB
@@ -1826,10 +1828,16 @@ EOT;
         // export header row:
         $data = $this->exportHeaderRow();
 
+        $formElements = $currForm->formElements;
+        $e = new FormElement();
+        $e->type = 'text';
+        $e->name = 'timestamp';
+        $formElements[] = $e;
+
         $r = 1;
         foreach ($srcData as $row) {
             $c = 0;
-            foreach ($currForm->formElements as $fldDescr) {
+            foreach ($formElements as $fldDescr) {
                 if (!$fldDescr) { continue; }
 
                 $fldName = @$fldDescr->name;
@@ -1894,6 +1902,8 @@ EOT;
             }
             $row[$c++] = $value;
         }
+        $value = $this->trans->translateVariable( 'Timestamp', true );
+        $row[] = $value;
         return [ $row ];
     } // exportHeaderRow
 
@@ -1945,11 +1955,11 @@ EOT;
     {
         $id = "fld_ch{$this->inx}";
         if ($this->currForm->antiSpam !== true) {   // field for antiSpam explicitly defined:
-            $nameFldId = str_replace('#fld_', '', $this->currForm->antiSpam);
+            $nameFldId = preg_replace('/^ (\#fld_)? (.*?) [_\d]* $/x', "$2", $this->currForm->antiSpam);
             $found = false;
             foreach ($this->currForm->formElements as $rec) {
-                if ($rec->elemId === $nameFldId) {
-                    $nameFldId = '#fld_' . $nameFldId;
+                if (strpos($rec->elemId, $nameFldId) === 0) {
+                    $nameFldId = '#fld_' . $rec->elemId;
                     $found = true;
                     break;
                 }
@@ -1974,8 +1984,8 @@ EOT;
         <div id="lzy-ch-wrapper-{$this->formInx}" class="lzy-ch-wrapper">
             {{ lzy-form-override-honeypot }}
             <div class="lzy-ch-input-wrapper">
-                <label for="$id">{{ lzy-form-override-honeypot-label }}</label>
-                <input id="$id" type="text" name="lzy-ch-name" />
+                <label for="lzy-popup-as-input">{{ lzy-form-override-honeypot-label }}</label>
+                <input id="lzy-popup-as-input" type="text" name="lzy-ch-name" />
             </div>
         </div>
 
@@ -1987,7 +1997,7 @@ EOT;
 
 function lzyChContinue( i, btn, callbackArg ) {
     lzyFormUnsaved = false;
-    var val = $( '#$id' ).val();
+    var val = $( '#lzy-popup-as-input' ).val();
     var origFld = $( '$nameFldId' ).val();
     if (!origFld) {
         origFld = '';
@@ -2019,7 +2029,7 @@ function initAntiSpamPopup() {
         buttonClass: 'lzy-button lzy-button-submit, lzy-button ',
         closeButton: false,
     });
-    $( '#$id' ).focus();
+    $( '#lzy-popup-as-input' ).focus();
 }
 
 EOT;
@@ -2373,17 +2383,17 @@ EOT;
     private function sendConfirmationMail( $rec )
     {
         $isHtml = false;
-        $emailFieldName = $this->currForm->confirmationEmail;
-        $to = false;
+        $emailFieldName = preg_replace('/_\d+$/', '', $this->currForm->confirmationEmail );
+        $to = $this->getUserSuppliedValue( $emailFieldName );
+        if (!$to) {
+            return;
+        }
         foreach ($rec as $key => $value) {
-            $key1 = preg_replace('/_\d+$/', '', $key);
-            if ($emailFieldName === $key1) {
-                $to = $value;
-            }
+            $key = preg_replace('/_\d+$/', '', $key);
             if (is_array($value)) {
                 $value = $value[0];
             }
-            $this->trans->addVariable("{$key1}_value", $value);
+            $this->trans->addVariable("{$key}_value", $value);
         }
         if ($this->currForm->confirmationEmailTemplate === true) {
             $subject = '{{ lzy-confirmation-response-subject }}';
@@ -2393,7 +2403,7 @@ EOT;
             $file = resolvePath($this->currForm->confirmationEmailTemplate, true);
             if (!file_exists($file)) {
                 $this->responseToClient = 'lzy-reservation-email-template-not-found';
-                return '';
+                return;
             }
 
             $ext = fileExt($file);
@@ -2446,7 +2456,7 @@ EOT;
                     $message = $m[2];
                 } else {
                     $this->responseToClient = 'lzy-reservation-email-template-syntax-error';
-                    return '';
+                    return;
                 }
             }
         }
