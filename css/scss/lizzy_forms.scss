@@ -444,7 +444,9 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
 .lzy-form-label-hint {
     color: #777;
 }
-
+.lzy-form-continue {
+    margin-top: 2em;
+}
 
 
 /* === Color ========================================== */
@@ -468,11 +470,23 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         color: #666;
         box-shadow: inset 0 0 0 1px #bbb;
     }
-    &.lzy-form-legend {
+    .lzy-form-header {
         border: 1px dotted orange;
         padding: 0.5em 1em;
+        margin: 0 0 1em 0;
     }
-    &.lzy-form-announcement {
+    .lzy-form-hint {
+        border: 1px dotted yellowgreen;
+        padding: 0.5em 1em;
+        margin: 1em 0 1em 0;
+        text-align: left;
+    }
+    .lzy-form-footer {
+        border: 1px dotted orange;
+        padding: 0.5em 1em;
+        margin: 1em 0 0 0;
+    }
+    .lzy-form-announcement {
         padding: 1rem 2rem;
         color: #a82600;
         background: #f8f2cd;

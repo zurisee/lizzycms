@@ -40,9 +40,9 @@ class Forms
     protected $inx;
 	private $currForm = null;		// shortcut to $formDescr[ $currFormIndex ]
 	private $currRec = null;		// shortcut to $currForm->formElements[ $currRecIndex ]
-    public  $errorDescr = [];
-    private $responseToClient = false;
     private $submitButtonRendered = false;
+    protected $errorDescr = [];
+    protected $responseToClient = false;
     protected $skipRenderingForm = false;
 
     //-------------------------------------------------------------
@@ -59,7 +59,7 @@ class Forms
         $this->tck = new Ticketing([
             'defaultType' => 'lzy-form',
             'defaultMaxConsumptionCount' => 100,
-            'defaultValidityPeriod' => 86400,
+            'defaultValidityPeriod' => 259200, // 3 days
         ]);
 
         if (isset($_POST['_lizzy-form']) && !$skipUserDataEval) {	// we received data:
@@ -81,6 +81,10 @@ class Forms
             $out = '';
             $buttons = [ 'label' => '', 'type' => 'button', 'value' => '' ];
             foreach ($keys as $key) {
+                if (is_int($key)) {
+                    unset($args[ $key ]);
+                    continue;
+                }
                 if (!$this->isElementAttribute($key)) {
                     if ($key === 'submit') {
                         $buttons["label"] .= isset($args[$key]['label']) ? $args[$key]['label'].',': 'Submit,';
@@ -97,7 +101,7 @@ class Forms
                         $args1['label'] = $key;
                     }
                     $out .= $this->_render($args1);
-                    $args1 = false;
+
                 } else {
                     $out .= $this->_render($args);
                     return $out;
@@ -151,6 +155,7 @@ class Forms
         if ($this->skipRenderingForm && ($type !== 'form-tail')) {
             return '';
         }
+        $elem = '';
         switch ($type) {
             case 'form-head':
                 return $this->renderFormHead();
@@ -309,8 +314,11 @@ class Forms
         if ($this->submitButtonRendered &&
                 (stripos($this->currForm->options, 'norequiredcomment') === false)) {
             $this->submitButtonRendered = false;
-            if (isset($this->currForm->hasRequiredFields) && $this->currForm->hasRequiredFields) {
-                $out = "\t<div class='lzy-form-required-comment'>{{ lzy-form-required-comment }}</div>\n$out";
+            if ($this->currForm->formHint) {
+                $out = "\t\t<div class='lzy-form-hint'>{$this->currForm->formHint}</div>\n$out";
+
+            } elseif (isset($this->currForm->hasRequiredFields) && $this->currForm->hasRequiredFields) {
+                $out = "\t\t<div class='lzy-form-required-comment'>{{ lzy-form-required-comment }}</div>\n$out";
             }
         }
 
@@ -366,6 +374,8 @@ class Forms
         $currForm->mailFrom = (isset($args['mailfrom'])) ? $args['mailfrom'] : ((isset($args['mailFrom'])) ? $args['mailFrom'] : '');
         $currForm->legend = (isset($args['formHeader'])) ? $args['formHeader'] : ''; // synonyme for 'legend'
         $currForm->legend = (isset($args['legend'])) ? $args['legend'] : $currForm->legend;
+        $currForm->formHint = (isset($args['formHint'])) ? $args['formHint'] : '';
+        $currForm->formFooter = (isset($args['formFooter'])) ? $args['formFooter'] : '';
         $currForm->customResponseEvaluation = (isset($args['customResponseEvaluation'])) ? $args['customResponseEvaluation'] : '';
         $currForm->next = (isset($args['next'])) ? $args['next'] : './';
         $currForm->file = (isset($args['file'])) ? $args['file'] : '';
@@ -442,6 +452,9 @@ class Forms
     {
         $args = $this->args;
 
+        if (!is_array($args)) {
+            $args = [];
+        }
         foreach ($args as $key => $value) {
             if (is_int($key)) {
                 if (strpos(SUPPORTED_TYPES, ",$value,") !== false) {
@@ -475,7 +488,13 @@ class Forms
         $_name = " name='$name'";
 
         // whether to translate a label: form-wide translateLabels or per-element translateLabel or '-' in front of label:
-        $rec->translateLabel = $this->currForm->translateLabels || ($label[0] === '-') || (@$args['translateLabel'] ? $args['translateLabel'] : false);
+        $rec->translateLabel = false;
+        if ($this->currForm->translateLabels || (@$args['translateLabel'])) {
+            $rec->translateLabel = true;
+        } elseif ($label[0] === '-') {
+            $label = substr($label, 1);
+            $rec->translateLabel = true;
+        }
 
         if (isset($args['id'])) {
             $elemId = $args['id'];
@@ -643,13 +662,13 @@ EOT;
         $this->userSuppliedData = $this->getUserSuppliedDataFromCache($formId);
         $currForm->creationTime = time();
 
-        $currForm->formHash = $this->tck->createTicket( $currForm->ticketPayload );
+        $this->formHash = $this->tck->createTicket( $currForm->ticketPayload );
 
         if ($currForm->formDataCaching && !$GLOBALS["globalParams"]['formDataCachingInitialized']) {
             $GLOBALS["globalParams"]['formDataCachingInitialized'] = true;
             $js = <<<EOT
 
-function onUnloadPage() {
+function lzyOnUnloadFormPage() {
     if ( lzyFormUnsaved ) {
         $('form').each(function( e ) {
             $('.lzy-form-cmd').val('_cache_');
@@ -659,7 +678,7 @@ function onUnloadPage() {
     }
 }
 var lzyFormUnsaved = false;
-window.onbeforeunload = onUnloadPage;
+window.onbeforeunload = lzyOnUnloadFormPage;
 
 EOT;
             $this->page->addJs( $js );
@@ -674,12 +693,11 @@ EOT;
 
         $id = " id='{$this->formId}'";
 
-        $legendClass = 'lzy-form-legend';
+        $legendClass = 'lzy-form-header';
         $announcementClass = 'lzy-form-announcement';
+        $wrapperClass = '';
         if (stripos($currForm->options, 'nocolor') === false) {
-            $currForm->class .= ' lzy-form-colored';
-            $legendClass .= ' lzy-form-colored';
-            $announcementClass .= ' lzy-form-colored';
+            $wrapperClass = ' lzy-form-colored';
         }
         $class = &$currForm->class;
         $class = "$formId $class";
@@ -709,9 +727,9 @@ EOT;
 
 
         // now assemble output, i.e. <form> element:
-		$out = '';
+		$out = "\n\t<div class='lzy-form-wrapper$wrapperClass'>\n";
         if ($currForm->legend) {
-            $out = "<div class='$legendClass {$currForm->formId}'>{$currForm->legend}</div>\n\n";
+            $out .= "\t  <div class='$legendClass {$currForm->formId}'>{$currForm->legend}</div>\n\n";
         }
 
         // handle general error feedback:
@@ -719,12 +737,17 @@ EOT;
             $msg = $this->errorDescr[$this->currForm->formId]['_announcement_'];
             $this->errorDescr[$this->currForm->formId]['_announcement_'] = false;
             $out .= "\t<div class='$announcementClass'>$msg</div>\n";
+
+        } elseif (@$this->errorDescr[ 'generic' ]['_announcement_']) {
+            $msg = $this->errorDescr[$this->currForm->formId]['_announcement_'];
+            $out .= "\t<div class='$announcementClass'>$msg</div>\n";
+            $this->errorDescr[ 'generic' ]['_announcement_'] = false;
         }
 
-        $out .= "\t<form$id$_class$_method$_action$novalidate>\n";
+        $out .= "\t  <form$id$_class$_method$_action$novalidate>\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form-id' value='{$this->formInx}' />\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form-label' value='{$currForm->formName}' />\n";
-		$out .= "\t\t<input type='hidden' name='_lizzy-form' value='{$currForm->formHash}' />\n";
+		$out .= "\t\t<input type='hidden' name='_lizzy-form' value='{$this->formHash}' />\n";
 		$out .= "\t\t<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-cmd' value='{$currForm->next}' />\n";
 
 		if ($currForm->antiSpam) {
@@ -1249,11 +1272,11 @@ EOT;
     //-------------------------------------------------------------
     private function renderButtons()
     {
+        $out = '';
         $indent = "\t\t";
 		$label = $this->currRec->label;
 		$options = (isset($this->currRec->options) && $this->currRec->options) ? $this->currRec->options : $label;
 		$value = (isset($this->currRec->value) && $this->currRec->value) ? $this->currRec->value : $options;
-		$out = '';
 
         $class = " class='".trim($this->currRec->class .' lzy-form-button'). "'";
         $types = preg_split('/\s*[,|]\s*/', $value);
@@ -1273,6 +1296,8 @@ EOT;
 				if (isset($label) && $label) {
 				    if ($label[0] === '-') {
                         $label = $this->trans->translateVariable(substr($label,1), true);
+                    } elseif ($this->currRec->translateLabel) {
+                        $label = $this->trans->translateVariable($label, true);
                     }
                 } else {
                     $label = $type;
@@ -1298,31 +1323,36 @@ EOT;
     //-------------------------------------------------------------
 	private function renderFormTail()
     {
+        $out = '';
         $formId = $this->currForm->formId;
-        if ($this->currForm->antiSpam) {
-            $this->initAntiSpam();
+        if (!$this->skipRenderingForm) {
+            if ($this->currForm->antiSpam) {
+                $this->initAntiSpam();
+            }
+            $out = "\t  </form>\n";
+
+            if ($this->currForm->formFooter) {
+                $out .= "\t  <div class='lzy-form-footer'>{$this->currForm->formFooter}</div>\n";
+            }
         }
-        $out = "\t</form>\n";
 
         // save form data to DB:
         $this->saveFormDescr();
 
         // append possible text from user-data evaluation:
         $msgToClient = '';
-        $msgToClientClass = '';
-        if (stripos($this->currForm->options, 'nocolor') === false) {
-            $msgToClientClass = 'lzy-form-colored ';
-        }
 
         // check _announcement_ and responseToClient, inject msg if present:
         if (@$this->errorDescr[$formId]['_announcement_']) { // is errMsg, takes precedence over responseToClient
             $msgToClient = @$this->errorDescr[$formId]['_announcement_'];
             $this->errorDescr[$formId]['_announcement_'] = false;
-            $msgToClientClass .= 'lzy-form-announcement';
+
+        } elseif (@$this->errorDescr[ 'generic' ]['_announcement_']) { // is errMsg, takes precedence over responseToClient
+            $msgToClient = @$this->errorDescr[ 'generic' ]['_announcement_'];
+            $this->errorDescr[ 'generic' ]['_announcement_'] = false;
 
         } elseif (@$this->responseToClient) {
             $msgToClient = $this->responseToClient;
-            $msgToClientClass .= 'lzy-form-response';
         }
         if ($msgToClient) {
             // append 'continue...' if form was omitted:
@@ -1330,8 +1360,10 @@ EOT;
                 $next = @$this->currForm->next ? $this->currForm->next : './';
                 $msgToClient .= "<div class='lzy-form-continue'><a href='{$next}'>{{ lzy-form-continue }}</a></div>\n";
             }
-            $out .= "\t<div class='$msgToClientClass'>$msgToClient</div>\n";
+            $out .= "\t<div class='lzy-form-response'>$msgToClient</div>\n";
         }
+
+        $out .= "\t</div><!-- /lzy-form-wrapper -->\n\n";
 
         // refresh export if necessary:
         if ($this->currForm->export) {
@@ -1359,7 +1391,9 @@ EOT;
         $label = $this->currRec->label;
         $hasColon = (strpos($label, ':') !== false);
         $label = trim(str_replace([':', '*'], '', $label));
-        if ($this->currRec->translateLabel) {
+        if ($label[0] === '-') {
+            $label = $this->trans->translateVariable(substr($label,1), true);
+        } elseif ($this->currRec->translateLabel) {
             $label = $this->trans->translateVariable($label, true);
         }
         if ($hasColon) {
@@ -1411,13 +1445,20 @@ EOT;
 	    $form = $this->currForm;
 	    $form->bypassedValues = @$this->bypassedValues;
         $str = base64_encode( serialize( $form) );
-        $this->tck->updateTicket( $this->currForm->formHash, ['form' => $str] );
+        if (!$this->formHash) {
+            $this->errorDescr['generic']['_announcement_'] = '{{ lzy-form-error-formhash-lost }}';
+            return;
+        }
+        $this->tck->updateTicket( $this->formHash, ['form' => $str] );
 	} // saveFormDescr
 
 
     //-------------------------------------------------------------
     public function restoreFormDescr($formHash)
 	{
+	    if (!$formHash) {
+            return null;
+        }
         $rec = $this->tck->consumeTicket($formHash);
         if (isset($rec['form'])) {
             return unserialize(base64_decode($rec['form']));
@@ -1803,7 +1844,7 @@ EOT;
                         }
                         $value = $row[$fldName][$i]? '1': ' ';
                     } else {
-                        $value = $row[$fldName][0];
+                        $value = isset($row[$fldName][0])? $row[$fldName][0]: '';
                     }
 
                 } else {
@@ -1846,7 +1887,9 @@ EOT;
             } else {
                 $value = $fldDescr->labelInOutput;
             }
-            if ($fldDescr->translateLabel) {
+            if ($value[0] === '-') {
+                $value = $this->trans->translateVariable( substr($value, 1), true );
+            } elseif ($fldDescr->translateLabel) {
                 $value = $this->trans->translateVariable( $value, true );
             }
             $row[$c++] = $value;
@@ -1890,7 +1933,9 @@ EOT;
             unset($_SESSION["lizzy"]['forms']);
         }
         $this->errorDescr = null;
-	    @$this->tck->deleteTicket( @$this->formHash );
+	    if ($this->formHash) {
+            $this->tck->deleteTicket($this->formHash);
+        }
 	} // clearCache
 
 
@@ -2162,7 +2207,7 @@ EOT;
 
     protected function isElementAttribute( $attr )
     {
-        if (!$attr) {
+        if (!$attr || !is_string($attr)) {
             return false;
         }
         return (strpos(ELEM_ATTRIBUTES, ",$attr,") !== false);
@@ -2419,8 +2464,20 @@ EOT;
 
     protected function getFormHash()
     {
-        return $this->currForm->formHash;
+        return $this->formHash;
     }
+
+
+
+    protected function getUserSuppliedValue( $fieldName )
+    {
+        foreach ($this->userSuppliedData as $key => $value) {
+            if (strpos($key, $fieldName) === 0) {
+                return $value;
+            }
+        }
+        return '';
+    } // getUserSuppliedValue
 
 
 
