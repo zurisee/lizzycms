@@ -201,7 +201,7 @@ class Ticketing
         $ticketsToPurge = false;
         if ($tickets) {
             foreach ($tickets as $key => $ticket) {
-                if (isset($ticket['lzy_ticketValidTill']) &&
+                if (!isset($ticket['lzy_ticketValidTill']) ||
                     ($ticket['lzy_ticketValidTill'] < $now)) {    // has expired
                     unset($tickets[$key]);
                     $ticketsToPurge = true;
