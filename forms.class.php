@@ -2399,8 +2399,13 @@ EOT;
     private function sendConfirmationMail( $rec )
     {
         $isHtml = false;
-        $emailFieldName = preg_replace('/_\d+$/', '', $this->currForm->confirmationEmail );
-        $to = $this->getUserSuppliedValue( $emailFieldName );
+        if ($this->currForm->confirmationEmail === true) {
+            $emailFieldName = 'e-mail';
+            $to = $this->getUserSuppliedValue( $emailFieldName, true );
+        } else {
+            $emailFieldName = preg_replace('/_\d+$/', '', $this->currForm->confirmationEmail );
+            $to = $this->getUserSuppliedValue( $emailFieldName );
+        }
         if (!$to) {
             return;
         }
@@ -2495,11 +2500,20 @@ EOT;
 
 
 
-    protected function getUserSuppliedValue( $fieldName )
+    protected function getUserSuppliedValue( $fieldName, $relaxed = false )
     {
-        foreach ($this->userSuppliedData as $key => $value) {
+        if ($relaxed) {
+            foreach ($this->userSuppliedData as $key => $value) {
+                if (strpos($key, $fieldName) !== false) {
+                    return $value;
+                }
+            }
+
+        } else {
+            foreach ($this->userSuppliedData as $key => $value) {
             if (strpos($key, $fieldName) === 0) {
-                return $value;
+                    return $value;
+                }
             }
         }
         return '';
