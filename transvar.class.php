@@ -173,8 +173,7 @@ class Transvar
                 }
             }
         } else {
-            $val = "<span class='lzy-untranslated-var'>&#123;&#123; $varName }}</span>";
-//            $val = "&#123;&#123; $varName }}";
+            $val = "&#123;&#123; $varName }}";
         }
         return $val;
     } // translateVariable
