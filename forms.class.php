@@ -1407,6 +1407,7 @@ EOT;
             $label .= ' '.$requiredMarker;
         }
 
+        // add info icon:
         $infoIcon = $infoText = $infoIconText = '';
         if ($this->currRec->info) {
             $elemInx = $this->currRec->elemInx;
@@ -1417,7 +1418,7 @@ EOT;
 EOT;
             $infoIconText = <<<EOT
     <span  class="sr-only">
-		<span id="lzy-formelem-info-text-$elemInx" class="lzy-formelem-info-text lzy-formelem-info-text-$elemInx">{$this->currRec->info}</span>
+		<span id="lzy-formelem-info-text-$elemInx" class="lzy-formelem-info-text lzy-formelem-info-text-$elemInx">{{ {$this->currRec->info} }}</span>
 	</span>
 
 EOT;

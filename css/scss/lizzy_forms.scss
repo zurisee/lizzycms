@@ -432,7 +432,9 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
     .lzy-horizontal:not(.lzy-small-screen-vertical) .lzy-form-choice-elem {
         display: inline-block;
     }
-
+    .lzy-formelem-show-info .lzy-icon-info::before {
+        top: 30%;
+    }
 } // lzy-form
 
 

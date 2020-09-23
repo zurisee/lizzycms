@@ -131,6 +131,10 @@ lzy-form-duplicate-data:
     de: '<h2>Hinweis</h2><p>Ihre Eingaben haben wir bereits früher empfangen.<br>Entsprechend wurde jetzt nichts abgespeichert.</p>'
     _:  '<h2>Note</h2><p>Your input has been received before.</p><p>Therefore, nothing has been stored this time.</p>'
 
+lzy-form-email-confirmation-info:
+    de: 'Wenn Sie Ihre E-Mail Adresse hier eingeben, erhalten Sie eine Bestästigung per E-Mail.'
+    _:  'If you fill in your e-mail address, we will send you confirmation message.'
+
 
 
 
