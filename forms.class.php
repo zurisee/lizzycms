@@ -362,6 +362,9 @@ class Forms
         }
         $this->formId = $formId;
 
+        if (!$this->currForm) {
+            $this->currForm = new FormDescriptor();
+        }
         $currForm = &$this->currForm;
         $currForm->formId = $formId;
 
@@ -1362,9 +1365,9 @@ EOT;
                 $msgToClient .= "<div class='lzy-form-continue'><a href='{$next}'>{{ lzy-form-continue }}</a></div>\n";
             }
             $out .= "\t<div class='lzy-form-response'>$msgToClient</div>\n";
+        } else {
+            $out .= "\t</div><!-- /lzy-form-wrapper -->\n\n";
         }
-
-        $out .= "\t</div><!-- /lzy-form-wrapper -->\n\n";
 
         // refresh export if necessary:
         if ($this->currForm->export) {
@@ -1853,6 +1856,18 @@ EOT;
                         $value = $row[$fldName][$i]? '1': ' ';
                     } else {
                         $value = isset($row[$fldName][0])? $row[$fldName][0]: '';
+                    }
+
+                } elseif ($fldType === 'tel') {
+                    $value = @$row[$fldName];
+
+                    // if tel number starts with 0 and contains no non-digits, we must reformat it
+                    //   in order to prevent CSV-import interpreting it as integer and discard leading 0:
+                    if ($value && ($value[0] === '0') && !preg_match('/\D/', $value)) {
+                        $value = substr($value, 0, 3) . ' '.
+                            substr($value, 3, 3) . ' '.
+                            substr($value, 5, 2) . ' '.
+                            substr($value, 8);
                     }
 
                 } else {
