@@ -29,6 +29,7 @@ class Transvar
 	private $sysVariables = ['head_injections', 'content', 'body_end_injections'];
 	private $filesLoaded = array();
     public $page;
+    public $notranslate = false;
 
 
 	//....................................................
@@ -159,16 +160,21 @@ class Transvar
     //....................................................
     public function translateVariable($varName, $returnKeyIfUnknown = false, $tryUserCodeIfUnknown = false)
     {
-        $val = $this->getVariable($varName);
-        if ($val === false) {
-            if ($returnKeyIfUnknown) {
-                $val = $varName;
-            } elseif ($tryUserCodeIfUnknown) {
-                $val = $this->doUserCode($varName, $this->config->custom_permitUserCode);
-                if (is_array($val)) {
-                    fatalError($val[1]);
+        if (!$this->notranslate || ($varName === 'content')) {
+            $val = $this->getVariable($varName);
+            if ($val === false) {
+                if ($returnKeyIfUnknown) {
+                    $val = $varName;
+                } elseif ($tryUserCodeIfUnknown) {
+                    $val = $this->doUserCode($varName, $this->config->custom_permitUserCode);
+                    if (is_array($val)) {
+                        fatalError($val[1]);
+                    }
                 }
             }
+        } else {
+            $val = "<span class='lzy-untranslated-var'>&#123;&#123; $varName }}</span>";
+//            $val = "&#123;&#123; $varName }}";
         }
         return $val;
     } // translateVariable

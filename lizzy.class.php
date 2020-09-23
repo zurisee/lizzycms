@@ -1551,6 +1551,11 @@ EOT;
             $this->page->addOverlay($str);
         }
 
+
+        if (getUrlArg('notranslate')) {							// render untranslated variables
+            $this->trans->notranslate = true;
+        }
+
         // TODO:
         //        if ($n = getUrlArg('printall', true)) {			// printall pages
         //            exit( $this->printall($n) );
@@ -2191,6 +2196,7 @@ Available URL-commands:
 <a href='?config'>?config</a>		    list configuration-items in the config-file
 <a href='?convert'>?convert</a>	    convert password to hash
 <a href='?debug'>?debug</a>		    adds 'debug' class to page on non-local host *)
+<a href='?notranslate'>?notranslate</a>    show untranslated variables
 <a href='?edit'>?edit</a>		    start editing mode *)
 <a href='?iframe'>?iframe</a>		    show code for embedding as iframe
 <a href='?info'>?info</a>		    list debug-info
