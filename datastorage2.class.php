@@ -1536,7 +1536,7 @@ EOT;
 
 
     //--------------------------------------------------------------
-    private function writeToCsvFile($filename, $array, $quote = '"', $delim = ',', $forceQuotes = true)
+    private function writeToCsvFile($filename, $array, $quote = '"', $delim = ';', $forceQuotes = true)
     {
         $out = '';
         if (!is_array($array)) {
