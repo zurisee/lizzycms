@@ -1886,6 +1886,13 @@ function stripNewlinesWithinTransvars($str)
 
 
 
+function stripHtml( $str )
+{
+    $str = preg_replace('/(<.*?>)/', '', $str);
+    return $str;
+} // stripHtml
+
+
 
 //-----------------------------------------------------------------------------
 function checkBracesBalance($str, $pat1 = '{{', $pat2 = '}}', $p0 = 0)
