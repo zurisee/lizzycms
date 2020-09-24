@@ -1132,7 +1132,7 @@ dd {
 /* === Reveal ========================== */
 #lzy .lzy-form.lzy-encapsulated,
 body {
-	input.lzy-reveal-checkbox {
+	input.lzy-reveal-icon {
 		-webkit-appearance: none;
 		-moz-appearance: none;
 		appearance: none;
@@ -1150,7 +1150,7 @@ body {
 		box-shadow: none;
 	}
 
-	input.lzy-reveal-checkbox::before {
+	input.lzy-reveal-icon::before {
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -1163,7 +1163,7 @@ body {
 		transition: transform 0.3s;
 		transform-origin: 50% 50%;
 	}
-	input.lzy-reveal-checkbox:checked::before {
+	input.lzy-reveal-icon:checked::before {
 		transform: rotate( 90deg );
 //		transform-origin: 50% 50%;
 		transition: transform 0.3s;
@@ -1194,15 +1194,15 @@ body {
 	padding: 0.5em 0;
 }
 .lzy-reveal-triangle {
-	input.lzy-reveal-checkbox {
+	input.lzy-reveal-icon {
 		margin-right: 0.4em;
 		font-size: 90%;
 		transform: translateY( 0.2em );
 	}
-	input.lzy-reveal-checkbox::before {
+	input.lzy-reveal-icon::before {
 		content: '\25B7';
 	}
-	input.lzy-reveal-checkbox:checked::before {
+	input.lzy-reveal-icon:checked::before {
 		content: '\25B7';
 	}
 

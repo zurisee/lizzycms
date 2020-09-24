@@ -45,6 +45,7 @@ class Forms
     private $submitButtonRendered = false;
     protected $errorDescr = [];
     protected $responseToClient = false;
+    private $revealJsAdded = false;
     protected $skipRenderingForm = false;
     protected $formId = false;
 
@@ -564,6 +565,10 @@ class Forms
         }
 
         $rec->target = @$args['target']? $args['target']: '';
+        if (strpos('radio,check,dropdown') !== false) {
+            $rec->target = @$args['reveal']? $args['reveal']: $rec->target;
+        }
+
         $rec->value = @$args['value']? $args['value']: '';
 
         // for radio, checkbox and dropdown: options define the values available
@@ -839,13 +844,20 @@ EOT;
     private function renderRadio()
     {
         $rec = $this->currRec;
-        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $class = $this->currRec->class;
         $groupName = translateToIdentifier($this->currRec->label);
         if ($this->currRec->name) {
             $groupName = $this->currRec->name;
         }
         $checkedElem = isset($this->currRec->prefill)? $this->currRec->prefill: false;
         $label = $this->getLabel(false, false);
+
+        $target = $this->currRec->target;
+        if ($target) {
+            $this->addRevealJs();
+            $target = explodeTrim(',|', "|$target||||||||||||||||");
+        }
+
         $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-radio-label'><div class='lzy-legend'><legend>{$label}</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
         foreach($rec->optionLabels as $i => $optionLabel) {
             if ($i === 0) { continue; } // skip group name
@@ -859,9 +871,17 @@ EOT;
                     $preselectedValue = true;
                 }
             }
+            $attr = '';
+            if ($target[$i]) {
+                $cls = " class='$class lzy-reveal-controller-elem'";
+                $attr = " data-reveal-target='{$target[$i]}'";
+            } else {
+                $cls = $class ? " class='$class'" : '';
+            }
+
             $checked = ($checkedElem && $checkedElem[$i]) || $preselectedValue ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-radio-elem lzy-form-choice-elem'>\n";
-            $out .= "\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked$cls /><label for='$id'>$optionLabel</label>\n";
+            $out .= "\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked$cls$attr /><label for='$id'>$optionLabel</label>\n";
             $out .= "\t\t\t</div>\n";
         }
         $out .= "\t\t\t  </div><!--/lzy-fieldset-body -->\n\t\t\t</fieldset>\n";
@@ -874,10 +894,17 @@ EOT;
     private function renderCheckbox()
     {
         $rec = $this->currRec;
-        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
+        $class = $this->currRec->class;
         $presetValues = isset($this->currRec->prefill)? $this->currRec->prefill: false;
         $groupName = translateToIdentifier($this->currRec->label) . '_' . $this->inx;
         $label = $this->getLabel(false, false);
+
+        $target = $this->currRec->target;
+        if ($target) {
+            $this->addRevealJs();
+            $target = explodeTrim(',|', "|$target||||||||||||||||");
+        }
+
         $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-checkbox-label'><div class='lzy-legend'><legend>$label</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
 
         foreach($rec->optionLabels as $i => $optionLabel) {
@@ -891,10 +918,17 @@ EOT;
                     $preselectedValue = true;
                 }
             }
+            $attr = '';
+            if ($target[$i]) {
+                $cls = " class='$class lzy-reveal-controller-elem'";
+                $attr = " data-reveal-target='{$target[$i]}'";
+            } else {
+                $cls = $class ? " class='$class'" : '';
+            }
 
             $checked = (($presetValues !== false) && @$presetValues[$i]) || $preselectedValue ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-checkbox-elem lzy-form-choice-elem'>\n";
-            $out .= "\t\t\t\t<input id='$id' type='checkbox' name='{$groupName}[]' value='$name'$checked$cls /><label for='$id'>$optionLabel</label>\n";
+            $out .= "\t\t\t\t<input id='$id' type='checkbox' name='{$groupName}[]' value='$name'$checked$cls$attr /><label for='$id'>$optionLabel</label>\n";
             $out .= "\t\t\t</div>\n";
         }
         $out .= "\t\t\t  </div><!--/lzy-fieldset-body -->\n\t\t\t</fieldset>\n";
@@ -907,7 +941,16 @@ EOT;
     private function renderDropdown()
     {
         $rec = $this->currRec;
-        $cls = $rec->class? " class='{$rec->class}'": '';
+        $class = $this->currRec->class;
+
+
+        $target = $this->currRec->target;
+        if ($target) {
+            $this->addRevealJs();
+            $target = explodeTrim(',|', "|$target||||||||||||||||");
+            $class .= ' lzy-reveal-controller-elem';
+        }
+        $cls = $class? " class='$class'": '';
 
         $selectedElem = isset($rec->prefill)? $rec->prefill: [];
         $selectedElem = @$selectedElem[0];
@@ -926,7 +969,12 @@ EOT;
                 }
                 $selected = ($val === $selectedElem) || $preselectedValue ? ' selected' : '';
             }
-            $out .= "\t\t\t\t<option value='$val'$selected>$optionLabel</option>\n";
+            $attr = '';
+            if ($target[$i]) {
+                $attr = " data-reveal-target='{$target[$i]}'";
+            }
+
+            $out .= "\t\t\t\t<option value='$val'$selected$attr>$optionLabel</option>\n";
         }
         $out .= "\t\t\t</select>\n";
 
@@ -1230,7 +1278,13 @@ EOT;
     private function renderDisclose()
     {
         $target = $this->currRec->target;
-        $jq = "$('$target').show();\n";
+        $jq = <<<EOT
+
+const \$target = $('$target');
+$('> div > div', \$target).css('margin-top', '-100vh');
+\$target.show();
+
+EOT;
         $this->page->addJq($jq);
         return '';
     } // renderDisclose
@@ -1247,41 +1301,20 @@ EOT;
         if ($this->currRec->errorMsg) {
             $out .= "\t\t\t<div class='lzy-form-field-errorMsg' aria-hidden='true'>{$this->currRec->errorMsg}</div>\n";
         }
-        $out .= "\t\t\t\t<input id='$id' class='lzy-reveal-checkbox' type='checkbox' data-reveal-target='$target' /><label for='$id'>$label</label>\n";
+        $out .= "\t\t\t\t<input id='$id' class='lzy-reveal-controller-elem lzy-reveal-icon' type='checkbox' data-reveal-target='$target' /><label for='$id'>$label</label>\n";
 
         $out = "\t\t\t<div class='lzy-reveal-controller'>$out</div>\n";
 
-        $jq = <<<'EOT'
-
-    $('.lzy-reveal-checkbox').each(function() {
-        $(this).attr('aria-expanded', 'false');
-        var $target = $( $( this ).attr('data-reveal-target') );
-        if ( !$target.parent().hasClass('lzy-reveal-container') ) {
-            $target.wrap("<div class='lzy-reveal-container'></div>").show();
-            var boundingBox = $target[0].getBoundingClientRect();
-            $target.css('margin-top', (boundingBox.height * -1 - 20) + 'px');
-        }
-    });
-    
-    $('.lzy-reveal-checkbox').change(function() {
-        var $target = $( $( this ).attr('data-reveal-target') );
-        var boundingBox = $target[0].getBoundingClientRect();
-        $target.css('margin-top', (boundingBox.height * -1 - 20) + 'px');
-        var $container = $target.parent();
-        if ( $( this ).prop('checked') ) {
-            $(this).attr('aria-expanded', 'true');
-            $container.addClass('lzy-elem-revealed');
-        } else {
-            $(this).attr('aria-expanded', 'false');
-            $container.removeClass('lzy-elem-revealed');
-        }
-    });
-
-EOT;
-        $this->page->addJq($jq);
-
+        $this->addRevealJs();
         return $out;
     } // renderReveal
+
+
+    private function addRevealJs()
+    {
+        $this->page->addModules('REVEAL');
+    } // addRevealJs
+
 
 
 
