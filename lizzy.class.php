@@ -936,7 +936,7 @@ EOT;
             $pagePathClass = rtrim(str_replace('/', '--', $this->pagePath), '--');
             $this->trans->addVariable('page_name_class', 'page_'.$pageName);        // just for compatibility
             $this->trans->addVariable('page_path_class', 'path_'.$pagePathClass);   // just for compatibility
-            $this->page->addBodyClasses("page_$pageName path_$pagePathClass");
+            $this->page->addBodyClasses("page_$pageName path_$pagePathClass lzy-large-screen");
             if ($this->config->isPrivileged) {
                 $this->page->addBodyClasses("lzy-privileged");
             }
