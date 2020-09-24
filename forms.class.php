@@ -2176,12 +2176,6 @@ $('$formId input[type=reset]').click(function(e) {  // reset: clear all entries
     \$form[0].submit();
 });
 
-$('$formId input[type=button]').click(function(e) { // cancel: reload page (or goto 'next' if provided
-    var \$form = $('$formId');
-    var next = $('.lzy-form-cmd', \$form ).val();
-    window.location.href = next;
-});
-
 $('$formId .lzy-form-pw-toggle').click(function(e) {
     e.preventDefault();
     var \$form = $('$formId');
