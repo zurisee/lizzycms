@@ -24,8 +24,10 @@ define('UNARY_ELEM_ATTRIBUTES', ',required,translateLabel,splitOutput,autocomple
 
 define('SUPPORTED_TYPES', 	    ',text,password,email,textarea,radio,checkbox,'.
     'dropdown,button,url,date,time,datetime,month,number,range,tel,file,'.
-    'fieldset,fieldset-end,reveal,hidden,literal,bypassed,');
-    // 'fieldset,fieldset-end,reveal,hidden,literal,bypassed,render-data,');
+    'fieldset,fieldset-end,reveal,hidden,literal,bypassed,disclose,');
+
+ // types to ignore in output:
+define('PSEUDO_TYPES', ',form-head,form-tail,reveal,button,literal,disclose,fieldset,fieldset-end,');
 
 
 mb_internal_encoding("utf-8");
@@ -150,7 +152,7 @@ class Forms
             $this->currRec = &$this->currForm->formElements[ $this->inx ];
         }
 
-        $wrapperClass = 'lzy-form-field-wrapper';
+        $wrapperClass = "lzy-form-field-wrapper lzy-form-field-wrapper-{$this->inx}";
 
         $type = $this->parseArgs();
         if ($this->skipRenderingForm && ($type !== 'form-tail')) {
@@ -240,6 +242,10 @@ class Forms
                 $elem = $this->renderReveal();
                 break;
 
+            case 'disclose':
+                $elem = $this->renderDisclose();
+                break;
+
             case 'hidden':
                 $elem = $this->renderHidden();
                 break;
@@ -285,8 +291,7 @@ class Forms
         if (isset($this->currRec->wrapperClass) && ($this->currRec->wrapperClass)) {
 	        $class = "$wrapperClass lzy-form-field-type-$type {$this->currRec->wrapperClass}";
 		} else {
-            $elemId = $this->currForm->formId.'_'. $this->currRec->elemId;
-            $class = "$elemId $wrapperClass lzy-form-field-type-$type";
+            $class = "$wrapperClass lzy-form-field-type-$type";
 		}
 
         // error in supplied data? -> signal to user:
@@ -304,7 +309,7 @@ class Forms
                 ($this->currRec->type !== 'literal')) {
             $comment = '';
             if ($this->currRec->comment) {
-                $comment = "\t\t\t<span class='lzy-form-elem-comment'>{$this->currRec->comment}\n\t\t</span>";
+                $comment = "\t\t\t<span class='lzy-form-elem-comment'><span>{$this->currRec->comment}</span>\n\t\t</span>";
             }
 		    $out = "\t\t<div $class>$error\n$elem\t\t$comment</div><!-- /field-wrapper -->\n\n";
         } elseif ($this->currRec->type !== 'bypassed') {
@@ -376,8 +381,8 @@ class Forms
         $currForm->action = (isset($args['action'])) ? $args['action'] : '';
         $currForm->mailTo = (isset($args['mailto'])) ? $args['mailto'] : ((isset($args['mailTo'])) ? $args['mailTo'] : '');
         $currForm->mailFrom = (isset($args['mailfrom'])) ? $args['mailfrom'] : ((isset($args['mailFrom'])) ? $args['mailFrom'] : '');
-        $currForm->legend = (isset($args['formHeader'])) ? $args['formHeader'] : ''; // synonyme for 'legend'
-        $currForm->legend = (isset($args['legend'])) ? $args['legend'] : $currForm->legend;
+        $currForm->formHeader = (isset($args['formHeader'])) ? $args['formHeader'] : ''; // synonyme for 'legend'
+        $currForm->formHeader = (isset($args['legend'])) ? $args['legend'] : $currForm->formHeader;
         $currForm->formHint = (isset($args['formHint'])) ? $args['formHint'] : '';
         $currForm->formFooter = (isset($args['formFooter'])) ? $args['formFooter'] : '';
         $currForm->customResponseEvaluation = (isset($args['customResponseEvaluation'])) ? $args['customResponseEvaluation'] : '';
@@ -481,6 +486,11 @@ class Forms
         $rec = &$this->currRec;
         $rec = new FormElement;
         $rec->type = $type;
+
+        if (strpos($label, '<') !== false) {
+            $rec->labelHtml = $label;
+            $label = stripHtml( $label );
+        }
 
         if (isset($args['name'])) {
             $name = str_replace(' ', '_', $args['name']);
@@ -732,8 +742,8 @@ EOT;
 
         // now assemble output, i.e. <form> element:
 		$out = "\n\t<div class='lzy-form-wrapper$wrapperClass'>\n";
-        if ($currForm->legend) {
-            $out .= "\t  <div class='$legendClass {$currForm->formId}'>{$currForm->legend}</div>\n\n";
+        if ($currForm->formHeader) {
+            $out .= "\t  <div class='$legendClass {$currForm->formId}'>{$currForm->formHeader}</div>\n\n";
         }
 
         // handle general error feedback:
@@ -1217,11 +1227,13 @@ EOT;
 
 
     //-------------------------------------------------------------
-    //private function renderData()
-    //{
-    //    $out = $this->renderDataTable();
-    //    return $out;
-    //} // renderLiteral
+    private function renderDisclose()
+    {
+        $target = $this->currRec->target;
+        $jq = "$('$target').show();\n";
+        $this->page->addJq($jq);
+        return '';
+    } // renderDisclose
 
 
 
@@ -1392,7 +1404,8 @@ EOT;
         if ($requiredMarker) {
             $this->currForm->hasRequiredFields = true;
         }
-        $label = $this->currRec->label;
+        $label = $this->currRec->labelHtml? $this->currRec->labelHtml: $this->currRec->label;
+
         $hasColon = (strpos($label, ':') !== false);
         $label = trim(str_replace([':', '*'], '', $label));
         if ($label[0] === '-') {
@@ -1654,7 +1667,7 @@ EOT;
         $msgToOwner = "{$currForm->formName}\n===================\n\n";
 
 		foreach ($currForm->formElements as $element) {
-		    if (($element->type === 'reveal') || ($element->type === 'button')) {
+		    if (strpos(PSEUDO_TYPES, $element->type) !== false) {
                 continue;
             }
             $label = $element->labelInOutput;
@@ -1778,7 +1791,9 @@ EOT;
             }
             $key = $elemDef->name;
             $type = $elemDef->type;
-            if ($type === 'reveal') { continue; }
+            if (strpos(PSEUDO_TYPES, $type) !== false) {
+                continue;
+            }
             if (!isset($userSuppliedData[ $key ])) {
                 if ($type === 'bypassed') {
                     $userSuppliedData[$key] = $elemDef->value;
@@ -1846,8 +1861,9 @@ EOT;
 
                 $fldName = @$fldDescr->name;
                 $fldType = @$fldDescr->type;
-                if (!$fldType || ($fldType === 'reveal') || ($fldType === 'button') || ($fldName[0] === '_')) {
+                if ((strpos(PSEUDO_TYPES, $fldType) !== false) || ($fldDescr->name[0] === '_')) {
                     continue;
+
                 } elseif (($fldType === 'checkbox') || ($fldType === 'radio') || ($fldType === 'dropdown')) {
                     if ($fldDescr->splitOutput) {
                         for ($i=1; $i<(sizeof($row[$fldName]) - 1); $i++) {
@@ -1893,8 +1909,9 @@ EOT;
         foreach ($this->currForm->formElements as $fldDescr) {
             if (!$fldDescr) { continue; }
             $fldType = @$fldDescr->type;
-            if (!$fldType || ($fldType === 'reveal') || ($fldType === 'button') || ($fldDescr->name[0] === '_')) {
+            if ((strpos(PSEUDO_TYPES, $fldType) !== false) || ($fldDescr->name[0] === '_')) {
                 continue;
+
             } elseif (($fldType === 'checkbox') || ($fldType === 'radio') || ($fldType === 'dropdown')) {
                 if ($fldDescr->splitOutput) {
                     $hdrs = $fldDescr->optionNames;
@@ -2558,6 +2575,7 @@ class FormElement
 {
     public $type = '';        // init, radio, checkbox, date, month, number, range, text, email, password, textarea, button
     public $label = '';        // some meaningful label used for the form element
+    public $labelHtml = '';        // some meaningful label used for the form element
     public $labelInOutput = '';// some meaningful short-form of label used in e-mail and .cvs data-file
     public $name = '';
     public $required = '';    // enforces user input

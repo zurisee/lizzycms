@@ -43,6 +43,9 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         }
     }
 
+    .lzy-elem-revealed.lzy-elem-revealed {
+        margin-top: -1.2em;
+    }
 
     /* === form-field-wrapper ========================== */
     .lzy-form-field-wrapper {
