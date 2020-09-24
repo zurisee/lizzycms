@@ -137,7 +137,7 @@ li.lzy-tabs-mode-panel-header {
     overflow: hidden;
 }
 .lzy-panels-widget:not(.lzy-tab-mode) .lzy-panel-page .lzy-panel-inner-wrapper {
-    margin-top: -100%;  /* initial value on the safe side, will be adjusted by js during initialization */
+    margin-top: -1000%;  /* initial value on the safe side, will be adjusted by js during initialization */
     overflow: auto;
     transition-property: margin-top;
 }
