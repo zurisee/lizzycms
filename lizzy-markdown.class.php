@@ -62,7 +62,7 @@ class LizzyMarkdown
 	{
 		$this->page = $page;
 
-        $this->mdVariables = $this->page->mdVariables; // get mdVars defined in frontmatter
+        $this->mdVariables = array_merge($this->mdVariables, $this->page->mdVariables); // get mdVars defined in frontmatter
 
         $this->addReplacesFromFrontmatter($page);
 
