@@ -24,10 +24,10 @@ define('UNARY_ELEM_ATTRIBUTES', ',required,translateLabel,splitOutput,autocomple
 
 define('SUPPORTED_TYPES', 	    ',text,password,email,textarea,radio,checkbox,'.
     'dropdown,button,url,date,time,datetime,month,number,range,tel,file,'.
-    'fieldset,fieldset-end,reveal,hidden,literal,bypassed,disclose,');
+    'fieldset,fieldset-end,reveal,hidden,literal,bypassed,');
 
  // types to ignore in output:
-define('PSEUDO_TYPES', ',form-head,form-tail,reveal,button,literal,disclose,fieldset,fieldset-end,');
+define('PSEUDO_TYPES', ',form-head,form-tail,reveal,button,literal,fieldset,fieldset-end,');
 
 
 mb_internal_encoding("utf-8");
@@ -156,7 +156,7 @@ class Forms
         $wrapperClass = "lzy-form-field-wrapper lzy-form-field-wrapper-{$this->inx}";
 
         $type = $this->parseArgs();
-        if ($this->skipRenderingForm && ($type !== 'form-tail')) {
+        if ($this->skipRenderingForm && (strpos('form-head,form-tail', $type) === false)) {
             return '';
         }
         $elem = '';
@@ -241,10 +241,6 @@ class Forms
 
             case 'reveal':
                 $elem = $this->renderReveal();
-                break;
-
-            case 'disclose':
-                $elem = $this->renderDisclose();
                 break;
 
             case 'hidden':
@@ -673,6 +669,9 @@ EOT;
     //-------------------------------------------------------------
     private function renderFormHead()
     {
+        if ($this->skipRenderingForm) {
+            return "\t<div class='lzy-form-disclosed' style='display: none;'>\n";
+        }
         $formId = $this->formId;
         $currForm = $this->currForm;
 
@@ -1276,16 +1275,6 @@ EOT;
 
 
     //-------------------------------------------------------------
-    private function renderDisclose()
-    {
-        $target = $this->currRec->target;
-        $this->page->addJq( "$('$target').show();" );
-        return '';
-    } // renderDisclose
-
-
-
-    //-------------------------------------------------------------
     private function renderReveal()
     {
         $id = "lzy-form-reveal_{$this->currRec->elemInx}";
@@ -1366,7 +1355,6 @@ EOT;
     //-------------------------------------------------------------
 	private function renderFormTail()
     {
-        $out = '';
         $formId = $this->currForm->formId;
         if (!$this->skipRenderingForm) {
             if ($this->currForm->antiSpam) {
@@ -1377,6 +1365,8 @@ EOT;
             if ($this->currForm->formFooter) {
                 $out .= "\t  <div class='lzy-form-footer'>{$this->currForm->formFooter}</div>\n";
             }
+        } else {
+            $out = "\t</div><!-- /lzy-form-disclosed -->\n";
         }
 
         // save form data to DB:
@@ -1406,6 +1396,20 @@ EOT;
             $out .= "\t<div class='lzy-form-response'>$msgToClient</div>\n";
         } else {
             $out .= "\t</div><!-- /lzy-form-wrapper -->\n\n";
+        }
+
+        if ($this->errorDescr) {
+            $jq = <<<'EOT'
+
+$('.lzy-form-error:first').each(function () {
+    const $this = $( this );
+    $('html, body').animate({
+        scrollTop: $this.offset().top - 50
+    }, 500);
+});
+
+EOT;
+            $this->page->addJq( $jq );
         }
 
         // refresh export if necessary:
