@@ -670,7 +670,7 @@ EOT;
     private function renderFormHead()
     {
         if ($this->skipRenderingForm) {
-            return "\t<div class='lzy-form-disclosed' style='display: none;'>\n";
+            return "\t<div class='lzy-form-hide-when-completed'>\n";
         }
         $formId = $this->formId;
         $currForm = $this->currForm;
@@ -1366,7 +1366,8 @@ EOT;
                 $out .= "\t  <div class='lzy-form-footer'>{$this->currForm->formFooter}</div>\n";
             }
         } else {
-            $out = "\t</div><!-- /lzy-form-disclosed -->\n";
+            $out = "\t</div><!-- /lzy-form-hide-when-completed -->\n";
+            $this->page->addJq("$('.lzy-form-hide-when-completed').css('display', 'none');");
         }
 
         // save form data to DB:
