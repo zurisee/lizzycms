@@ -565,7 +565,7 @@ class Forms
         }
 
         $rec->target = @$args['target']? $args['target']: '';
-        if (strpos('radio,check,dropdown') !== false) {
+        if (strpos('radio,checkbox,dropdown', $type) !== false) {
             $rec->target = @$args['reveal']? $args['reveal']: $rec->target;
         }
 
@@ -872,7 +872,7 @@ EOT;
                 }
             }
             $attr = '';
-            if ($target[$i]) {
+            if (@$target[$i]) {
                 $cls = " class='$class lzy-reveal-controller-elem'";
                 $attr = " data-reveal-target='{$target[$i]}'";
             } else {
@@ -901,6 +901,7 @@ EOT;
 
         $target = $this->currRec->target;
         if ($target) {
+            $rec->wrapperClass .= 'lzy-reveal-controller';
             $this->addRevealJs();
             $target = explodeTrim(',|', "|$target||||||||||||||||");
         }
@@ -919,7 +920,7 @@ EOT;
                 }
             }
             $attr = '';
-            if ($target[$i]) {
+            if (@$target[$i]) {
                 $cls = " class='$class lzy-reveal-controller-elem'";
                 $attr = " data-reveal-target='{$target[$i]}'";
             } else {
@@ -970,7 +971,7 @@ EOT;
                 $selected = ($val === $selectedElem) || $preselectedValue ? ' selected' : '';
             }
             $attr = '';
-            if ($target[$i]) {
+            if (@$target[$i]) {
                 $attr = " data-reveal-target='{$target[$i]}'";
             }
 
@@ -1278,14 +1279,7 @@ EOT;
     private function renderDisclose()
     {
         $target = $this->currRec->target;
-        $jq = <<<EOT
-
-const \$target = $('$target');
-$('> div > div', \$target).css('margin-top', '-100vh');
-\$target.show();
-
-EOT;
-        $this->page->addJq($jq);
+        $this->page->addJq( "$('$target').show();" );
         return '';
     } // renderDisclose
 
@@ -1462,9 +1456,13 @@ EOT;
         <a href="#" class="lzy-formelem-show-info" aria-label="{{ lzy-formelem-info-title }}" data-tooltip-content="#lzy-formelem-info-text-$elemInx">{$icon}</a> 
 
 EOT;
+            $infoIconText = $this->currRec->info;
+            if (@$infoIconText[0] === '-') {
+                $infoIconText = $this->trans->translateVariable( substr($infoIconText,1) );
+            }
             $infoIconText = <<<EOT
     <span  class="sr-only">
-		<span id="lzy-formelem-info-text-$elemInx" class="lzy-formelem-info-text lzy-formelem-info-text-$elemInx">{{ {$this->currRec->info} }}</span>
+		<span id="lzy-formelem-info-text-$elemInx" class="lzy-formelem-info-text lzy-formelem-info-text-$elemInx">$infoIconText</span>
 	</span>
 
 EOT;
