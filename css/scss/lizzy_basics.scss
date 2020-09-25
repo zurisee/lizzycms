@@ -1177,7 +1177,7 @@ body {
 .lzy-reveal-container {
 	overflow: hidden;
 	&.lzy-elem-revealed {
-		margin-bottom: 1em;
+//		margin-bottom: 1em;
 		transition: margin-bottom 0.3s;
 		> div {
 			margin-top: 0 !important;
