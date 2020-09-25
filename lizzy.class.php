@@ -1175,7 +1175,7 @@ EOT;
                     $eop = true;
                 }
 
-                $md->parse($mdStr, $newPage);
+                $md->compile($mdStr, $newPage);
             } elseif ($ext === 'html') {   // it's a HTML file
                 $newPage->addContent("{{ include( '~/$f' ) }}\n");
 
@@ -1677,7 +1677,7 @@ EOT;
 		$md = new LizzyMarkdown();
 		$pg = new Page;
 		$mdStr = $this->extractFrontmatter($mdStr, $pg);
-		$md->parse($mdStr, $pg);
+		$md->compile($mdStr, $pg);
 
 		$out = $pg->get('content');
 		if (getUrlArg('html')) {

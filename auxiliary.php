@@ -2064,7 +2064,7 @@ function rrmdir($src)
 function compileMarkdownStr($mdStr, $removeWrappingPTags = false)
 {
     $md = new LizzyMarkdown();
-    $str = $md->parseStr($mdStr);
+    $str = $md->compileStr($mdStr);
     if ($removeWrappingPTags) {
         $str = preg_replace('/^\<p>(.*)\<\/p>(\s*)$/ms', "$1$2", $str);
     }

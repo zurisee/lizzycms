@@ -58,7 +58,7 @@ class LizzyMarkdown
 
 
     //....................................................
-	public function parse($str, $page)
+	public function compile($str, $page)
 	{
 		$this->page = $page;
 
@@ -95,15 +95,14 @@ class LizzyMarkdown
 		}
 		$this->page->addContent($str);
 		return $this->page;
-	} // parse
+	} // compile
 
 
 
 
 
     //....................................................
-    // public function
-    public function parseStr($str, $page = false)
+    public function compileStr($str, $page = false)
     {
         $str = $this->preprocess($str);
 
@@ -113,7 +112,7 @@ class LizzyMarkdown
 
         $str = $this->doReplaces($str);
         return $str;
-    } // parseStr
+    } // compileStr
 
 
 
