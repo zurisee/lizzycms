@@ -1776,8 +1776,11 @@ EOT;
                 if ($hash === '_meta_') { continue; }
                 $identical = true;
                 foreach ($rec as $key => $value) {
-                    $v1 = $this->userSuppliedData[ $key ];
-                    $v2 = $rec[ $key ];
+                    if ($key === 'timestamp') {
+                        continue;
+                    }
+                    $v1 = strtolower( str_replace(' ', '', $this->userSuppliedData[ $key ] ));
+                    $v2 = strtolower( str_replace(' ', '', $rec[ $key ] ));
                     if ($v1 !== $v2) {
                         $identical = false;
                         break;
