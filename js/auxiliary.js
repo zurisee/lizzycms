@@ -15,6 +15,9 @@
             $('body').removeClass('lzy-small-screen').addClass('lzy-large-screen');
         }
     });
+    $('a.lzy-formelem-show-info').click( function ( e ) {
+        e.preventDefault();
+    });
 }( jQuery ));
 
 
