@@ -9,9 +9,8 @@ $('.lzy-reveal-controller-elem').each(function() {
 		$(this).attr('aria-expanded', 'false');
 		const $target = $( $(this).attr('data-reveal-target') );
 		if (!$target.parent().hasClass('lzy-reveal-container')) {
+			$target.css('margin-top', '-100vh');
 			$target.wrap("<div class='lzy-reveal-container'></div>").show();
-			const boundingBox = $target[0].getBoundingClientRect();
-			$target.css('margin-top', (boundingBox.height * -1 - 10) + 'px');
 		}
 	}
 });
