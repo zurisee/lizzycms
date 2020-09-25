@@ -244,7 +244,7 @@ class Lizzy
                 $html = $this->resolveAllPaths($html);
                 if ($this->timer) {
                     $timerMsg = 'Page rendering time: '.readTimer();
-                    $html = $this->page->lateApplyMessag($html, $timerMsg);
+                    $html = $this->page->lateApplyMessage($html, $timerMsg);
                 }
                 $html .= "\n<!-- cached page -->";
                 return $html;
@@ -293,7 +293,7 @@ class Lizzy
 
         if ($this->timer) {
             $timerMsg = 'Page rendering time: '.readTimer();
-            $html = $this->page->lateApplyMessag($html, $timerMsg);
+            $html = $this->page->lateApplyMessage($html, $timerMsg);
 		}
 
         $this->runUserFinalCode($html );   // optional custom code to operate on final HTML output

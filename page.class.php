@@ -1237,7 +1237,7 @@ EOT;
 
 
     //....................................................
-    public function lateApplyMessag($html, $msg)
+    public function lateApplyMessage($html, $msg)
     {
         $msg = createWarning($msg);
         $p = strpos($html, '<body');
