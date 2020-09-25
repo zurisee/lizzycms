@@ -820,7 +820,7 @@ EOT;
     private function renderTextarea()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
-        $value = $this->currRec->prefill;
+        $value = @$this->currRec->prefill;
         $out = $this->getLabel();
         $out .= "<textarea id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls>$value</textarea>\n";
         return $out;
@@ -1405,7 +1405,7 @@ EOT;
 
 $('.lzy-form-error:first').each(function () {
     const $this = $( this );
-    $('html, body').animate({
+    $('.main, html').animate({
         scrollTop: $this.offset().top - 50
     }, 500);
 });
