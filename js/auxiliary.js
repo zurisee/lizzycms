@@ -2,9 +2,9 @@
 // handle screen-size and resize
 (function ( $ ) {
     if ($(window).width() < screenSizeBreakpoint) {
-        $('body').addClass('lzy-small-screen');
+        $('body').addClass('lzy-small-screen').removeClass('lzy-large-screen');
     } else {
-        $('body').addClass('lzy-large-screen');
+        $('body').addClass('lzy-large-screen').removeClass('lzy-small-screen');
     }
 
     $(window).resize(function(){
