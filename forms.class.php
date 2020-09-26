@@ -1896,7 +1896,7 @@ EOT;
         $r = 1;
         foreach ($srcData as $row) {
             $c = 0;
-            foreach ($formElements as $fldDescr) {
+            foreach ($formElements as $fldI => $fldDescr) {
                 if (!$fldDescr) { continue; }
 
                 $fldName = @$fldDescr->name;
@@ -1906,11 +1906,11 @@ EOT;
 
                 } elseif (($fldType === 'checkbox') || ($fldType === 'radio') || ($fldType === 'dropdown')) {
                     if ($fldDescr->splitOutput) {
-                        for ($i=1; $i<(sizeof($row[$fldName]) - 1); $i++) {
-                            $value = $row[$fldName][$i];
+                        for ($i=1; $i<(sizeof($fldDescr->optionNames) - 1); $i++) {
+                            $value = @$row[$fldName][$i];
                             $data[$r][$c++] = $value? '1': ' ';
                         }
-                        $value = $row[$fldName][$i]? '1': ' ';
+                        $value = @$row[$fldName][$i]? '1': ' ';
                     } else {
                         $value = isset($row[$fldName][0])? $row[$fldName][0]: '';
                     }
