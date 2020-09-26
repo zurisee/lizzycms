@@ -391,6 +391,7 @@ class Forms
         $currForm->formTimeout = (isset($args['formTimeout'])) ? $args['formTimeout'] : false;
         $currForm->avoidDuplicates = (isset($args['avoidDuplicates'])) ? $args['avoidDuplicates'] : true;
         $currForm->export = (isset($args['export'])) ? $args['export'] : false;
+        $currForm->exportKey = (isset($args['exportKey'])) ? $args['exportKey'] : false;
         $currForm->confirmationEmail = (isset($args['confirmationEmail'])) ? $args['confirmationEmail'] : false;
         $currForm->confirmationEmailTemplate = (isset($args['confirmationEmailTemplate'])) ? $args['confirmationEmailTemplate'] : false;
         if ($currForm->export === true) {
@@ -413,6 +414,7 @@ class Forms
                 $ds = new DataStorage2($currForm->file);
                 $rec = $ds->readRecord($hash);
                 if ($rec) {
+                    $rec['dataKey'] = $hash;
                     $currForm->prefillRec = $rec;
                 }
             }
@@ -1499,6 +1501,9 @@ EOT;
 	{
 	    $form = $this->currForm;
 	    $form->bypassedValues = @$this->bypassedValues;
+	    if (isset( $form->prefillRec["dataKey"] )) {
+            $form->dataKey = $form->prefillRec["dataKey"];
+        }
         $str = base64_encode( serialize( $form) );
         if (!$this->formHash) {
             $this->errorDescr['generic']['_announcement_'] = '{{ lzy-form-error-formhash-lost }}';
@@ -1767,34 +1772,40 @@ EOT;
 	private function saveUserSuppliedDataToDB()
 	{
         $currForm = $this->currForm;
-        $recKey = createHash();
-        $ds = new DataStorage2( $currForm->file );
+        $ds = new DataStorage2($currForm->file);
+        if ($currForm->dataKey) {
+            $recKey = $currForm->dataKey;
 
-        if ($currForm->avoidDuplicates) {
-            $data = $ds->read();
-            foreach ($data as $hash => $rec) {
-                if ($hash === '_meta_') { continue; }
-                $identical = true;
-                foreach ($rec as $key => $value) {
-                    if ($key === 'timestamp') {
+        } else {
+            $recKey = createHash();
+
+            if ($currForm->avoidDuplicates) {
+                $data = $ds->read();
+                foreach ($data as $hash => $rec) {
+                    if ($hash === '_meta_') {
                         continue;
                     }
-                    $v1 = strtolower( str_replace(' ', '', $this->userSuppliedData[ $key ] ));
-                    $v2 = strtolower( str_replace(' ', '', $rec[ $key ] ));
-                    if ($v1 !== $v2) {
-                        $identical = false;
-                        break;
+                    $identical = true;
+                    foreach ($rec as $key => $value) {
+                        if ($key === 'timestamp') {
+                            continue;
+                        }
+                        $v1 = strtolower(str_replace(' ', '', $this->userSuppliedData[$key]));
+                        $v2 = strtolower(str_replace(' ', '', $rec[$key]));
+                        if ($v1 !== $v2) {
+                            $identical = false;
+                            break;
+                        }
                     }
-                }
-                if ($identical) {
-                    $this->clearCache();
-                    $this->errorDescr[$this->formId]['_announcement_'] = '{{ lzy-form-duplicate-data }}';
-                    $this->skipRenderingForm = true;
-                    return false;
+                    if ($identical) {
+                        $this->clearCache();
+                        $this->errorDescr[$this->formId]['_announcement_'] = '{{ lzy-form-duplicate-data }}';
+                        $this->skipRenderingForm = true;
+                        return false;
+                    }
                 }
             }
         }
-
         // prepend meta data if DB is empty:
         $n = $ds->getNoOfRecords();
         if ($n === 0) {
@@ -1888,13 +1899,20 @@ EOT;
         $data = $this->exportHeaderRow();
 
         $formElements = $currForm->formElements;
+        if ($this->currForm->exportKey) {
+            $e = new FormElement();
+            $e->type = 'text';
+            $e->name = 'dataKey';
+            $formElements[] = $e;
+        }
+
         $e = new FormElement();
         $e->type = 'text';
         $e->name = 'timestamp';
         $formElements[] = $e;
 
         $r = 1;
-        foreach ($srcData as $row) {
+        foreach ($srcData as $dataKey => $row) {
             $c = 0;
             foreach ($formElements as $fldI => $fldDescr) {
                 if (!$fldDescr) { continue; }
@@ -1927,6 +1945,8 @@ EOT;
                             substr($value, 8);
                     }
 
+                } elseif ($fldName === 'dataKey') {
+                    $value = $dataKey;
                 } else {
                     $value = @$row[$fldName];
                 }
@@ -1974,6 +1994,10 @@ EOT;
                 $value = $this->trans->translateVariable( $value, true );
             }
             $row[$c++] = $value;
+        }
+        if ($this->currForm->exportKey) {
+            $value = $this->trans->translateVariable( 'lzy-form-data-key', true );
+            $row[] = $value;
         }
         $value = $this->trans->translateVariable( 'Timestamp', true );
         $row[] = $value;
@@ -2596,6 +2620,12 @@ class FormDescriptor
     public $action = '';
     public $class = '';
     public $options = '';
+    public $export = '';
+    public $exportKey = '';
+    public $dataKey = '';
+    public $bypassedValues = [];
+    public $prefill = false;
+    public $prefillRec = [];
     public $formHash = '';
     public $preventMultipleSubmit = false;
     public $validate = false;
@@ -2619,5 +2649,6 @@ class FormElement
     public $value = '';        // defines a preset value
     public $class = '';        // class identifier that is added to the surrounding div
     public $inpAttr = '';
+    public $timestamp = '';
 } // class FormElement
 
