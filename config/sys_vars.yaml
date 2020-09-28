@@ -135,7 +135,11 @@ lzy-form-email-confirmation-info:
     de: 'Wenn Sie Ihre E-Mail Adresse hier eingeben, erhalten Sie eine Bestästigung per E-Mail.'
     _:  'If you fill in your e-mail address, we will send you confirmation message.'
 
+lzy-form-confirmation-email-sent:
+    de: 'Wir haben Ihnen eine Bestätigung per E-Mail geschickt.'
+    _:  'We have sent a confirmation to your e-mail address.'
 
+lzy-form-data-key: DataKey
 
 
 #--- File Upload --------------------------
