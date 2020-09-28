@@ -5,6 +5,7 @@ class Authentication
 {
 	public $message = '';
 	private $userRec = false;
+	private $knownUsers = null;
 
 
     public function __construct($lzy)
@@ -126,7 +127,7 @@ class Authentication
     {
         $res = $this->validateOnetimeAccessCode($codeCandidate);    // reloads on success, returns on failure
         if ($res === 'ok') {
-            return;
+            return '';
         }
         if ($oneTimeOnly) {
             $this->handleFailedLoginAttempts($codeCandidate);
@@ -134,7 +135,7 @@ class Authentication
         }
 
         if ($this->validateAccessCode($codeCandidate)) {   // check access code in user records and log in if found
-            return;
+            return '';
         }
         $this->handleFailedLoginAttempts($codeCandidate);
 
@@ -146,6 +147,7 @@ class Authentication
 
 EOT;
         $this->lzy->page->addOverride($html);
+        return '';
     } // handleAccessCodeInUrl
 
 
@@ -888,13 +890,8 @@ EOT;
                 writeLogStr("invalid email address in rec '{$rec['username']}': $emailRequest", LOGIN_LOG_FILENAME);
                 $res = [false, "<p>{{ lzy-login-user-unknown }}</p>", 'Message'];   //
             } else {
-//                $uname = $rec['username'];
-//                $displayName = $this->getDisplayName();
-//                $uname = $displayName ? "$uname ($displayName)" : $uname;
                 list($message, $displayName) = $this->sendOneTimeCode($emailRequest, $rec);
-//                $message = $this->sendOneTimeCode($emailRequest, $rec);
                 $res = [false, $message, 'Override'];   // if successful, a mail with a link has been sent and user will be authenticated on using that link
-//                $res = [false, $message, 'Overlay'];   // if successful, a mail with a link has been sent and user will be authenticated on using that link
             }
         } else {
             $res = [false, "<p>{{ lzy-login-user-unknown }}</p>", 'Message'];   //
@@ -913,7 +910,6 @@ EOT;
 
             } elseif ($res[2] === 'Override') {
                 $this->lzy->page->addOverride($res[1], false, false);
-//                $this->lzy->page->addOverlay($res[1], false, false);
 
             } elseif ($res[2] === 'LoginForm') {
                 $accForm = new UserAccountForm($this);
