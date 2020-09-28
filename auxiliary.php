@@ -3,12 +3,13 @@
 define('LOG_PATH', '.#logs/');
 define('MAX_URL_ARG_SIZE', 16000);
 define('DEFAULT_ASPECT_RATIO', 0.6667);
+define('LOG_WIDTH', 80);
 
 use Symfony\Component\Yaml\Yaml;
 
 
-//--------------------------------------------------------------
-function parseArgumentStr($str, $delim = ',', $yamlCompatibiity = false)
+/* ------------------------------------------------------ */
+function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
 {
     $str0 = $str;
     $str = trim($str);
@@ -22,7 +23,7 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibiity = false)
 
     $options = [];
 
-    if ($yamlCompatibiity) {
+    if ($yamlCompatibility) {
         // for compatibility with Yaml, the argument list may come enclosed in { }
         if (preg_match('/^\s* \{  (.*)  \} \s* $/x', $str, $m)) {
             $str = $m[1];
@@ -47,7 +48,7 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibiity = false)
         $val = '';
 
         // grab next value, can be bare or enclosed:
-        if ($assoc && !$yamlCompatibiity) {
+        if ($assoc && !$yamlCompatibility) {
             $supportedBrackets = &$supportedBrackets2;
         } else {
             $supportedBrackets = &$supportedBrackets1;
@@ -94,7 +95,22 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibiity = false)
         } elseif ($val === 'false') {
             $val = false;
         } elseif (is_string($val)) {
-            $val = str_replace(['"', "'"], ['&#34;', '&#39;'], $val);
+            if (preg_match('/ (!?) (loggedin|privileged|admin)/x', $val, $m)) {
+                $GLOBALS["globalParams"]["cachingActive"] = false;
+                $val = false;
+                if ($m[2] === 'admin') {
+                    $val = $GLOBALS['globalParams']['isAdmin'];
+                } elseif ($m[2] === 'privileged') {
+                    $val = $GLOBALS['globalParams']['isPrivileged'];
+                } elseif ($m[2] === 'loggedin') {
+                    $val = $GLOBALS['globalParams']['isLoggedin'];
+                }
+                if ($m[1]) {
+                    $val = !$val;
+                }
+            } else {
+                $val = str_replace(['"', "'"], ['&#34;', '&#39;'], $val);
+            }
         }
 
         // now, check whether it's a single value or a key:value pair
@@ -256,7 +272,7 @@ function parseInlineBlockArguments($str, $returnElements = false)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function parseCsv($str, $delim = false, $enclos = false) {
 
     if (!$delim) {
@@ -278,7 +294,7 @@ function parseCsv($str, $delim = false, $enclos = false) {
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function getCsvFile($filename, $returnStructure = false)
 {
     $csv = getFile($filename, true);
@@ -314,7 +330,7 @@ function getCsvFile($filename, $returnStructure = false)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function csv_to_array($str, $delim = ',') {
     $str = trim($str);
     if (preg_match('/^(\{.*\})[\s,]*$/', $str, $m)) {   // {}
@@ -335,7 +351,7 @@ function csv_to_array($str, $delim = ',') {
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function arrayToCsv($array, $quote = '"', $delim = ',', $forceQuotes = true)
 {
     $out = '';
@@ -353,7 +369,7 @@ function arrayToCsv($array, $quote = '"', $delim = ',', $forceQuotes = true)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function convertYaml($str, $stopOnError = true, $origin = '', $convertDates = true)
 {
 	$data = null;
@@ -370,7 +386,7 @@ function convertYaml($str, $stopOnError = true, $origin = '', $convertDates = tr
                 if ($stopOnError) {
                     fatalError("Error in Yaml-Code: <pre>\n$str\n</pre>\n" . $e->getMessage(), 'File: '.__FILE__.' Line: '.__LINE__, $origin);
                 } else {
-                    writeLog("Error in Yaml-Code: [$str] -> " . $e->getMessage(), true);
+                    writeLogStr("Error in Yaml-Code: [$str] -> " . $e->getMessage(), true);
                     return null;
                 }
             }
@@ -394,7 +410,7 @@ function convertYaml($str, $stopOnError = true, $origin = '', $convertDates = tr
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function getYamlFile($filename, $returnStructure = false)
 {
 	$yaml = getFile($filename, true);
@@ -451,7 +467,7 @@ function getYamlFile($filename, $returnStructure = false)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function convertToYaml($data, $level = 3)
 {
 	return Yaml::dump($data, $level);
@@ -459,7 +475,7 @@ function convertToYaml($data, $level = 3)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function writeToYamlFile($file, $data, $level = 3, $saveToRecycleBin = false)
 {
 	$yaml = Yaml::dump($data, $level);
@@ -474,7 +490,7 @@ function writeToYamlFile($file, $data, $level = 3, $saveToRecycleBin = false)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function findFile($pat)
 {
 	$pat = rtrim($pat, "\n");
@@ -484,7 +500,7 @@ function findFile($pat)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function getFile($pat, $removeComments = false)
 {
     global $globalParams;
@@ -530,7 +546,7 @@ function zapFileEND($file)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function fileExists($file)
 {
     global $globalParams;
@@ -544,7 +560,7 @@ function fileExists($file)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function removeEmptyLines($str)
 {
 	$lines = explode(PHP_EOL, $str);
@@ -558,7 +574,7 @@ function removeEmptyLines($str)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function getHashCommentedHeader($fileName)
 {
     $str = getFile($fileName);
@@ -581,7 +597,7 @@ function getHashCommentedHeader($fileName)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function removeHashTypeComments($str)
 {
     if (!$str) {
@@ -603,7 +619,7 @@ function removeHashTypeComments($str)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function removeCStyleComments($str)
 {
 	$p = 0;
@@ -646,7 +662,7 @@ function removeCStyleComments($str)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function getDir($pat, $supportLinks = false)
 {
 	if (strpos($pat, '{') === false) {
@@ -681,7 +697,7 @@ function getDir($pat, $supportLinks = false)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function getDirDeep($path, $onlyDir = false, $assoc = false, $returnAll = false)
 {
     $files = [];
@@ -722,7 +738,7 @@ function getDirDeep($path, $onlyDir = false, $assoc = false, $returnAll = false)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function lastModified($path, $recursive = true, $exclude = null)
 {
     $newest = 0;
@@ -751,7 +767,7 @@ function lastModified($path, $recursive = true, $exclude = null)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function is_inCommaSeparatedList($keyword, $list)
 {
     $list = ','.str_replace(' ', '', $list).',';
@@ -760,7 +776,7 @@ function is_inCommaSeparatedList($keyword, $list)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function fileExt($file0, $reverse = false)
 {
     $file = basename($file0);
@@ -777,7 +793,7 @@ function fileExt($file0, $reverse = false)
 
 
 
-//--------------------------------------------------------------
+/* ------------------------------------------------------ */
 function isNotShielded($str)
 {	// first char of file or dirname must not be '#'
 	return (($str[0] !== '#') && (strpos($str,'/#') === false));
@@ -785,7 +801,7 @@ function isNotShielded($str)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function base_name($file, $incl_ext = true, $incl_args = false) {
 	if (!$incl_args && ($pos = strpos($file, '?'))) {
 		$file = substr($file, 0, $pos);
@@ -809,10 +825,10 @@ function base_name($file, $incl_ext = true, $incl_args = false) {
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function dir_name($path)
-// last element considered a filename, if doesn't end in '/' and contains a dot
 {
+    // last element considered a filename, if doesn't end in '/' and contains a dot
     if (!$path) {
         return '';
     }
@@ -830,7 +846,7 @@ function dir_name($path)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function correctPath($path)
 {
 	if ($path) {
@@ -841,7 +857,7 @@ function correctPath($path)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function fixPath($path)
 {
 	if ($path) {
@@ -852,7 +868,7 @@ function fixPath($path)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function commonSubstr($str1, $str2, $delim = '')
 {
     $res = '';
@@ -877,7 +893,7 @@ function commonSubstr($str1, $str2, $delim = '')
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function makePathDefaultToPage($path)
 {
 	if (!$path) {
@@ -893,7 +909,7 @@ function makePathDefaultToPage($path)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function convertFsToHttpPath($path)
 {
     $pagesPath = $GLOBALS['globalParams']['pathToPage'];
@@ -906,7 +922,7 @@ function convertFsToHttpPath($path)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $absolutePath = false, $isResource = null)
 {
     global $globalParams;
@@ -1049,7 +1065,7 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function normalizePath($path)
 {
     $hdr = '';
@@ -1071,7 +1087,7 @@ function normalizePath($path)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function makePathRelativeToPage($path, $resolvePath = false)
 {
     if (!$path || (preg_match('/^\w{3,10}:/', $path))) {
@@ -1090,7 +1106,7 @@ function makePathRelativeToPage($path, $resolvePath = false)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function resolveHrefs( &$html )
 {
     $appRoot = $GLOBALS["globalParams"]["appRoot"];
@@ -1111,14 +1127,12 @@ function resolveHrefs( &$html )
 
 
 
-//-----------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function generateNewVersionCode()
 {
     $prevRandCode = false;
     if (file_exists(VERSION_CODE_FILE)) {
         $prevRandCode = file_get_contents(VERSION_CODE_FILE);
-    } else {
-        preparePath(VERSION_CODE_FILE);
     }
     do {
         $randCode = rand(0, 9) . rand(0, 9);
@@ -1130,7 +1144,7 @@ function generateNewVersionCode()
 
 
 
-//-----------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function getVersionCode($forceNew = false, $str = '')
 {
     if (!$forceNew && file_exists(VERSION_CODE_FILE)) {
@@ -1152,10 +1166,10 @@ function getVersionCode($forceNew = false, $str = '')
 
 
 
-//-----------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function parseNumbersetDescriptor($descr, $minValue = 1, $maxValue = 9, $headers = false)
-// extract patterns such as '1,3, 5-8', or '-3, 5, 7-'
-// don't parse if pattern contains ':' because that means it's a key:value
+ // extract patterns such as '1,3, 5-8', or '-3, 5, 7-'
+ // don't parse if pattern contains ':' because that means it's a key:value
 {
     if (!$descr) {
         return [];
@@ -1201,7 +1215,7 @@ function parseNumbersetDescriptor($descr, $minValue = 1, $maxValue = 9, $headers
 
 
 define('ORD_0', ord('a')-1);
-//-----------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function alphaIndexToInt($str, $headers = false, $ignoreCase = true)
 {
     if ($ignoreCase) {
@@ -1229,7 +1243,7 @@ function alphaIndexToInt($str, $headers = false, $ignoreCase = true)
 
 
 
-//-----------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function setNotificationMsg($msg)
 {
     // notification message is displayed once on next page load
@@ -1238,7 +1252,7 @@ function setNotificationMsg($msg)
 
 
 
-//-----------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function getNotificationMsg($clearMsg = true)
 {
     if (isset($_SESSION['lizzy']['reload-arg'])) {
@@ -1255,7 +1269,7 @@ function getNotificationMsg($clearMsg = true)
 
 
 
-//-----------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function clearNotificationMsg()
 {
     unset($_SESSION['lizzy']['reload-arg']);
@@ -1263,7 +1277,7 @@ function clearNotificationMsg()
 
 
 
-//-----------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function getCliArg($argname, $stringMode = false)
 {
 	$cliarg = null;
@@ -1282,12 +1296,12 @@ function getCliArg($argname, $stringMode = false)
 
 
 
-//-----------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function getUrlArg($tag, $stringMode = false, $unset = false)
-// in case of arg that is present but empty:
-// stringMode: returns value (i.e. '')
-// otherwise, returns true or false, note: empty string == true!
-// returns null if no url-arg was found
+ // in case of arg that is present but empty:
+ // stringMode: returns value (i.e. '')
+ // otherwise, returns true or false, note: empty string == true!
+ // returns null if no url-arg was found
 {
     $out = null;
 	if (isset($_GET[$tag])) {
@@ -1307,11 +1321,11 @@ function getUrlArg($tag, $stringMode = false, $unset = false)
 
 
 
-//-------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function getUrlArgStatic($tag, $stringMode = false, $varName = false)
-// like get_url_arg()
-// but returns previously received value if corresp. url-arg was not recived
-// returns null if no value has ever been received
+ // like get_url_arg()
+ // but returns previously received value if corresp. url-arg was not recived
+ // returns null if no value has ever been received
 {
 	if (!$varName) {
 		$varName = $tag;
@@ -1327,7 +1341,7 @@ function getUrlArgStatic($tag, $stringMode = false, $varName = false)
 
 
 
-//-------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function setStaticVariable($varName, $value, $append = false)
 {
     if (strpos($varName, '.') === false) {  // scalar static var:
@@ -1360,7 +1374,7 @@ function setStaticVariable($varName, $value, $append = false)
 
 
 
-//-------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function getStaticVariable($varName)
 {
     if (strpos($varName, '.') === false) {  // scalar static var:
@@ -1389,7 +1403,7 @@ function getStaticVariable($varName)
 
 
 
-//-------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function getClientIP($normalize = false)
 {
     $ip = getenv('HTTP_CLIENT_IP')?:
@@ -1411,7 +1425,7 @@ function getClientIP($normalize = false)
 
 
 
-//-------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function reloadAgent($target = false, $getArg = false)
 {
     global $globalParams;
@@ -1432,7 +1446,7 @@ function reloadAgent($target = false, $getArg = false)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function get_post_data($varName, $permitNL = false)
 {
 	$out = false;
@@ -1445,7 +1459,7 @@ function get_post_data($varName, $permitNL = false)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function path_info($file)
 {
 	if (substr($file, -1) === '/') {
@@ -1463,7 +1477,7 @@ function path_info($file)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function preparePath($path)
 {
     if ($path && ($path[0] === '~')) {
@@ -1481,9 +1495,9 @@ function preparePath($path)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function is_legal_email_address($str)
-// multiple address allowed, if separated by comma.
+ // multiple address allowed, if separated by comma.
 {
     if (!is_safe($str)) {
         return false;
@@ -1498,15 +1512,18 @@ function is_legal_email_address($str)
 
 
 
+/* ------------------------------------------------------ */
 function isValidUrl( $url )
 {
     return preg_match("/(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))/", $url);
 } // isValidUrl
 
-//------------------------------------------------------------
+
+
+/* ------------------------------------------------------ */
 function is_safe($str, $multiline = false)
 {
-//??? not implemented correctly yet!
+ //??? not implemented correctly yet!
 	if ($multiline) {
 		$str = str_replace(PHP_EOL, '', $str);
 		$str = str_replace("\r", '', $str);
@@ -1518,7 +1535,7 @@ function is_safe($str, $multiline = false)
 
 
 
-//---------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function safeStr($str, $permitNL = false)
 {
 	if (preg_match('/^\s*$/', $str)) {
@@ -1536,10 +1553,10 @@ function safeStr($str, $permitNL = false)
 
 
 
-//-------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function strToASCII($str)
 {
-// transliterate special characters (such as ä, ö, ü) into pure ASCII
+ // transliterate special characters (such as ä, ö, ü) into pure ASCII
 	$specChars = array('ä','ö','ü','Ä','Ö','Ü','é','â','á','à',
 		'ç','ñ','Ñ','Ç','É','Â','Á','À','ẞ','ß','ø','å');
 	$specCodes2 = array('ae','oe','ue','Ae',
@@ -1552,10 +1569,10 @@ function strToASCII($str)
 
 
 
-//-------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function translateUmlauteToHtml($str)
 {
-// transliterate special characters (such as ä, ö, ü) into pure ASCII
+ // transliterate special characters (such as ä, ö, ü) into pure ASCII
 	$specChars = array('ä','ö','ü','Ä','Ö','Ü','é','â','á','à',
 		'ç','ñ','Ñ','Ç','É','Â','Á','À','ẞ','ß','ø','Ø','å','Å');
 	$specCodes2 = array('&auml;','&ouml;','&uuml;','&Auml;',
@@ -1568,7 +1585,7 @@ function translateUmlauteToHtml($str)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function timestamp($short = false)
 {
 	if (!$short) {
@@ -1581,7 +1598,7 @@ function timestamp($short = false)
 
 
 
-//-------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function dateFormatted($date = false, $format = false)
 {
     if (!$date) {
@@ -1600,7 +1617,7 @@ function dateFormatted($date = false, $format = false)
 
 
 
-//-------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function touchFile($file, $time = false)
 {	// work-around: PHP's touch() fails if http-user is not owner of file 
 	if ($time) {
@@ -1612,10 +1629,10 @@ function touchFile($file, $time = false)
 
 
 
-//-------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function translateToFilename($str, $appendExt = true)
 {
-// translates special characters (such as , , ) into "filename-safe" non-special equivalents (a, o, U)
+ // translates special characters (such as , , ) into "filename-safe" non-special equivalents (a, o, U)
 	$str = strToASCII(trim(mb_strtolower($str)));	// replace special chars
 	$str = strip_tags($str);						// strip any html tags
 	$str = str_replace([' ', '-'], '_', $str);				// replace blanks with _
@@ -1635,10 +1652,10 @@ function translateToFilename($str, $appendExt = true)
 
 
 
-//-------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function translateToIdentifier($str, $removeDashes = false, $removeNonAlpha = false)
 {
-// translates special characters (such as , , ) into identifier which contains but safe characters:
+ // translates special characters (such as , , ) into identifier which contains but safe characters:
     if ($removeNonAlpha) {
         $str = preg_replace('/[^a-zA-Z]/ms', '', $str);
 
@@ -1657,7 +1674,7 @@ function translateToIdentifier($str, $removeDashes = false, $removeNonAlpha = fa
 
 
 
-//-------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function translateToClassName($str)
 {
 	$str = strToASCII(mb_strtolower($str));		// replace special chars
@@ -1672,62 +1689,79 @@ function translateToClassName($str)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function mylog($str, $destination = false)
 {
-    if (!is_string( $str )) {
-        $str = var_r($str);
-    }
-	writeLog($str, $destination);
+	writeLogStr($str, $destination);
 } // mylog
 
 
 
-//------------------------------------------------------------
-function writeLog($str, $errlog = false)
+/* ------------------------------------------------------ */
+function writeLog()
 {
-    global $globalParams;
-
-    if (!$errlog) {
-        if (!$globalParams['activityLoggingEnabled']) {
-            return;
-        }
-        preparePath(LOG_FILE);
-        file_put_contents(LOG_FILE, timestamp()."  $str\n", FILE_APPEND);
-
-    } else {
-        if (!$globalParams['errorLoggingEnabled']) {
-            return;
-        }
-        if (is_string($errlog)) {
-            // only allow files in LOGS_PATH and only with extension .txt or .log:
-            $errlog = LOGS_PATH . base_name($errlog);
-            $ext = fileExt($errlog);
-            if (($ext !== 'txt') && ($ext !== 'log')) {
-                $errlog = fileExt($errlog, true).'.txt';
-            }
-            $destination = resolvePath($errlog);
-        } else {
-            $destination = $globalParams['errorLogFile'];
-        }
-        if ($destination) {
-            preparePath($destination);
-            file_put_contents($destination, timestamp() . "  $str\n", FILE_APPEND);
-        }
+    $str = '';
+    $args = func_get_args();
+    if (!$args) {
+        return;
     }
+    foreach ($args as $arg) {
+        if (!is_string($arg)) {
+            $arg = var_export($arg, true);
+            $arg = str_replace("\n", '', $arg);
+        }
+        $indent = '                     ';
+        $s = str_replace(["\n", "\t", "\r"], [' ',' ',''], $arg);
+        while (strlen($s) > LOG_WIDTH) {
+            $str .= substr($s, 0,LOG_WIDTH)."\n$indent";
+            $s = substr($s, LOG_WIDTH);
+        }
+        $str .= $s;
+    }
+    $str = rtrim($str);
+    writeLogStr($str);
 } // writeLog
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
+function writeLogStr($str, $errlog = false)
+{
+    global $globalParams;
+
+    if (!$errlog) {
+        if (($globalParams['activityLoggingEnabled'] !== null) && !$globalParams['activityLoggingEnabled']) {
+            return;
+        }
+        file_put_contents(LOG_FILE, timestamp()."  $str\n\n", FILE_APPEND);
+
+    } else {
+        if (($errlog === true) && ($globalParams['errorLoggingEnabled'] !== null) && !$globalParams['errorLoggingEnabled']) {
+            return;
+        }
+        if (is_string($errlog)) {
+            // only allow files in LOGS_PATH and only with extension .txt or .log:
+            $destination = $errlog;
+        } else {
+            $destination = $globalParams['errorLogFile'];
+        }
+        if ($destination) {
+            file_put_contents($destination, timestamp() . "  $str\n\n", FILE_APPEND);
+        }
+    }
+} // writeLogStr
+
+
+
+/* ------------------------------------------------------ */
 function logError($str)
 {
-    writeLog($str, true);
+    writeLogStr($str, true);
 } // logError
 
 
 
-//------------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function shield_str($s)
 {
 	return str_replace('"', '\\"', $s);
@@ -1736,7 +1770,7 @@ function shield_str($s)
 
 
 
-//------------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function explodeTrim($sep, $str)
 {
     if (!$str) {
@@ -1756,7 +1790,7 @@ function explodeTrim($sep, $str)
 
 
 
-//------------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function revertQuotes($s, $unshield = true)
 {
     // &#39; -> '
@@ -1771,7 +1805,7 @@ function revertQuotes($s, $unshield = true)
 
 
 
-//------------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function var_r($var, $varName = '', $flat = false)
 {
 	if ($flat) {
@@ -1787,14 +1821,14 @@ function var_r($var, $varName = '', $flat = false)
 
 
 
-//------------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function createWarning($msg) {
 	return "\t\t<div class='lzy-msgbox lzy-warning'>$msg</div>\n";
 } // createWarning
 
 
 
-//------------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function createDebugOutput($msg) {
 	if ($msg) {
 		return "\t\t<div id='lzy-log'>$msg</div>\n";
@@ -1806,7 +1840,7 @@ function createDebugOutput($msg) {
 
 
 $timer = 0;
-//------------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function startTimer() {
 	global $timer;
 	$timer = microtime(true);
@@ -1814,7 +1848,7 @@ function startTimer() {
 
 
 
-//------------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function readTimer() {
 	global $timer;
 	return "Time: ".(round((microtime(true) - $timer)*1000000) / 1000 - 0.005).' ms';
@@ -1822,7 +1856,7 @@ function readTimer() {
 
 
 
-//------------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function renderLink($href, $text = '', $type = '', $class = '')
 {
 	$target = '';
@@ -1854,14 +1888,14 @@ function renderLink($href, $text = '', $type = '', $class = '')
 
 
 
-//------------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function mb_str_pad ($input, $pad_length, $pad_string, $pad_style=STR_PAD_RIGHT, $encoding="UTF-8") { 
    return str_pad($input, strlen($input)-mb_strlen($input,$encoding)+$pad_length, $pad_string, $pad_style); 
 } // mb_str_pad
 
 
 
-//-----------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function stripNewlinesWithinTransvars($str)
 {
     $p1 = strpos($str, '{{');
@@ -1894,7 +1928,7 @@ function stripHtml( $str )
 
 
 
-//-----------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function checkBracesBalance($str, $pat1 = '{{', $pat2 = '}}', $p0 = 0)
 {
     $shieldedOpening = substr_count($str, '\\' . $pat1, $p0);
@@ -1908,7 +1942,7 @@ function checkBracesBalance($str, $pat1 = '{{', $pat2 = '}}', $p0 = 0)
 
 
 
-//-----------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function strPosMatching($str, $pat1 = '{{', $pat2 = '}}', $p0 = 0)
 {	// returns positions of opening and closing patterns, ignoring shielded patters (e.g. \{{ )
 
@@ -1964,7 +1998,7 @@ function strPosMatching($str, $pat1 = '{{', $pat2 = '}}', $p0 = 0)
 
 
 
-//-----------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function checkNesting($str, $pat1, $pat2)
 {
     $n1 = substr_count($str, $pat1);
@@ -1977,7 +2011,7 @@ function checkNesting($str, $pat1, $pat2)
 
 
 
-//-----------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function findNextPattern($str, $pat, $p1 = 0)
 {
 	while (($p1 = strpos($str, $pat, $p1)) !== false) {
@@ -1991,14 +2025,14 @@ function findNextPattern($str, $pat, $p1 = 0)
 
 
 
-//-----------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function trunkPath($path, $n = 1, $leaveNotRemove = true)
-// case $leaveNotRemove == false:
-//      n==2   trunk from right   '/a/b/c/d/e/x.y' ->  /a/b/c/
-//      n==-2  trunk from left    '/a/b/c/d/e/x.y' ->  c/d/e/x.y
-// case $leaveNotRemove == true:
-//      n==2   leave from right   '/a/b/c/d/e/x.y' ->  d/e/x.y
-//      n==-2  leave from left    '/a/b/c/d/e/x.y' ->  /a/b/
+ // case $leaveNotRemove == false:
+ //      n==2   trunk from right   '/a/b/c/d/e/x.y' ->  /a/b/c/
+ //      n==-2  trunk from left    '/a/b/c/d/e/x.y' ->  c/d/e/x.y
+ // case $leaveNotRemove == true:
+ //      n==2   leave from right   '/a/b/c/d/e/x.y' ->  d/e/x.y
+ //      n==-2  leave from left    '/a/b/c/d/e/x.y' ->  /a/b/
 {
     if ($leaveNotRemove) {
         if ($n > 0) {   // leave from right
@@ -2031,7 +2065,7 @@ function trunkPath($path, $n = 1, $leaveNotRemove = true)
 
 
 
-//-----------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function rrmdir($src)
 {
     // remove dir recursively
@@ -2060,7 +2094,7 @@ function rrmdir($src)
 
 
 
-//-----------------------------------------------------------------------------
+/* ------------------------------------------------------ */
 function compileMarkdownStr($mdStr, $removeWrappingPTags = false)
 {
     $md = new LizzyMarkdown();
@@ -2073,7 +2107,7 @@ function compileMarkdownStr($mdStr, $removeWrappingPTags = false)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function shieldMD($md)
 {
     $md = str_replace('#', '&#35;', $md);
@@ -2083,7 +2117,7 @@ function shieldMD($md)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function isLocalCall()
 {
     $serverName = (isset($_SERVER['SERVER_NAME'])) ? $_SERVER['SERVER_NAME'] : 'localhost';
@@ -2101,7 +2135,7 @@ function isLocalCall()
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function getGitTag($shortForm = true)
 {
     $str = shell_exec('cd _lizzy; git describe --tags --abbrev=0; git log --pretty="%ci" -n1 HEAD');
@@ -2115,9 +2149,9 @@ function getGitTag($shortForm = true)
 
 
 
-//------------------------------------------------------------
+/* ------------------------------------------------------ */
 function fatalError($msg, $origin = '', $offendingFile = '')
-// $origin =, 'File: '.__FILE__.' Line: '.__LINE__;
+ // $origin =, 'File: '.__FILE__.' Line: '.__LINE__;
 {
     global $globalParams;
     $out = '';
@@ -2157,7 +2191,7 @@ function fatalError($msg, $origin = '', $offendingFile = '')
 
 
 
-//-------------------------------------------------------------
+/* ------------------------------------------------------ */
 function sendMail($to, $from, $subject, $message, $options = null, $exitOnError = true)
 {
     $html = $options;
@@ -2177,6 +2211,7 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
     }
     $to = strtolower($to);
     if (!is_legal_email_address($to)) {
+        writeLog("lzy-mail-invalid-to-address: $to");
         return 'lzy-mail-invalid-to-address';
     }
 
@@ -2195,10 +2230,12 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
             $name = $m[1];
         }
         if (preg_match("/[^\w\d'-.@]/", $from)) {
+            writeLog("lzy-mail-invalid-from-address: $from");
             return 'lzy-mail-invalid-from-address';
         }
         $from = strtolower($from);
         if (!is_legal_email_address($from)) {
+            writeLog("lzy-mail-invalid-from-address: $from");
             return 'lzy-mail-invalid-from-address';
         }
 
@@ -2219,6 +2256,7 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
         $subject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
     }
 
+    writeLog("sendMail to:[$to], from:[$from], subject:[$subject],\nmessage:[$message]");
 
     // replace tabs, shield nl:
     $message = str_replace(["\t", "\n"], ['    ', '~~NL~~'], $message);
@@ -2252,6 +2290,7 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
     $res = mail($to, $subject, $message, $headers);
     if (!$res) { // error case
         $err = error_get_last()['message'];
+        writeLog("ERROR sending email: $err");
         if ($exitOnError) {
             fatalError("Error: unable to send e-mail ($err)", 'File: '.__FILE__.' Line: '.__LINE__);
         }
@@ -2264,7 +2303,7 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
 
 
 
-//....................................................
+/*.................................................... */
 function handleFatalPhpError() {
     $last_error = error_get_last();
 
@@ -2275,7 +2314,7 @@ function handleFatalPhpError() {
 
 
 
-//....................................................
+/*.................................................... */
 function parseDimString($str)
 {
     // E.g. 200x150, or 200x  or x150 or 200 etc.
