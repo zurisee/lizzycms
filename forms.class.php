@@ -10,7 +10,7 @@ define('SPAM_LOG_FILE', 	    'spam-log.txt');
 
 define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,'.
     'legend,customResponseEvaluation,next,file,confirmationText,formDataCaching,'.
-    'encapsulate,formTimeout,avoidDuplicates,export,confirmationEmail,'.
+    'encapsulate,formTimeout,avoidDuplicates,export,exportKey,confirmationEmail,'.
     'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,'.
     'validate,showData,showDataMinRows,options,encapsulate,disableCaching,'.
     'translateLabel,formName,formHeader,formHint,formFooter,');
@@ -27,7 +27,7 @@ define('SUPPORTED_TYPES', 	    ',text,password,email,textarea,radio,checkbox,'.
     'fieldset,fieldset-end,reveal,hidden,literal,bypassed,');
 
  // types to ignore in output:
-define('PSEUDO_TYPES', ',form-head,form-tail,reveal,button,literal,fieldset,fieldset-end,');
+define('PSEUDO_TYPES', ',form-head,form-tail,reveal,literal,fieldset,fieldset-end,');
 
 
 mb_internal_encoding("utf-8");
@@ -387,7 +387,8 @@ class Forms
         $currForm->file = (isset($args['file'])) ? $args['file'] : '';
         $currForm->confirmationText = (isset($args['confirmationText'])) ? $args['confirmationText'] : '{{ lzy-form-data-received-ok }}';
         $currForm->formDataCaching = (isset($args['formDataCaching'])) ? $args['formDataCaching'] : true;
-        $currForm->encapsulate = (isset($args['encapsulate'])) ? $args['encapsulate'] : true;
+        $currForm->encapsulate = (isset($args['encapsulated'])) ? $args['encapsulated'] : true;
+        $currForm->encapsulate = (isset($args['encapsulate'])) ? $args['encapsulate'] : $currForm->encapsulate;
         $currForm->formTimeout = (isset($args['formTimeout'])) ? $args['formTimeout'] : false;
         $currForm->avoidDuplicates = (isset($args['avoidDuplicates'])) ? $args['avoidDuplicates'] : true;
         $currForm->export = (isset($args['export'])) ? $args['export'] : false;
@@ -422,7 +423,7 @@ class Forms
 
 
         // activate 'prevent multiple submits':
-        $currForm->preventMultipleSubmit = isset($args['preventMultipleSubmit'])? $args['preventMultipleSubmit'] : true;
+        $currForm->preventMultipleSubmit = isset($args['preventMultipleSubmit'])? $args['preventMultipleSubmit'] : false;
         $GLOBALS["globalParams"]['preventMultipleSubmit'] = $currForm->preventMultipleSubmit;
 
         $currForm->replaceQuotes = (isset($args['replaceQuotes'])) ? $args['replaceQuotes'] : true;
@@ -496,7 +497,18 @@ class Forms
         } else {
             $name = translateToIdentifier($label);
         }
-        $name = $name . '_' . $this->inx;   // add elem id
+
+        // check that $name is unique:
+        $ii = 0;
+        for ($i=0; $i<$this->inx; $i++) {
+            $n = @$this->currForm->formElements[$i]->name;
+            if ($n === $name) {
+                $ii++;
+            }
+        }
+        if ($ii) {
+            $name = $name . '_' . ($ii+1);   // add elem id
+        }
         $rec->name = $name;
         $_name = " name='$name'";
 
@@ -551,8 +563,8 @@ class Forms
         if (@$this->currForm->prefillRec) {
             if (isset($this->currForm->prefillRec[ $name ])) {
                 $value = $this->currForm->prefillRec[ $name ];
-                if (is_array($value)) {
-                    $rec->prefill = str_replace(',', '|', $value[0]);
+                if (is_string($value) && strpbrk($value, ',|')) {
+                    $rec->prefill = explodeTrim( "|$value");
                 } else {
                     $rec->prefill = $value;
                 }
@@ -582,6 +594,12 @@ class Forms
             $rec->options = $args['valueNames'];
         }
 
+        if ($type === 'button') {
+            $rec->optionNames = explodeTrim('|,', $rec->options);
+            if (strpos($value, 'submit') !== false) {
+                $rec->name = '_' . $rec->name;
+            }
+        }
         // for radio, checkbox and dropdown:
         if (($type === 'radio') || ($type === 'checkbox') || ($type === 'dropdown')) {
             $rec->optionNames = explodeTrim('|,', $rec->options);
@@ -683,33 +701,6 @@ EOT;
         $currForm->creationTime = time();
 
         $this->formHash = $this->tck->createTicket( $currForm->ticketPayload );
-
-        if ($currForm->formDataCaching && !$GLOBALS["globalParams"]['formDataCachingInitialized']) {
-            $GLOBALS["globalParams"]['formDataCachingInitialized'] = true;
-            $js = <<<EOT
-
-function lzyOnUnloadFormPage() {
-    if ( lzyFormUnsaved ) {
-        $('form').each(function( e ) {
-            $('.lzy-form-cmd').val('_cache_');
-            var data = $( this ).serialize();
-            $.post( './', data );
-        });
-    }
-}
-var lzyFormUnsaved = false;
-window.onbeforeunload = lzyOnUnloadFormPage;
-
-EOT;
-            $this->page->addJs( $js );
-            $js = <<<EOT
-$(":input").change(function () {
-    lzyFormUnsaved = true;
-});
-
-EOT;
-            $this->page->addJq( $js );
-        }
 
         $id = " id='{$this->formId}'";
 
@@ -898,7 +889,7 @@ EOT;
         $rec = $this->currRec;
         $class = $this->currRec->class;
         $presetValues = isset($this->currRec->prefill)? $this->currRec->prefill: false;
-        $groupName = translateToIdentifier($this->currRec->label) . '_' . $this->inx;
+        $groupName = translateToIdentifier($this->currRec->label);
         $label = $this->getLabel(false, false);
 
         $target = $this->currRec->target;
@@ -1598,7 +1589,7 @@ EOT;
 
         } elseif ($cmd === '_log_') {   // _log_
             $out = @$userSuppliedData['_lizzy-form-log'];
-            writeLog($out, SPAM_LOG_FILE);
+            writeLogStr($out, SPAM_LOG_FILE);
             exit;
         }
 
@@ -1759,7 +1750,7 @@ EOT;
             $out .= "\n[{$_SERVER['REMOTE_ADDR']}] {$_SERVER['HTTP_USER_AGENT']}\n";
             $logState = $GLOBALS["globalParams"]["errorLoggingEnabled"];
             $GLOBALS["globalParams"]["errorLoggingEnabled"] = true;
-            writeLog($out, 'spam-log.txt');
+            writeLog($out, SPAM_LOG_FILE); //'spam-log.txt');
             $GLOBALS["globalParams"]["errorLoggingEnabled"] = $logState;
             return true;
         }
@@ -1863,7 +1854,6 @@ EOT;
                 }
                 for ($i=1; $i<sizeof($elemDef->optionNames); $i++) {
                     $option = $elemDef->optionNames[$i];
-                    if (!$option) { continue; }
                     if (is_array($value)) {
                         $userSuppliedData[$key][] = (bool) in_array($option, $value);
                     } else {
@@ -1925,6 +1915,9 @@ EOT;
                 } elseif (($fldType === 'checkbox') || ($fldType === 'radio') || ($fldType === 'dropdown')) {
                     if ($fldDescr->splitOutput) {
                         for ($i=1; $i<(sizeof($fldDescr->optionNames) - 1); $i++) {
+                            if (!$fldDescr->optionNames[$i]) {
+                                continue;
+                            }
                             $value = @$row[$fldName][$i];
                             $data[$r][$c++] = $value? '1': ' ';
                         }
@@ -2052,7 +2045,7 @@ EOT;
     {
         $id = "fld_ch{$this->inx}";
         if ($this->currForm->antiSpam !== true) {   // field for antiSpam explicitly defined:
-            $nameFldId = preg_replace('/^ (\#fld_)? (.*?) [_\d]* $/x', "$2", $this->currForm->antiSpam);
+            $nameFldId = preg_replace('/^ (\#fld_)? (.*?) $/x', "$2", $this->currForm->antiSpam);
             $found = false;
             foreach ($this->currForm->formElements as $rec) {
                 if (strpos($rec->elemId, $nameFldId) === 0) {
@@ -2089,8 +2082,10 @@ EOT;
 EOT;
         $html = str_replace(["\n", '  '], ' ', $html);
 
-        // submit: check honey pot
-        $js = <<<EOT
+        if ($this->currForm->antiSpam) {
+            // submit: check honey pot
+
+            $js = <<<EOT
 
 function lzyChContinue( i, btn, callbackArg ) {
     lzyFormUnsaved = false;
@@ -2120,17 +2115,18 @@ function initAntiSpamPopup() {
         text: '$html',
         trigger: true,
         class: 'lzy-popup-leftaligned',
-        buttons: '{{ Continue }},{{ Cancel }}',
-        callbacks: 'lzyChContinue,lzyChAbort',
+        buttons: '{{ Cancel }},{{ Continue }}',
+        callbacks: 'lzyChAbort,lzyChContinue',
         callbackArg: '{$this->currForm->formId}',
-        buttonClass: 'lzy-button lzy-button-submit, lzy-button ',
+        buttonClass: 'lzy-button, lzy-button lzy-button-submit',
         closeButton: false,
     });
     $( '#lzy-popup-as-input' ).focus();
 }
 
 EOT;
-        $this->page->addJs($js);
+            $this->page->addJs($js);
+        }
     } // initAntiSpam
 
 
@@ -2157,7 +2153,9 @@ EOT;
         $formId = '#'.$this->currForm->formId;
 
         $logFile = SPAM_LOG_FILE;
-        $jq = <<<EOT
+        $jq = '';
+        if ($this->currForm->antiSpam) {
+            $jq = <<<EOT
 
 $('$formId input[type=submit]').click(function(e) {
     var \$form = $('$formId');
@@ -2197,7 +2195,7 @@ $('$formId input[type=submit]').click(function(e) {
 });
 
 EOT;
-
+        }
         $jq .= <<<EOT
 
 $('$formId input[type=reset]').click(function(e) {  // reset: clear all entries
@@ -2424,7 +2422,6 @@ EOT;
                     $found = false;
                     foreach ($g as $n) {
                         foreach ($userSuppliedData as $k => $v) {
-                            $k = preg_replace('/_\d+$/', '', $k);
                             if (($k === $n) && $v) {
                                 $found = true;
                                 break 2;
@@ -2466,7 +2463,7 @@ EOT;
         if (@$this->errorDescr[$this->formId]) {
             $log .= "\nError Msg: ".str_replace(["\n", '  '], ' ', var_export($this->errorDescr[$this->formId], true));
         }
-        writeLog("New form data [{$currForm->formName}]:\n$log\n");
+        writeLogStr("New form data [{$currForm->formName}]:\n$log\n", LOG_PATH.'form-log.txt');
     } // checkSuppliedDataEntries
 
 
@@ -2478,14 +2475,12 @@ EOT;
             $emailFieldName = 'e-mail';
             $to = $this->getUserSuppliedValue( $emailFieldName, true );
         } else {
-            $emailFieldName = preg_replace('/_\d+$/', '', $this->currForm->confirmationEmail );
-            $to = $this->getUserSuppliedValue( $emailFieldName );
+            $to = $this->getUserSuppliedValue( $this->currForm->confirmationEmail );
         }
         if (!$to) {
             return;
         }
         foreach ($rec as $key => $value) {
-            $key = preg_replace('/_\d+$/', '', $key);
             if (is_array($value)) {
                 $value = $value[0];
             }
@@ -2562,7 +2557,7 @@ EOT;
         if ($to) {
             $mailfrom = @$this->mailfrom? $this->mailfrom: $this->trans->getVariable('webmaster_email');
             $this->lzy->sendMail($to, $subject, $message, $mailfrom, $isHtml);
-            $this->responseToClient = '{{ lzy-reservation-email-sent }}';
+            $this->responseToClient = '{{ lzy-form-confirmation-email-sent }}';
         }
     } // sendConfirmationMail
 
@@ -2595,11 +2590,6 @@ EOT;
     } // getUserSuppliedValue
 
 
-
-    private function elementInx($name)
-    {
-        return preg_replace('/^.*_(\d+)$/', "$1", $name);
-    } // elementInx
 
 
     protected function getFormProp( $propName ) {
