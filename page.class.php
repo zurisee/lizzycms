@@ -440,6 +440,15 @@ class Page
                 $args = ['text' => $args, 'mdCompile' => $mdCompile];
             }
         }
+        // save state of modules:
+        $args['currState'] = [
+            'js' => $this->js,
+            'jsFiles' => $this->jsFiles,
+            'jq' => $this->jq,
+            'jqFiles' => $this->jqFiles,
+            'modules' => $this->modules,
+            'jsModules' => $this->jsModules
+        ];
         $this->override = $args;
 
     } // addOverride
@@ -547,6 +556,10 @@ class Page
             return true;
 
         } else {
+            // restore state at time of addOverride:
+            foreach ($override['currState'] as $k => $v) {
+                $this->$k = $v;
+            }
             if (isset($this->mdCompileModifiedContent) && ($this->mdCompileModifiedContent || ($this->mdCompileModifiedContent === null) )) {
                 $override['mdCompile'] = true;
             }
@@ -564,6 +577,7 @@ class Page
             if ((isset($override['mdCompile']) && $override['mdCompile']) || $this->mdCompileModifiedContent) {
                 $text = compileMarkdownStr($text);
             }
+            $text = "\t<section class='lzy-overridden'>$text</section>\n";
             $this->addContent($text, true);
             return true;
         }
@@ -1032,7 +1046,7 @@ EOT;
     public function render($processShieldedElements = false)
     {
         $n = 0;
-        $writeToCache = $this->config->cachingActive;
+        $writeToCache = $GLOBALS['globalParams']['cachingActive'];
         if (!$processShieldedElements) {
             $processShieldedElements = !$writeToCache;
         }
