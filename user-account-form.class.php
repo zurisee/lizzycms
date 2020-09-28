@@ -253,7 +253,8 @@ EOT;
         <label for="">{{ lzy-enter onetime code }}</label>
         <input type="hidden" value="$user" name="lzy-login-user" />
         <input id="lzy-onetime-code" type="text" name="lzy-onetime-code" style="text-transform:uppercase;width:6em;" />
-        <input type="submit" class='lzy-button' value="{{ submit }}" />
+        <input type="submit" class='lzy-button lzy-admin-submit-button' value="{{ submit }}" />
+<!--        <input type="submit" class='lzy-button' value="{{ submit }}" />-->
     </form>
 
     <p> {{ $prefix sent2 }} $validUntilStr</p>
@@ -801,9 +802,13 @@ EOT;
     private function createSubmitButton($prefix, $class = 'lzy-admin-submit-button')
     {
         return <<<EOT
-                    <button type="submit" id="lzy-login-submit-button{$this->inx}" class="$class {$prefix}submit-button lzy-button">{{ {$prefix}send }}</button>
+                    <input type="submit" id="lzy-login-submit-button{$this->inx}" class="$class {$prefix}submit-button lzy-button" value="{{ {$prefix}send }}">
 
 EOT;
+//        return <<<EOT
+//                    <button type="submit" id="lzy-login-submit-button{$this->inx}" class="$class {$prefix}submit-button lzy-button">{{ {$prefix}send }}</button>
+//
+//EOT;
     } // createSubmitButton
 
 
