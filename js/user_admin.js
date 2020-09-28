@@ -6,15 +6,11 @@
 $( document ).ready(function() {
     init();
     setGenericEventHandlers();
-    // setupOnetimeLogin(); // ???
-
 }); // ready
 
 function init() {
     $('.lzy-login-username').focus();
     $('.lzy-signup-username').focus();
-
-    // $('#lzy-panel-id101').addClass('lzy-panel-page-open');  // pre-open first accordion panel
 }
 
 function setGenericEventHandlers() {
@@ -35,31 +31,25 @@ function setGenericEventHandlers() {
         e.preventDefault();
         $('.lzy-admin-info', $(this).parent()).toggle();
     });
-}
+} // setGenericEventHandlers
 
 
-// function setupOnetimeLogin() {
-//     // $('.lzy-show-onetimelogin-info').click(function(e) {
-//     //     e.preventDefault();
-//     //     $('.lzy-onetimelogin-info').toggle();
-//     // });
-// }
+
 
 $('.lzy-show-un-pw-login-info').click(function(e) {
     e.preventDefault();
     $('.lzy-un-pw-login-info').toggle();
-    // $('.lzy-pw-login-info').toggle();
 });
+
 
 $('.lzy-show-password-login-info').click(function(e) {
     e.preventDefault();
     $show = $('.lzy-password-login-info');
-    if ($show.css('display') == 'block') {
+    if ($show.css('display') === 'block') {
         $show.css('display', 'none');
     } else {
         $show.css('display', 'block');
     }
-    // $('.lzy-password-info').toggle();
 });
 
 /* SignUp Form: */
@@ -82,6 +72,7 @@ $('.lzy-show-signup-info').click(function(e) {
     e.preventDefault();
     $('.lzy-signup-info').toggle();
 });
+
 $('.lzy-show-add-user-login-info').click(function(e) {
     e.preventDefault();
     $('.lzy-add-user-info').toggle();
@@ -92,56 +83,13 @@ $('.lzy-show-add-user-login-info').click(function(e) {
 
 
 $('.lzy-admin-submit-button').click(function(e) {
-    e.preventDefault();
-    $(this).prop('disabled', true);
-    var url = window.location.href.replace(/\?.*/, '');
+    const url = window.location.href.replace(/\?.*/, '');
     if (!(url.match(/^https:\/\//) || url.match(/^http:\/\/localhost/) || url.match(/^http:\/\/192\.168/))) {
         alert('{{ Warning insecure connection }}');
+        e.preventDefault();
         return;
     }
-    var $form = $(this).closest('form');
-    $form.attr('action', url);
-    var which = $(this).attr('class').replace('lzy-admin-submit-button', '').replace('lzy-button', '').trim();
-    switch (which) {
-        case 'lzy-signup-submit-button':
-            break;
-
-        case 'lzy-add-user-submit-button':
-            break;
-
-        case 'lzy-login-submit-button':
-            break;
-
-    }
-    $form.submit();
-
 });
-// $('X.signup-submit-btn').click(function(e) {
-//     e.preventDefault();
-//     $(this).prop('disabled', true);
-//     // var url = window.location.href.replace(/\?.*/, '');
-//     var url = window.location.href;
-//     if (!(url.match(/^https:\/\//) || url.match(/^http:\/\/localhost/) || url.match(/^http:\/\/192\.168/))) {
-//         alert('{{ Warning insecure connection }}');
-//         return;
-//     }
-//     var $form = $(this).closest('form');
-//     // $form.attr('action', url);
-//     // var which = $(this).attr('class').replace('lzy-admin-submit-button', '').replace('lzy-button', '').trim();
-//     // switch (which) {
-//     //     case 'lzy-signup-submit-button':
-//     //         break;
-//     //
-//     //     case 'lzy-add-user-submit-button':
-//     //         break;
-//     //
-//     //     case 'lzy-login-submit-button':
-//     //         break;
-//     //
-//     // }
-//     $form.submit();
-//
-// });
 
 
 $('.lzy-login-tab-label1').click(function() {
@@ -159,25 +107,25 @@ $('.lzy-login-simple-mode #fld_username').focus();
 
 $('.lzy-login-simple-mode #btn_lzy-login-submit').click(function(e) {
     e.preventDefault();
-    var url = window.location.href;
+    const url = window.location.href;
     if (!(url.match(/^https:\/\//) || url.match(/^http:\/\/localhost/) || url.match(/^http:\/\/192\.168/) )) {
         alert('{{ Warning insecure connection }}');
         return;
     }
     $('.login_wrapper form').attr('action', url);
-    $("#lzy-lbl-login-user output").text('');
-    $("#lbl_login_password output").text('');
-    var un = $('#fld_username').val();
-    var pw = $('#fld_password').val();
+    $('#lzy-lbl-login-user output').text('');
+    $('#lbl_login_password output').text('');
+    const un = $('#fld_username').val();
+    const pw = $('#fld_password').val();
     if (!un) {
-        $("#lzy-lbl-login-user output").text('{{ Err empty username }}');
+        $('#lzy-lbl-login-user output').text('{{ Err empty username }}');
         return;
     }
     if (!pw) {
-        $("#lbl_login_password output").text('{{ Err empty password }}');
+        $('#lbl_login_password output').text('{{ Err empty password }}');
         return;
     }
-    if (false && (location.protocol != 'https:')) {
+    if (false && (location.protocol !== 'https:')) {
         alert('No HTTPS Connection!');
         return;
     }
@@ -195,5 +143,5 @@ $('.lzy-invite-user-form').submit(function () {
     txt = $('#lzy-textarea2').val();
     txt = txt.replace(/\n/g, ' BR ');
     $('#lzy-textarea2').val( txt );
-})
+});
 
