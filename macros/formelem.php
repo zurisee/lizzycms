@@ -73,9 +73,15 @@ $this->addMacro($macroName, function () {
 
         $this->getArg($macroName, 'max', 'For number and range type: the max value (see HTML).', '');
 
-        $this->getArg($macroName, 'path', 'For upload type:', '');
+        $this->getArg($macroName, 'path', 'For upload type', '');
 
         $this->getArg($macroName, 'target', '[selector] For type "reveal": specifies the DOM element that shall be manipulated.', '');
+// ToDo:
+$this->getArg($macroName, 'export', '', '');
+$this->getArg($macroName, 'exportKey', '', '');
+$this->getArg($macroName, 'antiSpam', '', '');
+$this->getArg($macroName, 'avoidDuplicates', '', '');
+$this->getArg($macroName, 'prefill', '', '');
 
         return 'A form must start with a <code>form-head()</code>, followed by any number of <code>form-elem()'.
         '</code> fields and must end with a <code>form-tail()</code> element.<br>'.
