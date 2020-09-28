@@ -558,6 +558,7 @@ EOT;
         $data = &$this->data;
         $headers = $data[0];
 
+        $phpExpr = str_replace(['ʺ', 'ʹ'], ['"', "'"], $phpExpr);
         if (preg_match_all('/( (?<!\\\) \[\[ [^\]]* \]\] )/x', $phpExpr, $m)) {
             foreach ($m[1] as $cellRef) {
                 $cellRef0 = $cellRef;
@@ -566,7 +567,7 @@ EOT;
                 $ch1 = ($cellRef !== '') ? $cellRef[0] : false;
 
                 if (($ch1 === '"') || ($ch1 === "'")) {
-                    $cellRef = preg_replace('/^ [\'"]? (.*) [\'"]? $/x', "$1", $cellRef);
+                    $cellRef = preg_replace('/^ [\'"]? (.*?) [\'"]? $/x', "$1", $cellRef);
                     if (($i = array_search($cellRef, $headers)) !== false) { // column name
                         $c = $i;
 
@@ -589,7 +590,7 @@ EOT;
                     $cellVal = $cellRef;    // literal content
                 }
 
-                $cellVal = $cellVal ? $cellVal : "\$data[\$r][$c]";
+                $cellVal = $cellVal ? $cellVal : "{\$data[\$r][$c]}";
                 $phpExpr = str_replace($cellRef0, $cellVal, $phpExpr);
             }
         }
@@ -600,8 +601,8 @@ EOT;
             if (strpos($phpExpr, 'sum()') !== false) {
                 $sum = 0;
                 for (; $r<sizeof($data); $r++) {
-                    $val = $data[$r][$_col];
-                    if (preg_match('/^([\d\.]+)/', $val, $m)) {
+                    $val = @$data[$r][$_col];
+                    if (preg_match('/^([\d.]+)/', $val, $m)) {
                         $val = floatval($m[1]);
                         $sum += $val;
                     }
