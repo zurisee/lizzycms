@@ -306,6 +306,7 @@ function executeServiceTask($lzy, $codeFile)
     }
     $do = USER_CODE_PATH . "@$codeFile.php";
     if (file_exists($do)) {
+//        if (!$lzy->config->custom_permitServiceCode) {
         if (!$lzy->config->admin_enableServiceTasks) {
             die("Attempt to run service task '$do', but is feature not enabled.<br>To activate, set config -> admin_enableServiceTasks:true");
         }
@@ -423,3 +424,11 @@ function sendSimpleNotification($args)
     return true;
 } // sendSimpleNotification
 
+
+
+
+function resetLizzy( $lzy )
+{
+    // ToDo: ...
+    reloadAgent();
+} // resetLizzy

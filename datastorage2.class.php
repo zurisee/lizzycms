@@ -1341,7 +1341,7 @@ EOT;
     private function initLizzyDB()
     {
         if (!file_exists(LIZZY_DB)) {
-            preparePath(LIZZY_DB);
+//            preparePath(LIZZY_DB);
             touch(LIZZY_DB);
         }
     } // initLizzyDB

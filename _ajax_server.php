@@ -108,7 +108,7 @@ class AjaxServer
 
 		$this->hash = $_SESSION['lizzy']['hash'];
 		session_write_close();
-        preparePath(DATA_PATH);
+//        preparePath(DATA_PATH);
 
 		$this->remoteAddress = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : 'REMOTE_ADDR';
 		$this->userAgent = isset($_SESSION['lizzy']['userAgent']) ? $_SESSION['lizzy']['userAgent'] : $_SERVER["HTTP_USER_AGENT"];
