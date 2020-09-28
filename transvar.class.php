@@ -108,7 +108,7 @@ class Transvar
             // handle macro-modifiers, e.g. {{# }}
             $var = $this->handleModifers($var);
 
-            if ($this->config->cachingActive && $this->dontCache) {   // don't cache -> shield now and translate after read-cache
+            if ($GLOBALS['globalParams']['cachingActive'] && $this->dontCache) {   // don't cache -> shield now and translate after read-cache
                 $str = $this->shieldVariableInstance($str, $p1, $var, $p2);
 
             } else {
@@ -198,7 +198,7 @@ class Transvar
             $val = $this->executeMacro($macro);
 
             if ($this->disablePageCaching) {
-                $this->config->cachingActive = false;
+                $GLOBALS['globalParams']['cachingActive'] = false;
             }
 
             if (($val !== null) && ($this->config->isLocalhost || $this->config->isPrivileged) && !$this->optionAddNoComment) {
@@ -255,7 +255,6 @@ class Transvar
         $inx = $this->macroInx++;
         if (!$name) {
             $name = ' ';
-//            return 'help';
         }
 
         $this->macroFieldnames[$macroName][$inx] = $name;
@@ -658,7 +657,6 @@ class Transvar
                             $this->addVariable($key, $value);
                         }
                     } else {
-//                    } elseif (is_string($res)) {
                         $out = $res;
                     }
                 } else {
