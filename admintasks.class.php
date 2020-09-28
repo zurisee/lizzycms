@@ -484,13 +484,13 @@ EOT;
 
             } else {
                 $this->addUsersToDB([ $email => ['email' => $email, 'groups' => $group]]);
-                writeLog("new admin user added: $email [".getClientIP().']', LOGIN_LOG_FILENAME);
+                writeLogStr("new admin user added: $email [".getClientIP().']', LOGIN_LOG_FILENAME);
                 return true;
             }
 
         } else {
             $this->addUsersToDB([ $email => ['email' => $email, 'groups' => $group]]);
-            writeLog("new guest user added: $email [".getClientIP().']', LOGIN_LOG_FILENAME);
+            writeLogStr("new guest user added: $email [".getClientIP().']', LOGIN_LOG_FILENAME);
             return true;
         }
     } // createGuestUserAccount
@@ -527,7 +527,7 @@ EOT;
         }
         $this->auth->loadKnownUsers();
         $this->auth->setUserAsLoggedIn($user, $userRec);
-        writeLog("email for user changed: $email [".getClientIP().']', LOGIN_LOG_FILENAME);
+        writeLogStr("email for user changed: $email [".getClientIP().']', LOGIN_LOG_FILENAME);
     } // changeEMail
 
 
@@ -662,7 +662,7 @@ EOT;
             $userAcc = new UserAccountForm(null);
 
             $message = $userAcc->renderOnetimeLinkEntryForm($user, $validUntilStr, 'lzy-onetime access link');
-            writeLog("one time link sent to: $submittedEmail -> '$hash'", LOGIN_LOG_FILENAME);
+            writeLogStr("one time link sent to: $submittedEmail -> '$hash'", LOGIN_LOG_FILENAME);
 
         } elseif ($mode === 'email-signup') {
             $subject = "[{{ site_title }}] {{ lzy-email-sign-up-subject }} {$globalParams['host']}";

@@ -18,6 +18,10 @@ class Authentication
 			$_SESSION['lizzy']['user'] = false;
 		}
         setStaticVariable('lastLoginMsg', '');
+
+        $GLOBALS['globalParams']['isLoggedin'] = false;
+        $GLOBALS['globalParams']['isPrivileged'] = false;
+        $GLOBALS['globalParams']['isAdmin'] = false;
     } // __construct
 
 
@@ -47,6 +51,11 @@ class Authentication
         }
 
         if ($res === null) {        // no login attempt detected -> check whether already logged in:
+            if (isset($_GET['logout'])) {
+                unset($_GET['logout']);
+                $this->logout();
+                return;
+            }
             $user = $this->setUserAsLoggedIn();
             $res = true;
 
@@ -89,7 +98,7 @@ class Authentication
 
             // check username and password:
             if (password_verify($providedPW, $correctPW)) {  // login succeeded
-                writeLog("logged in: $requestingUser [{$rec['groups']}] (" . getClientIP(true) . ')', LOGIN_LOG_FILENAME);
+                writeLogStr("logged in: $requestingUser [{$rec['groups']}] (" . getClientIP(true) . ')', LOGIN_LOG_FILENAME);
                 $res = $requestingUser;
 
             } else {                                        // login failed: pw wrong
@@ -98,7 +107,7 @@ class Authentication
                     $rep = ' REPEATED';
                 }
                 $this->monitorFailedLoginAttempts();
-                writeLog("*** Login failed$rep (wrong pw): $requestingUser [" . getClientIP(true) . ']', LOGIN_LOG_FILENAME);
+                writeLogStr("*** Login failed$rep (wrong pw): $requestingUser [" . getClientIP(true) . ']', LOGIN_LOG_FILENAME);
                 $this->message = '{{ Login failed }}';
                 setStaticVariable('lastLoginMsg', '{{ Login failed }}');
                 $this->unsetLoggedInUser();
@@ -160,7 +169,7 @@ EOT;
             $user = $userRec['username'];
             $this->setUserAsLoggedIn( $user, null, $oneTimeRec["email"] );
             $user .= " ({$oneTimeRec['email']})";
-            writeLog("one time link accepted: $user [".getClientIP().']', LOGIN_LOG_FILENAME);
+            writeLogStr("one time link accepted: $user [".getClientIP().']', LOGIN_LOG_FILENAME);
 
             if (!$this->lzy->keepAccessCode) {
                 // access granted, remove hash-code from url, if there is one:
@@ -184,7 +193,7 @@ EOT;
             $this->monitorFailedLoginAttempts();
             $errMsg = $tick->getLastError();
 
-            writeLog("*** one-time link rejected: $code ($errMsg) [".getClientIP().']', LOGIN_LOG_FILENAME);
+            writeLogStr("*** one-time link rejected: $code ($errMsg) [".getClientIP().']', LOGIN_LOG_FILENAME);
             return false;
         }
         $username = $ticket['username'];
@@ -277,7 +286,7 @@ EOT;
         $ticket = $tick->consumeTicket($ticket);
         if (!$ticket) {
             $this->monitorFailedLoginAttempts();
-            writeLog("*** ticket rejected: $ticket [".getClientIP().']', LOGIN_LOG_FILENAME);
+            writeLogStr("*** ticket rejected: $ticket [".getClientIP().']', LOGIN_LOG_FILENAME);
             return false;
         }
 
@@ -327,10 +336,13 @@ EOT;
         session_regenerate_id();
         $_SESSION['lizzy']['user'] = $user;
         $isAdmin = $this->checkAdmission('admins');
-        $GLOBALS['globalParams']['isAdmin'] = $isAdmin;
         $_SESSION['lizzy']['isAdmin'] = $isAdmin;
         $_SESSION['lizzy']['loginTimes'] = serialize($this->loginTimes);
         $_SESSION['lizzy']['loginEmail'] = $loginEmail;
+
+        $GLOBALS['globalParams']['isLoggedin'] = boolval( $user );
+        $GLOBALS['globalParams']['isPrivileged'] = $this->checkAdmission('admins,editors');
+        $GLOBALS['globalParams']['isAdmin'] = $isAdmin;
 
         if (isset($rec['displayName'])) {
             $displayName = $rec['displayName']; // displayName from user rec
@@ -354,12 +366,15 @@ EOT;
 		$user = isset($_SESSION['lizzy']['user']) ? $_SESSION['lizzy']['user'] : false;
 		if ($user) {
 			$rec = (isset($this->knownUsers[$user])) ? $this->knownUsers[$user] : false;
+            $this->userRec = $rec;
 			if (!$rec) {    // just to be safe: if logged in user has nor record, don't allow to proceed
 			    $_SESSION['lizzy']['user'] = false;
 
             } else {                    // user is logged in
                 $res = $user;
                 $isAdmin = $this->isAdmin(true);
+                $GLOBALS['globalParams']['isLoggedin'] = boolval( $user );
+                $GLOBALS['globalParams']['isPrivileged'] = $this->checkAdmission('admins,editors');
                 $GLOBALS['globalParams']['isAdmin'] = $isAdmin;
 
                 $lastLogin = (isset($this->loginTimes[$user])) ? $this->loginTimes[$user] : 0;  // check maxSessionTime
@@ -549,7 +564,7 @@ EOT;
         $user = getStaticVariable('user');
         if ($user) {
             $user .= (isset($_SESSION['lizzy']['userDisplayName'])) ? ' (' . $_SESSION['lizzy']['userDisplayName'] . ')' : '';
-            writeLog("logged out: $user [" . getClientIP(true) . ']', LOGIN_LOG_FILENAME);
+            writeLogStr("logged out: $user [" . getClientIP(true) . ']', LOGIN_LOG_FILENAME);
         }
 
         $this->unsetLoggedInUser();
@@ -569,6 +584,9 @@ EOT;
         $isAdmin = ($this->localCall && $this->config->admin_autoAdminOnLocalhost);
         $_SESSION['lizzy']['isAdmin'] = $isAdmin ;
         $GLOBALS['globalParams']['isAdmin'] = $isAdmin;
+        $GLOBALS['globalParams']['isLoggedin'] = false;
+        $GLOBALS['globalParams']['isPrivileged'] = false;
+        $this->lzy->unCachePage();
     } // unsetLoggedInUser
 
 
@@ -582,7 +600,7 @@ EOT;
         }
         $this->monitorFailedLoginAttempts();
         if ($rep) {
-            writeLog("*** one time link rejected$rep: $code [" . getClientIP() . ']', LOGIN_LOG_FILENAME);
+            writeLogStr("*** one time link rejected$rep: $code [" . getClientIP() . ']', LOGIN_LOG_FILENAME);
         }
     } // handleFailedLoginAttempts
 
@@ -635,7 +653,7 @@ EOT;
                 $out .= $l;
             }
             if (($cnt > HACKING_THRESHOLD) || ($allCnt > 4*HACKING_THRESHOLD)) {
-                writeLog("!!!!! Possible hacking attempt [".getClientIP().']', LOGIN_LOG_FILENAME);
+                writeLogStr("!!!!! Possible hacking attempt [".getClientIP().']', LOGIN_LOG_FILENAME);
                 sleep(5);
             }
         }
@@ -863,19 +881,20 @@ EOT;
         list($emailRequest, $rec) = $this->findEmailMatchingUserRec($emailRequest, true);
         if ($emailRequest) {
             if (isset($rec['inactive']) && $rec['inactive']) {  // account set to inactive?
-                writeLog("Account '{$rec['username']}' is inactive: $emailRequest", LOGIN_LOG_FILENAME);
+                writeLogStr("Account '{$rec['username']}' is inactive: $emailRequest", LOGIN_LOG_FILENAME);
                 $res = [false, "<p>{{ lzy-login-user-unknown }}</p>", 'Message'];
 
             } elseif (!is_legal_email_address($emailRequest)) { // valid email address?
-                writeLog("invalid email address in rec '{$rec['username']}': $emailRequest", LOGIN_LOG_FILENAME);
+                writeLogStr("invalid email address in rec '{$rec['username']}': $emailRequest", LOGIN_LOG_FILENAME);
                 $res = [false, "<p>{{ lzy-login-user-unknown }}</p>", 'Message'];   //
             } else {
-                $uname = $rec['username'];
-                $displayName = $this->getDisplayName();
-                $uname = $displayName ? "$uname ($displayName)" : $uname;
+//                $uname = $rec['username'];
+//                $displayName = $this->getDisplayName();
+//                $uname = $displayName ? "$uname ($displayName)" : $uname;
                 list($message, $displayName) = $this->sendOneTimeCode($emailRequest, $rec);
-
-                $res = [false, $message, 'Overlay'];   // if successful, a mail with a link has been sent and user will be authenticated on using that link
+//                $message = $this->sendOneTimeCode($emailRequest, $rec);
+                $res = [false, $message, 'Override'];   // if successful, a mail with a link has been sent and user will be authenticated on using that link
+//                $res = [false, $message, 'Overlay'];   // if successful, a mail with a link has been sent and user will be authenticated on using that link
             }
         } else {
             $res = [false, "<p>{{ lzy-login-user-unknown }}</p>", 'Message'];   //
@@ -893,7 +912,8 @@ EOT;
                 $this->lzy->page->addOverlay($res[1], false, false);
 
             } elseif ($res[2] === 'Override') {
-                $this->lzy->page->addOverlay($res[1], false, false);
+                $this->lzy->page->addOverride($res[1], false, false);
+//                $this->lzy->page->addOverlay($res[1], false, false);
 
             } elseif ($res[2] === 'LoginForm') {
                 $accForm = new UserAccountForm($this);
