@@ -849,7 +849,7 @@ private function loadRequired()
     //....................................................
 	private function setTransvars1()
 	{
-	    if ($this->auth->knownUsers) {
+	    if ($this->auth->getKnownUsers()) {
             $userAcc = new UserAccountForm($this);
             $rec = $this->auth->getLoggedInUser(true);
             $login = $userAcc->renderLoginLink($rec);
