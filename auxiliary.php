@@ -95,7 +95,7 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
         } elseif ($val === 'false') {
             $val = false;
         } elseif (is_string($val)) {
-            if (preg_match('/ (!?) (isLoggedin|isPrivileged|isAdmin) $/x', $val, $m)) {
+            if (preg_match('/^ (!?) (isLoggedin|isPrivileged|isAdmin) $/x', $val, $m)) {
                 $GLOBALS["globalParams"]["cachingActive"] = false;
                 $val = false;
                 if ($m[2] === 'isAdmin') {
