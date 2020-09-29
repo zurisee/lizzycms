@@ -876,8 +876,8 @@ EOT;
         $rootJs .= "\t\tvar screenSizeBreakpoint = $screenSizeBreakpoint;\n";
         $rootJs .= "\t\tvar pagePath = '{$this->lzy->pagePath}';\n";
 
-        if (($this->config->debug_allowDebugInfo) &&
-            (($this->config->debug_showDebugInfo)) || getUrlArgStatic('debug')) {
+        if ($this->config->debug_allowDebugInfo &&
+            ((($this->config->debug_showDebugInfo)) || getUrlArgStatic('debug'))) {
             if ($this->config->isPrivileged) {
                 $bodyEndInjections .= $this->renderDebugInfo();
             }
