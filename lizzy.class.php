@@ -695,10 +695,6 @@ private function loadRequired()
         $_SESSION['lizzy']['appRootUrl'] = $baseUrl.$appRoot; // https://domain.net/...
         $_SESSION['lizzy']['absAppRoot'] = $absAppRoot;
 
-//        if ($this->config->debug_logClientAccesses) {
-//            writeLog('[' . getClientIP(true) . "] $ua" . (($this->config->isLegacyBrowser) ? " (Legacy browser!)" : ''));
-//        }
-
         if ($accessCode) {
             $this->auth->handleAccessCodeInUrl($accessCode);
         }
@@ -1713,7 +1709,6 @@ EOT;
             $permitted = $this->auth->checkGroupMembership('editors');
             if ($permitted) {
                 if (preg_match('|^'.PAGES_PATH.'(.*)\.md$|', $filename)) {
-//                if (preg_match("|^{$this->config->path_pagesPath}(.*)\.md$|", $filename)) {
                     require_once SYSTEM_PATH . 'page-source.class.php';
                     PageSource::storeFile($filename, $mdStr);
                     writeLog("User '$user' ($group) saved data to file $filename.");
