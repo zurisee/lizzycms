@@ -630,7 +630,7 @@ private function loadRequired()
         $pathToRoot = str_repeat('../', sizeof(explode('/', $requestedpageHttpPath)) - 1);
 
         $globalParams['pageHttpPath'] = $pageHttpPath;
-        $globalParams['pagesFolder'] = $this->config->path_pagesPath;
+        $globalParams['pagesFolder'] = PAGES_PATH;
 
         $globalParams['pathToRoot'] = $pathToRoot;  // path from requested folder to root (= ~/), e.g. ../
         $this->pageHttpPath = $pageHttpPath;
@@ -683,20 +683,17 @@ private function loadRequired()
         $globalParams['appRoot'] = $appRoot;  // path from docRoot to base folder of app, e.g. 'on/'
         $globalParams['redirectedPath'] = $redirectedPath;  // the part that is optionally skippped by htaccess
         $globalParams['localCall'] = $this->localCall;
-
+        $globalParams['pagePath'] = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
+        $this->pagePath = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
 
         $_SESSION['lizzy']['pagePath'] = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
         $_SESSION['lizzy']['pageHttpPath'] = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
 
         $_SESSION['lizzy']['pathToPage'] = null; //???
-        $_SESSION['lizzy']['pagesFolder'] = $this->config->path_pagesPath;
+        $_SESSION['lizzy']['pagesFolder'] = PAGES_PATH;
         $baseUrl = $requestScheme.$_SERVER['SERVER_NAME'];
         $_SESSION['lizzy']['appRootUrl'] = $baseUrl.$appRoot; // https://domain.net/...
         $_SESSION['lizzy']['absAppRoot'] = $absAppRoot;
-
-        if ($this->config->debug_logClientAccesses) {
-            writeLog('[' . getClientIP(true) . "] $ua" . (($this->config->isLegacyBrowser) ? " (Legacy browser!)" : ''));
-        }
 
         if ($accessCode) {
             $this->auth->handleAccessCodeInUrl($accessCode);
@@ -979,7 +976,7 @@ EOT;
         require_once SYSTEM_PATH.'file_upload.class.php';
 
         $rec = [
-            'uploadPath' => $this->page->config->path_pagesPath.$filePath,
+            'uploadPath' => PAGES_PATH.$filePath,
             'pagePath' => $GLOBALS['globalParams']['pagePath'],
             'pathToPage' => $GLOBALS['globalParams']['pathToPage'],
             'appRootUrl' => $GLOBALS['globalParams']['absAppRootUrl'],
@@ -1076,7 +1073,7 @@ EOT;
 		} else {
 			$file = $folder.$file;
 		}
-		$file = $this->config->path_pagesPath.$file;
+		$file = PAGES_PATH.$file;
 		if (file_exists($file)) {
 			$html = file_get_contents($file);
 			$page->addContent($this->extractHtmlBody($html), true);
@@ -1110,7 +1107,7 @@ EOT;
 			return $this->loadHtmlFile($folder, $currRec['file']);
 		}
 
-        $folder = $this->config->path_pagesPath.resolvePath($folder);
+        $folder = PAGES_PATH.resolvePath($folder);
 		$this->handleMissingFolder($folder);
 
 		$mdFiles = getDir($folder.'*.{md,html,txt}');
@@ -1120,7 +1117,7 @@ EOT;
 		if (!$mdFiles && isset($currRec[0])) {
 			$folder = $currRec[0]['folder'];
 			$this->siteStructure->currPageRec['folder'] = $folder;
-			$mdFiles = getDir($this->config->path_pagesPath.$folder.'*.{md,html,txt}');
+			$mdFiles = getDir(PAGES_PATH.$folder.'*.{md,html,txt}');
             registerFileDateDependencies($mdFiles);
 		}
 		
@@ -1711,7 +1708,7 @@ EOT;
             $group = $rec['groups'];
             $permitted = $this->auth->checkGroupMembership('editors');
             if ($permitted) {
-                if (preg_match("|^{$this->config->path_pagesPath}(.*)\.md$|", $filename)) {
+                if (preg_match('|^'.PAGES_PATH.'(.*)\.md$|', $filename)) {
                     require_once SYSTEM_PATH . 'page-source.class.php';
                     PageSource::storeFile($filename, $mdStr);
                     writeLog("User '$user' ($group) saved data to file $filename.");
@@ -2302,12 +2299,8 @@ EOT;
         $this->siteStructure = new SiteStructure($this, $this->reqPagePath);
         $this->currPage = $this->reqPagePath = $this->siteStructure->currPage;
 
-        if (isset($this->siteStructure->currPageRec['showthis'])) {
-            $this->pagePath = $this->siteStructure->currPageRec['showthis'];
-        } else {
-            $this->pagePath = $this->siteStructure->currPageRec['folder'];
-        }
-        $this->pathToPage = $this->config->path_pagesPath . $this->pagePath;   //  includes pages/
+        $this->pagePath = $this->siteStructure->currPageRec['actualFolder'];
+        $this->pathToPage = PAGES_PATH . $this->pagePath;   //  includes pages/
         $globalParams['pageHttpPath'] = $this->pageHttpPath;            // excludes pages/, takes showThis into account
         $globalParams['pagePath'] = $this->pagePath;                    // excludes pages/, takes not showThis into account
         $globalParams['pathToPage'] = $this->pathToPage;
@@ -2315,7 +2308,7 @@ EOT;
         $globalParams['filepathToDocroot'] = str_repeat('../', substr_count($globalParams["appRoot"], '/')-1);
         $_SESSION['lizzy']['pageHttpPath'] = $this->pageHttpPath;               // for _ajax_server.php and _upload_server.php
         $_SESSION['lizzy']['pagePath'] = $this->pagePath;               // for _ajax_server.php and _upload_server.php
-        $_SESSION['lizzy']['pathToPage'] = $this->config->path_pagesPath . $this->pagePath;
+        $_SESSION['lizzy']['pathToPage'] = PAGES_PATH . $this->pagePath;
 
 
         $this->pageRelativePath = $this->pathToRoot . $this->pagePath;
@@ -2339,7 +2332,7 @@ EOT;
         $globalParams['pageHttpPath'] = '';            // excludes pages/, takes showThis into account
         $globalParams['filepathToRoot'] = '';
 
-        $this->pathToPage = $this->config->path_pagesPath;
+        $this->pathToPage = PAGES_PATH;
         $globalParams['pathToPage'] = $this->pathToPage;
         $this->pageRelativePath = '';
         $this->pagePath = '';
@@ -2391,7 +2384,7 @@ EOT;
         if (isset($_GET['nc'])) {  // nc = no-caching
             $_SESSION['lizzy']['nc'] = true;
             return;
-        } elseif (@$_SESSION['lizzy']['nc']) {
+        } elseif (@$_SESSION['lizzy']['nc'] || @$_SESSION['lizzy']['debug']) {
             return;
         }
         if ($this->dailyPageCacheReset()) {

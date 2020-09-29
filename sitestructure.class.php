@@ -119,7 +119,7 @@ class SiteStructure
     private function getSitemapFromFolders() {
         $list = array();
         $i = 0;
-        return $this->_traverseDir($this->config->path_pagesPath,$i, 0, $list);
+        return $this->_traverseDir(PAGES_PATH,$i, 0, $list);
     } // getSitemapFromFolders
 
 
@@ -224,6 +224,9 @@ class SiteStructure
 
                                 } else {                                // internal link -> fix it if necessary
                                     $folder = fixPath($value);
+                                    if (@$folder[0] === '~') {
+                                        $folder = str_replace(['~/', '~page/'], '', $folder);
+                                    }
                                     if (!$folder) {
                                         $folder = './';
                                     }
@@ -346,7 +349,7 @@ class SiteStructure
 		    $path = '';
         }
 
-		$pagesPath = $this->config->path_pagesPath;
+		$pagesPath = PAGES_PATH;
         while ($i < sizeof($list)) {
             $level = $list[$i]['level'];
 			if ($level > $lastLevel) {
@@ -360,17 +363,27 @@ class SiteStructure
 			} elseif ($level === $lastLevel) {
 				$rec = &$list[$i];
                 $rec['hasChildren'] = false;
-				if (substr($rec['folder'], 0, 2) !== '~/') {
+				if (strpos($rec['folder'], '~/') !== 0) {
                     $rec['folder'] = $path.$rec['folder'];
 				} else {
-                    $rec['folder'] = (strlen($rec['folder']) > 2) ? substr($rec['folder'], 2) : '';
+                    $rec['folder'] = str_replace('~/', '', $rec['folder']);
 				}
+//				if (substr($rec['folder'], 0, 2) !== '~/') {
+//                    $rec['folder'] = $path.$rec['folder'];
+//				} else {
+//                    $rec['folder'] = (strlen($rec['folder']) > 2) ? substr($rec['folder'], 2) : '';
+//				}
 
-				if (substr($rec['actualFolder'], 0, 2) !== '~/') {
+                if (strpos($rec['actualFolder'], '~/') !== 0) {
                     $rec['actualFolder'] = $path.$rec['actualFolder'];
-				} else {
-                    $rec['actualFolder'] = (strlen($rec['actualFolder']) > 2) ? substr($rec['actualFolder'], 2) : '';
-				}
+                } else {
+                    $rec['actualFolder'] = str_replace('~/', '', $rec['actualFolder']);
+                }
+//				if (substr($rec['actualFolder'], 0, 2) !== '~/') {
+//                    $rec['actualFolder'] = $path.$rec['actualFolder'];
+//				} else {
+//                    $rec['actualFolder'] = (strlen($rec['actualFolder']) > 2) ? substr($rec['actualFolder'], 2) : '';
+//				}
                 $mdFiles = getDir("$pagesPath{$rec['actualFolder']}*.md");
                 $rec['noContent'] = (sizeof($mdFiles) === 0);
 
@@ -466,7 +479,7 @@ class SiteStructure
 		$foundLevel = 0;
 		foreach($list as $key => $elem) {
 			if ($found || ($str === $elem['folder']) || ($str.'/' === $elem['folder'])) {
-				$folder = $this->config->path_pagesPath.$elem['folder'];
+				$folder = PAGES_PATH.$elem['folder'];
 				if (isset($elem['showthis']) && $elem['showthis']) {	// no 'skip empty folder trick' in case of showthis
                     $found = true;
                     break;
@@ -482,7 +495,7 @@ class SiteStructure
                     $found = true;
                     break;
                 }
-				$dir = getDir($this->config->path_pagesPath.$elem['folder'].'*');	// check whether folder is empty, if so, move to the next non-empty one
+				$dir = getDir(PAGES_PATH.$elem['folder'].'*');	// check whether folder is empty, if so, move to the next non-empty one
 				$nFiles = sizeof(array_filter($dir, function($f) {
                     return ((substr($f, -3) === '.md') || (substr($f, -5) === '.link') || (substr($f, -5) === '.html'));
 				}));
