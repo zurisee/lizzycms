@@ -58,7 +58,7 @@ $this->addMacro($macroName, function () {
         $this->getArg($macroName, 'export', '[true,false,filename] If set, form data so far collected will be exported '.
             'to this file. (Default: false; true means "'.DEFAULT_EXPORT_FILE.'")', '');
 
-        $this->getArg($macroName, 'exportKey', '[true,false] If set, exported table will contain a column '.
+        $this->getArg($macroName, 'exportKey', '[true,false] If true, exported table will contain a column '.
             'containing the key into the form-DB. You can use this key in conjunction with arg "prefill". (Default: false)', '');
 
         $this->getArg($macroName, 'prefill', '[hash,url-arg] Hash corresponds to the key in the form-DB, i.e. where '.
