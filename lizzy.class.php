@@ -889,7 +889,7 @@ EOT;
         $this->trans->addVariable('lang', $this->config->lang);
 
 
-		if  (getUrlArgStatic('debug')) {
+		if  (getUrlArgStatic('debug') || $this->config->debug_forceDebugMode) {
             if  (!$this->localCall) {   // log only on non-local host
                 writeLog('starting debug mode');
             }
@@ -1571,13 +1571,25 @@ EOT;
 
 
         if (getUrlArg('log')) {    // log
-            if (file_exists(ERROR_LOG)) {
-                $str = file_get_contents(ERROR_LOG);
-                $str = str_replace('{', '&#123;', $str);
-            } else {
-                $str = "Currently no error log available.";
+            $str = '';
+            if (file_exists(LOG_FILE)) {
+                $str .= "<h1>".basename(LOG_FILE).":</h1>\n";
+                $log = file_get_contents(LOG_FILE);
+                $log .= str_replace('{', '&#123;', $log);
+                $str .= "<pre>$log</pre>\n";
             }
-            $str = "<h1>Error Logs:</h1>\n<pre>$str</pre>";
+            if (file_exists(ERROR_LOG)) {
+                $str .= "<h1>".basename(ERROR_LOG).":</h1>\n";
+                $log = file_get_contents(ERROR_LOG);
+                $log .= str_replace('{', '&#123;', $log);
+                $str .= "<pre>$log</pre>\n";
+            }
+            if (file_exists(LOGIN_LOG_FILENAME)) {
+                $str .= "<h1>".basename(LOGIN_LOG_FILENAME).":</h1>\n";
+                $log = file_get_contents(LOGIN_LOG_FILENAME);
+                $log .= str_replace('{', '&#123;', $log);
+                $str .= "<pre>$log</pre>\n";
+            }
             $this->page->addOverlay(['text' => $str, 'closable' => 'reload']);
         }
 
@@ -1623,12 +1635,7 @@ EOT;
             $this->trans->addVariable('debug_class', ' notouch');
             $this->page->addBodyClasses('notouch');
         }
-
-        // This feature requires LiveReload (http://livereload.com/) to be running in the background
-        if ($this->config->isLocalhost && getUrlArgStatic('auto', false)) {   // auto (liveReload)                        // auto reload
-            $this->page->addJqFiles("http://localhost:35729/livereload.js?snipver=1");
-        }
-
+		
         if (getUrlArg('config')) {                              // config
             if (!$this->auth->checkGroupMembership('admins')) {
                 $this->page->addMessage("Insufficient privilege for option '?config'");
@@ -2205,9 +2212,6 @@ EOT;
 Available URL-commands:
 
 <a href='?help'>?help</a>		    this message
-
-<a href='?auto'>?auto</a>		    automatic reload of page when files change 
-                    (&rarr; on Mac localhost only, requires external tool <a href="https://livereload.com" target="_blank">livereload.com</a>)  *)
 <a href='?config'>?config</a>		    list configuration-items in the config-file
 <a href='?convert'>?convert</a>	    convert password to hash
 <a href='?debug'>?debug</a>		    adds 'debug' class to page on non-local host *)
