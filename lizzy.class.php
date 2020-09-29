@@ -2391,7 +2391,7 @@ EOT;
         if (isset($_GET['nc'])) {  // nc = no-caching
             $_SESSION['lizzy']['nc'] = true;
             return;
-        } elseif (@$_SESSION['lizzy']['nc']) {
+        } elseif (@$_SESSION['lizzy']['nc'] || @$_SESSION['lizzy']['debug']) {
             return;
         }
         if ($this->dailyPageCacheReset()) {
