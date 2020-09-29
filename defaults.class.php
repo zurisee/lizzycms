@@ -36,7 +36,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'custom_permitUserVarDefs'          => [false, 'Only if true, "_code/user-var-defs.php" will be executed.', 1 ],
     'custom_wrapperTag'                 => ['section', 	'The HTML tag in which MD-files are wrapped (default: section)', 2 ],
 
-    'debug_allowDebugInfo'              => [false, '[false|true] If true, debugging Info can be activated: log in as admin and invoke URL-cmd "?debug"', 2 ],
+    'debug_allowDebugInfo'              => [false, '[false|true] If true, debugging Info can be activated: use "?debug" or set debug_showDebugInfo=true', 2 ],
     'debug_collectBrowserSignatures'    => [false, 'If true, Lizzy records browser signatures of visitors.', 3 ],
     'debug_compileScssWithLineNumbers'  => [false, 'If true, original line numbers are added as comments to compiled CSS."', 1 ],
     'debug_enableDevMode'               => [false, '[false|true] Enables devolepment mode', 1 ],
@@ -45,10 +45,11 @@ private $userConfigurableSettingsAndDefaults      = [
     'debug_debugLogging'                => [false, 'Enable or disabling logging.', 1 ],
     'debug_forceBrowserCacheUpdate'     => [false, 'If true, the browser is forced to ignore the cache and reload css and js resources on every time.', 2 ],
     'debug_logClientAccesses'           => [false, 'If true, Lizzy records visits (IP-addresses and browser/os types).', 3 ],
-    'debug_showDebugInfo'               => [false, 'If true, debugging info is appended to the page (prerequisite: localhost or logged in as editor/admin)', 1 ],
+    'debug_showDebugInfo'               => [false, 'If true, debugging info is appended to the page (prerequisite: debug_allowDebugInfo=true and localhost or logged in as editor/admin)', 1 ],
     'debug_showUndefinedVariables'      => [false, 'If true, all undefined static variables (i.e. obtained from yaml-files) are marked.', 2 ],
     'debug_showVariablesUnreplaced'     => [false, 'If true, all static variables (i.e. obtained from yaml-files) are render as &#123;&#123; name }}.', 2 ],
     'debug_monitorUnusedVariables'      => [false, '[false|true] If true, Lizzy keeps track of variable usage. Initialize tracking with url-arg "?reset"', 2 ],
+    'debug_forceDebugMode'              => [false, '[false|true] If true, forces debug mode, even if not logged in (debug mode normally activated by"?debug"', 3 ],
 
     'feature_autoConvertLinks'          => [false, 'If true, automatically converts text that looks like links to HTML-links (i.e. &lt;a> tags).', 1 ],
     'feature_autoLoadClassBasedModules' => [true, 'If true, automatically loads modules that are invoked by applying classes, e.g. .editable', 3 ],
