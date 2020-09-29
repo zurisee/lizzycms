@@ -236,7 +236,7 @@ function clearMdCache($lzy)
     }
 
     // clear all 'pages/*/.#page-cache.dat'
-    $dir = getDirDeep($lzy->config->path_pagesPath, true);
+    $dir = getDirDeep(PAGES_PATH, true);
     foreach ($dir as $folder) {
         $filename = $folder.$lzy->config->cacheFileName;
         if (file_exists($filename)) {
@@ -274,7 +274,7 @@ function clearCaches($lzy, $secondRun = null)
 //....................................................
 function purgeRecyleBins($lzy)
 {
-    $pageFolder = $lzy->config->path_pagesPath;
+    $pageFolder = PAGES_PATH;
     $recycleBinFolderName = rtrim(RECYCLE_BIN,'/');
     $isLocalhost = isLocalCall();
 

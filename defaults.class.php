@@ -75,7 +75,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'feature_replaceNLandTabChars'      => [false, 'If true, "\\n" and "\\t" will be replaced to corresponding control characters.', 3 ],
 
     'path_logPath'                      => [LOGS_PATH, '[true|Name] Name of folder to which logging output will be sent. Or "false" for disabling logging.', 3 ],
-    'path_pagesPath'                    => ['pages/', 'Name of folder in which all pages reside.', 3 ],
+//    'path_pagesPath'                    => ['pages/', 'Name of folder in which all pages reside.', 3 ],
     'path_stylesPath'                   => ['css/', 'Name of folder in which style sheets reside', 3 ],
     'path_userCodePath'                 => [USER_CODE_PATH, 'Name of folder in which user-provided PHP-code must reside.', 3 ],
 

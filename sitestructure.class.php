@@ -119,7 +119,7 @@ class SiteStructure
     private function getSitemapFromFolders() {
         $list = array();
         $i = 0;
-        return $this->_traverseDir($this->config->path_pagesPath,$i, 0, $list);
+        return $this->_traverseDir(PAGES_PATH,$i, 0, $list);
     } // getSitemapFromFolders
 
 
@@ -349,7 +349,7 @@ class SiteStructure
 		    $path = '';
         }
 
-		$pagesPath = $this->config->path_pagesPath;
+		$pagesPath = PAGES_PATH;
         while ($i < sizeof($list)) {
             $level = $list[$i]['level'];
 			if ($level > $lastLevel) {
@@ -479,7 +479,7 @@ class SiteStructure
 		$foundLevel = 0;
 		foreach($list as $key => $elem) {
 			if ($found || ($str === $elem['folder']) || ($str.'/' === $elem['folder'])) {
-				$folder = $this->config->path_pagesPath.$elem['folder'];
+				$folder = PAGES_PATH.$elem['folder'];
 				if (isset($elem['showthis']) && $elem['showthis']) {	// no 'skip empty folder trick' in case of showthis
                     $found = true;
                     break;
@@ -495,7 +495,7 @@ class SiteStructure
                     $found = true;
                     break;
                 }
-				$dir = getDir($this->config->path_pagesPath.$elem['folder'].'*');	// check whether folder is empty, if so, move to the next non-empty one
+				$dir = getDir(PAGES_PATH.$elem['folder'].'*');	// check whether folder is empty, if so, move to the next non-empty one
 				$nFiles = sizeof(array_filter($dir, function($f) {
                     return ((substr($f, -3) === '.md') || (substr($f, -5) === '.link') || (substr($f, -5) === '.html'));
 				}));

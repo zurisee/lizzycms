@@ -85,7 +85,6 @@ feature_supportLegacyBrowsers: true          # If true, jQuery 1 is loaded in ca
 feature_touchDeviceSupport: false            # If true, Lizzy supports swipe gestures etc. on touch devices.
 
 path_logPath: .#logs/                        # [true|Name] Name of folder to which logging output will be sent. Or "false" for disabling logging.
-path_pagesPath: pages/                       # Name of folder in which all pages reside.
 path_stylesPath: css/                        # Name of folder in which style sheets reside
 path_userCodePath: code/                     # Name of folder in which user-provided PHP-code must reside.
 
