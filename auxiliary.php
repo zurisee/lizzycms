@@ -95,15 +95,17 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
         } elseif ($val === 'false') {
             $val = false;
         } elseif (is_string($val)) {
-            if (preg_match('/ (!?) (loggedin|privileged|admin)/x', $val, $m)) {
+            if (preg_match('/ (!?) (isLoggedin|isPrivileged|isAdmin) $/x', $val, $m)) {
                 $GLOBALS["globalParams"]["cachingActive"] = false;
                 $val = false;
-                if ($m[2] === 'admin') {
+                if ($m[2] === 'isAdmin') {
                     $val = $GLOBALS['globalParams']['isAdmin'];
-                } elseif ($m[2] === 'privileged') {
+                } elseif ($m[2] === 'isPrivileged') {
                     $val = $GLOBALS['globalParams']['isPrivileged'];
-                } elseif ($m[2] === 'loggedin') {
+                } elseif ($m[2] === 'isLoggedin') {
                     $val = $GLOBALS['globalParams']['isLoggedin'];
+                } else {
+                    $val = str_replace(['"', "'"], ['&#34;', '&#39;'], $val);
                 }
                 if ($m[1]) {
                     $val = !$val;
