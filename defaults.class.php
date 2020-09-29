@@ -8,7 +8,7 @@
 class Defaults
 {
 
-// User configurable Settings -> config/config.yaml:
+ // User configurable Settings -> config/config.yaml:
 private $userConfigurableSettingsAndDefaults      = [
     'admin_activityLogging'             => [true, 'If true, logs activities to file '.LOG_FILE.'.', 3 ],
     'admin_allowDisplaynameForLogin'    => [false, 'If true, users may log in using their "DisplayName" rather than their "UserName".', 3 ],
@@ -75,7 +75,6 @@ private $userConfigurableSettingsAndDefaults      = [
     'feature_replaceNLandTabChars'      => [false, 'If true, "\\n" and "\\t" will be replaced to corresponding control characters.', 3 ],
 
     'path_logPath'                      => [LOGS_PATH, '[true|Name] Name of folder to which logging output will be sent. Or "false" for disabling logging.', 3 ],
-//    'path_pagesPath'                    => ['pages/', 'Name of folder in which all pages reside.', 3 ],
     'path_stylesPath'                   => ['css/', 'Name of folder in which style sheets reside', 3 ],
     'path_userCodePath'                 => [USER_CODE_PATH, 'Name of folder in which user-provided PHP-code must reside.', 3 ],
 
@@ -109,7 +108,6 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->userFinalCodeFile        = USER_FINAL_CODE_FILE;
         $this->cachePath                = CACHE_PATH;
         $this->cacheFileName            = CACHE_FILENAME;
-//        $this->cachingActive            = false;
         $this->mdCachingActive          = false;
         $this->siteIdententation        = MIN_SITEMAP_INDENTATION;
         $this->configFile               = $configFile;
@@ -126,8 +124,8 @@ private $userConfigurableSettingsAndDefaults      = [
         // shortcuts for modules to be loaded (upon request):
         // weight value controls the order of invocation. The higher the earlier.
         $this->jQueryWeight = 200;
-//        $this->loadModules['JQUERY']                = array('module' => 'third-party/jquery/jquery-3.5.0.min.js', 'weight' => $this->jQueryWeight);
-//        $this->loadModules['JQUERY3']               = array('module' => 'third-party/jquery/jquery-3.5.0.min.js', 'weight' => $this->jQueryWeight);
+        // $this->loadModules['JQUERY']                = array('module' => 'third-party/jquery/jquery-3.5.0.min.js', 'weight' => $this->jQueryWeight);
+        // $this->loadModules['JQUERY3']               = array('module' => 'third-party/jquery/jquery-3.5.0.min.js', 'weight' => $this->jQueryWeight);
         $this->loadModules['JQUERY']                = array('module' => 'third-party/jquery/jquery-3.5.1.min.js', 'weight' => $this->jQueryWeight);
         $this->loadModules['JQUERY3']               = array('module' => 'third-party/jquery/jquery-3.5.1.min.js', 'weight' => $this->jQueryWeight);
         $this->loadModules['JQUERY1']               = array('module' => 'third-party/jquery/jquery-1.12.4.min.js', 'weight' => $this->jQueryWeight);
