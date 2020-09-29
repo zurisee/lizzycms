@@ -683,7 +683,8 @@ private function loadRequired()
         $globalParams['appRoot'] = $appRoot;  // path from docRoot to base folder of app, e.g. 'on/'
         $globalParams['redirectedPath'] = $redirectedPath;  // the part that is optionally skippped by htaccess
         $globalParams['localCall'] = $this->localCall;
-
+        $globalParams['pagePath'] = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
+        $this->pagePath = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
 
         $_SESSION['lizzy']['pagePath'] = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
         $_SESSION['lizzy']['pageHttpPath'] = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
@@ -694,9 +695,9 @@ private function loadRequired()
         $_SESSION['lizzy']['appRootUrl'] = $baseUrl.$appRoot; // https://domain.net/...
         $_SESSION['lizzy']['absAppRoot'] = $absAppRoot;
 
-        if ($this->config->debug_logClientAccesses) {
-            writeLog('[' . getClientIP(true) . "] $ua" . (($this->config->isLegacyBrowser) ? " (Legacy browser!)" : ''));
-        }
+//        if ($this->config->debug_logClientAccesses) {
+//            writeLog('[' . getClientIP(true) . "] $ua" . (($this->config->isLegacyBrowser) ? " (Legacy browser!)" : ''));
+//        }
 
         if ($accessCode) {
             $this->auth->handleAccessCodeInUrl($accessCode);
@@ -2302,11 +2303,7 @@ EOT;
         $this->siteStructure = new SiteStructure($this, $this->reqPagePath);
         $this->currPage = $this->reqPagePath = $this->siteStructure->currPage;
 
-        if (isset($this->siteStructure->currPageRec['showthis'])) {
-            $this->pagePath = $this->siteStructure->currPageRec['showthis'];
-        } else {
-            $this->pagePath = $this->siteStructure->currPageRec['folder'];
-        }
+        $this->pagePath = $this->siteStructure->currPageRec['actualFolder'];
         $this->pathToPage = $this->config->path_pagesPath . $this->pagePath;   //  includes pages/
         $globalParams['pageHttpPath'] = $this->pageHttpPath;            // excludes pages/, takes showThis into account
         $globalParams['pagePath'] = $this->pagePath;                    // excludes pages/, takes not showThis into account

@@ -224,6 +224,9 @@ class SiteStructure
 
                                 } else {                                // internal link -> fix it if necessary
                                     $folder = fixPath($value);
+                                    if (@$folder[0] === '~') {
+                                        $folder = str_replace(['~/', '~page/'], '', $folder);
+                                    }
                                     if (!$folder) {
                                         $folder = './';
                                     }
@@ -360,17 +363,27 @@ class SiteStructure
 			} elseif ($level === $lastLevel) {
 				$rec = &$list[$i];
                 $rec['hasChildren'] = false;
-				if (substr($rec['folder'], 0, 2) !== '~/') {
+				if (strpos($rec['folder'], '~/') !== 0) {
                     $rec['folder'] = $path.$rec['folder'];
 				} else {
-                    $rec['folder'] = (strlen($rec['folder']) > 2) ? substr($rec['folder'], 2) : '';
+                    $rec['folder'] = str_replace('~/', '', $rec['folder']);
 				}
+//				if (substr($rec['folder'], 0, 2) !== '~/') {
+//                    $rec['folder'] = $path.$rec['folder'];
+//				} else {
+//                    $rec['folder'] = (strlen($rec['folder']) > 2) ? substr($rec['folder'], 2) : '';
+//				}
 
-				if (substr($rec['actualFolder'], 0, 2) !== '~/') {
+                if (strpos($rec['actualFolder'], '~/') !== 0) {
                     $rec['actualFolder'] = $path.$rec['actualFolder'];
-				} else {
-                    $rec['actualFolder'] = (strlen($rec['actualFolder']) > 2) ? substr($rec['actualFolder'], 2) : '';
-				}
+                } else {
+                    $rec['actualFolder'] = str_replace('~/', '', $rec['actualFolder']);
+                }
+//				if (substr($rec['actualFolder'], 0, 2) !== '~/') {
+//                    $rec['actualFolder'] = $path.$rec['actualFolder'];
+//				} else {
+//                    $rec['actualFolder'] = (strlen($rec['actualFolder']) > 2) ? substr($rec['actualFolder'], 2) : '';
+//				}
                 $mdFiles = getDir("$pagesPath{$rec['actualFolder']}*.md");
                 $rec['noContent'] = (sizeof($mdFiles) === 0);
 
