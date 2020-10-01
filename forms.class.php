@@ -374,6 +374,7 @@ class Forms
         $currForm->translateLabels = (isset($args['translateLabels'])) ? $args['translateLabels'] : false;
 
         $currForm->class = (isset($args['class'])) ? $args['class'] : 'lzy-form';
+        $currForm->wrapperClass = (isset($args['wrapperClass'])) ? $args['wrapperClass'] : '';
         $currForm->method = (isset($args['method'])) ? $args['method'] : 'post';
         $currForm->action = (isset($args['action'])) ? $args['action'] : '';
         $currForm->mailTo = (isset($args['mailto'])) ? $args['mailto'] : ((isset($args['mailTo'])) ? $args['mailTo'] : '');
@@ -408,6 +409,7 @@ class Forms
         if ($currForm->prefill) {
             if (preg_match('/^[A-Z0-9]{5,10}$/', $currForm->prefill)) {
                 $hash = $currForm->prefill;
+                $currForm->wrapperClass .= ' lzy-form-revisited';
             } else {
                 $hash = getUrlArg($currForm->prefill, true);
             }
@@ -417,6 +419,7 @@ class Forms
                 if ($rec) {
                     $rec['dataKey'] = $hash;
                     $currForm->prefillRec = $rec;
+                    $currForm->wrapperClass .= ' lzy-form-revisited';
                 }
             }
         }
@@ -706,14 +709,15 @@ EOT;
 
         $legendClass = 'lzy-form-header';
         $announcementClass = 'lzy-form-announcement';
-        $wrapperClass = '';
+
+        $wrapperClass = $currForm->wrapperClass;
         if (stripos($currForm->options, 'nocolor') === false) {
-            $wrapperClass = ' lzy-form-colored';
+            $wrapperClass .= ' lzy-form-colored';
         }
         $class = &$currForm->class;
         $class = "$formId $class";
 
-        if ($currForm->encapsulate) {
+        if ($currForm->encapsulate && (strpos($class, 'lzy-encapsulated') === false)) {
             $class .= ' lzy-encapsulated';
         }
         $_class = " class='$class'";
