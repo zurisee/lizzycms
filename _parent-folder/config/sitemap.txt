@@ -73,8 +73,8 @@ hideFrom, hideTill, showFrom, showTill:
 	Regarding acceptable formats, see examples below or 
 	http://php.net/manual/en/datetime.formats.php for reference.
 
-availableFrom, availableTill:
-	Example: availableFrom: 2020-01-01 
+omitFrom, omitTill (resp. availableFrom, availableTill):
+	Example: omitTill: 2020-01-01 
 	Defines a point in time when a page and its nav element will become available, 
 	resp. when it will become inavailable. 
 	Note: unlike the hideTill-option, the page will be completely inaccessible 
