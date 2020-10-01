@@ -745,8 +745,8 @@ private function loadRequired()
 	//....................................................
 	private function isRestrictedPage()
 	{
-		if (isset($this->siteStructure->currPageRec['restricted'])) {
-			$lockProfile = $this->siteStructure->currPageRec['restricted'];
+		if (isset($this->siteStructure->currPageRec['restricted!'])) {
+			$lockProfile = $this->siteStructure->currPageRec['restricted!'];
 			return $lockProfile;
 		}
 		return false;
@@ -1076,7 +1076,7 @@ EOT;
 		$file = PAGES_PATH.$file;
 		if (file_exists($file)) {
 			$html = file_get_contents($file);
-			$page->addContent($this->extractHtmlBody($html), true);
+			$page->addContent( $this->page->extractHtmlBody($html), true);
 		} else {
 			$page->addOverride("Requested file not found: '$file'");
 		}
@@ -1635,7 +1635,7 @@ EOT;
             $this->trans->addVariable('debug_class', ' notouch');
             $this->page->addBodyClasses('notouch');
         }
-		
+
         if (getUrlArg('config')) {                              // config
             if (!$this->auth->checkGroupMembership('admins')) {
                 $this->page->addMessage("Insufficient privilege for option '?config'");
