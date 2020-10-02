@@ -1661,14 +1661,15 @@ function translateToFilename($str, $appendExt = true)
 function translateToIdentifier($str, $removeDashes = false, $removeNonAlpha = false)
 {
  // translates special characters (such as , , ) into identifier which contains but safe characters:
+    $str = mb_strtolower($str);		// all lowercase
+    $str = strToASCII( $str );		// replace umlaute etc.
+    $str = strip_tags( $str );							// strip any html tags
     if ($removeNonAlpha) {
         $str = preg_replace('/[^a-zA-Z]/ms', '', $str);
 
     } elseif (preg_match('/^ \W* (\w .*? ) \W* $/x', $str, $m)) { // cut leading/trailing non-chars;
         $str = trim($m[1]);
     }
-	$str = strToASCII(mb_strtolower($str));		// replace special chars
-	$str = strip_tags($str);							// strip any html tags
 	$str = preg_replace('/\s+/', '_', $str);			// replace blanks with _
 	$str = preg_replace("/[^[:alnum:]_-]/m", '', $str);	// remove any non-letters, except _ and -
 	if ($removeDashes) {
