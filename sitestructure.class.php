@@ -19,6 +19,7 @@ class SiteStructure
         'name' => '',
         'level' => 0,
         'folder' => '',
+        'showthis' => '',
         'isCurrPage' => false,
         'listInx' => 0,
         'urlExt' => '',
@@ -54,8 +55,7 @@ class SiteStructure
         $this->cacheFile = $this->cachePath . '_siteStructure.dat';
 
 
-		if (true) {
-//		if (!$this->readCache()) {
+		if (!$this->readCache()) {
             if ($config->feature_sitemapFromFolders) {
                 $this->list = $this->getSitemapFromFolders();
 
@@ -104,6 +104,25 @@ class SiteStructure
             }
         }
     } // __construct
+
+
+    //....................................................
+    public function getPagePath()
+    {
+        $pagePath = $this->currPageRec['actualFolder'];
+        if (!$pagePath) {
+            $pagePath = $this->currPageRec['folder'];
+        }
+        return $pagePath;
+    } // getPagePath
+
+
+    //....................................................
+    public function isPageDislocated()
+    {
+        // if 'showThis' is active, the browser's page folder differs from filesystem location
+        return $this->currPageRec['actualFolder'];
+    } // isPageDislocated
 
 
     //....................................................
@@ -237,13 +256,6 @@ class SiteStructure
 
     private function handleSpecificOptions( $rec )
     {
-        // showThis option:
-        if (isset($rec['showthis']) && $rec['showthis']) {
-            $rec['actualFolder'] = $rec['showthis'];
-        } else {
-            $rec['actualFolder'] = $rec['folder'];
-        }
-
         // hide option -> always propagate:
         if (isset($rec['hide'])) {
             $rec['hide!'] = $rec['hide'];
@@ -294,10 +306,15 @@ class SiteStructure
 
             $currTreeElem['parentInx'] = $parentInx;
             $currTreeElem['folder'] = $path1;
-            $currTreeElem['actualFolder'] = $path . $currTreeElem['actualFolder'];
+            if ($currTreeElem['showthis']) {
+                $actualFolder = $currTreeElem['showthis'];
+                $currTreeElem['actualFolder'] = $actualFolder;
+            } else {
+                $actualFolder = $currTreeElem['folder'];
+            }
 
             // check whether page folder contains .md file(s):
-            $mdFiles = getDir(PAGES_PATH."{$currTreeElem['actualFolder']}*.md");
+            $mdFiles = getDir(PAGES_PATH."$actualFolder*.md");
             $currTreeElem['noContent'] = (sizeof($mdFiles) === 0);
 
             $treeInx++;

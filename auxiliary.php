@@ -961,10 +961,11 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
         }
     }
 
-	$host  = isset($globalParams["host"]) ? $globalParams["host"] : '';
-	$appRoot  = isset($globalParams["appRoot"]) ? $globalParams["appRoot"] : '';
-	$pathToPage  = isset($globalParams["pathToPage"]) ? $globalParams["pathToPage"] : '';
-	$absAppRoot = isset($globalParams["absAppRoot"]) ? $globalParams["absAppRoot"] : '';
+	$host  = isset($globalParams['host']) ? $globalParams['host'] : '';
+	$appRoot  = isset($globalParams['appRoot']) ? $globalParams['appRoot'] : '';
+	$pagePath  = isset($globalParams['pagePath']) ? $globalParams['pagePath'] : '';
+	$pathToPage  = isset($globalParams['pathToPage']) ? $globalParams['pathToPage'] : '';
+	$absAppRoot = isset($globalParams['absAppRoot']) ? $globalParams['absAppRoot'] : '';
 
 
     if (preg_match('|^(~.*?/)(.*)|', $path, $m)) {
@@ -987,7 +988,9 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
                         }
                     } else {
                         if ($absolutePath) {
-                            $path = "$host$appRoot$pathToPage$path";
+                            $path = "$host$appRoot$pagePath$path";
+                        } else {
+                            $path = "$appRoot$pagePath$path";
                         }
                     }
                     break;

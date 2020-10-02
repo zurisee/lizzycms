@@ -63,9 +63,8 @@ require_once SYSTEM_PATH.'auxiliary.php';
 
 $globalParams = array(
 	'pathToRoot' => null,			// ../../
-	'pageHttpPath' => null,			// xy/  ???
-	'pagePath' => null,				// xy/    -> may differ from pageHttpPath in case 'showThis' is used
-	'pathToPage' => null,			// pages/xy/    -> may differ from pageHttpPath in case 'showThis' is used
+	'pagePath' => null,				// xy/
+	'pathToPage' => null,			// pages/xy/
     'path_logPath' => null,
     'activityLoggingEnabled' => null,
     'errorLoggingEnabled' => null,
@@ -82,7 +81,6 @@ class Lizzy
 	private $systemPath = SYSTEM_PATH;
 	private $autoAttrDef = [];
 	public  $pathToRoot;
-	public  $pageHttpPath;
 	public  $pagePath;
 	private $reqPagePath;
 	public  $siteStructure;
@@ -369,17 +367,24 @@ private function loadRequired()
     private function resolveAllPaths( $html )
     {
         global $globalParams;
-        $pathToRoot = $globalParams['appRoot'];
+        $appRoot = $globalParams['appRoot'];
+        $pagePath = $globalParams['pagePath'];
+        $pathToRoot = $globalParams['pathToPage'];
 
         if (!$this->config->admin_useRequestRewrite) {
             resolveHrefs($html);
         }
 
         // Handle resource accesses first: src='~page/...' -> local to page but need full path:
-        $p = $globalParams["appRoot"].$globalParams["pathToPage"];
+        $p = $appRoot.$pathToRoot;
         $html = preg_replace(['|(src=[\'"])(?<!\\\\)~page/|', '|(srcset=[\'"])(?<!\\\\)~page/|'], "$1$p", $html);
 
         // Handle all other special links:
+        if ($this->siteStructure->isPageDislocated()) {
+            $p = $appRoot.$pagePath;
+        } else {
+            $p = '';
+        }
         $from = [
             '|(?<!\\\\)~/|',
             '|(?<!\\\\)~data/|',
@@ -388,11 +393,11 @@ private function loadRequired()
             '|(?<!\\\\)~page/|',
         ];
         $to = [
-            $pathToRoot,
-            $pathToRoot.$globalParams['dataPath'],
-            $pathToRoot.SYSTEM_PATH,
-            $pathToRoot.EXTENSIONS_PATH,
-            '',   // for page accesses
+            $appRoot,
+            $appRoot.$globalParams['dataPath'],
+            $appRoot.SYSTEM_PATH,
+            $appRoot.EXTENSIONS_PATH,
+            $p,   // for page accesses
         ];
 
         $html = preg_replace($from, $to, $html);
@@ -571,13 +576,12 @@ private function loadRequired()
     private function analyzeHttpRequest()
     {
     // appRoot:         path from docRoot to base folder of app, mostly = ''; appRoot == '~/'
-    // pageHttpPath:    forward-path from appRoot to requested folder, e.g. 'contact/ (-> excludes pages/)
     // pagePath:        forward-path from appRoot to requested folder, e.g. 'contact/ (-> excludes pages/)
     // pathToPage:      filesystem forward-path from appRoot to requested folder, e.g. 'pages/contact/ (-> includes pages/)
     // pathToRoot:      upward-path from requested folder to appRoot, e.g. ../
     // redirectedPath:  if requests get redirected by .htaccess, this is the skipped folder(s), e.g. 'now_active/'
 
-    // $globalParams:   -> pageHttpPath, pagePath, pathToRoot, redirectedPath
+    // $globalParams:   -> pagePath, pathToRoot, redirectedPath
     // $_SESSION:       -> userAgent, pageName, currPagePath, lang
 
         global $globalParams, $pathToRoot;
@@ -629,11 +633,9 @@ private function loadRequired()
         }
         $pathToRoot = str_repeat('../', sizeof(explode('/', $requestedpageHttpPath)) - 1);
 
-        $globalParams['pageHttpPath'] = $pageHttpPath;
         $globalParams['pagesFolder'] = PAGES_PATH;
 
         $globalParams['pathToRoot'] = $pathToRoot;  // path from requested folder to root (= ~/), e.g. ../
-        $this->pageHttpPath = $pageHttpPath;
         $this->pathToRoot = $pathToRoot;
         $this->config->pathToRoot = $pathToRoot;
 
@@ -687,7 +689,6 @@ private function loadRequired()
         $this->pagePath = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
 
         $_SESSION['lizzy']['pagePath'] = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
-        $_SESSION['lizzy']['pageHttpPath'] = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
 
         $_SESSION['lizzy']['pathToPage'] = null; //???
         $_SESSION['lizzy']['pagesFolder'] = PAGES_PATH;
@@ -2303,16 +2304,14 @@ EOT;
         $this->siteStructure = new SiteStructure($this, $this->reqPagePath);
         $this->currPage = $this->reqPagePath = $this->siteStructure->currPage;
 
-        $this->pagePath = $this->siteStructure->currPageRec['actualFolder'];
+        $this->pagePath = $this->siteStructure->getPagePath();
         $this->pathToPage = PAGES_PATH . $this->pagePath;   //  includes pages/
-        $globalParams['pageHttpPath'] = $this->pageHttpPath;            // excludes pages/, takes showThis into account
         $globalParams['pagePath'] = $this->pagePath;                    // excludes pages/, takes not showThis into account
         $globalParams['pathToPage'] = $this->pathToPage;
         $globalParams['filepathToRoot'] = str_repeat('../', substr_count($this->pathToPage, '/'));
         $globalParams['filepathToDocroot'] = str_repeat('../', substr_count($globalParams["appRoot"], '/')-1);
-        $_SESSION['lizzy']['pageHttpPath'] = $this->pageHttpPath;               // for _ajax_server.php and _upload_server.php
         $_SESSION['lizzy']['pagePath'] = $this->pagePath;               // for _ajax_server.php and _upload_server.php
-        $_SESSION['lizzy']['pathToPage'] = PAGES_PATH . $this->pagePath;
+        $_SESSION['lizzy']['pathToPage'] = $this->pathToPage;
 
 
         $this->pageRelativePath = $this->pathToRoot . $this->pagePath;
@@ -2333,7 +2332,6 @@ EOT;
         $this->siteStructure = new SiteStructure($this, ''); //->list = false;
         $this->currPage = '';
         $globalParams['pagePath'] = '';
-        $globalParams['pageHttpPath'] = '';            // excludes pages/, takes showThis into account
         $globalParams['filepathToRoot'] = '';
 
         $this->pathToPage = PAGES_PATH;
