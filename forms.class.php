@@ -1704,7 +1704,7 @@ EOT;
         $msgToOwner = "{$currForm->formName}\n===================\n\n";
 
 		foreach ($currForm->formElements as $element) {
-		    if (strpos(PSEUDO_TYPES, $element->type) !== false) {
+		    if ((strpos(PSEUDO_TYPES, $element->type) !== false) || ($element->name[0] === '_')) {
                 continue;
             }
             $label = $element->labelInOutput;
@@ -1714,6 +1714,9 @@ EOT;
             $label = html_entity_decode($label);
 
             $name = $element->name;
+            if (!isset($this->userSuppliedData[ $name ])) {
+                continue;
+            }
             $value = $this->userSuppliedData[ $name ];
             if (is_array($value)) {
                 $value = $value[0];
@@ -2488,6 +2491,7 @@ EOT;
             if (is_array($value)) {
                 $value = $value[0];
             }
+            $value = $value? $value: '{{ lzy-confirmation-response-element-empty }}';
             $this->trans->addVariable("{$key}_value", $value);
         }
         if ($this->currForm->confirmationEmailTemplate === true) {
@@ -2497,7 +2501,10 @@ EOT;
         } else {
             $file = resolvePath($this->currForm->confirmationEmailTemplate, true);
             if (!file_exists($file)) {
-                $this->responseToClient = 'lzy-reservation-email-template-not-found';
+                $this->responseToClient = '';
+                if ($this->lzy->localCall || $GLOBALS['globalParams']['isLoggedin']) {
+                    $this->lzy->page->addPopup("{{ lzy-form-response-email-template-not-found }}:<br>$file");
+                }
                 return;
             }
 

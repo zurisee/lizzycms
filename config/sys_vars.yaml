@@ -139,6 +139,10 @@ lzy-form-confirmation-email-sent:
     de: 'Wir haben Ihnen eine Bestätigung per E-Mail geschickt.'
     _:  'We have sent a confirmation to your e-mail address.'
 
+lzy-form-response-email-template-not-found:
+    de: 'Keine Template-Datei für das Versenden der E-Mail gefunden.'
+    _:  'Template file for e-mail response not found.'
+
 lzy-form-data-key: DataKey
 
 
