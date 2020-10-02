@@ -1671,7 +1671,7 @@ EOT;
             if (!$msgToClient) {
                 $msgToClient = $this->currForm->confirmationText;
             }
-            $this->responseToClient = $msgToClient . $this->responseToClient;
+            $this->responseToClient = $msgToClient . '<br>' . $this->responseToClient;
             $this->skipRenderingForm = true;
         }
     } // evaluateUserSuppliedData
