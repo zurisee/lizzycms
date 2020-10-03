@@ -10,7 +10,8 @@
  *
 */
 
-
+ // PATH_TO_APP_ROOT must to be defined by the invoking module
+ // *_PATH constants must only define path starting from app-root
 define('LIZZY_DB',  PATH_TO_APP_ROOT . CACHE_PATH . '_lzy_db.sqlite');
 
 if (!defined('LZY_LOCK_ALL_DURATION_DEFAULT')) {
@@ -33,7 +34,7 @@ use Symfony\Component\Yaml\Yaml;
 
 class DataStorage2
 {
-    private   $lzyDb = null;
+    private $lzyDb = null;
 	private $dataFile;
 	private $tableName;
 	private $data = null;
@@ -1341,7 +1342,6 @@ EOT;
     private function initLizzyDB()
     {
         if (!file_exists(LIZZY_DB)) {
-//            preparePath(LIZZY_DB);
             touch(LIZZY_DB);
         }
     } // initLizzyDB

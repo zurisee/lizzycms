@@ -1,11 +1,17 @@
 <?php
 
-define('EXTENSIONS_PATH', 	SYSTEM_PATH.'extensions/');		        //
-define('DATA_PATH', 		PATH_TO_APP_ROOT.'data/');		        // must correspond to lizzy app
-define('CACHE_PATH',        PATH_TO_APP_ROOT.'.#cache/');           // required by Ticketing class
-define('LOG_PATH',          PATH_TO_APP_ROOT.'.#logs/');	        //
-define('SERVICE_LOG',       LOG_PATH.'backend-log.txt');	        //
-define('ERROR_LOG',         LOG_PATH.'errlog.txt');	                //
+// PATH_TO_APP_ROOT must to be defined by the invoking module
+// *_PATH constants must only define path starting from app-root
+
+define('EXTENSIONS_PATH', 	    SYSTEM_PATH.'extensions/');
+define('DATA_PATH', 		    'data/');
+define('CACHE_PATH',            '.#cache/');
+define('LOG_PATH',              '.#logs/');
+define('DEFAULT_TICKETS_PATH',  '.#tickets/');
+
+define('SERVICE_LOG',           PATH_TO_APP_ROOT . LOG_PATH.'backend-log.txt');
+define('ERROR_LOG',             PATH_TO_APP_ROOT . LOG_PATH.'errlog.txt');
+
 define('RECYCLE_BIN',           '.#recycleBin/');
 define('RECYCLE_BIN_PATH',      '~page/'.RECYCLE_BIN);
 if (!defined('MKDIR_MASK')) {

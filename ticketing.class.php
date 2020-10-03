@@ -1,6 +1,9 @@
 <?php
 
-define ('DEFAULT_TICKET_STORAGE_FILE', '.lzy_tickets.yaml');
+if (!defined ('DEFAULT_TICKETS_PATH')) {
+    define('DEFAULT_TICKETS_PATH', '.#tickets/');
+}
+define ('DEFAULT_TICKET_STORAGE_FILE', PATH_TO_APP_ROOT . DEFAULT_TICKETS_PATH.'tickets.yaml');
 define ('DEFAULT_TICKET_HASH_SIZE', 6);
 define ('DEFAULT_TICKET_VALIDITY_TIME', 900); // 15 min
 define ('UNAMBIGUOUS_CHARACTERS', '3479ACDEFHJKLMNPQRTUVWXY'); // -> excludes '0O2Z1I5S6G8B'

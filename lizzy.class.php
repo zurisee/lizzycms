@@ -24,6 +24,7 @@ define('USER_FINAL_CODE_FILE',  USER_CODE_PATH.'final-code.php');
 define('USER_VAR_DEF_FILE',     USER_CODE_PATH.'var-definitions.php');
 define('ICS_PATH',              'ics/'); // where .ics files are located
 
+define('DEFAULT_TICKETS_PATH', '.#tickets/');
 define('DAILY_PURGE_FILE',      CONFIG_PATH.'daily-purge.txt');
 define('USER_DAILY_CODE_FILE',  USER_CODE_PATH.'@daily-task.php');
 define('CACHE_DEPENDENCY_FILE', '.#page-cache.dependency.txt');
@@ -1980,6 +1981,7 @@ EOT;
 
         preparePath(DATA_PATH);
         preparePath(CACHE_PATH);
+        preparePath(DEFAULT_TICKETS_PATH);
         preparePath(LOGS_PATH);
     } // checkInstallation
 
