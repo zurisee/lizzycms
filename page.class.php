@@ -389,6 +389,7 @@ class Page
     //-----------------------------------------------------------------------
     public function addMessage($str, $replace = false)
     {
+        $str = str_replace("\n", '<br>', $str);
         $this->addToProperty('message', $str, $replace);
     } // addMessage
 
