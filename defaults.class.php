@@ -17,20 +17,23 @@ private $userConfigurableSettingsAndDefaults      = [
     'admin_defaultAccessLinkValidyTime' => [900,    'Default Time in seconds during whith an access-link is valid.', 3 ],
     'admin_defaultGuestGroup'           => ['guest', 'Name of default group for self-registration.', 3 ],
     'admin_defaultLoginValidityPeriod'  => [86400, 'Defines how long a user can access the page since the last login.', 3 ],
-    'admin_enableDailyUserTask'         => [false, 'If true, looks for "code/user-daily-task.php" and executes it.', 3 ],
     'admin_enableEditing'               => [true, 'Enables online editing', 2 ],
-    'admin_enableDailyFilePurge'        => [true, 'If true, Lizzy reads '.DAILY_PURGE_FILE.' and deletes all listed files one per day.', 2 ],
-    'admin_enableScheduledTasks'        => [false, 'If true, a scheduler (cron) can invoke scheduled tasks by calling "?scheduled".', 3 ],
-    'admin_enableServiceTasks'          => [false, 'If true, an external process can invoke service tasks by calling "?service=service-task".', 3 ],
+    'admin_serviceTasks'                => [[
+                                                'daily' => false,
+                                                'onPageInit' => false,
+                                                'onPageRenderingStart' => false,
+                                                'onPageRendered' => false,
+                                                'onRequestGetArg' => false,
+                                                'dailyFilePurge' => false,
+                                            ], 'Enables and defines various service tasks.', 2 ],
     'admin_enableSelfSignUp'            => [false, 'If true, visitors can create a guest account on their own.', 3 ],
     'admin_enforcePasswordQuality'      => [false, 'If true, a minimum password quality is enforced when users create/change their password.', 3 ],
     'admin_useRequestRewrite'           => [true, 'If true, assumes web-server supports request-rewrite (i.e. .htaccess).', 3 ],
     'admin_userAllowSelfAdmin'          => [false, 'If true, user can modify their account after they logged in', 3 ],
-    'admin_enableFileManager'           => [true, 'If true, the file-manager (upload, rename, delete) is enabled for privileged users.', 2 ],
+    'admin_enableFileManager'           => [false, 'If true, the file-manager (upload, rename, delete) is enabled for privileged users.', 2 ],
     'admin_minPasswordLength'           => [10, '[integer] Minimum length of passwords if "admin_enforcePasswordQuality" is enabled.', 3 ],
 
     'custom_relatedGitProjects'         => ['', "Git Project(s) to be included in ?getstat command", 3 ],
-    'custom_permitServiceCode'          => [false, "Enables the 'service routine' mechanism: run PHP code in '".USER_CODE_PATH."' (filename starting with '@')", 1 ],
     'custom_permitUserCode'             => [false, "Only if true, user-provided code can be executed. And only if located in '".USER_CODE_PATH."'", 1 ],
     'custom_permitUserInitCode'         => [false, "Only if true, user-provided init-code can be executed. And only if located in '".USER_CODE_PATH."'", 1 ],
     'custom_permitUserVarDefs'          => [false, 'Only if true, "_code/user-var-defs.php" will be executed.', 1 ],
@@ -97,21 +100,18 @@ private $userConfigurableSettingsAndDefaults      = [
 ];
 
 
-    public function __construct($configFile)
+    public function __construct($lzy)
     {
+        $this->lzy                      = $lzy;
         $this->macrosPath               = MACROS_PATH;
         $this->extensionsPath           = EXTENSIONS_PATH;
         $this->configPath               = CONFIG_PATH;
         $this->systemPath               = SYSTEM_PATH;
         $this->systemHttpPath           = '~/'.SYSTEM_PATH;
 
-        $this->userInitCodeFile         = USER_INIT_CODE_FILE;
-        $this->userFinalCodeFile        = USER_FINAL_CODE_FILE;
-        $this->cachePath                = CACHE_PATH;
-        $this->cacheFileName            = CACHE_FILENAME;
         $this->mdCachingActive          = false;
         $this->siteIdententation        = MIN_SITEMAP_INDENTATION;
-        $this->configFile               = $configFile;
+        $this->configFile               = $lzy->configFile;
 
 
         // values not to be modified by config.yaml file:
@@ -196,10 +196,10 @@ private $userConfigurableSettingsAndDefaults      = [
             'zoomTarget' => ['jsFiles' => 'ZOOM_TARGET'],
         ];
 
-        $this->getConfigValues($configFile);
+        $this->getConfigValues();
 
         if ($this->debug_enableDevMode && file_exists(DEV_MODE_CONFIG_FILE)) {
-            $this->getConfigValues(DEV_MODE_CONFIG_FILE, true);
+            $this->getConfigValues(DEV_MODE_CONFIG_FILE);
         }
 
 
@@ -212,17 +212,22 @@ private $userConfigurableSettingsAndDefaults      = [
 
 
     //....................................................
-    private function getConfigValues($configFile, $append = false)
+    private function getConfigValues($append = false)
     {
         global $globalParams;
 
-        $configValues = getYamlFile($configFile);
+        if (!$append) {
+            $configValues = getYamlFile($this->configFile);
+        } else {
+            $configValues = getYamlFile($append);
+        }
 
         $overridableSettings = array_keys($this->userConfigurableSettingsAndDefaults);
         foreach ($overridableSettings as $key) {
             if (isset($configValues[$key])) {
                 $defaultValue = $this->userConfigurableSettingsAndDefaults[$key][0];
                 $val = $configValues[$key];
+
                 if (stripos($key, 'Path') !== false) {
                     if (($key !== 'site_dataPath') &&
                         ($key !== 'site_onairDataPath') &&
@@ -233,6 +238,7 @@ private $userConfigurableSettingsAndDefaults      = [
                 } elseif (stripos($key, 'File') !== false) {
                     $val = str_replace('/', '', $val);
                 }
+
                 // make sure it gets the right type:
                 if (is_bool($defaultValue)) {
                     $this->$key = (bool)$val;
@@ -244,7 +250,11 @@ private $userConfigurableSettingsAndDefaults      = [
                     $this->$key = (string)$val;
 
                 } elseif (is_array($defaultValue)) {
-                    $this->$key = explode(',', str_replace(' ', '',$val ));
+                    if (is_array($val)) {
+                        $this->$key = $val;
+                    } else {
+                        $this->$key = explode(',', str_replace(' ', '', (string)$val));
+                    }
 
                 } else {
                     $this->$key = $val;
@@ -425,5 +435,136 @@ EOT;
         $out = str_pad("$key: ''", 50)."# default=$default\n";
         return $out;
     } // getConfigLine
+
+
+
+
+    //....................................................
+    public function renderConfigOverlay()
+    {
+        $configCmd = getUrlArg('config', true);
+        if ($configCmd === 'raw') {
+            return $this->renderRawConfigOverlay();
+        }
+        $level1Class = $level2Class = $level3Class = '';
+        $level = max(1, min(3, intval($configCmd)));
+        switch ($level) {
+            case 1: $level1Class = ' class="lzy-config-viewer-hl"'; break;
+            case 2: $level2Class = ' class="lzy-config-viewer-hl"'; break;
+            case 3: $level3Class = ' class="lzy-config-viewer-hl"'; break;
+        }
+        $url = $GLOBALS["globalParams"]["pageUrl"];
+
+        if (isset($_POST) && $_POST) {
+            $this->config->updateConfigValues( $_POST, $this->configFile );
+        }
+
+
+        $configItems = $this->getConfigInfo();
+        ksort($configItems);
+        $out = "<h1>Lizzy Config-Items and their Purpose:</h1>\n";
+        $out .= "<p>Settings stored in file <code>{$this->configFile}</code>.<br/>\n";
+        $out .= "&rarr; Default values in (), values deviating from defaults are marked <span class='lzy-config-viewer-hl'>red</span>)</p>\n";
+        $out .= "<p class='lzy-config-select'>Select: <a href='$url?config=1'$level1Class>Essential</a> ".
+            "| <a href='$url?config=2'$level2Class>Common</a> | <a href='$url?config=3'$level3Class>All</a> ".
+            "| <a href='$url?config=raw'$level3Class>raw</a></p>\n";
+        $out .= "  <form class='lzy-config-form' action='$url?config=$level' method='post'>\n";
+        $out .= "    <input class='lzy-button' type='submit' value='{{ lzy-config-save }}'>";
+
+        $i = 1;
+        foreach ($configItems as $key => $rec) {
+            if ($rec[2] > $level) {     // skip elements with lower priority than requested
+                continue;
+            }
+            $currValue = $this->$key;
+            $displayValue = $currValue;
+            $defaultValue = $this->getDefaultValue($key);
+            $displayDefault = $defaultValue;
+            $inputValue = $defaultValue;
+
+            $diff = '';
+            if ($currValue !== $defaultValue) {
+                $diff = ' class="lzy-config-viewer-hl"';
+            }
+            $checked = '';
+
+            if (is_bool($defaultValue)) {
+                $displayValue = $currValue ? 'true' : 'false';
+                $inputValue = 'true';
+                $displayDefault = $defaultValue ? 'true' : 'false';
+                $inputType = 'checkbox';
+                $checked = ($currValue) ? " checked" : '';
+
+            } elseif (is_int($defaultValue)) {
+                $inputValue = $displayValue;
+                $inputType = 'integer';
+
+            } elseif (is_string($defaultValue)) {
+                $inputValue = $displayValue;
+                $inputType = 'text';
+
+            } elseif (is_array($defaultValue)) {
+                $displayValue = implode(',', $currValue);
+                $inputValue = $displayValue;
+                $displayDefault = implode(',', $defaultValue);
+                $inputType = 'comment';
+            }
+
+            $comment = $rec[1];
+
+            $id = translateToIdentifier($key).$i++;
+
+            if ($inputType === 'comment') {
+                $inputField = "<span id='$id' style='width: 5em;display: inline-block;'></span>";
+            } else {
+                $inputField = "<input id='$id' name='$key' type='$inputType' value='$inputValue'$checked />";
+            }
+            $out .= "<div class='lzy-config-elem'> $inputField <label for='$id'$diff>$key</label>  &nbsp;&nbsp;&nbsp;($displayDefault)<div class='lzy-config-comment'>$comment</div></div>\n";
+        }
+
+        $out .= "    <input class='lzy-button' type='submit' value='{{ lzy-config-save }}'>";
+        $out .= "  </form>\n";
+
+        return $out;
+    } // renderConfigOverlay
+
+
+
+
+    private function renderRawConfigOverlay()
+    {
+        $out = '';
+        $lastElem = '';
+        $configItems = $this->getConfigInfo();
+        ksort($configItems);
+        foreach ($configItems as $item => $rec) {
+            if (is_bool($rec[0])) {
+                $val = $rec[0]? 'false':'true';
+
+            } elseif (is_array($rec[0])) {
+                $str = str_pad("$item:", 45, ' ') . "# {$rec[1]}\n";
+                foreach ($rec[0] as $k => $v) {
+                    $str .= "    '$k': false,\n";
+                }
+                $out .= $str;
+                continue;
+
+            } else {
+                $val = $rec[0];
+            }
+
+            $str = str_pad("$item: $val", 45, ' ');
+            if (substr($item, 0, 2) !== $lastElem) {
+                $str = "\n$str";
+                $lastElem = substr($item, 0, 2);
+            }
+            $out .= "$str# {$rec[1]}\n";
+        }
+        $this->lzy->page->addJq("$('#raw-config-text').selText();");
+        return "<pre id='raw-config-text'>$out\n\n</pre>";
+    }
+
+
+
 
 } // Defaults

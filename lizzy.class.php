@@ -112,7 +112,9 @@ class Lizzy
 
         $this->checkInstallation();
 
-        runServiceTasks($this);
+        $srv = new ServiceTasks($this);
+        $srv->runServiceTasks();
+
 		$this->init();
 		$this->setupErrorHandling();
 
@@ -133,7 +135,7 @@ class Lizzy
 // - move runServiceTasks(2) up before handleEditSaveRequests(), initializeSiteInfrastructure()
 // - poss. 3rd level at current position, i.e. after initializeSiteInfrastructure()
 // - option for serviceTask to define on which level it should be executed
-        runServiceTasks($this, 2);
+        $srv->runServiceTasks(2);
     } // __construct
 
 
@@ -153,7 +155,7 @@ private function loadRequired()
     require_once SYSTEM_PATH.'uadetector.class.php';
     require_once SYSTEM_PATH.'user-account-form.class.php';
     require_once SYSTEM_PATH.'ticketing.class.php';
-    require_once SYSTEM_PATH.'service-tasks.php';
+    require_once SYSTEM_PATH.'service-tasks.class.php';
 } // loadRequired
 
 
@@ -286,7 +288,7 @@ private function loadRequired()
         $this->setTransvars2();
 
         if ($accessGranted) {
-            $this->runUserInitCode();
+            $this->runUserRenderingStartCode();
         }
         $this->loadTemplate();
 
@@ -711,8 +713,7 @@ private function loadRequired()
     {
         global $globalParams;
 
-        $this->config = new Defaults($this->configFile);
-
+        $this->config = new Defaults( $this );
         $this->config->pathToRoot = $this->pathToRoot;
 
         $globalParams['path_logPath'] = $this->config->path_logPath;
@@ -1015,16 +1016,23 @@ EOT;
 
 
 	//....................................................
-	private function runUserInitCode()
+	private function runUserRenderingStartCode()
 	{
-	    if (!$this->config->custom_permitUserInitCode) {   // user-init-code enabled?
-	        return;
+        $codeFile = $this->config->admin_serviceTasks['onPageRenderingStart'];
+        if (!$codeFile) {
+            return;
         }
 
-		if (file_exists($this->config->userInitCodeFile)) {
-            require_once $this->config->userInitCodeFile;
-		}
-	} // runUserInitCode
+        $codeFile = ltrim(base_name($codeFile, true), '-');
+        $codeFile = fileExt($codeFile, true);
+        $codeFile = USER_CODE_PATH . "-$codeFile.php";
+        if ($codeFile && file_exists($codeFile)) {
+            require_once $codeFile;
+            if (function_exists('renderingStartOperation')) {
+                $html = renderingStartOperation( $this );
+            }
+        }
+	} // runUserRenderingStartCode
 	
 
 
@@ -1032,13 +1040,18 @@ EOT;
 	//....................................................
     private function runUserFinalCode( &$html )
     {
-        if (!$this->config->custom_permitUserInitCode) {
+        $codeFile = $this->config->admin_serviceTasks['onPageRendered'];
+        if (!$codeFile) {
             return;
         }
-        if (file_exists($this->config->userFinalCodeFile)) {
-            require_once $this->config->userFinalCodeFile;
-            if (function_exists('finalCode')) {
-                $html = finalCode( $this, $html );
+
+        $codeFile = ltrim(base_name($codeFile, true), '-');
+        $codeFile = fileExt($codeFile, true);
+        $codeFile = USER_CODE_PATH . "-$codeFile.php";
+        if ($codeFile && file_exists($codeFile)) {
+            require_once $codeFile;
+            if (function_exists('finalRenderingOperation')) {
+                $html = finalRenderingOperation( $html, $this );
             }
         }
     } // runUserFinalCode
@@ -1358,8 +1371,9 @@ EOT;
                 setStaticVariable('nc', true);
             }
 
-            if (getUrlArg('purge')) {                        // empty recycleBins and caches
-                purgeAll( $this );
+            if (getUrlArg('purge-all')) {                        // empty recycleBins and caches
+                $srv = new ServiceTasks( $this );
+                $srv->purgeAll( $this );
             }
 
             if (getUrlArg('lang', true) === 'none') {                  // force language
@@ -1462,7 +1476,8 @@ EOT;
 	private function handleUrlArgs2()
 	{
         if (getUrlArg('reset')) {			            // reset (cache)
-            resetLizzy( $this ); // reloads, never returns
+            $srv = new ServiceTasks( $this );
+            $srv->resetLizzy(); // reloads, never returns
         }
 
         // user wants to login in and is not already logged in:
@@ -1530,12 +1545,12 @@ EOT;
             }
         }
 
-        if (getUrlArg('access-link')) {                                    // reorg-css
+        if (getUrlArg('access-link')) {                                    // access-link
             $user = getUrlArg('access-link', true);
             $this->createAccessLink($user);
         }
 
-        if ($filename = getUrlArg('reorg-css', true)) {                                    // reorg-css
+        if ($filename = getUrlArg('reorg-css', true)) {         // reorg-css
             $this->reorganizeCss($filename);
         }
 
@@ -1644,7 +1659,7 @@ EOT;
                 return;
             }
 
-            $str = $this->renderConfigOverlay();
+            $str = $this->config->renderConfigOverlay();
             $this->page->addOverlay(['text' => $str, 'closable' => 'reload']); // close shall reload page to remove url-arg
         }
 
@@ -1798,119 +1813,6 @@ EOT;
         return $lang;
     } // selectLanguage
 
-
-
-	//....................................................
-	private function renderConfigOverlay()
-	{
-	    $configCmd = getUrlArg('config', true);
-	    if ($configCmd === 'raw') {
-	        return $this->renderRawConfigOverlay();
-        }
-        $level1Class = $level2Class = $level3Class = '';
-        $level = max(1, min(3, intval($configCmd)));
-        switch ($level) {
-            case 1: $level1Class = ' class="lzy-config-viewer-hl"'; break;
-            case 2: $level2Class = ' class="lzy-config-viewer-hl"'; break;
-            case 3: $level3Class = ' class="lzy-config-viewer-hl"'; break;
-        }
-        $url = $GLOBALS["globalParams"]["pageUrl"];
-
-        if (isset($_POST) && $_POST) {
-            $this->config->updateConfigValues( $_POST, $this->configFile );
-        }
-
-
-        $configItems = $this->config->getConfigInfo();
-        ksort($configItems);
-        $out = "<h1>Lizzy Config-Items and their Purpose:</h1>\n";
-        $out .= "<p>Settings stored in file <code>{$this->configFile}</code>.<br/>\n";
-        $out .= "&rarr; Default values in (), values deviating from defaults are marked <span class='lzy-config-viewer-hl'>red</span>)</p>\n";
-        $out .= "<p class='lzy-config-select'>Select: <a href='$url?config=1'$level1Class>Essential</a> ".
-            "| <a href='$url?config=2'$level2Class>Common</a> | <a href='$url?config=3'$level3Class>All</a> ".
-            "| <a href='$url?config=raw'$level3Class>raw</a></p>\n";
-        $out .= "  <form class='lzy-config-form' action='$url?config=$level' method='post'>\n";
-        $out .= "    <input class='lzy-button' type='submit' value='{{ lzy-config-save }}'>";
-
-        $i = 1;
-        foreach ($configItems as $key => $rec) {
-            if ($rec[2] > $level) {     // skip elements with lower priority than requested
-                continue;
-            }
-            $currValue = $this->config->$key;
-            $displayValue = $currValue;
-            $defaultValue = $this->config->getDefaultValue($key);
-            $displayDefault = $defaultValue;
-            $inputValue = $defaultValue;
-
-            $diff = '';
-            if ($currValue !== $defaultValue) {
-                $diff = ' class="lzy-config-viewer-hl"';
-            }
-            $checked = '';
-
-            if (is_bool($defaultValue)) {
-                $displayValue = $currValue ? 'true' : 'false';
-                $inputValue = 'true';
-                $displayDefault = $defaultValue ? 'true' : 'false';
-                $inputType = 'checkbox';
-                $checked = ($currValue) ? " checked" : '';
-
-            } elseif (is_int($defaultValue)) {
-                $inputValue = $displayValue;
-                $inputType = 'integer';
-
-            } elseif (is_string($defaultValue)) {
-                $inputValue = $displayValue;
-                $inputType = 'text';
-
-            } elseif (is_array($defaultValue)) {
-                $displayValue = implode(',', $currValue);
-                $inputValue = $displayValue;
-                $displayDefault = implode(',', $defaultValue);
-                $inputType = 'text';
-            }
-
-            $comment = $rec[1];
-
-            $id = translateToIdentifier($key).$i++;
-
-            $inputField = "<input id='$id' name='$key' type='$inputType' value='$inputValue'$checked />";
-            $out .= "<div class='lzy-config-elem'> $inputField <label for='$id'$diff>$key</label>  &nbsp;&nbsp;&nbsp;($displayDefault)<div class='lzy-config-comment'>$comment</div></div>\n";
-        }
-
-        $out .= "    <input class='lzy-button' type='submit' value='{{ lzy-config-save }}'>";
-        $out .= "  </form>\n";
-
-        return $out;
-    } // renderConfigOverlay
-
-
-
-
-    private function renderRawConfigOverlay()
-    {
-        $out = '';
-        $lastElem = '';
-        $configItems = $this->config->getConfigInfo();
-        ksort($configItems);
-        foreach ($configItems as $item => $rec) {
-            if (is_bool($rec[0])) {
-                $val = $rec[0]? 'false':'true';
-            } else {
-                $val = $rec[0];
-            }
-
-            $str = str_pad("$item: $val", 45, ' ');
-            if (substr($item, 0, 2) !== $lastElem) {
-                $str = "\n$str";
-                $lastElem = substr($item, 0, 2);
-            }
-            $out .= "$str# {$rec[1]}\n";
-        }
-        $this->page->addJq("$('#raw-config-text').selText();");
-        return "<pre id='raw-config-text'>$out\n\n</pre>";
-    }
 
 
 
@@ -2211,7 +2113,7 @@ EOT;
     {
         $overlay = <<<EOT
 <h1>Lizzy Help</h1>
-<pre>
+<pre class="pre">
 Available URL-commands:
 
 <a href='?help'>?help</a>		    this message
@@ -2222,19 +2124,19 @@ Available URL-commands:
 <a href='?edit'>?edit</a>		    start editing mode *)
 <a href='?iframe'>?iframe</a>		    show code for embedding as iframe
 <a href='?info'>?info</a>		    list debug-info
-<a href='?lang=xy'>?lang=</a>	            switch to given language (e.g. '?lang=en')  *)
+<a href='?lang=xy'>?lang=</a>	        switch to given language (e.g. '?lang=en')  *)
 <a href='?list'>?list</a>		    list <samp>transvars</samp> and <samp>macros()</samp>
 <a href='?log'>?log</a>		    displays log files in overlay
 <a href='?login'>?login</a>		    login
 <a href='?logout'>?logout</a>		    logout
 <a href='?mobile'>?mobile</a>,<a href='?touch'>?touch</a>,<a href='?notouch'>?notouch</a>	emulate modes  *)
-<a href='?nc'>?nc</a>		    supress caching (?nc=false to enable caching again)  *)
+<a href='?nc'>?nc</a>		        supress caching (?nc=false to enable caching again)  *)
 <a href='?print'>?print</a>		    starts printing mode and launches the printing dialog
-<a href='?print-preview'>?print-preview</a>      presents the page in print-view mode    
-<a href='?purge'>?purge</a>		    empty and delete all recycle bins (i.e. copies of modified pages)
-<a href='?reorg-css='>?reorg-css={file(s)}</a>take CSS file(s) and convert to SCSS (e.g. "?reorg-css=tmp/*.css")
-<a href='?reset'>?reset</a>		    clear cache, session-variables and error-log
+<a href='?print-preview'>?print-preview</a>  presents the page in print-view mode    
 <a href='?timer'>?timer</a>		    switch timer on or off  *)
+
+<a href='?reset'>?reset</a>		    resets all state-defining information: caches, tickets, session-vars.
+<a href='?purge-all'>?purge-all</a>		purges all files generated by Lizzy, so they will be recreated from scratch
 
 *) these options are persistent, they keep their value for further page requests. 
 Unset individually as ?xy=false or globally as ?reset
@@ -2242,6 +2144,7 @@ Unset individually as ?xy=false or globally as ?reset
 </pre>
 
 EOT;
+        //<a href='?reorg-css='>?reorg-css={file(s)}</a>take CSS file(s) and convert to SCSS (e.g. "?reorg-css=tmp/*.css")
         // TODO: printall -> add above
         $this->page->addOverlay(['text' => $overlay, 'closable' => 'reload']);
     }

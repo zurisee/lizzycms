@@ -51,8 +51,7 @@ class SiteStructure
             return;
         }
         $this->site_enableCaching = $this->config->site_enableCaching;
-        $this->cachePath = $this->config->cachePath; //'.#cache/';
-        $this->cacheFile = $this->cachePath . '_siteStructure.dat';
+        $this->cacheFile = CACHE_PATH . '_siteStructure.dat';
 
 
 		if (!$this->readCache()) {
@@ -641,9 +640,6 @@ class SiteStructure
 	private function writeCache()
 	{
 		if ($this->site_enableCaching) {
-			if (!file_exists($this->cachePath)) {
-				mkdir($this->cachePath, MKDIR_MASK2);
-			}
 			$cache = serialize($this);
 			file_put_contents($this->cacheFile, $cache);
 		}
@@ -678,13 +674,6 @@ class SiteStructure
 
 
 
-
-    public function clearCache()
-    {
-        if (isset($this->cacheFile) && file_exists($this->cacheFile)) {
-            unlink($this->cacheFile);
-        }
-    } // clearCache
 
 	public function getNumberOfPages()
 	{
