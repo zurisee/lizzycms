@@ -159,12 +159,7 @@ class ServiceTasks
 
         $this->checkInstallation2();   // check pages/ -> writable if editing is enabled
 
-        if (isset( $this->config->admin_serviceTasks['daily'] )) {
-            $dailyTask = $this->config->admin_serviceTasks['daily'];
-            if ($dailyTask) {
-                $this->executeServiceTask($dailyTask);
-            }
-        }
+        $this->runDailyTask();
 
         // reset housekeeping flag:
         touch(HOUSEKEEPING_FILE);
@@ -508,6 +503,15 @@ class ServiceTasks
 
 
 
+    private function runDailyTask()
+    {
+        if (isset($this->config->admin_serviceTasks['daily'])) {
+            $dailyTask = $this->config->admin_serviceTasks['daily'];
+            if ($dailyTask) {
+                $this->executeServiceTask($dailyTask);
+            }
+        }
+    } // runDailyTask
 
 
 } // class ServiceTasks
