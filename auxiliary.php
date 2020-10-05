@@ -785,6 +785,9 @@ function fileExt($file0, $reverse = false)
     $file = preg_replace(['|^\w{1,6}://|', '/[#?&:].*/'], '', $file);
     if ($reverse) {
         $path = dirname($file0).'/';
+        if ($path === './') {
+            $path = '';
+        }
         $file = pathinfo($file, PATHINFO_FILENAME);
         return $path.$file;
 
