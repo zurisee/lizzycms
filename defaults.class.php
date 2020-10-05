@@ -251,7 +251,7 @@ private $userConfigurableSettingsAndDefaults      = [
 
                 } elseif (is_array($defaultValue)) {
                     if (is_array($val)) {
-                        $this->$key = $val;
+                        $this->$key = array_merge($defaultValue, $val);
                     } else {
                         $this->$key = explode(',', str_replace(' ', '', (string)$val));
                     }
