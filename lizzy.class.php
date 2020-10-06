@@ -1318,9 +1318,9 @@ EOT;
 	{
         $resizer = new ImageResizer($this->config->feature_ImgDefaultMaxDim);
         $modified = $resizer->provideImages($html);
-        if ($modified) {
-            checkInstallation1();
-        }
+//        if ($modified) {
+//            checkInstallation1();
+//        }
     } // prepareImages
 
 
