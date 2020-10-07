@@ -883,6 +883,7 @@ nav li {
 /* === Links =========================================== */
 .lzy-link {
 	position: relative;
+	white-space: nowrap;
 	padding-left: 1.4em;
 }
 .lzy-link:before {
