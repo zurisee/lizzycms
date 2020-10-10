@@ -855,7 +855,8 @@ EOT;
             $target = explodeTrim(',|', "|$target||||||||||||||||");
         }
 
-        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-radio-label'><div class='lzy-legend'><legend>{$label}</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
+        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-radio-label'><legend class='lzy-legend'>{$label}</legend>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
+//        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-radio-label'><div class='lzy-legend'><legend>{$label}</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
         foreach($rec->optionLabels as $i => $optionLabel) {
             if ($i === 0) { continue; } // skip group name
             $preselectedValue = false;
@@ -903,7 +904,8 @@ EOT;
             $target = explodeTrim(',|', "|$target||||||||||||||||");
         }
 
-        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-checkbox-label'><div class='lzy-legend'><legend>$label</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
+        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-checkbox-label'><legend class='lzy-legend'>$label</legend>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
+//        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-checkbox-label'><div class='lzy-legend'><legend>$label</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
 
         foreach($rec->optionLabels as $i => $optionLabel) {
             if ($i === 0) { continue; } // skip group name
