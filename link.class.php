@@ -351,7 +351,9 @@ class CreateLink
             $hiddenText = '';
         }
 
-        $this->href = resolvePath($this->href, true, true, false, false);
+        // download link may point to a resource type object, so let resolvePath() auto-determine type:
+        $this->href = resolvePath($this->href, true, true, false);
+//        $this->href = resolvePath($this->href, true, true, false, false); // was fixed to type 'page access' (omitting pages/)
         $this->href .= $hash;
         return $hiddenText;
     } // renderRegularLink
