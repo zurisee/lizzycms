@@ -132,9 +132,18 @@ class ServiceTasks
              }
 
              // service task triggered by configurable request GET arg:
-             if (isset($serviceTasksDef['onRequestGetArg']) && isset($_GET[ $serviceTasksDef['onRequestGetArg'] ])) {
-                 $urlArg = $_GET[ $serviceTasksDef['onRequestGetArg'] ];
-                 $this->executeServiceTask($urlArg);
+             if (isset($serviceTasksDef['onRequestGetArg']) ) {
+                 $urlArg = $serviceTasksDef['onRequestGetArg'];
+                 if (strpos($urlArg, ':') !== false) {
+                     list($urlArg, $functionToCall) = explodeTrim(':', $urlArg);
+                 } else {
+                     $functionToCall = 'executeService';
+                 }
+
+                 if (isset($_GET[ $urlArg ]) && $_GET[ $urlArg ]) {
+                     $file = $_GET[$urlArg];
+                     $this->executeServiceTask($file, $functionToCall);
+                 }
              }
          }
      } // runPgRequestTriggeredServiceTask
