@@ -16,6 +16,7 @@ class ServiceTasks
     {
         $this->lzy = $lzy;
         $this->page = $lzy->page;
+        $this->auth = null;
         $this->config = null;
     }
 
@@ -29,7 +30,11 @@ class ServiceTasks
 
         } else {
             // 2nd run: Lizzy fully set up:
+            $this->auth = $this->lzy->auth;
             $this->config = $this->lzy->config;
+
+            $this->handleEditSaveRequests();
+            $this->restoreEdition();  // if user chose to activate a previous edition of a page
 
             $this->runScheduledTasks();
 
@@ -75,6 +80,7 @@ class ServiceTasks
     // === private methods =============================================
     private function runEarlyServiceTasks()
     {
+        // these are tasks that don't rely on the Lizzy infrastructure
         $this->runScheduledTaskAfterInit = false;
         if (isset($_GET['scheduled'])) {
             $res = $this->executeScheduledTasks();
@@ -84,25 +90,7 @@ class ServiceTasks
                 $this->runScheduledTaskAfterInit = true;
             }
         }
-
-        // check housekeeping flag:
-        if (file_exists(HOUSEKEEPING_FILE)) {
-            $fileTime = intval(filemtime(HOUSEKEEPING_FILE) / 86400);
-            $today = intval(time() / 86400);
-            if (($fileTime) === $today) {    // update once per day
-                $this->housekeeping = false;
-                return;
-            }
-        }
-
-        // Beyond this point run only once per day upon first page request after midnight:
-        $this->clearCaches();
-
-        $this->checkInstallation1();   // check folder structure and writability
-
-        $this->housekeeping = true;
     } // runEarlyServiceTasks
-
 
 
 
@@ -153,7 +141,7 @@ class ServiceTasks
     private function runDailyHousekeepingTask()
     {
         // Run once per day upon first page request after midnight:
-        if (!$this->housekeeping) {
+        if (!$this->checkTimeForDailyHousekeeping()) {
             return;
         }
         writeLog("Daily housekeeping run.");
@@ -172,9 +160,36 @@ class ServiceTasks
 
         // reset housekeeping flag:
         touch(HOUSEKEEPING_FILE);
-        chmod(HOUSEKEEPING_FILE, 0770);
     } // runDailyHousekeepingTask
 
+
+
+
+    private function checkTimeForDailyHousekeeping()
+    {
+        // check housekeeping flag:
+        $intervall = $this->config->site_cacheResetIntervall * 3600;
+        if (file_exists(HOUSEKEEPING_FILE)) {
+            $fileTime = intval(filemtime(HOUSEKEEPING_FILE) / $intervall);
+            $today = intval(time() / $intervall);
+            if ($fileTime === $today) {    // update once per day
+                return false;
+            }
+        }
+
+        // Beyond this point runs only once per day upon first page request after midnight:
+        //  Note: $this->clearCaches() will have been executed already by checkAndRenderCachePage()
+        //  so no need to do it again here.
+
+        $this->checkInstallation1();   // check folder structure and writability
+
+        // initialise housekeeping flag:
+        preparePath(HOUSEKEEPING_FILE);
+        file_put_contents(HOUSEKEEPING_FILE, $intervall);
+        chmod(HOUSEKEEPING_FILE, 0770);
+
+        return true;
+    } // checkTimeForDailyHousekeeping
 
 
 
@@ -266,10 +281,6 @@ class ServiceTasks
         $codeFile = fileExt($codeFile, true);
         $taskFile = USER_CODE_PATH . "-$codeFile.php";
         if (file_exists( $taskFile )) {
-    //        if (!$lzy->config->custom_permitServiceCode) {
-    //        if (!$lzy->config->admin_enableServiceTasks) {
-    //            die("Attempt to run service task '$taskFile', but is feature not enabled.<br>To activate, set config -> admin_enableServiceTasks:true");
-    //        }
             require_once $taskFile;
 
             if ($functionToCall && function_exists($functionToCall)) {
@@ -281,6 +292,19 @@ class ServiceTasks
         }
         return false;
     } // executeServiceTask
+
+
+
+
+    private function runDailyTask()
+    {
+        if (isset($this->config->admin_serviceTasks['daily'])) {
+            $dailyTask = $this->config->admin_serviceTasks['daily'];
+            if ($dailyTask) {
+                $this->executeServiceTask($dailyTask);
+            }
+        }
+    } // runDailyTask
 
 
 
@@ -385,6 +409,120 @@ class ServiceTasks
         $mess->send($args['to'], $args['msg'], $subject);
         return true;
     } // sendSimpleNotification
+
+
+
+
+
+    // === Request Handlers for Page Edit functionality:
+    private function handleEditSaveRequests()
+    {
+        $cliarg = getCliArg('lzy-compile');
+        if ($cliarg) {
+            $this->savePageFile();
+            $this->renderMD();  // exits
+
+        }
+
+        $cliarg = getCliArg('lzy-save');
+        if ($cliarg) {
+            $this->saveSitemapFile($this->config->site_sitemapFile); // exits
+        }
+    } // handleEditSaveRequests
+
+
+
+    //....................................................
+    private function savePageFile()
+    {
+        $mdStr = get_post_data('lzy_md', true);
+        $mdStr = urldecode($mdStr);
+        $doSave = getUrlArg('lzy-save');
+        if ($doSave && ($filename = get_post_data('lzy_filename'))) {
+            $rec = $this->auth->getLoggedInUser(true);
+            $user = $rec['username'];
+            $group = $rec['groups'];
+            $permitted = $this->auth->checkGroupMembership('editors');
+            if ($permitted) {
+                if (preg_match('|^'.PAGES_PATH.'(.*)\.md$|', $filename)) {
+                    require_once SYSTEM_PATH . 'page-source.class.php';
+                    PageSource::storeFile($filename, $mdStr);
+                    writeLog("User '$user' ($group) saved data to file $filename.");
+
+                } else {
+                    writeLog("User '$user' ($group) tried to save to illegal file name: '$filename'.");
+                    fatalError("illegal file name: '$filename'", 'File: ' . __FILE__ . ' Line: ' . __LINE__);
+                }
+            } else {
+                writeLog("User '$user' ($group) had no permission to modify file '$filename' on the server.");
+                die("Sorry, you have no permission to modify files on the server.");
+            }
+        }
+    } // savePageFile
+
+
+
+    //....................................................
+    private function renderMD()
+    {
+        $mdStr = get_post_data('lzy_md', true);
+        $mdStr = urldecode($mdStr);
+
+        $md = new LizzyMarkdown();
+        $pg = new Page;
+        $mdStr = $this->lzy->extractFrontmatter($mdStr, $pg);
+        $md->compile($mdStr, $pg);
+
+        $out = $pg->get('content');
+        if (getUrlArg('html')) {
+            $out = "<pre>\n".htmlentities($out)."\n</pre>\n";
+        }
+        exit($out);
+    } // renderMD
+
+
+
+    //....................................................
+    private function restoreEdition()
+    {
+        $admission = $this->auth->checkGroupMembership('editors');
+        if (!$admission) {
+            return;
+        }
+
+        $edSave = getUrlArg('ed-save', true);
+        if ($edSave !== null) {
+            require_once SYSTEM_PATH . 'page-source.class.php';
+            PageSource::saveEdition();  // if user chose to activate a previous edition of a page
+
+            // need to compile the restored page:
+            $this->scss = new SCssCompiler($this);
+            $this->scss->compile( $this->config->debug_forceBrowserCacheUpdate );
+        }
+    } // restoreEdition
+
+
+
+
+    //....................................................
+    private function saveSitemapFile($filename)
+    {
+        $str = get_post_data('lzy_sitemap', true);
+        $permitted = $this->auth->checkGroupMembership('editors');
+        $rec = $this->auth->getLoggedInUser(true);
+        $user = $rec['username'];
+        $group = $rec['groups'];
+        if ($permitted) {
+            require_once SYSTEM_PATH.'page-source.class.php';
+            PageSource::storeFile($filename, $str, SYSTEM_RECYCLE_BIN_PATH);
+            writeLog("User '$user' ($group) saved data to file $filename.");
+
+        } else {
+            writeLog("User '$user' ($group) has no permission to modify files on the server.");
+            fatalError("Sorry, you have no permission to modify files on the server.", 'File: '.__FILE__.' Line: '.__LINE__);
+        }
+    } // saveSitemapFile
+
 
 
 
@@ -509,20 +647,6 @@ class ServiceTasks
     {
         rrmdir(DEFAULT_TICKETS_PATH);
     } // clearLogs
-
-
-
-    private function runDailyTask()
-    {
-        if (isset($this->config->admin_serviceTasks['daily'])) {
-            $dailyTask = $this->config->admin_serviceTasks['daily'];
-            if ($dailyTask) {
-                $this->executeServiceTask($dailyTask);
-            }
-        }
-    } // runDailyTask
-
-
 } // class ServiceTasks
 
 
