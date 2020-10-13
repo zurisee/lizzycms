@@ -856,7 +856,6 @@ EOT;
         }
 
         $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-radio-label'><legend class='lzy-legend'>{$label}</legend>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
-//        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-radio-label'><div class='lzy-legend'><legend>{$label}</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
         foreach($rec->optionLabels as $i => $optionLabel) {
             if ($i === 0) { continue; } // skip group name
             $preselectedValue = false;
@@ -905,7 +904,6 @@ EOT;
         }
 
         $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-checkbox-label'><legend class='lzy-legend'>$label</legend>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
-//        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-checkbox-label'><div class='lzy-legend'><legend>$label</legend></div>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
 
         foreach($rec->optionLabels as $i => $optionLabel) {
             if ($i === 0) { continue; } // skip group name
@@ -1129,7 +1127,7 @@ EOT;
 
         $rec = [
             'uploadPath' => $targetFilePath,
-            'pagePath' => $GLOBALS['globalParams']['pagePath'],
+            'pagePath' => $GLOBALS['globalParams']['pageFolder'], //??? -> rename subsequently
             'pathToPage' => $GLOBALS['globalParams']['pathToPage'],
             'appRootUrl' => $GLOBALS['globalParams']['absAppRootUrl'],
             'user'      => $_SESSION["lizzy"]["user"],

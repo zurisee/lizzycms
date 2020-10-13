@@ -51,7 +51,7 @@ class ImageTag
 
         $genericAttibs = $this->imgTagAttributes ? ' '.$this->imgTagAttributes : '';
 
-        $src = $globalParams["appRoot"].$globalParams["pathToPage"].'_/'.base_name($this->src);
+        $src = $globalParams["appRoot"].$globalParams["pageFolder"].'_/'.base_name($this->src);
 
 
         // basic img code:
