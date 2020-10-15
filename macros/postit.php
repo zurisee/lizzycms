@@ -39,13 +39,16 @@ $this->addMacro($macroName, function () {
     $top = $this->getArg($macroName, 'top', 'Where to place measured from top ', false);
     $bottom = $this->getArg($macroName, 'bottom', 'Where to place measured from bottom ', false);
     $angle = $this->getArg($macroName, 'angle', 'Angle by which the Post-it is tilted', '');
-    $color = $this->getArg($macroName, 'color', 'Background-color for Post-it', '');
+    $bgColor = $this->getArg($macroName, 'color', 'Background-color for Post-it', '');
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if ($text === 'help') {
         return '';
     }
 
+    if ($text) {
+        $text = str_replace(['&#34;', '&#39;'], ['"',"'"], $text);
+    }
     if ($contentFrom) {
         $text .= "<div id='lzy-postit-wrapper$inx'></div>\n";
         $jq = <<<EOT
@@ -56,7 +59,6 @@ EOT;
     }
 
     $style = '';
-	$style_content = '';
 	if ($top) {
 		if (preg_match('/^[-\d]*$/', $top)) {
 			$top .= 'px';
@@ -110,9 +112,9 @@ EOT;
 
 
 	}
-	if ($color) {
-		$borderCol = darken($color, 3);
-		$style_content = " style='background: $color;border-left: 1px solid $borderCol;border-bottom: 1px solid $borderCol;'";
+	if ($bgColor) {
+		$borderCol = darken($bgColor, 3);
+		$styleWrapper = " style='background: $bgColor;border-left: 1px solid $borderCol;border-bottom: 1px solid $borderCol;'";
 	}
 	if ($style) {
 		$style = " style='$style'";
@@ -121,9 +123,9 @@ EOT;
 
 <div id='post-it$inx' class='post-it'$style>
 	<div class='post-it-bg'></div>
-	<div class='post-it-content'$style_content>
-		<a href='#' class='close_icon' title='Schliessen'><img src='{$sys}rsc/close32.png' alt=''></a>
-$text
+	<div class='post-it-wrapper'$styleWrapper>
+		<a href='#' class='close_icon' title='Close'><img src='{$sys}rsc/close32.png' alt=''></a>
+        <div class='post-it-content'>$text</div>
 	</div>
 </div> <!-- /post-it -->
 

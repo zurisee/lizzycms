@@ -508,7 +508,7 @@ function getFile($pat, $removeComments = false)
     global $globalParams;
 	$pat = str_replace('~/', '', $pat);
 	if (strpos($pat, '~page/') === 0) {
-	    $pat = str_replace('~page/', $globalParams['pagePath'], $pat);
+	    $pat = str_replace('~page/', $globalParams['pageFolder'], $pat);
     }
     if (file_exists($pat)) {
         $file = file_get_contents($pat);
@@ -554,7 +554,7 @@ function fileExists($file)
     global $globalParams;
     $file = str_replace('~/', '', $file);
     if (strpos($file, '~page/') === 0) {
-        $file = str_replace('~page/', $globalParams['pagePath'], $file);
+        $file = str_replace('~page/', $globalParams['pageFolder'], $file);
     }
     return file_exists($file);
 
@@ -967,6 +967,7 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
 	$host  = isset($globalParams['host']) ? $globalParams['host'] : '';
 	$appRoot  = isset($globalParams['appRoot']) ? $globalParams['appRoot'] : '';
 	$pagePath  = isset($globalParams['pagePath']) ? $globalParams['pagePath'] : '';
+	$pageFolder  = isset($globalParams['pageFolder']) ? $globalParams['pageFolder'] : '';
 	$pathToPage  = isset($globalParams['pathToPage']) ? $globalParams['pathToPage'] : '';
 	$absAppRoot = isset($globalParams['absAppRoot']) ? $globalParams['absAppRoot'] : '';
 
@@ -983,13 +984,13 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
                     }
                     break;
                 case '~page/':
-                    if ($isResource) {
+                    if ($isResource) { // HTTP resource file access -> include 'pages/'
                         if ($absolutePath) {
                             $path = "$host$appRoot$pathToPage$path";
                         } else {
                             $path = "$appRoot$pathToPage$path";
                         }
-                    } else {
+                    } else { // HTTP page access -> exclude 'pages/'
                         if ($absolutePath) {
                             $path = "$host$appRoot$pagePath$path";
                         } else {
@@ -1032,9 +1033,9 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
                     break;
                 case '~page/':    // case B
                     if ($absolutePath) {
-                        $path = "$absAppRoot$pathToPage$path";
+                        $path = "$absAppRoot$pageFolder$path";
                     } else {
-                        $path = "$pathToPage$path";
+                        $path = "$pageFolder$path";
                     }
                     break;
                 case '~data/':

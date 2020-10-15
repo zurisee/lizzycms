@@ -97,6 +97,8 @@ private $userConfigurableSettingsAndDefaults      = [
     'site_supportedLanguages'           => ['en', 'Defines which languages will be supported: comma-separated list of language-codes. E.g. "en, de, fr" (first elem => default lang)', 1 ],
     'site_localeCodes'                  => ['en_GB,de_DE,fr_FR,it_IT', 'Defines prefered locale codes for supported languages. If not found, Lizzy assumes "xy_XY".', 3 ],
     'site_timeZone'                     => ['auto', 'Name of timezone, e.g. "UTC" or "CET". If auto, attempts to set it automatically.', 2 ],
+    'site_cacheResetIntervall'          => [24, '(number of hours) Defines the interval after which the cache shall be reset. When that happens,'.
+                                            'page requests will build up the cache again.', 3 ],
 ];
 
 

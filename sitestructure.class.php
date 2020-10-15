@@ -27,12 +27,16 @@ class SiteStructure
         'noContent' => false,
         'hide!' => false,
         'restricted!' => false,
-        'actualFolder' => '',
-        'alias' => false,
+        'actualFolder' => false,
+        'urlpath' => false,
         'hasChildren' => false,
         'parentInx' => NULL,
     ];
-
+    private $allowedArgs =
+        ',urlpath,name,folder,showthis,hide!,restricted,template,goto,'.
+        'hide,hideFrom,hideTill,showFrom,showTill,omitFrom,omitTill,availableFrom,availableTill,';
+    private $internalArgs =
+        ',level,isCurrPage,listInx,urlExt,active,noContent,actualFolder,hasChildren,parentInx,';
 
     //....................................................
     public function __construct($lzy, $currPage = false)
@@ -108,12 +112,20 @@ class SiteStructure
     //....................................................
     public function getPagePath()
     {
-        $pagePath = $this->currPageRec['actualFolder'];
-        if (!$pagePath) {
-            $pagePath = $this->currPageRec['folder'];
-        }
+        $pagePath = $this->currPageRec['folder'];
         return $pagePath;
     } // getPagePath
+
+
+    //....................................................
+    public function getPageFolder()
+    {
+        if ($this->currPageRec['actualFolder'] !== false) {
+            return $this->currPageRec['actualFolder'];
+        } else {
+            return $this->currPageRec['folder'];
+        }
+    } // getPageFolder
 
 
     //....................................................
@@ -187,10 +199,25 @@ class SiteStructure
                         if ($key === 'folder') {
                             $key = 'specified_folder'; // explicit folder -> later override computed folder
                             $value = fixPath( str_replace(['~/', '~page/'], '', $value) );
-                        } elseif (stripos(',showThis,alias,goto,', ",$key,") !== false) {
+
+                        } elseif (stripos(',showThis,urlPath,goto,', ",$key,") !== false) {
+                            // treat patterns for app-root: '~/' and '/' -> just remove, always relative to app-root
+                            //  (also take care of nonsensical pattern '~page/', treat the same)
                             $value = fixPath( str_replace(['~/', '~page/'], '', $value) );
+                            if (@$value[0] === '/') {
+                                $value = substr($value, 1);
+                            }
                         }
-                        $rec[strtolower($key)] = $value;
+
+                        // check given key: a) against allowed keys, b) against internal keys
+                        if (stripos($this->allowedArgs, ",$key,") !== false) {
+                            $rec[ strtolower($key) ] = $value;
+
+                        } elseif (stripos($this->internalArgs, ",$key,") === false) {
+                            $rec[ $key ] = $value;  // -> custom key, just pass on as is
+                        } else {
+                            die("Error in sitemap: illegal argument '$key'.");
+                        }
                     }
                 }
             }
@@ -550,14 +577,14 @@ class SiteStructure
 
 
 	//....................................................
-	public function findSiteElem($str, $returnRec = false, $allowNameToSearch = false)
+	public function findSiteElem($requestedPath, $returnRec = false, $allowNameToSearch = false)
 	{
-	    if (($str === '/') || ($str === './')) {
-            $str = '';
-        } elseif ((strlen($str) > 0) && ($str[0] === '/')) {
-	        $str = substr($str, 1);
-        } elseif ((strlen($str) > 0) && (substr($str,0,2) === '~/')) {
-            $str = substr($str, 2);
+	    if (($requestedPath === '/') || ($requestedPath === './')) {
+            $requestedPath = '';
+        } elseif ((strlen($requestedPath) > 0) && ($requestedPath[0] === '/')) {
+	        $requestedPath = substr($requestedPath, 1);
+        } elseif ((strlen($requestedPath) > 0) && (substr($requestedPath,0,2) === '~/')) {
+            $requestedPath = substr($requestedPath, 2);
         }
         if (!$this->list) {
         	return false;
@@ -566,16 +593,17 @@ class SiteStructure
 		$list = $this->list;
 		$found = false;
 		$foundLevel = 0;
-		foreach($list as $key => $elem) {
-			if ($found || ($str === $elem['folder'])) {
-				$folder = PAGES_PATH.$elem['folder'];
-				if (isset($elem['showthis']) && $elem['showthis']) {	// no 'skip empty folder trick' in case of showthis
+		foreach($list as $key => $pageRec) {
+			if ($found || ($requestedPath === $pageRec['folder'])) {
+				$folder = PAGES_PATH.$pageRec['folder'];
+				if ($pageRec['showthis'] !== false) {	// no 'skip empty folder trick' in case of showthis
+//				if (isset($pageRec['showthis']) && $pageRec['showthis']) {	// no 'skip empty folder trick' in case of showthis
                     $found = true;
                     break;
 				}
 
 				// case: falling through empty page-folders and hitting the bottom:
-				if ($found && ($foundLevel >= $elem['level'])) {
+				if ($found && ($foundLevel >= $pageRec['level'])) {
 				    $key = max(0, $key - 1);
 				    break;
                 }
@@ -584,7 +612,7 @@ class SiteStructure
                     $found = true;
                     break;
                 }
-				$dir = getDir(PAGES_PATH.$elem['folder'].'*');	// check whether folder is empty, if so, move to the next non-empty one
+				$dir = getDir(PAGES_PATH.$pageRec['folder'].'*');	// check whether folder is empty, if so, move to the next non-empty one
 				$nFiles = sizeof(array_filter($dir, function($f) {
                     return ((substr($f, -3) === '.md') || (substr($f, -5) === '.link') || (substr($f, -5) === '.html'));
 				}));
@@ -594,20 +622,21 @@ class SiteStructure
 				} else {
 					$found = true;
                     $this->noContent = true;
-                    $foundLevel = $elem['level'];
+                    $foundLevel = $pageRec['level'];
 				}
 
-			} elseif (isset($elem['alias']) && ($str === $elem['alias'])) {
+			} elseif (($pageRec['urlpath'] !== false) && ($requestedPath === $pageRec['urlpath'])) {
                 $found = true;
                 break;
 
 			} elseif ($allowNameToSearch) {
-			    if (strtolower($elem['name']) === strtolower($str)) {
+			    if (strtolower($pageRec['name']) === strtolower($requestedPath)) {
                     $found = true;
                     break;
                 }
             }
 		}
+
 		if ($returnRec && $found) {
 		    return $list[$key];
         } elseif ($found) {

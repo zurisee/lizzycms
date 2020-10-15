@@ -43,8 +43,9 @@ class ContentEditor
 
         $this->page->addContent($this->html, true);
         $this->addEditorDock($filePath);
-        $this->page->addJQFiles('~sys/third-party/jqueryui/drag-resize/jquery-ui.min.js');
-        $this->page->addCssFiles('~sys/third-party/jqueryui/drag-resize/jquery-ui.min.css');
+//        $this->page->addJQFiles('~sys/third-party/jqueryui/drag-resize/jquery-ui.min.js');
+//        $this->page->addCssFiles('~sys/third-party/jqueryui/drag-resize/jquery-ui.min.css');
+        $this->page->addModules('JQUERYUI');
 
     } // injectEditor
 

@@ -126,15 +126,8 @@ class Lizzy
         }
         $this->keepAccessCode = false;
 
-        $this->handleEditSaveRequests();
-        $this->restoreEdition();  // if user chose to activate a previous edition of a page
-
         $this->trans->addVariable('debug_class', '');   // just for compatibility
-//Todo:
-// - optimize: init1 / init2 -> tasks unnecessary for serviceTasks
-// - move runServiceTasks(2) up before handleEditSaveRequests(), initializeSiteInfrastructure()
-// - poss. 3rd level at current position, i.e. after initializeSiteInfrastructure()
-// - option for serviceTask to define on which level it should be executed
+
         $srv->runServiceTasks(2);
     } // __construct
 
@@ -428,8 +421,6 @@ private function loadRequired()
         } elseif ($this->config->debug_forceBrowserCacheUpdate) {
             $forceUpdate = getVersionCode( true );
 
-        //        } elseif ($this->config->debug_autoForceBrowserCache) {
-        //            $forceUpdate = getVersionCode();
         } else {
             return;
         }
@@ -623,6 +614,7 @@ private function loadRequired()
         $requestScheme = ((isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'])) ? $_SERVER['REQUEST_SCHEME'].'://' : 'HTTP://';
         $requestedUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestUri;
         $globalParams['requestedUrl'] = $requestedUrl;
+        $globalParams['pageFolder'] = null;
         $globalParams['pagePath'] = null;
         $globalParams['pathToPage'] = null; // needs to be set after determining actually requested page
 
@@ -685,6 +677,9 @@ private function loadRequired()
 
 
         $this->reqPagePath = $pageHttpPath; //???ok
+        if ($pageHttpPath === './') {
+            $pageHttpPath = '';
+        }
         $globalParams['appRoot'] = $appRoot;  // path from docRoot to base folder of app, e.g. 'on/'
         $globalParams['redirectedPath'] = $redirectedPath;  // the part that is optionally skippped by htaccess
         $globalParams['localCall'] = $this->localCall;
@@ -755,26 +750,6 @@ private function loadRequired()
 		return false;
 	} // isRestrictedPage
 
-
-
-	//....................................................
-	private function restoreEdition()
-	{
-        $admission = $this->auth->checkGroupMembership('editors');
-        if (!$admission) {
-            return;
-        }
-
-        $edSave = getUrlArg('ed-save', true);
-        if ($edSave !== null) {
-            require_once SYSTEM_PATH . 'page-source.class.php';
-            PageSource::saveEdition();  // if user chose to activate a previous edition of a page
-
-            // need to compile the restored page:
-            $this->scss = new SCssCompiler($this);
-            $this->scss->compile( $this->config->debug_forceBrowserCacheUpdate );
-        }
-    } // restoreEdition
 
 
 
@@ -980,7 +955,7 @@ EOT;
 
         $rec = [
             'uploadPath' => PAGES_PATH.$filePath,
-            'pagePath' => $GLOBALS['globalParams']['pagePath'],
+            'pagePath' => $GLOBALS['globalParams']['pageFolder'], //??? correct?
             'pathToPage' => $GLOBALS['globalParams']['pathToPage'],
             'appRootUrl' => $GLOBALS['globalParams']['absAppRootUrl'],
             'user'      => $_SESSION["lizzy"]["user"],
@@ -1317,10 +1292,7 @@ EOT;
     private function prepareImages($html)
 	{
         $resizer = new ImageResizer($this->config->feature_ImgDefaultMaxDim);
-        $modified = $resizer->provideImages($html);
-//        if ($modified) {
-//            checkInstallation1();
-//        }
+        $resizer->provideImages($html);
     } // prepareImages
 
 
@@ -1698,75 +1670,6 @@ EOT;
     }
 
 
-
-
-	//....................................................
-	private function renderMD()
-	{
-        $mdStr = get_post_data('lzy_md', true);
-        $mdStr = urldecode($mdStr);
-
-		$md = new LizzyMarkdown();
-		$pg = new Page;
-		$mdStr = $this->extractFrontmatter($mdStr, $pg);
-		$md->compile($mdStr, $pg);
-
-		$out = $pg->get('content');
-		if (getUrlArg('html')) {
-			$out = "<pre>\n".htmlentities($out)."\n</pre>\n";
-		}
-		exit($out);
-	} // renderMD
-
-
-
-    //....................................................
-    private function savePageFile()
-    {
-        $mdStr = get_post_data('lzy_md', true);
-        $mdStr = urldecode($mdStr);
-        $doSave = getUrlArg('lzy-save');
-        if ($doSave && ($filename = get_post_data('lzy_filename'))) {
-            $rec = $this->auth->getLoggedInUser(true);
-            $user = $rec['username'];
-            $group = $rec['groups'];
-            $permitted = $this->auth->checkGroupMembership('editors');
-            if ($permitted) {
-                if (preg_match('|^'.PAGES_PATH.'(.*)\.md$|', $filename)) {
-                    require_once SYSTEM_PATH . 'page-source.class.php';
-                    PageSource::storeFile($filename, $mdStr);
-                    writeLog("User '$user' ($group) saved data to file $filename.");
-
-                } else {
-                    writeLog("User '$user' ($group) tried to save to illegal file name: '$filename'.");
-                    fatalError("illegal file name: '$filename'", 'File: ' . __FILE__ . ' Line: ' . __LINE__);
-                }
-            } else {
-                writeLog("User '$user' ($group) had no permission to modify file '$filename' on the server.");
-                die("Sorry, you have no permission to modify files on the server.");
-            }
-        }
-
-    }
-
-    //....................................................
-	private function saveSitemapFile($filename)
-	{
-        $str = get_post_data('lzy_sitemap', true);
-        $permitted = $this->auth->checkGroupMembership('editors');
-        $rec = $this->auth->getLoggedInUser(true);
-        $user = $rec['username'];
-        $group = $rec['groups'];
-        if ($permitted) {
-            require_once SYSTEM_PATH.'page-source.class.php';
-            PageSource::storeFile($filename, $str, SYSTEM_RECYCLE_BIN_PATH);
-            writeLog("User '$user' ($group) saved data to file $filename.");
-
-        } else {
-            writeLog("User '$user' ($group) has no permission to modify files on the server.");
-            fatalError("Sorry, you have no permission to modify files on the server.", 'File: '.__FILE__.' Line: '.__LINE__);
-        }
-    } // saveSitemapFile
 
 
 
@@ -2151,24 +2054,6 @@ EOT;
 
 
 
-
-    private function handleEditSaveRequests()
-    {
-        $cliarg = getCliArg('lzy-compile');
-        if ($cliarg) {
-            $this->savePageFile();
-            $this->renderMD();  // exits
-
-        }
-
-        $cliarg = getCliArg('lzy-save');
-        if ($cliarg) {
-            $this->saveSitemapFile($this->config->site_sitemapFile); // exits
-        }
-    }
-
-
-
     private function renderGitStatus()
     {
         $status = '';
@@ -2211,11 +2096,13 @@ EOT;
 
         $this->pagePath = $this->siteStructure->getPagePath();
         $this->pathToPage = PAGES_PATH . $this->pagePath;   //  includes pages/
-        $globalParams['pagePath'] = $this->pagePath;                    // excludes pages/, takes not showThis into account
+        $globalParams['pageFolder'] = PAGES_PATH . $this->siteStructure->getPageFolder();      // excludes pages/, may differ from path if page redirected
+        $globalParams['pagePath'] = $this->pagePath;        // excludes pages/, takes not showThis into account
         $globalParams['pathToPage'] = $this->pathToPage;
         $globalParams['filepathToRoot'] = str_repeat('../', substr_count($this->pathToPage, '/'));
         $globalParams['filepathToDocroot'] = str_repeat('../', substr_count($globalParams["appRoot"], '/')-1);
-        $_SESSION['lizzy']['pagePath'] = $this->pagePath;               // for _ajax_server.php and _upload_server.php
+        $_SESSION['lizzy']['pageFolder'] = $globalParams['pageFolder'];     // for _ajax_server.php and _upload_server.php
+        $_SESSION['lizzy']['pagePath'] = $globalParams['pagePath']; // for _ajax_server.php and _upload_server.php
         $_SESSION['lizzy']['pathToPage'] = $this->pathToPage;
 
 
@@ -2236,6 +2123,7 @@ EOT;
         global $globalParams;
         $this->siteStructure = new SiteStructure($this, ''); //->list = false;
         $this->currPage = '';
+        $globalParams['pageFolder'] = '';
         $globalParams['pagePath'] = '';
         $globalParams['filepathToRoot'] = '';
 
@@ -2378,17 +2266,17 @@ EOT;
     private function dailyPageCacheReset()
     {
         if (file_exists(HOUSEKEEPING_FILE)) {
-            $fileTime = intval(filemtime(HOUSEKEEPING_FILE) / 86400);
-            $today = intval(time() / 86400);
-            if (($fileTime) !== $today) {
-                purgePageCache();
-                return true;
+            $intervall = intval(file_get_contents(HOUSEKEEPING_FILE));
+            if ($intervall) {
+                $fileTime = intval(filemtime(HOUSEKEEPING_FILE) / $intervall);
+                $today = intval(time() / $intervall);
+                if ($fileTime === $today) {
+                    return false;   // ok to use cache
+                }
             }
-        } else {
-            purgePageCache();
-            return true;
         }
-        return false;
+        purgePageCache();
+        return true;
     } // dailyPageCacheReset
 
 } // class WebPage

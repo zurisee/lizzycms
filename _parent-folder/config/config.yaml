@@ -108,4 +108,5 @@ site_robots: true                            # If true, Lizzy will add a meta-ta
 site_sitemapFile: sitemap.txt                # Name of file that defines the site structure. Build hierarchy simply by indenting.
 site_supportedLanguages: en                  # Defines which languages will be supported: comma-separated list of language-codes. E.g. "en, de, fr" (first elem => default lang)
 site_timeZone: auto                          # Name of timezone, e.g. "UTC" or "CET". If auto, attempts to set it automatically.
+site_cacheResetIntervall: 24
 
