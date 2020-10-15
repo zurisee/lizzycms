@@ -845,6 +845,8 @@ EOT;
             $this->data = $data;
         }
 
+        $this->sortData();
+
         $this->adjustTableSize();
         $this->insertCellAddressAttributes();
 
@@ -853,7 +855,6 @@ EOT;
         $this->nCols = sizeof($this->data[0]);
         $this->nRows = sizeof($this->data);
 
-        $this->sortData();
         return;
     } // loadData
 
@@ -966,7 +967,7 @@ EOT;
         if ($this->sort) {
             $data = &$this->data;
             $s = $this->sort - 1;
-            if (($s >= 0) && ($s < $this->nCols)) {
+            if (($s >= 0) && ($s < sizeof($data))) {
                 if ($this->sortExcludeHeader) {
                     $row0 = array_shift($data);
                 }
