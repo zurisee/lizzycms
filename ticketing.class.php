@@ -60,6 +60,8 @@ class Ticketing
         if (!$ticket) {
             $ticket = $this->_createTicket($rec, $maxConsumptionCount, $validityPeriod, $type);
             setStaticVariable("$pathToPage.tickets.$type", $ticket);
+        } else {
+            $this->updateTicket($ticket, $rec);
         }
         return $ticket;
     } // createTicket
