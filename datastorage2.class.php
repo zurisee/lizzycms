@@ -588,7 +588,7 @@ class DataStorage2
 
         $res = $this->lowLevelWrite($data);
         if ($locking) {
-            $this->ds->unlockDB();
+            $this->unlockDB();
         }
         return $res;
     } // writeElement
