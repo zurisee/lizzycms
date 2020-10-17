@@ -102,6 +102,11 @@ class Ticketing
     {
         // finds a ticket that matches the given hash
         // if $key is provided, it finds a ticket that contains given data (i,e, key and value match)
+        if ($value === null) {
+            $pathToPage = @$GLOBALS['globalParams']['pathToPage'];
+            $type = $key? $key : $this->defaultType;
+            return getStaticVariable( "$pathToPage.tickets.$type" );
+        }
         if ($key !== false) {
             return $this->ds->findRecByContent($key, $value, true);
         } else {
