@@ -6,13 +6,15 @@ $timezone = isset($_SESSION['lizzy']['systemTimeZone']) ? $_SESSION['lizzy']['sy
 date_default_timezone_set($timezone);
 
 error_reporting(E_ALL | E_STRICT);
+ob_start();
+
 require_once SYSTEM_PATH.'/third-party/jquery-upload/server/php/UploadHandler.php';
 require_once SYSTEM_PATH.'backend_aux.php';
 require_once SYSTEM_PATH.'datastorage2.class.php';
 require_once SYSTEM_PATH.'ticketing.class.php';
 
 if (!isset($_REQUEST) || !$_REQUEST) {
-    exit('_upload_server.php has nothing to do...');
+    lzyExit('_upload_server.php has nothing to do...');
 }
 session_start();
 
@@ -20,7 +22,7 @@ $activityRestrectedTo = $_SESSION['lizzy']['isRestrictedPage'];
 $loggedInUser = $_SESSION['lizzy']['user'];
 if ($activityRestrectedTo && ($loggedInUser !== $activityRestrectedTo)) {   // check whether upload initiated by logged in user
     mylog("Upload-Server: unauthorized user tried to upload a file.");
-    exit('Error: not logged in');
+    lzyExit('Error: not logged in');
 }
 $files = isset($_FILES) ? $_FILES : [];
 
@@ -38,7 +40,7 @@ $actualUser = $_SESSION["lizzy"]["user"];
 
 if ($actualUser !== $user) {
     mylog("Warning: user '$user' tried to upload picture(s), but is logged in as '$actualUser'.");
-    exit('{}');
+    lzyExit('{}');
 }
 session_abort();
 
@@ -53,7 +55,7 @@ if (isset($_POST["lzy-cmd"])) {
         }
         file_put_contents($fname, $text);
     }
-    exit( json_encode('ok') );
+    lzyExit( json_encode('ok') );
 }
 
 $thumbnails = [
@@ -87,7 +89,7 @@ if (isset($_POST['lzy-rename-file'])) {
     if (file_exists($file)) {
         if (file_exists($dest)) {
             mylog("_upload_server.php: [$dataPath] file '$newName' already exists, cannot rename '$filename'");
-            exit;
+            lzyExit();
         }
         mylog("_upload_server.php: [$dataPath] file '$filename' renamed to '$newName'");
         rename($file, $dest);
@@ -100,12 +102,12 @@ if (isset($_POST['lzy-rename-file'])) {
         mylog("_upload_server.php: [$dataPath] file '$filename' renamed to '$newName'");
         rename($file, $dest);
     }
-    exit;
+    lzyExit();
 }
 
 // handle delete requests:
 if ($reqMethod === 'DELETE') {
-    exit;
+    lzyExit();
 }
 if (isset($_POST['lzy-delete-file'])) {
     $filename = isset($_POST['lzy-delete-file']) ? $_POST['lzy-delete-file'] : '';
@@ -118,7 +120,7 @@ if (isset($_POST['lzy-delete-file'])) {
     $timestamp = date('Y-m-d_H.i.s_');
     rename($file, $dest.$timestamp.$filename);
     mylog("_upload_server.php: [$dataPath] file deleted: $filename");
-    exit;
+    lzyExit();
 }
 
 $fname = implode(',', isset($files["files"]["name"]) ? $files["files"]["name"] : []);
@@ -127,7 +129,7 @@ $user = $user ? $user : 'anonymous';
 //mylog("_upload_server.php: file received: '$fname' stored in: '$dataPath' from user '$user'");
 
 $upload_handler = new UploadHandler($options);
-exit;
+lzyExit();
 
 
 function getUploadParameters()
@@ -142,7 +144,7 @@ function getUploadParameters()
         $dataRef = $_SESSION['lzy-backend']['dataRef'];
 
     } else {
-        exit('nothing to do...');
+        lzyExit('nothing to do...');
     }
     if ($dataRef &&preg_match('/^[A-Z0-9]{4,20}$/', $dataRef)) {     // dataRef (=ticket hash) available
         $ticketing = new Ticketing();

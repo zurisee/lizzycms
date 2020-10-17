@@ -81,6 +81,19 @@ function preparePath($path)
 
 
 
+
+//------------------------------------------------------------
+function lzyExit( $str = '' )
+{
+    if (strlen($buff = ob_get_clean ()) > 1) {
+        file_put_contents(PATH_TO_APP_ROOT.'.#logs/output-buffer.txt', $buff);
+    }
+    exit($str);
+} // lzyExit
+
+
+
+
 //------------------------------------------------------------
 function fatalError($msg)
 {
