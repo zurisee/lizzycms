@@ -85,6 +85,7 @@ class DataStorage2
         $this->exportToFile(); // saves data if modified
         if ($this->lzyDb) {
             $this->lzyDb->close();
+            unset($this->lzyDb);
         }
     } // __destruct
 
@@ -705,7 +706,7 @@ class DataStorage2
 
 
 
-// === depricated ======================
+ // === depricated ======================
     //---------------------------------------------------------------------------
     public function doLockDB()  // alias for compatibility
     {
@@ -736,7 +737,7 @@ class DataStorage2
     
 
 
-// === aux methods ======================
+ // === aux methods ======================
     public function dumpDb( $raw = false)
     {
         if ($raw) {
@@ -757,7 +758,7 @@ class DataStorage2
 
 
 
-// === private methods ===============
+ // === private methods ===============
     private function getData( $force = false )
     {
         if ($this->data && !$force) {
@@ -1061,9 +1062,9 @@ class DataStorage2
 
     private function fixRecId($recId, $allowNewRec = false, $supportedArgs = false)
     {
-//        if (!$this->data) {
-//            return false;
-//        }
+        if (!$this->data) {
+            return $recId;
+        }
         if (is_array($recId)) {
             return $this->parseRecModifArgs($recId, $supportedArgs);
         }
@@ -1366,9 +1367,11 @@ EOT;
     private function openDbReadOnly()
     {
         if ($this->lzyDb) {
+            // if it's already open, leave it open, even it's in read-write mode:
             return;
         }
         $this->lzyDb = new SQLite3(LIZZY_DB, SQLITE3_OPEN_READONLY);
+        $this->lzyDb->busyTimeout(5000);
     } // openDbReadWrite
 
 
@@ -1416,9 +1419,14 @@ EOT;
             $tableName = $this->deriveTableName();
             $this->tableName = $tableName;
         }
-
         $sql = "SELECT name FROM sqlite_master WHERE type='table' AND name='$tableName';";
+        if (is_bool($sql)) {
+            return;
+        }
         $stmt = $this->lzyDb->prepare($sql);
+        if (is_bool($stmt)) {
+            return;
+        }
         $res = $stmt->execute();
         $table = $res->fetchArray(SQLITE3_ASSOC);
         if (!$table) {  // if table does not exist: create it and populate it with data from origFile
