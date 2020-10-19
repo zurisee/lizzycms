@@ -1373,10 +1373,12 @@ function setStaticVariable($varName, $value, $append = false)
         }
     }
 
-    if ($append) {
+    if (!$var || !$append) {
+        $var = $value;
+    } elseif ($append === true) {
         $var .= $value;
     } else {
-        $var = $value;
+        $var .= $append . $value;
     }
 } // setStaticVariable
 
