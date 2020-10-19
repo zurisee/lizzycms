@@ -49,21 +49,23 @@ class Ticketing
     public function createTicket($rec = [], $maxConsumptionCount = false, $validityPeriod = null, $type = false)
     {
         $type = $type? $type : $this->defaultType;
+        $maxConsumptionCount = $maxConsumptionCount ?$maxConsumptionCount : $this->defaultMaxConsumptionCount;
         $pathToPage = @$GLOBALS['globalParams']['pathToPage'];
 
-        $ticket = getStaticVariable( "$pathToPage.tickets.$type" );
-        if ($ticket !== null) {
-            if (!$this->findTicket($ticket)) {
-                $ticket = false;
+        // first check whether ticket already exists for this page:
+        $ticketHash = getStaticVariable( "$pathToPage.tickets.$type" );
+        if ($ticketHash !== null) {
+            foreach (explodeTrim(',', $ticketHash) as $tHash) {
+                $ticketRec = $this->ds->readRecord($tHash);
+                if ($ticketRec && ($ticketRec['lzy_maxConsumptionCount'] === $maxConsumptionCount)) {
+                    $this->updateTicket($tHash, $rec);
+                    return $tHash;
+                }
             }
         }
-        if (!$ticket) {
-            $ticket = $this->_createTicket($rec, $maxConsumptionCount, $validityPeriod, $type);
-            setStaticVariable("$pathToPage.tickets.$type", $ticket);
-        } else {
-            $this->updateTicket($ticket, $rec);
-        }
-        return $ticket;
+        $ticketHash = $this->_createTicket($rec, $maxConsumptionCount, $validityPeriod, $type);
+        setStaticVariable("$pathToPage.tickets.$type", $ticketHash, ',');
+        return $ticketHash;
     } // createTicket
 
 
