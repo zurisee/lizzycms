@@ -25,6 +25,7 @@ class HtmlTable
         $this->tableClass 	        = $this->getOption('tableClass', '(optional) Class applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
         $this->tableClass 	        = $this->getOption('class', 'Synonyme for tableClass', $this->tableClass);
         $this->cellClass 	        = $this->getOption('cellClass', '(optional) Class applied to each table cell');
+        $this->cellWrapper 	        = $this->getOption('cellWrapper', '(optional) If true, each cell is wrapped in a DIV element; if it\'s a string, the cell is wrapped in a tag of given name.');
         $this->rowClass 	        = $this->getOption('rowClass', '(optional) Class applied to each table row', 'lzy-row-*');
         $this->cellIds 	            = $this->getOption('cellIds', '(optional) If true, each cell gets an ID which is derived from the cellClass');
         $this->nRows 		        = $this->getOption('nRows', '(optional) Number of rows: if set the table is forced to this number of rows');
@@ -719,7 +720,15 @@ EOT;
         if ($this->headersAsVars && $hdrElem) {
             $cell = "{{ $cell }}";
         }
-        return "<$tag$tdId$tdClass$ref$title><div>$cell</div></$tag>";
+        if ($this->cellWrapper) {
+            if (is_string( $this->cellWrapper)) {
+                $cell = "<$this->cellWrapper>$cell</$this->cellWrapper>";
+            } else {
+                $cell = "<div>$cell</div>";
+            }
+        }
+        return "<$tag$tdId$tdClass$ref$title>$cell</$tag>";
+//        return "<$tag$tdId$tdClass$ref$title><div>$cell</div></$tag>";
     } // getDataElem
 
 
