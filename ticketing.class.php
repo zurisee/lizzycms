@@ -57,7 +57,8 @@ class Ticketing
         if ($ticketHash !== null) {
             foreach (explodeTrim(',', $ticketHash) as $tHash) {
                 $ticketRec = $this->ds->readRecord($tHash);
-                if ($ticketRec && ($ticketRec['lzy_maxConsumptionCount'] === $maxConsumptionCount)) {
+                if ($ticketRec) {
+                    $rec = array_merge($ticketRec, $rec);
                     $this->updateTicket($tHash, $rec);
                     return $tHash;
                 }
