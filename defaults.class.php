@@ -193,7 +193,7 @@ private $userConfigurableSettingsAndDefaults      = [
         // elementes that shall be loaded when corresponding classes are found anywhere in the page:
         //   elements: can be any of cssFiles, css, js, jq etc.
         $this->classBasedModules = [
-            'editable' => ['modules' => 'EDITABLE', 'jq' => "\$('.lzy-editable').editable();"],
+//            'editable' => ['modules' => 'EDITABLE', 'jq' => "\$('.lzy-editable').editable();"],
             'panels_widget' => ['modules' => 'PANELS'],
             'zoomTarget' => ['jsFiles' => 'ZOOM_TARGET'],
         ];
