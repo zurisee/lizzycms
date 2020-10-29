@@ -20,7 +20,7 @@ function lzyPopup( options ) {
     var content  = (typeof options.content !== 'undefined')? options.content : text;
 
     var contentFrom = (typeof options.contentFrom !== 'undefined') ? options.contentFrom : ''; // contentFrom synonyme for contentRef
-    var contentRef = (typeof options.contentRef !== 'undefined') ? options.contentRef : contentFrom;
+    var contentRef = (typeof options.contentRef !== 'undefined') ? options.contentRef : '';
 
     var trigger = (typeof options.trigger !== 'undefined') ? options.trigger : true;
     var anker = 'body'; // (typeof options.anker !== 'undefined') ? options.anker : 'body';
@@ -62,6 +62,13 @@ function lzyPopup( options ) {
         closeButton = '<div class="lzy-js-popup-close-button"></div>';
     } else {
         closeButton = '';
+    }
+
+    if (contentFrom) {
+        if ((contentFrom.charAt(0) !== '#') && (contentFrom.charAt(0) !== '.')) {
+            contentFrom = '#' + contentFrom;
+        }
+        content = content + $( contentFrom ).html();
     }
 
     if (content) {      // content supplied as literal:
