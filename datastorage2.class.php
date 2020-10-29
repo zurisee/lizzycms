@@ -235,6 +235,8 @@ class DataStorage2
         } elseif (is_array($recId)) {
             list($recId, $recData, $locking, $blocking) = $recId;
         }
+
+//??? what was this for?
         if (($recId === false) || !$recData) {
             return false;
         } elseif (is_array($recId)) {
@@ -536,7 +538,9 @@ class DataStorage2
 
     public function lastModifiedElement($key)
     {
-        $lastRecModif = $this->lowlevelReadMetaElement('lastRecModif_'.$key);
+        $rawLastRecModif = $this->lowlevelReadRawData('recLastUpdates');
+        $lastRecModifs = $this->jsonDecode($rawLastRecModif);
+        $lastRecModif = isset($lastRecModifs[ $key ])? $lastRecModifs[ $key ]: false;
         if (!$lastRecModif) {
             $lastRecModif = $this->lastDbModified();
         }
@@ -548,9 +552,9 @@ class DataStorage2
 
     public function writeElement($key, $value, $locking = true, $blocking = true)
     {
-        if ($locking && !$this->lockDB( $blocking )) {
+        if ($locking && !$this->lockDB( false, $blocking )) {
             return false;
-        } elseif ($this->isDbLocked()) {
+        } elseif ($this->isDbLocked(false)) {
             return false;
         }
         $data = $this->getData(true);
@@ -584,7 +588,7 @@ class DataStorage2
         }
 
         if ($this->logModifTimes) {
-            $this->updateRecLastUpdate( $key0 );
+            $this->updateRecLastUpdate( $key );
         }
 
         $res = $this->lowLevelWrite($data);
@@ -1154,19 +1158,6 @@ class DataStorage2
 
 
     // === Low Level Operations ===========================================================
-    private function lowlevelReadMetaElement($key)
-    {
-        $meta = $this->lowlevelReadRecLocks();
-        if (isset($meta[$key])) {
-            return $meta[$key];
-        } else {
-            return null;
-        }
-    } // lowlevelReadMetaElement
-
-
-
-
     private function lowlevelReadRecLocks()
     {
         $query = "SELECT \"recLocks\" FROM \"{$this->tableName}\"";
