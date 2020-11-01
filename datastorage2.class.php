@@ -390,19 +390,19 @@ class DataStorage2
 
 
 
-    public function lockRec( $recId, $blocking = true )
+    public function lockRec( $recId, $blocking = true, $lockForAll = false )
     {
         if ($this->isDbLocked( false, $blocking )) {
             return false;
         }
-        if (($recId = $this->fixRecId($recId)) === false) {
+        if (($recId = $this->fixRecId($recId, true)) === false) {
             return false;
         }
 
         if (!$this->_awaitRecLockEnd($recId, $blocking, true)) {
             return false;
         }
-        return $this->_lockRec( $recId);
+        return $this->_lockRec( $recId, $lockForAll );
     } // lockRec
 
 
@@ -997,7 +997,7 @@ class DataStorage2
 
 
 
-    private function _lockRec( $recId )
+    private function _lockRec( $recId, $lockForAll )
     {
 
         if ($this->isRecLocked( $recId )) { // rec already locked
@@ -1006,7 +1006,8 @@ class DataStorage2
         $recLocks = $this->lowlevelReadRecLocks();
         $recLocks[$recId] = [
             'lockTime' => microtime(true),
-            'lockOwner' => $this->sessionId
+            'lockOwner' => $lockForAll? 0 : $this->sessionId
+//            'lockOwner' => $this->sessionId
         ];
         $this->lowLevelWriteRecLocks($recLocks);
         return true;
