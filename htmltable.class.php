@@ -159,7 +159,7 @@ class HtmlTable
         $rowClass0 = $this->rowClass;
 
         for ($r = 0; $r < $nRows; $r++) {
-            $rowClass = str_replace('*', $r, $rowClass0);
+            $rowClass = str_replace('*', ($r + 1), $rowClass0);
 
             if ($header && ($r === 0)) {
                 $thead = "\t<thead>\n\t\t<tr class='$rowClass'>\n";
@@ -891,10 +891,11 @@ EOT;
             $this->id = 'lzy-table' . $inx;
         }
         if ($this->tableDataAttr) {
-            list($name, $value) = explode('=', $this->tableDataAttr);
+            list($name, $value) = explodeTrim('=', $this->tableDataAttr);
             if (strpos($name, 'data-') !== 0) {
                 $name = "data-$name";
             }
+            $value = str_replace(['"', "'"], '', $value);
             $this->tableDataAttr = " $name='$value'";
         }
     } // checkArguments
