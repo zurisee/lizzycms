@@ -176,6 +176,18 @@ function parseInlineBlockArguments($str, $returnElements = false)
 
         } elseif ($k === 'md-compile') {                                      // md-compile
             $mdCompile = $v? (stripos($v, 'true') !== false): true;
+
+        } elseif (($k === 'showtill')) {                                      // showTill
+            $t = strtotime($v);
+            if ($t < time()) {
+                $lang = 'none';
+            }
+
+        } elseif (($k === 'showfrom')) {                                      // showFrom
+            $t = strtotime($v);
+            if ($t > time()) {
+                $lang = 'none';
+            }
         }
     }
 
