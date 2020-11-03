@@ -586,6 +586,7 @@ class SiteStructure
         } elseif ((strlen($requestedPath) > 0) && (substr($requestedPath,0,2) === '~/')) {
             $requestedPath = substr($requestedPath, 2);
         }
+        $requestedPath = fixPath( $requestedPath );
         if (!$this->list) {
         	return false;
         }
