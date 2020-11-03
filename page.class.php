@@ -1377,6 +1377,28 @@ EOT;
             unset($hdr['runPHP']);
         }
 
+        // runPHPonce:
+        if (isset($hdr['runPHPonce'])) {
+            if (!$this->config->custom_permitUserCode) {
+                fatalError("Trying to use 'runPHPonce' in frontmatter, but config option 'custom_permitUserCode' is not enabled.");
+            }
+            $phpFile = $hdr['runPHPonce'];
+            if ($phpFile[0] !== '-') {
+                $phpFile = '-' . $phpFile;
+            }
+            if (isset($GLOBALS['lizzy']['runPHPonce'][$phpFile])) {
+                return;
+            }
+            $GLOBALS['lizzy']['runPHPonce'][$phpFile] = true;
+            $phpFile = USER_CODE_PATH . $phpFile;
+            if (file_exists($phpFile)) {
+                require $phpFile;
+            } else {
+                fatalError("Trying to use 'runPHP' in frontmatter, but file '$phpFile' not found.");
+            }
+            unset($hdr['runPHP']);
+        }
+
         // mdVariables:
         $mdVariables = [];
         if (isset($hdr['mdVariables'])) {
