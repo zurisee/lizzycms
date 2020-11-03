@@ -1386,17 +1386,16 @@ EOT;
             if ($phpFile[0] !== '-') {
                 $phpFile = '-' . $phpFile;
             }
-            if (isset($GLOBALS['lizzy']['runPHPonce'][$phpFile])) {
-                return;
+            if (!isset($GLOBALS['lizzy']['runPHPonce'][$phpFile])) {
+                $GLOBALS['lizzy']['runPHPonce'][$phpFile] = true;
+                $phpFile = USER_CODE_PATH . $phpFile;
+                if (file_exists($phpFile)) {
+                    require $phpFile;
+                } else {
+                    fatalError("Trying to use 'runPHP' in frontmatter, but file '$phpFile' not found.");
+                }
+                unset($hdr['runPHPonce']);
             }
-            $GLOBALS['lizzy']['runPHPonce'][$phpFile] = true;
-            $phpFile = USER_CODE_PATH . $phpFile;
-            if (file_exists($phpFile)) {
-                require $phpFile;
-            } else {
-                fatalError("Trying to use 'runPHP' in frontmatter, but file '$phpFile' not found.");
-            }
-            unset($hdr['runPHP']);
         }
 
         // mdVariables:
