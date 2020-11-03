@@ -997,7 +997,7 @@ class DataStorage2
 
 
 
-    private function _lockRec( $recId, $lockForAll )
+    private function _lockRec( $recId, $lockForAll = false )
     {
 
         if ($this->isRecLocked( $recId )) { // rec already locked
