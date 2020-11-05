@@ -1552,6 +1552,7 @@ EOT;
         // returns false on success, error msg otherwise:
         $this->userSuppliedData = $_POST;
         $this->userSuppliedData0 = $_POST;
+
         $userSuppliedData = &$this->userSuppliedData;
 		if (!isset($userSuppliedData['_lizzy-form-id'])) {
 			$this->clearCache();
@@ -1788,8 +1789,8 @@ EOT;
                         if ($key === 'timestamp') {
                             continue;
                         }
-                        $v1 = strtolower(str_replace(' ', '', $this->userSuppliedData[$key]));
-                        $v2 = strtolower(str_replace(' ', '', $rec[$key]));
+                        $v1 = @strtolower(str_replace(' ', '', $this->userSuppliedData[$key]));
+                        $v2 = @strtolower(str_replace(' ', '', $rec[$key]));
                         if ($v1 !== $v2) {
                             $identical = false;
                             break;
@@ -1988,7 +1989,7 @@ EOT;
             } else {
                 $value = $fldDescr->labelInOutput;
             }
-            if ($value[0] === '-') {
+            if ($value && ($value[0] === '-')) {
                 $value = $this->trans->translateVariable( substr($value, 1), true );
             } elseif ($fldDescr->translateLabel) {
                 $value = $this->trans->translateVariable( $value, true );
