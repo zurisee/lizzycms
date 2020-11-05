@@ -272,7 +272,7 @@ private function loadRequired()
             $this->loadFile();        // get content file
         }
 
-        $this->scss->compile( $this->config->debug_forceBrowserCacheUpdate );
+        $this->scss->compile();
 
         $this->injectPageSwitcher();
 
@@ -1587,6 +1587,7 @@ EOT;
         if (getUrlArg('info')) {    // info
             $str = $this->page->renderDebugInfo();
             $str = "<h1>Lizzy System Info</h1>\n".$str;
+            $str .= "<div style='margin-bottom:5em;'></div>\n";
             $this->page->addOverlay(['text' => $str, 'closable' => 'reload']);
 		}
 
