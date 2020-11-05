@@ -1007,7 +1007,6 @@ class DataStorage2
         $recLocks[$recId] = [
             'lockTime' => microtime(true),
             'lockOwner' => $lockForAll? 0 : $this->sessionId
-//            'lockOwner' => $this->sessionId
         ];
         $this->lowLevelWriteRecLocks($recLocks);
         return true;
@@ -1205,7 +1204,7 @@ class DataStorage2
         $this->openDbReadWrite();
 
         $json = $this->jsonEncode($newData, $isJson);
-        $modifTime = microtime(true);
+        $modifTime = str_replace(',', '.', microtime(true)); // fix float->str conversion problem
 
         $sql = <<<EOT
 UPDATE "{$this->tableName}" SET 
@@ -1233,7 +1232,7 @@ EOT;
     {
         $this->openDbReadWrite();
 
-        $modifTime = microtime(true);
+        $modifTime = str_replace(',', '.', microtime(true)); // fix float->str conversion problem
         $recLocksJson = $this->jsonEncode( $recLocks );
         $sql = <<<EOT
 UPDATE "{$this->tableName}" SET 
@@ -1275,11 +1274,12 @@ EOT;
     {
         $this->openDbReadWrite();
 
-        $modifTime = microtime(true);
+        $modifTime = str_replace(',', '.', microtime(true)); // fix float->str conversion problem
+        $lockTime = str_replace(',', '.', $rawData['lockTime']); // fix float->str conversion problem
         $sql = <<<EOT
 UPDATE "{$this->tableName}" SET 
     "lockedBy" = "{$rawData['lockedBy']}",
-    "lockTime" = "{$rawData['lockTime']}",
+    "lockTime" = "$lockTime",
     "lastUpdate" = $modifTime;
 
 EOT;
@@ -1486,6 +1486,10 @@ EOT;
 
             } else {
                 $filename = PATH_TO_APP_ROOT . $rawData['origFile'];
+            }
+            if (!$filename) {
+                mylog("Error: filename missing for export file (".__FILE__.' '.__LINE__.')');
+                return;
             }
             if (!file_exists($filename)) {
                 mylog("Error: unable to export data to file '$filename'");
@@ -1809,13 +1813,16 @@ EOT;
         if (PATH_TO_APP_ROOT && (strpos($origFileName, PATH_TO_APP_ROOT) === 0)) {
             $origFileName = substr($origFileName, strlen(PATH_TO_APP_ROOT));
         }
-        $modifTime = microtime(true);
+        $modifTime = str_replace(',', '.', microtime(true)); // fix float->str conversion problem
 
         $sql = <<<EOT
 INSERT INTO "$tableName" ("data", "structure", "origFile", "recLastUpdates", "recLocks", "lockedBy", "lockTime", "lastUpdate")
 VALUES ("", "", "$origFileName", "[]", "[]", "", 0.0, $modifTime);
 EOT;
         $stmt = $this->lzyDb->prepare($sql);
+        if (!$stmt) {
+            die("Error: unable to initialize table in lzyDB: '$tableName'");
+        }
         $res = $stmt->execute();
         if ($res === false) {
             die("Error: unable to initialize table in lzyDB: '$tableName'");
