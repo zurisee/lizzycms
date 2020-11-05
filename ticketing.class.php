@@ -57,7 +57,7 @@ class Ticketing
         if ($ticketHash !== null) {
             foreach (explodeTrim(',', $ticketHash) as $tHash) {
                 $ticketRec = $this->ds->readRecord($tHash);
-                if ($ticketRec) {
+                if ($ticketRec && is_array($ticketRec) && is_array($rec)) {
                     $rec = array_merge($ticketRec, $rec);
                     $this->updateTicket($tHash, $rec);
                     return $tHash;
