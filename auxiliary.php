@@ -1837,6 +1837,9 @@ function var_r($var, $varName = '', $flat = false)
 		if (preg_match('/array \((.*),\)/', $out, $m)) {
 		    $out = "[{$m[1]} ]";
         }
+		if ($varName) {
+		    $out = "$varName: $out";
+        }
 	} else {
         $out = "<div><pre>$varName: ".var_export($var, true)."\n</pre></div>\n";
     }
