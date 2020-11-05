@@ -586,7 +586,7 @@ class SiteStructure
         } elseif ((strlen($requestedPath) > 0) && (substr($requestedPath,0,2) === '~/')) {
             $requestedPath = substr($requestedPath, 2);
         }
-        $requestedPath = fixPath( $requestedPath );
+        $requestedPath1 = fixPath( $requestedPath );
         if (!$this->list) {
         	return false;
         }
@@ -595,10 +595,9 @@ class SiteStructure
 		$found = false;
 		$foundLevel = 0;
 		foreach($list as $key => $pageRec) {
-			if ($found || ($requestedPath === $pageRec['folder'])) {
+			if ($found || ($requestedPath1 === $pageRec['folder'])) {
 				$folder = PAGES_PATH.$pageRec['folder'];
 				if ($pageRec['showthis'] !== false) {	// no 'skip empty folder trick' in case of showthis
-//				if (isset($pageRec['showthis']) && $pageRec['showthis']) {	// no 'skip empty folder trick' in case of showthis
                     $found = true;
                     break;
 				}
@@ -626,7 +625,7 @@ class SiteStructure
                     $foundLevel = $pageRec['level'];
 				}
 
-			} elseif (($pageRec['urlpath'] !== false) && ($requestedPath === $pageRec['urlpath'])) {
+			} elseif (($pageRec['urlpath'] !== false) && ($requestedPath1 === $pageRec['urlpath'])) {
                 $found = true;
                 break;
 
