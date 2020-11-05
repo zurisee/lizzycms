@@ -458,7 +458,7 @@ EOT;
         $url = $GLOBALS["globalParams"]["pageUrl"];
 
         if (isset($_POST) && $_POST) {
-            $this->config->updateConfigValues( $_POST, $this->configFile );
+            $this->updateConfigValues( $_POST, $this->configFile );
         }
 
 
