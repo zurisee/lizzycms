@@ -1100,6 +1100,26 @@ dd {
 
 
 
+/* === Login ============================== */
+.lzy-small-screen {
+	#lzy-login-form_wrapper * {
+		font-size: 14pt;
+	}
+	.lzy-login-form  {
+		padding: 0;
+	}
+	#lzy-login-form a.lzy-panel-link {
+		color: white;
+	}
+	.lzy-panel-inner-wrapper {
+		padding: 1em 0;
+	}
+	input, button {
+		line-height: 2em;
+	}
+}
+
+
 /* === Login Link ========================= */
 .lzy-login-link-menu {
     position: relative;
