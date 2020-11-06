@@ -597,7 +597,7 @@ class SiteStructure
 		foreach($list as $key => $pageRec) {
 			if ($found || ($requestedPath1 === $pageRec['folder'])) {
 				$folder = PAGES_PATH.$pageRec['folder'];
-				if ($pageRec['showthis'] !== false) {	// no 'skip empty folder trick' in case of showthis
+				if ($pageRec['showthis']) {	// no 'skip empty folder trick' in case of showthis
                     $found = true;
                     break;
 				}
