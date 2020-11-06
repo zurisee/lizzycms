@@ -25,6 +25,7 @@ class HtmlTable
         $this->tableClass 	        = $this->getOption('tableClass', '(optional) Class applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
         $this->tableClass 	        = $this->getOption('class', 'Synonyme for tableClass', $this->tableClass);
         $this->cellClass 	        = $this->getOption('cellClass', '(optional) Class applied to each table cell');
+        $this->cellWrapper 	        = $this->getOption('cellWrapper', '(optional) If true, each cell is wrapped in a DIV element; if it\'s a string, the cell is wrapped in a tag of given name.');
         $this->rowClass 	        = $this->getOption('rowClass', '(optional) Class applied to each table row', 'lzy-row-*');
         $this->cellIds 	            = $this->getOption('cellIds', '(optional) If true, each cell gets an ID which is derived from the cellClass');
         $this->nRows 		        = $this->getOption('nRows', '(optional) Number of rows: if set the table is forced to this number of rows');
@@ -158,7 +159,7 @@ class HtmlTable
         $rowClass0 = $this->rowClass;
 
         for ($r = 0; $r < $nRows; $r++) {
-            $rowClass = str_replace('*', $r, $rowClass0);
+            $rowClass = str_replace('*', ($r + 1), $rowClass0);
 
             if ($header && ($r === 0)) {
                 $thead = "\t<thead>\n\t\t<tr class='$rowClass'>\n";
@@ -558,6 +559,7 @@ EOT;
         $data = &$this->data;
         $headers = $data[0];
 
+        $phpExpr = str_replace(['ʺ', 'ʹ'], ['"', "'"], $phpExpr);
         if (preg_match_all('/( (?<!\\\) \[\[ [^\]]* \]\] )/x', $phpExpr, $m)) {
             foreach ($m[1] as $cellRef) {
                 $cellRef0 = $cellRef;
@@ -566,7 +568,7 @@ EOT;
                 $ch1 = ($cellRef !== '') ? $cellRef[0] : false;
 
                 if (($ch1 === '"') || ($ch1 === "'")) {
-                    $cellRef = preg_replace('/^ [\'"]? (.*) [\'"]? $/x', "$1", $cellRef);
+                    $cellRef = preg_replace('/^ [\'"]? (.*?) [\'"]? $/x', "$1", $cellRef);
                     if (($i = array_search($cellRef, $headers)) !== false) { // column name
                         $c = $i;
 
@@ -589,7 +591,7 @@ EOT;
                     $cellVal = $cellRef;    // literal content
                 }
 
-                $cellVal = $cellVal ? $cellVal : "\$data[\$r][$c]";
+                $cellVal = $cellVal ? $cellVal : "{\$data[\$r][$c]}";
                 $phpExpr = str_replace($cellRef0, $cellVal, $phpExpr);
             }
         }
@@ -600,8 +602,8 @@ EOT;
             if (strpos($phpExpr, 'sum()') !== false) {
                 $sum = 0;
                 for (; $r<sizeof($data); $r++) {
-                    $val = $data[$r][$_col];
-                    if (preg_match('/^([\d\.]+)/', $val, $m)) {
+                    $val = @$data[$r][$_col];
+                    if (preg_match('/^([\d.]+)/', $val, $m)) {
                         $val = floatval($m[1]);
                         $sum += $val;
                     }
@@ -679,7 +681,7 @@ EOT;
 
     private function getDataElem($row, $col, $tag = 'td', $hdrElem = false)
     {
-        $cell = $this->data[$row][$col];
+        $cell = @$this->data[$row][$col];
 
         $col1 = $col + 1;
         if ($hdrElem) {
@@ -718,7 +720,15 @@ EOT;
         if ($this->headersAsVars && $hdrElem) {
             $cell = "{{ $cell }}";
         }
-        return "<$tag$tdId$tdClass$ref$title><div>$cell</div></$tag>";
+        if ($this->cellWrapper) {
+            if (is_string( $this->cellWrapper)) {
+                $cell = "<$this->cellWrapper>$cell</$this->cellWrapper>";
+            } else {
+                $cell = "<div>$cell</div>";
+            }
+        }
+        return "<$tag$tdId$tdClass$ref$title>$cell</$tag>";
+//        return "<$tag$tdId$tdClass$ref$title><div>$cell</div></$tag>";
     } // getDataElem
 
 
@@ -844,6 +854,8 @@ EOT;
             $this->data = $data;
         }
 
+        $this->sortData();
+
         $this->adjustTableSize();
         $this->insertCellAddressAttributes();
 
@@ -852,7 +864,6 @@ EOT;
         $this->nCols = sizeof($this->data[0]);
         $this->nRows = sizeof($this->data);
 
-        $this->sortData();
         return;
     } // loadData
 
@@ -880,10 +891,11 @@ EOT;
             $this->id = 'lzy-table' . $inx;
         }
         if ($this->tableDataAttr) {
-            list($name, $value) = explode('=', $this->tableDataAttr);
+            list($name, $value) = explodeTrim('=', $this->tableDataAttr);
             if (strpos($name, 'data-') !== 0) {
                 $name = "data-$name";
             }
+            $value = str_replace(['"', "'"], '', $value);
             $this->tableDataAttr = " $name='$value'";
         }
     } // checkArguments
@@ -965,7 +977,7 @@ EOT;
         if ($this->sort) {
             $data = &$this->data;
             $s = $this->sort - 1;
-            if (($s >= 0) && ($s < $this->nCols)) {
+            if (($s >= 0) && ($s < sizeof($data))) {
                 if ($this->sortExcludeHeader) {
                     $row0 = array_shift($data);
                 }

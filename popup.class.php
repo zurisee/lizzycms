@@ -88,11 +88,9 @@ class PopupWidget
     vertical: 'top',
     horizontal: 'center',
 EOT;
-//                    $type = 'type: tooltip,';
                     break;
             }
             $this->getArg('contentFrom');
-//            $this->getArg('id', "lzy-popup$popupInx");
             $this->getArg('class', "lzy-popup$popupInx");
             $class = $this->class;
             $this->getArg('autoOpen');
@@ -110,8 +108,8 @@ EOT;
             $this->getArg('horizontal', 0);
             $this->getArg('vertical', 0);
             $this->getArg('transition', '', 'transition');
-            $this->getArg('speed', 0.3);
-            $this->getArg('opacity', 0.5, 'opacity', false);
+            $this->getArg('speed', '0.3');
+            $this->getArg('opacity', '0.5', 'opacity', false);
             $this->getArg('bgColor', '#000', 'color');
 
             if (isset($args[0])) {
@@ -152,7 +150,6 @@ EOT;
                 $onOpen = $this->onOpen;
                 $onOpen = str_replace('&#34;', '"', $onOpen);
                 $onOpen = "\n\t$onOpen";
-//                $this->argStr .= $onOpen;
             }
 
 
@@ -181,7 +178,10 @@ EOT;
                 } elseif ($this->triggerSource !== 'none') {
                     $jq .= <<<EOT
 $('{$this->triggerSource}')
-    .bind('{$this->triggerEvent}', function(e) { e.preventDefault(); $('$_popupId').popup('show'); })
+    .bind('{$this->triggerEvent}', function(e) { 
+        e.preventDefault(); 
+        $('$_popupId').popup('show'); 
+    })
     .attr('aria-expanded', false);
 
 EOT;

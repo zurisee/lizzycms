@@ -8,7 +8,7 @@
 class Defaults
 {
 
-// User configurable Settings -> config/config.yaml:
+ // User configurable Settings -> config/config.yaml:
 private $userConfigurableSettingsAndDefaults      = [
     'admin_activityLogging'             => [true, 'If true, logs activities to file '.LOG_FILE.'.', 3 ],
     'admin_allowDisplaynameForLogin'    => [false, 'If true, users may log in using their "DisplayName" rather than their "UserName".', 3 ],
@@ -17,36 +17,42 @@ private $userConfigurableSettingsAndDefaults      = [
     'admin_defaultAccessLinkValidyTime' => [900,    'Default Time in seconds during whith an access-link is valid.', 3 ],
     'admin_defaultGuestGroup'           => ['guest', 'Name of default group for self-registration.', 3 ],
     'admin_defaultLoginValidityPeriod'  => [86400, 'Defines how long a user can access the page since the last login.', 3 ],
-    'admin_enableDailyUserTask'         => [false, 'If true, looks for "code/user-daily-task.php" and executes it.', 3 ],
     'admin_enableEditing'               => [true, 'Enables online editing', 2 ],
-    'admin_enableDailyFilePurge'        => [true, 'If true, Lizzy reads '.DAILY_PURGE_FILE.' and deletes all listed files one per day.', 2 ],
-    'admin_enableScheduledTasks'        => [false, 'If true, a scheduler (cron) can invoke scheduled tasks by calling "?scheduled".', 3 ],
-    'admin_enableServiceTasks'          => [false, 'If true, an external process can invoke service tasks by calling "?service=service-task".', 3 ],
+    'admin_serviceTasks'                => [[
+                                                'daily' => false,
+                                                'onPageInit' => false,
+                                                'onPageRenderingStart' => false,
+                                                'onPageRendered' => false,
+                                                'onRequestGetArg' => false,
+                                                'dailyFilePurge' => false,
+                                            ], 'Enables and defines various service tasks.', 2 ],
     'admin_enableSelfSignUp'            => [false, 'If true, visitors can create a guest account on their own.', 3 ],
     'admin_enforcePasswordQuality'      => [false, 'If true, a minimum password quality is enforced when users create/change their password.', 3 ],
     'admin_useRequestRewrite'           => [true, 'If true, assumes web-server supports request-rewrite (i.e. .htaccess).', 3 ],
     'admin_userAllowSelfAdmin'          => [false, 'If true, user can modify their account after they logged in', 3 ],
-    'admin_enableFileManager'           => [true, 'If true, the file-manager (upload, rename, delete) is enabled for privileged users.', 2 ],
+    'admin_enableFileManager'           => [false, 'If true, the file-manager (upload, rename, delete) is enabled for privileged users.', 2 ],
+    'admin_minPasswordLength'           => [10, '[integer] Minimum length of passwords if "admin_enforcePasswordQuality" is enabled.', 3 ],
 
     'custom_relatedGitProjects'         => ['', "Git Project(s) to be included in ?getstat command", 3 ],
-    'custom_permitServiceCode'          => [false, "Enables the 'service routine' mechanism: run PHP code in '".USER_CODE_PATH."' (filename starting with '@')", 1 ],
     'custom_permitUserCode'             => [false, "Only if true, user-provided code can be executed. And only if located in '".USER_CODE_PATH."'", 1 ],
     'custom_permitUserInitCode'         => [false, "Only if true, user-provided init-code can be executed. And only if located in '".USER_CODE_PATH."'", 1 ],
     'custom_permitUserVarDefs'          => [false, 'Only if true, "_code/user-var-defs.php" will be executed.', 1 ],
     'custom_wrapperTag'                 => ['section', 	'The HTML tag in which MD-files are wrapped (default: section)', 2 ],
 
-    'debug_allowDebugInfo'              => [false, '[false|true] If true, debugging Info can be activated: log in as admin and invoke URL-cmd "?debug"', 2 ],
+    'debug_allowDebugInfo'              => [false, '[false|true] If true, debugging Info can be activated: use "?debug" or set debug_showDebugInfo=true', 2 ],
     'debug_collectBrowserSignatures'    => [false, 'If true, Lizzy records browser signatures of visitors.', 3 ],
     'debug_compileScssWithLineNumbers'  => [false, 'If true, original line numbers are added as comments to compiled CSS."', 1 ],
     'debug_enableDevMode'               => [false, '[false|true] Enables devolepment mode', 1 ],
     'debug_enableDevModeAutoOff'        => [false, '[false|true] If true, devolepment mode is automatically turned of the next morning', 1 ],
     'debug_errorLogging'                => [false, 'Enable or disabling logging.', 1 ],
+    'debug_debugLogging'                => [false, 'Enable or disabling logging.', 1 ],
     'debug_forceBrowserCacheUpdate'     => [false, 'If true, the browser is forced to ignore the cache and reload css and js resources on every time.', 2 ],
     'debug_logClientAccesses'           => [false, 'If true, Lizzy records visits (IP-addresses and browser/os types).', 3 ],
-    'debug_showDebugInfo'               => [false, 'If true, debugging info is appended to the page (prerequisite: localhost or logged in as editor/admin)', 1 ],
+    'debug_showDebugInfo'               => [false, 'If true, debugging info is appended to the page (prerequisite: debug_allowDebugInfo=true and localhost or logged in as editor/admin)', 1 ],
     'debug_showUndefinedVariables'      => [false, 'If true, all undefined static variables (i.e. obtained from yaml-files) are marked.', 2 ],
     'debug_showVariablesUnreplaced'     => [false, 'If true, all static variables (i.e. obtained from yaml-files) are render as &#123;&#123; name }}.', 2 ],
     'debug_monitorUnusedVariables'      => [false, '[false|true] If true, Lizzy keeps track of variable usage. Initialize tracking with url-arg "?reset"', 2 ],
+    'debug_forceDebugMode'              => [false, '[false|true] If true, forces debug mode, even if not logged in (debug mode normally activated by"?debug"', 3 ],
 
     'feature_autoConvertLinks'          => [false, 'If true, automatically converts text that looks like links to HTML-links (i.e. &lt;a> tags).', 1 ],
     'feature_autoLoadClassBasedModules' => [true, 'If true, automatically loads modules that are invoked by applying classes, e.g. .editable', 3 ],
@@ -73,7 +79,6 @@ private $userConfigurableSettingsAndDefaults      = [
     'feature_replaceNLandTabChars'      => [false, 'If true, "\\n" and "\\t" will be replaced to corresponding control characters.', 3 ],
 
     'path_logPath'                      => [LOGS_PATH, '[true|Name] Name of folder to which logging output will be sent. Or "false" for disabling logging.', 3 ],
-    'path_pagesPath'                    => ['pages/', 'Name of folder in which all pages reside.', 3 ],
     'path_stylesPath'                   => ['css/', 'Name of folder in which style sheets reside', 3 ],
     'path_userCodePath'                 => [USER_CODE_PATH, 'Name of folder in which user-provided PHP-code must reside.', 3 ],
 
@@ -81,7 +86,6 @@ private $userConfigurableSettingsAndDefaults      = [
     'site_dataPath'                     => [DATA_PATH, 'Path to data/ folder.', 3 ],
     'site_devDataPath'                  => ['', 'Activates a mechanism that, in dev-mode, switches ~data/ to given destination. Thus, you can savely develop and test in dev-mode without overwriting hot data. Hint: set site_dataPath to "../db/".', 2 ],
     'site_devDataPathPattern'           => ['/-', 'Regex-pattern to match against appRoot path to identify, whether we are running on a dev site, e.g. "/(dev|-)". Default: "/-"', 3 ],
-    'site_defaultLocale'                => ['en_US', 'Default local, e.g. "en_US" or "de_CH"', 3 ],
     'site_enableCaching'                => [false, 'If true, Lizzy\'s caching mechanism is activated.', 1 ],
     'site_enableMdCaching'                => [false, 'If true, Lizzy\'s MD caching mechanism is activated. (not fully implemented yet)', 3 ],
     'site_extractSelector'              => ['body main', '[selector] Lets an external js-app request an extract of the web-page', 3 ],
@@ -91,26 +95,25 @@ private $userConfigurableSettingsAndDefaults      = [
     'site_robots'                       => [false, 'If true, Lizzy will add a meta-tag to inform search engines, not to index this site.', 1 ],
     'site_sitemapFile'                  => ['sitemap.txt', 'Name of file that defines the site structure. Build hierarchy simply by indenting.', 3 ],
     'site_supportedLanguages'           => ['en', 'Defines which languages will be supported: comma-separated list of language-codes. E.g. "en, de, fr" (first elem => default lang)', 1 ],
+    'site_localeCodes'                  => ['en_GB,de_DE,fr_FR,it_IT', 'Defines prefered locale codes for supported languages. If not found, Lizzy assumes "xy_XY".', 3 ],
     'site_timeZone'                     => ['auto', 'Name of timezone, e.g. "UTC" or "CET". If auto, attempts to set it automatically.', 2 ],
+    'site_cacheResetIntervall'          => [24, '(number of hours) Defines the interval after which the cache shall be reset. When that happens,'.
+                                            'page requests will build up the cache again.', 3 ],
 ];
 
 
-    public function __construct($configFile)
+    public function __construct($lzy)
     {
+        $this->lzy                      = $lzy;
         $this->macrosPath               = MACROS_PATH;
         $this->extensionsPath           = EXTENSIONS_PATH;
         $this->configPath               = CONFIG_PATH;
         $this->systemPath               = SYSTEM_PATH;
         $this->systemHttpPath           = '~/'.SYSTEM_PATH;
 
-        $this->userInitCodeFile         = USER_INIT_CODE_FILE;
-        $this->userFinalCodeFile        = USER_FINAL_CODE_FILE;
-        $this->cachePath                = CACHE_PATH;
-        $this->cacheFileName            = CACHE_FILENAME;
-        $this->cachingActive            = false;
         $this->mdCachingActive          = false;
         $this->siteIdententation        = MIN_SITEMAP_INDENTATION;
-        $this->configFile               = $configFile;
+        $this->configFile               = $lzy->configFile;
 
 
         // values not to be modified by config.yaml file:
@@ -124,8 +127,8 @@ private $userConfigurableSettingsAndDefaults      = [
         // shortcuts for modules to be loaded (upon request):
         // weight value controls the order of invocation. The higher the earlier.
         $this->jQueryWeight = 200;
-//        $this->loadModules['JQUERY']                = array('module' => 'third-party/jquery/jquery-3.5.0.min.js', 'weight' => $this->jQueryWeight);
-//        $this->loadModules['JQUERY3']               = array('module' => 'third-party/jquery/jquery-3.5.0.min.js', 'weight' => $this->jQueryWeight);
+        // $this->loadModules['JQUERY']                = array('module' => 'third-party/jquery/jquery-3.5.0.min.js', 'weight' => $this->jQueryWeight);
+        // $this->loadModules['JQUERY3']               = array('module' => 'third-party/jquery/jquery-3.5.0.min.js', 'weight' => $this->jQueryWeight);
         $this->loadModules['JQUERY']                = array('module' => 'third-party/jquery/jquery-3.5.1.min.js', 'weight' => $this->jQueryWeight);
         $this->loadModules['JQUERY3']               = array('module' => 'third-party/jquery/jquery-3.5.1.min.js', 'weight' => $this->jQueryWeight);
         $this->loadModules['JQUERY1']               = array('module' => 'third-party/jquery/jquery-1.12.4.min.js', 'weight' => $this->jQueryWeight);
@@ -180,6 +183,7 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->loadModules['PAGED_POLYFILL']        = array('module' => 'third-party/paged.polyfill/paged.polyfill.js', 'weight' => 46);
         $this->loadModules['ZOOM_TARGET']           = array('module' => 'third-party/zoomooz/jquery.zoomooz.min.js', 'weight' => 45);
         $this->loadModules['PAGE_SWITCHER']         = array('module' => 'js/page_switcher.js', 'weight' => 30);
+        $this->loadModules['REVEAL']                = array('module' => 'js/reveal.js', 'weight' => 21);
         $this->loadModules['TETHER']                = array('module' => 'third-party/tether.js/tether.min.js', 'weight' => 20);
         $this->loadModules['IFRAME_RESIZER']        = array('module' => 'third-party/iframe-resizer/iframeResizer.contentWindow.min.js', 'weight' => 19);
         $this->loadModules['USER_ADMIN']            = array('module' => 'js/user_admin.js, css/user_admin.css', 'weight' => 5);
@@ -189,15 +193,15 @@ private $userConfigurableSettingsAndDefaults      = [
         // elementes that shall be loaded when corresponding classes are found anywhere in the page:
         //   elements: can be any of cssFiles, css, js, jq etc.
         $this->classBasedModules = [
-            'editable' => ['modules' => 'EDITABLE', 'jq' => "\$('.lzy-editable').editable();"],
+//            'editable' => ['modules' => 'EDITABLE', 'jq' => "\$('.lzy-editable').editable();"],
             'panels_widget' => ['modules' => 'PANELS'],
             'zoomTarget' => ['jsFiles' => 'ZOOM_TARGET'],
         ];
 
-        $this->getConfigValues($configFile);
+        $this->getConfigValues();
 
         if ($this->debug_enableDevMode && file_exists(DEV_MODE_CONFIG_FILE)) {
-            $this->getConfigValues(DEV_MODE_CONFIG_FILE, true);
+            $this->getConfigValues(DEV_MODE_CONFIG_FILE);
         }
 
 
@@ -210,17 +214,22 @@ private $userConfigurableSettingsAndDefaults      = [
 
 
     //....................................................
-    private function getConfigValues($configFile, $append = false)
+    private function getConfigValues($append = false)
     {
         global $globalParams;
 
-        $configValues = getYamlFile($configFile);
+        if (!$append) {
+            $configValues = getYamlFile($this->configFile);
+        } else {
+            $configValues = getYamlFile($append);
+        }
 
         $overridableSettings = array_keys($this->userConfigurableSettingsAndDefaults);
         foreach ($overridableSettings as $key) {
             if (isset($configValues[$key])) {
                 $defaultValue = $this->userConfigurableSettingsAndDefaults[$key][0];
                 $val = $configValues[$key];
+
                 if (stripos($key, 'Path') !== false) {
                     if (($key !== 'site_dataPath') &&
                         ($key !== 'site_onairDataPath') &&
@@ -231,6 +240,7 @@ private $userConfigurableSettingsAndDefaults      = [
                 } elseif (stripos($key, 'File') !== false) {
                     $val = str_replace('/', '', $val);
                 }
+
                 // make sure it gets the right type:
                 if (is_bool($defaultValue)) {
                     $this->$key = (bool)$val;
@@ -242,7 +252,11 @@ private $userConfigurableSettingsAndDefaults      = [
                     $this->$key = (string)$val;
 
                 } elseif (is_array($defaultValue)) {
-                    $this->$key = explode(',', str_replace(' ', '',$val ));
+                    if (is_array($val)) {
+                        $this->$key = array_merge($defaultValue, $val);
+                    } else {
+                        $this->$key = explode(',', str_replace(' ', '', (string)$val));
+                    }
 
                 } else {
                     $this->$key = $val;
@@ -313,6 +327,20 @@ private $userConfigurableSettingsAndDefaults      = [
     {
         return $this->userConfigurableSettingsAndDefaults;
     }
+
+
+
+    public function getConfigProperties( $category = '')
+    {
+        $pattern = $category? $category : '\w+_';
+        $array = (array) $this;
+        $array = array_filter($array, function () use (&$array, $pattern) {
+            $k = key($array);
+            next($array);
+            return (bool) preg_match("/^$pattern/", $k);
+        });
+        return $array;
+    } // getConfigProperties
 
 
 
@@ -409,5 +437,136 @@ EOT;
         $out = str_pad("$key: ''", 50)."# default=$default\n";
         return $out;
     } // getConfigLine
+
+
+
+
+    //....................................................
+    public function renderConfigOverlay()
+    {
+        $configCmd = getUrlArg('config', true);
+        if ($configCmd === 'raw') {
+            return $this->renderRawConfigOverlay();
+        }
+        $level1Class = $level2Class = $level3Class = '';
+        $level = max(1, min(3, intval($configCmd)));
+        switch ($level) {
+            case 1: $level1Class = ' class="lzy-config-viewer-hl"'; break;
+            case 2: $level2Class = ' class="lzy-config-viewer-hl"'; break;
+            case 3: $level3Class = ' class="lzy-config-viewer-hl"'; break;
+        }
+        $url = $GLOBALS["globalParams"]["pageUrl"];
+
+        if (isset($_POST) && $_POST) {
+            $this->updateConfigValues( $_POST, $this->configFile );
+        }
+
+
+        $configItems = $this->getConfigInfo();
+        ksort($configItems);
+        $out = "<h1>Lizzy Config-Items and their Purpose:</h1>\n";
+        $out .= "<p>Settings stored in file <code>{$this->configFile}</code>.<br/>\n";
+        $out .= "&rarr; Default values in (), values deviating from defaults are marked <span class='lzy-config-viewer-hl'>red</span>)</p>\n";
+        $out .= "<p class='lzy-config-select'>Select: <a href='$url?config=1'$level1Class>Essential</a> ".
+            "| <a href='$url?config=2'$level2Class>Common</a> | <a href='$url?config=3'$level3Class>All</a> ".
+            "| <a href='$url?config=raw'$level3Class>raw</a></p>\n";
+        $out .= "  <form class='lzy-config-form' action='$url?config=$level' method='post'>\n";
+        $out .= "    <input class='lzy-button' type='submit' value='{{ lzy-config-save }}'>";
+
+        $i = 1;
+        foreach ($configItems as $key => $rec) {
+            if ($rec[2] > $level) {     // skip elements with lower priority than requested
+                continue;
+            }
+            $currValue = $this->$key;
+            $displayValue = $currValue;
+            $defaultValue = $this->getDefaultValue($key);
+            $displayDefault = $defaultValue;
+            $inputValue = $defaultValue;
+
+            $diff = '';
+            if ($currValue !== $defaultValue) {
+                $diff = ' class="lzy-config-viewer-hl"';
+            }
+            $checked = '';
+
+            if (is_bool($defaultValue)) {
+                $displayValue = $currValue ? 'true' : 'false';
+                $inputValue = 'true';
+                $displayDefault = $defaultValue ? 'true' : 'false';
+                $inputType = 'checkbox';
+                $checked = ($currValue) ? " checked" : '';
+
+            } elseif (is_int($defaultValue)) {
+                $inputValue = $displayValue;
+                $inputType = 'integer';
+
+            } elseif (is_string($defaultValue)) {
+                $inputValue = $displayValue;
+                $inputType = 'text';
+
+            } elseif (is_array($defaultValue)) {
+                $displayValue = implode(',', $currValue);
+                $inputValue = $displayValue;
+                $displayDefault = implode(',', $defaultValue);
+                $inputType = 'comment';
+            }
+
+            $comment = $rec[1];
+
+            $id = translateToIdentifier($key).$i++;
+
+            if ($inputType === 'comment') {
+                $inputField = "<span id='$id' style='width: 5em;display: inline-block;'></span>";
+            } else {
+                $inputField = "<input id='$id' name='$key' type='$inputType' value='$inputValue'$checked />";
+            }
+            $out .= "<div class='lzy-config-elem'> $inputField <label for='$id'$diff>$key</label>  &nbsp;&nbsp;&nbsp;($displayDefault)<div class='lzy-config-comment'>$comment</div></div>\n";
+        }
+
+        $out .= "    <input class='lzy-button' type='submit' value='{{ lzy-config-save }}'>";
+        $out .= "  </form>\n";
+
+        return $out;
+    } // renderConfigOverlay
+
+
+
+
+    private function renderRawConfigOverlay()
+    {
+        $out = '';
+        $lastElem = '';
+        $configItems = $this->getConfigInfo();
+        ksort($configItems);
+        foreach ($configItems as $item => $rec) {
+            if (is_bool($rec[0])) {
+                $val = $rec[0]? 'false':'true';
+
+            } elseif (is_array($rec[0])) {
+                $str = str_pad("$item:", 45, ' ') . "# {$rec[1]}\n";
+                foreach ($rec[0] as $k => $v) {
+                    $str .= "    '$k': false,\n";
+                }
+                $out .= $str;
+                continue;
+
+            } else {
+                $val = $rec[0];
+            }
+
+            $str = str_pad("$item: $val", 45, ' ');
+            if (substr($item, 0, 2) !== $lastElem) {
+                $str = "\n$str";
+                $lastElem = substr($item, 0, 2);
+            }
+            $out .= "$str# {$rec[1]}\n";
+        }
+        $this->lzy->page->addJq("$('#raw-config-text').selText();");
+        return "<pre id='raw-config-text'>$out\n\n</pre>";
+    }
+
+
+
 
 } // Defaults

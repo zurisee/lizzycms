@@ -44,7 +44,7 @@ function executeScheduledTask($lzy, $args)
     $subject = isset($args['subject']) ? $args['subject'] : "[{{ site_title }}] Notification";
     $subject = $lzy->trans->translate( $subject );
 
-    $from = isset($args['from']) ? $args['from'] : $lzy->trans->translateVariable('webmaster_email');
+    $from = isset($args['from']) ? $args['from'] : $lzy->trans->translateVariable('webmaster_email', true);
     $to = isset($args['to']) ? $args['to'] : '';
 
     if (!$to) {

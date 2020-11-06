@@ -1,14 +1,17 @@
 /*  JS-Popup  */
 
-.lzy-js-popup {
+.lzy-js-popup-bg {
 	background:rgba(0,0,0,.4);
 	cursor:pointer;
 	height:100%;
 	position:fixed;
 	text-align:center;
 	top:0;
+	left: 0;
+	bottom: 0;
+	right: 0;
 	width:100%;
-	z-index:10000;
+	z-index: 10000;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -25,8 +28,7 @@
 	padding: 15px 5%;
 	position: relative;
 }
-.lzy-js-popup-closebtn .lzy-js-popup-wrapper::after {
-	content: '\0D7';
+.lzy-js-popup-close-button {
 	background-color: #fff;
 	border: 3px solid #999;
 	border-radius: 50px;
@@ -41,6 +43,12 @@
 	width: 30px;
 	height: 30px;
 	text-align: center;
+}
+.lzy-js-popup-close-button::after {
+	content: '\0D7';
+	position: absolute;
+	top:-3px; bottom: 0;
+	left: 0; right: 0;
 }
 .lzy-js-popup-buttons {
 	margin: 1em 0;

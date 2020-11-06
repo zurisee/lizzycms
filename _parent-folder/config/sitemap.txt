@@ -1,9 +1,9 @@
 # Sitemap
 
-Home: { folder: '~/', showThis: 'home/'}
+Home: { urlPath: '~/' }
 
 Test { hide: non-privileged }
-	Sub Page
+	Sub Page { folder: sub }
 
 Contact
 
@@ -15,33 +15,33 @@ __END__
 Optional Configuration Attributes:
 ----------------------------------
 
+urlPath: 
+	Example: urlPath: path/  
+	Defines the path, by which a HTTP request can be reached the page.
+	Example: My Page: { urlPath: pg1/ } -> now this page may be opened with the 
+	URL-path HTTP://domain.net/pg1/).
+
 folder: 
 	Example: folder: 'foldername/'	 
-	overrides the natural folder name (which is derived from the page name. 
+	Overrides the natural folder name (which is derived from the page name. 
 	Use '~/' to define a path starting at the root.
 
 file: 
 	Example: file: file.html	 
-	if set, the specified file will be loaded, but no markdown files
+	Ff set, the specified file will be loaded, but no markdown files
 
 template: 
 	Example: template: file.html 
-	specifies the template file, overriding the default which is set in 
+	Specifies the template file, overriding the default which is set in 
 	'_config/config.yaml'
-
-alias: 
-	Example: alias: foldername/  
-	defines an alternative folder name, under which the page can be reached 
-	Example: My Page: { alias: pg1/ } -> now this page may be opened with the 
-	alternative address [pg1/](~/pg1/).
 
 showThis:
 	Example: showThis: foldername/ 
-	show content of some other page (but leave the nav position as is)
+	Shows content of some other page folder (but leave the nav position as is)
 
 goto: 
 	Example: goto: foldername/  
-	directly open target folder, as if that was requested in the URL. 
+	Directly opens target folder, as if that was requested in the URL. 
 	BTW, goto is also the option you can use if you need to link to another site, 
 	such as https://github.com.
 
@@ -73,8 +73,8 @@ hideFrom, hideTill, showFrom, showTill:
 	Regarding acceptable formats, see examples below or 
 	http://php.net/manual/en/datetime.formats.php for reference.
 
-availableFrom, availableTill:
-	Example: availableFrom: 2020-01-01 
+omitFrom, omitTill (resp. availableFrom, availableTill):
+	Example: omitTill: 2020-01-01 
 	Defines a point in time when a page and its nav element will become available, 
 	resp. when it will become inavailable. 
 	Note: unlike the hideTill-option, the page will be completely inaccessible 

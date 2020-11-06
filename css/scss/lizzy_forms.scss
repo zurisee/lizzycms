@@ -43,7 +43,9 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         }
     }
 
-
+    .lzy-elem-revealed.lzy-elem-revealed {
+//        margin-top: -1.2em;
+    }
 
     /* === form-field-wrapper ========================== */
     .lzy-form-field-wrapper {
@@ -54,6 +56,10 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         * {
             box-sizing: border-box;
             vertical-align: middle;
+        }
+        label a,
+        legend a {
+            border-bottom: none;
         }
     }
 
@@ -78,6 +84,10 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         padding: 0.2em 0.4em;
         display: inline-block;
     }
+    input[type=radio],
+    input[type=checkbox] {
+        width: initial;
+    }
     .lzy-form-required-marker,
     .lzy-form-combined-required-marker {
         font-size: 85%;
@@ -86,6 +96,10 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         vertical-align: baseline;
         top: -0.25em;
     }
+    .lzy-formelem-show-info ::before {
+        color: gray;
+    }
+
 
     /* === Placeholders =================================== */
     ::-webkit-input-placeholder { /* Chrome/Opera/Safari */
@@ -116,11 +130,14 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
 
     /* === Password ================================ */
     .lzy-form-field-type-password {
-        input {
-            width: calc(100% - var(--lzy-label-width, #{$label-width}) - 2em - 10px);
-        }
+        position: relative;
 
         .lzy-form-pw-toggle {
+            position: absolute;
+            top: 0.8em;
+            right: 0.5em;
+            font-size: 80%;
+            opacity: 0.5;
             img {
                 width: 2em;
             }
@@ -129,6 +146,9 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
                 position: absolute;
                 left: -1000vw;
             }
+        }
+        .lzy-form-pw-toggle:hover {
+            opacity: 1;
         }
     }
 
@@ -196,6 +216,10 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         background: linear-gradient(#FFF 0%,#EFEFEF 60%,#E1DFE2 100%);
         padding: 0.3em 1.5em;
         cursor: pointer;
+    }
+    .lzy-form-button-submit {
+        color: #444;
+        border-color: #444;
     }
 
 
@@ -291,6 +315,9 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
             padding: 0;
             box-sizing: content-box;
         }
+        .lzy-formelem-show-info {
+            padding-left: 0.5em;
+        }
         .lzy-form-choice-elem {
             > * {
                 vertical-align: top;
@@ -310,13 +337,10 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
             appearance: none;
             display: inline-block;
             position: relative;
-//            background-color: #f1f1f1;
-//            color: #666;
             font-size: inherit;
             height: 1em;
             width: 1em;
             border: 0;
-//            box-shadow: inset 0 0 0 1px #bbb;
             cursor: pointer;
             margin-top: -1px;
             margin-right: 0.65em;
@@ -363,8 +387,9 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         .lzy-legend {
             width: 7em;
             width: var(--lzy-label-width, $label-width);
-            margin: 0 6px 0 0;
+            margin: 0;
             line-height: 1.2em;
+            float: left;
         }
     }
 
@@ -411,9 +436,23 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
     .lzy-horizontal:not(.lzy-small-screen-vertical) .lzy-form-choice-elem {
         display: inline-block;
     }
-
+    .lzy-formelem-show-info .lzy-icon-info::before {
+        top: 30%;
+    }
 } // lzy-form
 
+
+
+/* === misc =========================================== */
+.lzy-form-legend {
+    margin: 1em 0;
+}
+.lzy-form-label-hint {
+    color: #777;
+}
+.lzy-form-continue {
+    margin-top: 2em;
+}
 
 
 /* === Color ========================================== */
@@ -423,8 +462,9 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         color: red;
     }
     .lzy-form-error {
-        box-shadow: 0 0 10px red;
+        border: 1px dotted red;
         padding: 5px !important;
+        margin: 2px 0;
     }
 
     .lzy-form-error textarea,
@@ -435,6 +475,34 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         background-color: #f1f1f1;
         color: #666;
         box-shadow: inset 0 0 0 1px #bbb;
+    }
+    .lzy-form-header {
+        border: 1px dotted orange;
+        padding: 0.5em 1em;
+        margin: 0 0 1em 0;
+    }
+    .lzy-form-hint {
+        border: 1px dotted yellowgreen;
+        padding: 0.5em 1em;
+        margin: 1em 0 1em 0;
+        text-align: left;
+    }
+    .lzy-form-footer {
+        border: 1px dotted orange;
+        padding: 0.5em 1em;
+        margin: 1em 0 0 0;
+    }
+    .lzy-form-announcement {
+        padding: 1rem 2rem;
+        color: #a82600;
+        background: #f8f2cd;
+        border: 1px dotted #a82600;
+        padding: 5px !important;
+        margin: 0.5em 0 1em 0;
+        h2 {
+            font-size: 1.2rem;
+            margin: 0 0 0.5em 0;
+        }
     }
 }
 
@@ -531,11 +599,28 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         }
     }
 
-
     // choice (radio / checkbox)
+    .lzy-fieldset-body.lzy-fieldset-body label {
+        width: calc(100% - 2.4em - 16px);
+        margin: 0;
+        padding: 0.5em 0 0 0;
+    }
+    .lzy-form-checkbox-elem {
+        width: 100%;
+        display: inline-flex;
+    }
+    .lzy-fieldset-body,
+    .lzy-form-checkbox-label {
+        display: block;
+        float: none;
+        width: 100%;
+    }
     .lzy-form-field-type-choice {
         .lzy-legend {
             margin-bottom: 1em;
+            display: block;
+            float: none;
+            width: 100%;
         }
         input {
             height: 2.4em;
@@ -603,3 +688,7 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         padding: 4px 8px;
     }
 }
+
+
+
+

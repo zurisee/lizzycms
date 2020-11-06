@@ -318,7 +318,7 @@ EOT;
 
             // tabindex:
             $tabindex = 'tabindex="-1"';
-            if (($elem['parent'] === null) || ($this->list[$elem['parent']]['active'])) {
+            if (($elem['parentInx'] === null) || ($this->list[$elem['parentInx']]['active'])) {
                 $tabindex = '';
             }
 
@@ -436,11 +436,11 @@ EOT;
         $list = $this->lzy->siteStructure->getSiteList();
         $elems = [];
         while ($elem) {
-            if ($elem['inx'] === 0) {
+            if ($elem['listInx'] === 0) {
                 break;
             }
             $elems[] = $elem;
-            $parent = $elem['parent'];
+            $parent = $elem['parentInx'];
             if ($parent === null) {
                 break;
             }

@@ -7,83 +7,93 @@
 
 class SiteStructure
 {
-	private $list = false;
-	private $tree = false;
-	public $currPage;
-	public $prevPage = '';
-	public $nextPage = '';
-	public $currPageRec = false;
-	public $config;
-	private $noContent = false;
+    private $list = false;
+    private $tree = false;
+    public  $currPage;
+    public  $prevPage = '';
+    public  $nextPage = '';
+    public  $currPageRec = false;
+    public  $config;
+    private $noContent = false;
+    private $recTemplate = [
+        'name' => '',
+        'level' => 0,
+        'folder' => '',
+        'showthis' => '',
+        'isCurrPage' => false,
+        'listInx' => 0,
+        'urlExt' => '',
+        'active' => false,
+        'noContent' => false,
+        'hide!' => false,
+        'restricted!' => false,
+        'actualFolder' => false,
+        'urlpath' => false,
+        'hasChildren' => false,
+        'parentInx' => NULL,
+    ];
+    private $allowedArgs =
+        ',urlpath,name,folder,showthis,hide!,restricted,template,goto,'.
+        'hide,hideFrom,hideTill,showFrom,showTill,omitFrom,omitTill,availableFrom,availableTill,';
+    private $internalArgs =
+        ',level,isCurrPage,listInx,urlExt,active,noContent,actualFolder,hasChildren,parentInx,';
 
-	//....................................................
-	public function __construct($lzy, $currPage = false)
-	{
-	    $this->lzy = $lzy;
+    //....................................................
+    public function __construct($lzy, $currPage = false)
+    {
+        $this->lzy = $lzy;
         $this->nextPage = false;
         $this->prevPage = false;
 
         $this->config = $config = $lzy->config;
 
-		$this->site_sitemapFile = $config->site_sitemapFile;
-		$this->currPage = $currPage;
-		if (!$this->config->feature_sitemapFromFolders && !file_exists($this->site_sitemapFile)) {
-			$this->currPageRec = array('folder' => '', 'name' => '');
-			$this->list = false;
-			return;
-		}
-		$this->site_enableCaching = $this->config->site_enableCaching;
-		$this->cachePath = $this->config->cachePath; //'.#cache/';
-		$this->cacheFile = $this->cachePath.'_siteStructure.dat';
+        $this->site_sitemapFile = $config->site_sitemapFile;
+        $this->currPage = $currPage;
+        if (!$this->config->feature_sitemapFromFolders && !file_exists($this->site_sitemapFile)) {
+            $this->currPageRec = array('folder' => '', 'name' => '');
+            $this->list = false;
+            return;
+        }
+        $this->site_enableCaching = $this->config->site_enableCaching;
+        $this->cacheFile = CACHE_PATH . '_siteStructure.dat';
 
 
 		if (!$this->readCache()) {
             if ($config->feature_sitemapFromFolders) {
                 $this->list = $this->getSitemapFromFolders();
+
             } else {
-                $this->list = $this->getList();
+                $this->list = $this->parseSitemapDef();
             }
-			$this->tree = $this->getTree();
+            $this->tree = $this->parseList();
+
             $this->propagateProperties();   // properties marked with ! -> propagate into branches, e.g. 'lang!'='fr'
 
-			$this->writeCache();
-		}
+            $this->writeCache();
+        }
 
-		$currNr = $this->findSiteElem($this->currPage);
-		if ($currNr !== false) {
-			$this->list[$currNr]['isCurrPage'] = true;
-			$this->currPageRec = &$this->list[$currNr];
-			$this->markParents();
+        $currNr = $this->findSiteElem($this->currPage);
+        if ($currNr !== false) {
+            $this->list[$currNr]['isCurrPage'] = true;
+            $this->currPageRec = &$this->list[$currNr];
+            $this->markParents();
 
-		} else {    // requested page not found:
+        } else {    // requested page not found:
             $this->currPage = '_unknown/';
-            $this->currPageRec = [
-                'name' => 'Default',
-                'level' => 0,
-                'folder' => '_unknown/',
-                'requestedFolder' => $currPage,
-                'isCurrPage' => true,
-                'inx' => '0',
-                'urlExt' => '',
-                'active' => false,
-                'noContent' => false,
-                'hide!' => false,
-                'hasChildren' => false,
-                'restricted' => false,
-                'parent' => null
-            ];
+            $this->currPageRec = $this->recTemplate;
+            $this->currPageRec['isCurrPage'] = true;
             http_response_code(404);
             return;
         }
 
-		if ($currNr < (sizeof($this->list) - 1)) {
-		    $i = 1;
-		    while ($this->list[$currNr + $i]['hide!'] && (($currNr + $i) < (sizeof($this->list) - 1))) {
-		        $i++;
+        if ($currNr < (sizeof($this->list) - 1)) {
+            $i = 1;
+            while ($this->list[$currNr + $i]['hide!'] && (($currNr + $i) < (sizeof($this->list) - 1))) {
+                $i++;
             }
-			$this->nextPage = $this->list[$currNr + $i]['folder'];
-		}
-		if ($currNr > 0) {
+            $this->nextPage = $this->list[$currNr + $i]['folder'];
+        }
+        if ($currNr > 0) {
             $i = 1;
             $j = $currNr - $i;
             while (($j > 0) && ($this->list[$j]['hide!'] || $this->list[$j]['noContent'])) {
@@ -95,22 +105,268 @@ class SiteStructure
             } else {
                 $this->prevPage = false;
             }
-		}
-	} // __construct
+        }
+    } // __construct
+
+
+    //....................................................
+    public function getPagePath()
+    {
+        $pagePath = $this->currPageRec['folder'];
+        return $pagePath;
+    } // getPagePath
+
+
+    //....................................................
+    public function getPageFolder()
+    {
+        if ($this->currPageRec['actualFolder'] !== false) {
+            return $this->currPageRec['actualFolder'];
+        } else {
+            return $this->currPageRec['folder'];
+        }
+    } // getPageFolder
+
+
+    //....................................................
+    public function isPageDislocated()
+    {
+        // if 'showThis' is active, the browser's page folder differs from filesystem location
+        return $this->currPageRec['actualFolder'];
+    } // isPageDislocated
+
+
+    //....................................................
+    public function getSiteList()
+    {
+        return $this->list;
+    } // getSiteList
+
+
+    //....................................................
+    public function getSiteTree()
+    {
+        return $this->tree;
+    } // getSiteTree
+
+
+    //....................................................
+    // first pass: parse config/sitemap.txt and assemble $this->list :
+    private function parseSitemapDef()
+    {
+        $list = [];
+        $lines = $this->getSitemapLines();
+        $lastLevel = 0;
+        $indent = '';
+        foreach ($lines as $i => $line) {
+            $rec = $this->recTemplate;
+
+            // extract name / visibleName and split from rest of line:
+            // check whether page name in {{ }} -> to be translated later:
+            if (preg_match('/^ (\s*) {{ (.*?) }} \s* :? \s*  (.*) /x', $line, $m)) {
+                $indent = $m[1];
+                $name = trim($m[2]);
+                $visibleName = "{{ $name }} ";
+                $rest = $m[3];
+
+            // -> plain name:
+            } elseif (preg_match('/^ (\s*) ([^:{]*)  \s* :? \s*  (.*) /x', $line, $m)) {
+                $indent = $m[1];
+                $name = trim($m[2]);
+                $visibleName = $name;
+                $rest = $m[3];
+            }
+            $rec['name'] = $visibleName;
+
+            // obtain arguments:
+            $args = '';
+            if (preg_match('/ { \s* (.*?) \s* } /x', $rest, $m)) {
+                $args = $m[1];
+            }
+
+            // determine level:
+            $rec['level'] = $level = $this->determineLevel( $indent, $lastLevel, $line );
+            $lastLevel = $level;
+
+            // folder:
+            $rec['folder'] = translateToIdentifier($name, true).'/';
+
+            // parse args:
+            if ($args) {
+                $args = parseArgumentStr($args, ',', true);
+                if (is_array($args)) {
+                    foreach($args as $key => $value) {
+                        if ($key === 'folder') {
+                            $key = 'specified_folder'; // explicit folder -> later override computed folder
+                            $value = fixPath( str_replace(['~/', '~page/'], '', $value) );
+
+                        } elseif (stripos(',showThis,urlPath,goto,', ",$key,") !== false) {
+                            // treat patterns for app-root: '~/' and '/' -> just remove, always relative to app-root
+                            //  (also take care of nonsensical pattern '~page/', treat the same)
+                            $value = fixPath( str_replace(['~/', '~page/'], '', $value) );
+                            if (@$value[0] === '/') {
+                                $value = substr($value, 1);
+                            }
+                        }
+
+                        // check given key: a) against allowed keys, b) against internal keys
+                        if (stripos($this->allowedArgs, ",$key,") !== false) {
+                            $rec[ strtolower($key) ] = $value;
+
+                        } elseif (stripos($this->internalArgs, ",$key,") === false) {
+                            $rec[ $key ] = $value;  // -> custom key, just pass on as is
+                        } else {
+                            die("Error in sitemap: illegal argument '$key'.");
+                        }
+                    }
+                }
+            }
+
+            // determine visibility of element:
+            $rec = $this->determineVisability( $rec );
+            if ($rec === false) {
+                continue; // do not add to list
+            }
+
+            $rec = $this->handleSpecificOptions( $rec );
+
+            // add to list:
+            $list[] = $rec;
+
+        } // /foreach
+        return $list;
+    } // parseSitemapDef
+
+
+
+    private function getSitemapLines()
+    {
+        $rawLines = file($this->site_sitemapFile);
+        $lines = [];
+        foreach($rawLines as $line) {
+            if (strpos($line, '__END__') === 0) {
+                break;
+            }
+
+            $line = preg_replace('/(?<! [\\\:] ) (\/\/|\#) .* /x', '', $line);
+            $line = rtrim($line);
+            if ($line) {
+                $lines[] = $line;
+            }
+        }
+        return $lines;
+    } // getSitemapLines
+
+
+
+    private function determineLevel( $indent, $lastLevel, $line )
+    {
+        // determine level:
+        // idententation -> 4 blanks count as one tab = level
+        if (strlen($indent) === 0) {
+            $level = 0;
+        } else {
+            // convert every 4 blanks to a tab, then remove all remaining blanks => level
+            $indent = str_replace(str_repeat(' ', $this->config->siteIdententation), "\t", $indent);
+            $indent = str_replace(' ', '', $indent);
+            $level = strlen($indent);
+        }
+        if (($level - $lastLevel) > 1) {
+            writeLogStr("Error in sitemap.txt: indentation on line $line (level: $level / lastLevel: $lastLevel)", true);
+            $level = $lastLevel + 1;
+        }
+        return $level;
+    } // determineLevel
+
+
+
+    private function handleSpecificOptions( $rec )
+    {
+        // hide option -> always propagate:
+        if (isset($rec['hide'])) {
+            $rec['hide!'] = $rec['hide'];
+            unset($rec['hide']);
+        }
+
+        // restricted option -> always propagate:
+        if (isset($rec['restricted'])) {
+            $rec['restricted!'] = $rec['restricted'];
+            unset($rec['restricted']);
+        }
+        return $rec;
+    } // handleSpecificOptions
 
 
 
 	//....................................................
-	public function getSiteList() {
-		return $this->list;
-	} // getSiteList
+    // second pass: derive hierarchical structure $this->tree from $this->list :
+	private function parseList()
+	{
+		$this->listInx = 0;
+		$this->listSize = sizeof($this->list);
+		$tree = $this->_parseList('', 0, null);
+		return $tree;
+	} // parseList
 
 
 
-	//....................................................
-	public function getSiteTree() {
-		return $this->tree;
-	} // getSiteTree
+    //....................................................
+    private function _parseList($path, $parentLevel, $parentInx)
+    {
+        $listInx = &$this->listInx;
+        $treeInx = 0;         // $treeInx -> counter within level
+        $tree = [];
+        while ($listInx < $this->listSize) {
+            // create tree elem as ref to list elem:
+            $tree[ $treeInx ] = &$this->list[$listInx];
+            $currTreeElem = &$this->list[$listInx];
+
+            if (isset($currTreeElem['specified_folder'])) {
+                $path1 = $currTreeElem['specified_folder'];
+
+            } else {
+                $path1 = "$path{$currTreeElem['folder']}";
+            }
+            $currLevel = $currTreeElem['level'];
+            $currInx = $listInx;
+
+            $currTreeElem['parentInx'] = $parentInx;
+            $currTreeElem['folder'] = $path1;
+            if ($currTreeElem['showthis']) {
+                $actualFolder = $currTreeElem['showthis'];
+                $currTreeElem['actualFolder'] = $actualFolder;
+            } else {
+                $actualFolder = $currTreeElem['folder'];
+            }
+
+            // check whether page folder contains .md file(s):
+            $mdFiles = getDir(PAGES_PATH."$actualFolder*.md");
+            $currTreeElem['noContent'] = (sizeof($mdFiles) === 0);
+
+            $treeInx++;
+            $listInx++;
+
+            $nextLevel = @$this->list[ $listInx]['level'];
+            $up = ($nextLevel < $currLevel);
+            $down = ($nextLevel > $currLevel);
+            if ($up) {
+                return $tree;
+
+            } elseif ($down) {
+                $currTreeElem['hasChildren'] = true;
+
+                $subtree = $this->_parseList($path1, $currLevel, $currInx);
+
+                $currTreeElem = array_merge($currTreeElem, $subtree);
+                $nextLevel = @$this->list[$listInx]['level'];
+                $up = ($nextLevel < $currLevel);
+                if ($up) {
+                    return $tree;
+                }
+            }
+        }
+        return $tree;
+    } // _parseList
 
 
 
@@ -119,7 +375,7 @@ class SiteStructure
     private function getSitemapFromFolders() {
         $list = array();
         $i = 0;
-        return $this->_traverseDir($this->config->path_pagesPath,$i, 0, $list);
+        return $this->_traverseDir(PAGES_PATH,$i, 0, $list);
     } // getSitemapFromFolders
 
 
@@ -146,7 +402,7 @@ class SiteStructure
                     $rec['folder'] = $f . '/';
                 }
                 $rec['isCurrPage'] = false;
-                $rec['inx'] = $i;
+                $rec['listInx'] = $i;
                 $rec['urlExt'] = '';
                 $rec['active'] = false;
                 $rec['hide!'] = false;
@@ -161,233 +417,104 @@ class SiteStructure
 
 
 
-    //....................................................
-	private function getList()
-	{
-		$lines = file($this->site_sitemapFile);
-		$list = array();
-		$i = -1;
-		$lastLevel = 0;
-		foreach($lines as $line) {
-			if (strpos($line, '__END__') !== false) {
-				break;
-			}
-
-            $rec = [];
-			$line = str_replace(['http://', 'https://'], ['http:||', 'https:||'], $line);
-			$line = preg_replace('|//.*|', '', $line);
-			$line = preg_replace('|#.*|', '', $line);
-            $line = str_replace(['http:||', 'https:||'], ['http://', 'https://'], $line);
-			$line = rtrim($line);
-			if (preg_match('/^\s*$/', $line) || preg_match('/^\s*#/', $line)) {continue;}
-			$i++;
-
-			if (preg_match('/^(\s*) \{\{ ([^\}]+) \}\} (.*)/x', $line, $m)) {   // catch {{}}
-			    $transName = "{{ {$m[2]} }}";
-			    $line = $m[1].ltrim($m[2]).$m[3];
-            } else {
-			    $transName = false;
-            }
-
-			if (preg_match('/^(\s*)([^:\{]+)(.*)/', $line, $m)) {
-				$indent = $m[1];
-				$name = trim($m[2]);
-				$args = preg_replace('/:?\s*(\{[^\}]*\})/', "$1", $m[3]);;
-
-				$rec['name'] = $transName ? $transName : trim($m[2]);
-				if (strlen($indent) === 0) {
-                    $level = 0;
-                } else {
-				    // siteIdententation -> 4 blanks count as one tab
-                    // convert every 4 blanks to a tab, then remove all remaining blanks => level
-				    $indent = str_replace(str_repeat(' ', $this->config->siteIdententation), "\t", $indent);
-				    $indent = str_replace(' ', '', $indent);
-                    $level = strlen($indent);
-                }
-				if (($level - $lastLevel) > 1) {
-                    writeLog("Error in sitemap.txt: indentation on line $line (level: $level / lastLevel: $lastLevel)", true);
-                    $level = $lastLevel + 1;
-				}
-                $rec['level'] = $level;
-				$lastLevel = $level;
-
-				$rec['folder'] = basename(translateToFilename($name, true), '.html').'/';
-				if ($args) {
-					$args = parseArgumentStr($args, ',', true);
-					if (is_array($args)) {
-						foreach($args as $key => $value) {
-							if (($key === 'folder') || ($key === 'showthis')) {
-
-							    // if it's folder, take care of absolute URLs, e.g. HTTP://
-							    if (preg_match('|^https?\://|i', $value)) { // external link:
-							        $folder = $value;
-
-                                } else {                                // internal link -> fix it if necessary
-                                    $folder = fixPath($value);
-                                    if (!$folder) {
-                                        $folder = './';
-                                    }
-                                }
-								$rec[strtolower($key)] = $folder;
-
-							} else {
-								$rec[strtolower($key)] = $value;
-							}
-						}
-					}
-				}
-				$rec['isCurrPage'] = false;
-				$rec['inx'] = $i;
-				$rec['urlExt'] = '';
-				$rec['active'] = false;
-				$rec['noContent'] = false;
-
-				// Hide: hide always propagating, therefore we need 'hide!' element
-                if (isset($rec['hide!'])) {
-                    if (isset($rec['hide'])) {
-                        unset($rec['hide']);
-                    }
-                } else {
-                    $rec['hide!'] = (isset($rec['hide'])) ? $rec['hide'] : false;   // always propagate hide attribute
-                    unset($rec['hide']);    // beyond this point hide is permanently replaced by hide!
-                }
-
-
-				// case: page only visible to selected users:
-                $hideArg = &$rec['hide!'];
-
-                if ($hideArg) {
-                    // detect leading inverter (non or not or !):
-                    $neg = false;
-                    if (preg_match('/^((non|not|\!)\-?)/i', $hideArg, $m)) {
-                        $neg = true;
-                        $hideArg = substr($hideArg, strlen($m[1]));
-                    }
-
-                    if (preg_match('/privileged/i', $hideArg)) {
-                        $hideArg = $this->config->isPrivileged;
-                    } elseif (preg_match('/loggedin/i', $hideArg)) {
-                        $hideArg = $_SESSION['lizzy']['user'];
-                    } elseif (($hideArg !== 'true') && !is_bool($hideArg)) {        // if not 'true', it's interpreted as a group
-                        $hideArg = $this->lzy->auth->checkGroupMembership($hideArg);
-                    }
-                    if ($neg) {
-                        $hideArg = !$hideArg;
-                    }
-                }
-
-
-                // check time dependencies:
-				if (isset($rec['availablefrom'])) {
-				    $t = strtotime($rec['availablefrom']);
-                    if (time() < $t) {
-                        continue;
-                    }
-                }
-				if (isset($rec['availabletill'])) {
-				    $t = strtotime($rec['availabletill']);
-                    if (time() > $t) {
-                        continue;
-                    }
-                }
-
-                if (isset($rec['showfrom'])) {
-                    $t = strtotime($rec['showfrom']);
-                    $rec['hide!'] |= (time() < $t);
-                }
-                if (isset($rec['showtill'])) {
-                    $t = strtotime($rec['showtill']);
-                    $rec['hide!'] |= (time() > $t);
-                }
-                if (isset($rec['hidefrom'])) {
-                    $t = strtotime($rec['hidefrom']);
-                    $rec['hide!'] |= (time() > $t);
-                }
-                if (isset($rec['hidetill'])) {
-                    $t = strtotime($rec['hidetill']);
-                    $rec['hide!'] |= (time() < $t);
-                }
-
-                if (isset($rec['showthis']) && $rec['showthis']) {
-                    $rec['actualFolder'] = $rec['showthis'];
-                } else {
-                    $rec['actualFolder'] = $rec['folder'];
-                }
-                if (isset($rec['alias']) && $rec['alias']) {
-                    $rec['alias'] = resolvePath(fixPath($rec['alias']));
-                }
-                $list[] = $rec;
-            }
-        }
-		return $list;
-	} // getList
-
-
-
-	//....................................................
-	private function getTree()
-	{
-		$this->lastLevel = 0;
-		$i = 0;
-		list($tree, $visChildren) = $this->exploreTree($this->list, $i, '', 0, null);
-		return $tree;
-	} // getTree
-
-
-
-	//....................................................
-	private function exploreTree(&$list, &$i, $path, $lastLevel, $parent)
-	{
-	                    // $i -> list-elem counter
-		$j = 0;         // $j -> counter within level
-		$tree = array();
-		$hasVisibleChildren = false;
-		if ($path === './') {
-		    $path = '';
+    private function determineVisability( $rec )
+    {
+        // Hide: hide always propagating, therefore we need 'hide!' element
+        if (isset($rec['hide'])) {
+            $rec['hide!'] = $rec['hide'];
+            unset($rec['hide']);
         }
 
-		$pagesPath = $this->config->path_pagesPath;
-        while ($i < sizeof($list)) {
-            $level = $list[$i]['level'];
-			if ($level > $lastLevel) {
-				$lastRec = &$list[$i-1];
 
-				list($subtree, $visChildren) = $this->exploreTree($list, $i, $list[$i-1]['folder'], $lastLevel+1, ($i) ? ($i-1) : null);
+        // case: page only visible to selected users:
+        $hideArg = $rec['hide!'];
 
-				$lastRec['hasChildren'] = $visChildren;
-				$tree[$j-1] = (isset($tree[$j-1])) ? array_merge($tree[$j-1], $subtree) : $subtree;
+        if (!is_bool( $hideArg )) {
+            // detect leading inverter (non or not or !):
+            $neg = false;
+            if (preg_match('/^((non|not|\!)\-?)/i', $hideArg, $m)) {
+                $neg = true;
+                $hideArg = substr($hideArg, strlen($m[1]));
+            }
 
-			} elseif ($level === $lastLevel) {
-				$rec = &$list[$i];
-                $rec['hasChildren'] = false;
-				if (substr($rec['folder'], 0, 2) !== '~/') {
-                    $rec['folder'] = $path.$rec['folder'];
-				} else {
-                    $rec['folder'] = (strlen($rec['folder']) > 2) ? substr($rec['folder'], 2) : '';
-				}
+            if (preg_match('/privileged/i', $hideArg)) {
+                $hideArg = $this->config->isPrivileged;
+            } elseif (preg_match('/loggedin/i', $hideArg)) {
+                $hideArg = $_SESSION['lizzy']['user'];
+            } elseif (($hideArg !== 'true') && !is_bool($hideArg)) {        // if not 'true', it's interpreted as a group
+                $hideArg = $this->lzy->auth->checkGroupMembership($hideArg);
+            }
+            if ($neg) {
+                $hideArg = !$hideArg;
+            }
+            $rec['hide!'] = $hideArg;
+        }
 
-				if (substr($rec['actualFolder'], 0, 2) !== '~/') {
-                    $rec['actualFolder'] = $path.$rec['actualFolder'];
-				} else {
-                    $rec['actualFolder'] = (strlen($rec['actualFolder']) > 2) ? substr($rec['actualFolder'], 2) : '';
-				}
-                $mdFiles = getDir("$pagesPath{$rec['actualFolder']}*.md");
-                $rec['noContent'] = (sizeof($mdFiles) === 0);
+        // arg 'omit':
+        if (isset($rec['omit'])) {
+            $omitArg = $rec['omit'];
+            if ($omitArg === true) {
+                return false;
+            }
 
-				$list[$i]['parent'] = $parent;
-				if (isset($rec['hide!']) && $rec['hide!']) {
-					$hasVisibleChildren = true;
-				}
+            // detect leading inverter (non or not or !):
+            $neg = false;
+            if (preg_match('/^((non|not|\!)\-?)/i', $omitArg, $m)) {
+                $neg = true;
+                $omitArg = substr($omitArg, strlen($m[1]));
+            }
 
-				$tree[$j] = &$list[$i];
-				$i++;
-				$j++;
-			} else {
-				return array($tree, $hasVisibleChildren); // going up
-			}
-		}
-		return array($tree, $hasVisibleChildren); // the end, all pages consumed
-	} // exploreTree
+            if (preg_match('/privileged/i', $omitArg)) {
+                $omitArg = $this->config->isPrivileged;
+            } elseif (preg_match('/loggedin/i', $omitArg)) {
+                $omitArg = $_SESSION['lizzy']['user'];
+            } elseif (($omitArg !== 'true') && !is_bool($omitArg)) {        // if not 'true', it's interpreted as a group
+                $omitArg = $this->lzy->auth->checkGroupMembership($omitArg);
+            }
+            if ($neg) {
+                $omitArg = !$omitArg;
+            }
+            if ($omitArg) {
+                return false;
+            }
+        }
+
+
+        // check time dependencies:
+        if (isset($rec['omittill']) || isset($rec['availablefrom'])) {
+            $s = isset($rec['omittill'])? $rec['omittill']: $rec['availablefrom'];
+            $t = strtotime( $s );
+            if (time() < $t) {
+                return false;
+            }
+        }
+        if (isset($rec['omitfrom']) || isset($rec['availabletill'])) {
+            $s = isset($rec['omitfrom'])? $rec['omitfrom']: $rec['availabletill'];
+            $t = strtotime( $s );
+            if (time() > $t) {
+                return false;
+            }
+        }
+
+        if (isset($rec['showfrom'])) {
+            $t = strtotime($rec['showfrom']);
+            $rec['hide!'] |= (time() < $t);
+        }
+        if (isset($rec['showtill'])) {
+            $t = strtotime($rec['showtill']);
+            $rec['hide!'] |= (time() > $t);
+        }
+        if (isset($rec['hidefrom'])) {
+            $t = strtotime($rec['hidefrom']);
+            $rec['hide!'] |= (time() > $t);
+        }
+        if (isset($rec['hidetill'])) {
+            $t = strtotime($rec['hidetill']);
+            $rec['hide!'] |= (time() < $t);
+        }
+        return $rec;
+    } // determineVisability
+
 
 
 
@@ -399,26 +526,28 @@ class SiteStructure
 
 
 
-    private function _propagateProperties($subtree, $level = 0, $toPropagate = [])
+    private function _propagateProperties(&$subtree, $toPropagate = [])
     {
         $toPropagate1 = $toPropagate;
-        if (isset($subtree['inx'])) {
-            $r = &$this->list[$subtree['inx']];
+        if (isset($subtree['listInx'])) {
+            // apply propagating option from further up:
             foreach ($toPropagate1 as $k => $v) {
-                $r[$k] = $v;
+                $subtree[$k] = $v;
             }
 
-            if ($r !== null) {
-                foreach ($r as $k => $v) {
-                    if ($k === 'hide!') { // special case 'hide!'
-                        if ($v) {
-                            $toPropagate1['hide!'] = true;
+            // check for new propagating options:
+            if ($subtree !== null) {
+                foreach ($subtree as $k => $v) {
+                    if (strpos($k, '!') !== false) {    // item to propagate found
+                        if (strpos('hide!,restricted!', $k) !== false) {
+                            if (!$v) {
+                                continue;
+                            }
+                        } else {
+                            $k = str_replace('!', '', $k);
                         }
-                    } elseif (strpos($k, '!') !== false) {    // item to propagate found
-                        $k1 = str_replace('!', '', $k);
-                        $toPropagate1[$k1] = $v;
-                        $r[$k1] = $v;
-                        unset($r[$k]);
+                        $toPropagate1[$k] = $v;
+                        $subtree[$k] = $v;
                     }
                 }
             }
@@ -426,7 +555,7 @@ class SiteStructure
 
         foreach ($subtree as $key => $rec) {
             if (is_int($key)) {
-                $this->_propagateProperties($rec, $level + 1, $toPropagate1);
+                $this->_propagateProperties($subtree[ $key ], $toPropagate1);
             }
         }
     } // _propagateProperties
@@ -439,8 +568,8 @@ class SiteStructure
 	{
 		$this->currPageRec['active'] = true;
 		$rec = &$this->currPageRec;
-		while ($rec['parent'] !== null) {
-			$rec = &$this->list[$rec['parent']];
+		while ($rec['parentInx'] !== null) {
+			$rec = &$this->list[$rec['parentInx']];
 			$rec['active'] = true;
 		}
 	} // markParents
@@ -448,32 +577,33 @@ class SiteStructure
 
 
 	//....................................................
-	public function findSiteElem($str, $returnRec = false, $allowNameToSearch = false)
+	public function findSiteElem($requestedPath, $returnRec = false, $allowNameToSearch = false)
 	{
-	    if (($str === '/') || ($str === './')) {
-            $str = '';
-        } elseif ((strlen($str) > 0) && ($str[0] === '/')) {
-	        $str = substr($str, 1);
-        } elseif ((strlen($str) > 0) && (substr($str,0,2) === '~/')) {
-            $str = substr($str, 2);
+	    if (($requestedPath === '/') || ($requestedPath === './')) {
+            $requestedPath = '';
+        } elseif ((strlen($requestedPath) > 0) && ($requestedPath[0] === '/')) {
+	        $requestedPath = substr($requestedPath, 1);
+        } elseif ((strlen($requestedPath) > 0) && (substr($requestedPath,0,2) === '~/')) {
+            $requestedPath = substr($requestedPath, 2);
         }
+        $requestedPath1 = fixPath( $requestedPath );
         if (!$this->list) {
         	return false;
         }
-        
+
 		$list = $this->list;
 		$found = false;
 		$foundLevel = 0;
-		foreach($list as $key => $elem) {
-			if ($found || ($str === $elem['folder']) || ($str.'/' === $elem['folder'])) {
-				$folder = $this->config->path_pagesPath.$elem['folder'];
-				if (isset($elem['showthis']) && $elem['showthis']) {	// no 'skip empty folder trick' in case of showthis
+		foreach($list as $key => $pageRec) {
+			if ($found || ($requestedPath1 === $pageRec['folder'])) {
+				$folder = PAGES_PATH.$pageRec['folder'];
+				if ($pageRec['showthis'] !== false) {	// no 'skip empty folder trick' in case of showthis
                     $found = true;
                     break;
 				}
 
 				// case: falling through empty page-folders and hitting the bottom:
-				if ($found && ($foundLevel >= $elem['level'])) {
+				if ($found && ($foundLevel >= $pageRec['level'])) {
 				    $key = max(0, $key - 1);
 				    break;
                 }
@@ -482,7 +612,7 @@ class SiteStructure
                     $found = true;
                     break;
                 }
-				$dir = getDir($this->config->path_pagesPath.$elem['folder'].'*');	// check whether folder is empty, if so, move to the next non-empty one
+				$dir = getDir(PAGES_PATH.$pageRec['folder'].'*');	// check whether folder is empty, if so, move to the next non-empty one
 				$nFiles = sizeof(array_filter($dir, function($f) {
                     return ((substr($f, -3) === '.md') || (substr($f, -5) === '.link') || (substr($f, -5) === '.html'));
 				}));
@@ -492,20 +622,21 @@ class SiteStructure
 				} else {
 					$found = true;
                     $this->noContent = true;
-                    $foundLevel = $elem['level'];
+                    $foundLevel = $pageRec['level'];
 				}
 
-			} elseif (isset($elem['alias']) && ($str === $elem['alias'])) {
+			} elseif (($pageRec['urlpath'] !== false) && ($requestedPath1 === $pageRec['urlpath'])) {
                 $found = true;
                 break;
 
 			} elseif ($allowNameToSearch) {
-			    if (strtolower($elem['name']) === strtolower($str)) {
+			    if (strtolower($pageRec['name']) === strtolower($requestedPath)) {
                     $found = true;
                     break;
                 }
             }
 		}
+
 		if ($returnRec && $found) {
 		    return $list[$key];
         } elseif ($found) {
@@ -523,8 +654,8 @@ class SiteStructure
         if ($elem['active']) {
             return true;
         }
-        while ($elem['parent'] !== null) {
-            $elem = $this->list[$elem['parent']];
+        while ($elem['parentInx'] !== null) {
+            $elem = $this->list[$elem['parentInx']];
             if ($elem['active']) {
                 return true;
             }
@@ -538,9 +669,6 @@ class SiteStructure
 	private function writeCache()
 	{
 		if ($this->site_enableCaching) {
-			if (!file_exists($this->cachePath)) {
-				mkdir($this->cachePath, MKDIR_MASK2);
-			}
 			$cache = serialize($this);
 			file_put_contents($this->cacheFile, $cache);
 		}
@@ -575,13 +703,6 @@ class SiteStructure
 
 
 
-
-    public function clearCache()
-    {
-        if (isset($this->cacheFile) && file_exists($this->cacheFile)) {
-            unlink($this->cacheFile);
-        }
-    } // clearCache
 
 	public function getNumberOfPages()
 	{

@@ -50,6 +50,7 @@ class Page
     private $overlay = [];    // if set, will add an overlay while the original page gets fully rendered
     private $debugMsg = false;
     private $redirect = false;
+    public  $mdVariables = [];
 
     private $mdCompileModifiedContent = false;
     private $wrapperTag = 'section';
@@ -90,10 +91,52 @@ class Page
                 $this->$var = '';
             }
             return $val;
+        } elseif (strpos($var, '.') !== false) {
+            $a = explode('.', $var);
+            $r = &$this;
+            while ($a) {
+                $k = array_shift($a);
+                if (isset($r->$k)) {
+                    $r = $r->$k;
+                } elseif (is_array($r) && isset($r[$k])) {
+                    $r = $r[$k];
+                } else {
+                    return null;
+                }
+            }
+            return $r;
         } else {
             return '';
         }
     }
+
+
+
+    public function update($values)
+    {
+        // merge given values into the page object's properties:
+        foreach ($values as $key => $value) {
+            if (isset($this->$key)) {
+                if (!$this->$key) {
+                    $this->$key = $value;
+                } else {
+                    if (is_array($this->$key) && is_array($value)) {
+                        $this->$key = array_merge($this->$key, $value);
+
+                    } elseif (is_string($this->$key) && is_string($value)) {
+                        $this->$key .= $value;
+
+                    } elseif (is_int($this->$key) && is_int($value)) {
+                        $this->$key += $value;
+
+                    } else {
+                        fatalError("page->update: type clash or unsupported type: $value");
+                    }
+                }
+            }
+        }
+    } // update
+
 
 
 
@@ -346,6 +389,7 @@ class Page
     //-----------------------------------------------------------------------
     public function addMessage($str, $replace = false)
     {
+        $str = str_replace("\n", '<br>', $str);
         $this->addToProperty('message', $str, $replace);
     } // addMessage
 
@@ -397,6 +441,15 @@ class Page
                 $args = ['text' => $args, 'mdCompile' => $mdCompile];
             }
         }
+        // save state of modules:
+        $args['currState'] = [
+            'js' => $this->js,
+            'jsFiles' => $this->jsFiles,
+            'jq' => $this->jq,
+            'jqFiles' => $this->jqFiles,
+            'modules' => $this->modules,
+            'jsModules' => $this->jsModules
+        ];
         $this->override = $args;
 
     } // addOverride
@@ -504,6 +557,10 @@ class Page
             return true;
 
         } else {
+            // restore state at time of addOverride:
+            foreach ($override['currState'] as $k => $v) {
+                $this->$k = $v;
+            }
             if (isset($this->mdCompileModifiedContent) && ($this->mdCompileModifiedContent || ($this->mdCompileModifiedContent === null) )) {
                 $override['mdCompile'] = true;
             }
@@ -521,6 +578,7 @@ class Page
             if ((isset($override['mdCompile']) && $override['mdCompile']) || $this->mdCompileModifiedContent) {
                 $text = compileMarkdownStr($text);
             }
+            $text = "\t<section class='lzy-overridden'>$text</section>\n";
             $this->addContent($text, true);
             return true;
         }
@@ -819,8 +877,8 @@ EOT;
         $rootJs .= "\t\tvar screenSizeBreakpoint = $screenSizeBreakpoint;\n";
         $rootJs .= "\t\tvar pagePath = '{$this->lzy->pagePath}';\n";
 
-        if (($this->config->debug_allowDebugInfo) &&
-            (($this->config->debug_showDebugInfo)) || getUrlArgStatic('debug')) {
+        if ($this->config->debug_allowDebugInfo &&
+            ((($this->config->debug_showDebugInfo)) || getUrlArgStatic('debug'))) {
             if ($this->config->isPrivileged) {
                 $bodyEndInjections .= $this->renderDebugInfo();
             }
@@ -989,7 +1047,7 @@ EOT;
     public function render($processShieldedElements = false)
     {
         $n = 0;
-        $writeToCache = $this->config->cachingActive;
+        $writeToCache = $GLOBALS['globalParams']['cachingActive'];
         if (!$processShieldedElements) {
             $processShieldedElements = !$writeToCache;
         }
@@ -1194,7 +1252,7 @@ EOT;
 
 
     //....................................................
-    public function lateApplyMessag($html, $msg)
+    public function lateApplyMessage($html, $msg)
     {
         $msg = createWarning($msg);
         $p = strpos($html, '<body');
@@ -1271,5 +1329,157 @@ EOT;
         }
         return $headInjections;
     } // renderRelLinks
+
+
+
+    //....................................................
+    public function extractFrontmatter($str)
+    {
+        return $this->_extractFrontmatter($str);
+    } // extractFrontmatter
+
+
+
+    private function extractSettings( &$hdr )
+    {
+        if (!$this->config) {
+            return;
+        }
+        // directly apply any config properties 'feature_...' to the global config values:
+        $featureConfigProps = $this->config->getConfigProperties( 'feature' );
+        foreach ($featureConfigProps as $key => $value) {
+            $k = substr($key, 8);
+            if (isset($hdr[ $k ])) {
+                $this->config->setConfigValue($key, $hdr[ $k ]);
+                // special case 'dataPath': activate immediately (i.e. copy to S_SESSION and $GLOBALS):
+                if ($k === 'dataPath') {
+                    $_SESSION['lizzy']['dataPath'] = $hdr['dataPath'];
+                    $GLOBALS['globalParams']['dataPath'] = $hdr['dataPath'];
+                }
+            }
+        }
+
+        // runPHP:
+        if (isset($hdr['runPHP'])) {
+            if (!$this->config->custom_permitUserCode) {
+                fatalError("Trying to use 'runPHP' in frontmatter, but config option 'custom_permitUserCode' is not enabled.");
+            }
+            $phpFile = $hdr['runPHP'];
+            if ($phpFile[0] !== '-') {
+                $phpFile = '-' . $phpFile;
+            }
+            $phpFile = USER_CODE_PATH . $phpFile;
+            if (file_exists($phpFile)) {
+                require $phpFile;
+            } else {
+                fatalError("Trying to use 'runPHP' in frontmatter, but file '$phpFile' not found.");
+            }
+            unset($hdr['runPHP']);
+        }
+
+        // runPHPonce:
+        if (isset($hdr['runPHPonce'])) {
+            if (!$this->config->custom_permitUserCode) {
+                fatalError("Trying to use 'runPHPonce' in frontmatter, but config option 'custom_permitUserCode' is not enabled.");
+            }
+            $phpFile = $hdr['runPHPonce'];
+            if ($phpFile[0] !== '-') {
+                $phpFile = '-' . $phpFile;
+            }
+            if (!isset($GLOBALS['lizzy']['runPHPonce'][$phpFile])) {
+                $GLOBALS['lizzy']['runPHPonce'][$phpFile] = true;
+                $phpFile = USER_CODE_PATH . $phpFile;
+                if (file_exists($phpFile)) {
+                    require $phpFile;
+                } else {
+                    fatalError("Trying to use 'runPHP' in frontmatter, but file '$phpFile' not found.");
+                }
+                unset($hdr['runPHPonce']);
+            }
+        }
+
+        // mdVariables:
+        $mdVariables = [];
+        if (isset($hdr['mdVariables'])) {
+            foreach ($hdr['mdVariables'] as $key => $value) {
+                $key = str_replace('$', '', $key);
+                if (preg_match('/^ \s* (\w [\w\d]*) \( (.*?) \) $/x', $value, $m)) {
+                    $funName = $m[1];
+                    if (!$this->config->custom_permitUserCode) {
+                        fatalError("Trying to use function '$funName()' in frontmatter, but config option 'custom_permitUserCode' is not enabled.");
+                    }
+                    if (function_exists($funName)) {
+                        $value = $funName($m[2]);
+                    } else {
+                        fatalError("Trying to use function, '$funName()' is not defined.");
+                    }
+                }
+                $mdVariables[$key] = $value;
+            }
+            unset($hdr['mdVariables']);
+            $this->mdVariables = $mdVariables;
+
+        } else {
+            foreach ($hdr as $key => $value) {
+                if ($key[0] !== '$') {
+                    continue;
+                }
+                $mdVariables[substr($key, 1)] = $value;
+                unset($hdr[$key]);
+            }
+            $this->mdVariables = $mdVariables;
+        }
+    } // extractSettings
+
+
+
+    //....................................................
+    public function extractHtmlBody($html)
+    {
+        $html = $this->_extractFrontmatter($html);
+
+        if (($p1=strpos($html, '<body')) !== false) {
+            $p1 = strpos($html, '>', $p1);
+            if (($p2=strpos($html, '</body')) !== false) {
+                $html = trim(substr($html, $p1+1, $p2-$p1-1));
+            }
+        }
+        return $html;
+    } // extractHtmlBody
+
+
+
+    private function _extractFrontmatter($str) // $propagateToGlobalSettings = false
+    {
+        if (strpos($str, '---') !== 0) {
+            return $str;
+        }
+        $p1 = strpos($str, "\n")+1;
+        $p2 = strpos($str, "\n---", 4);
+        if (!$p2) {
+            return $str;
+        }
+        $yaml = substr($str, $p1, $p2-$p1);
+        $str = substr($str, strpos($str, "\n", $p2+4));
+
+        if ($yaml) {
+            $yaml = str_replace("\t", '    ', $yaml);
+            try {
+                $hdr = convertYaml($yaml);
+            } catch (Exception $e) {
+                fatalError("Error in Yaml-Code: <pre>\n$yaml\n</pre>\n" . $e->getMessage(), 'File: ' . __FILE__ . ' Line: ' . __LINE__);
+            }
+        }
+        if ($hdr && is_array($hdr)) {
+            $this->extractSettings($hdr);
+            $this->update($hdr);
+            $this->set('frontmatter', $hdr);
+
+            if ($this->trans && isset($hdr['variables'])) {
+                $this->trans->addVariables( $hdr['variables'] );
+            }
+        }
+        return $str;
+    } // _extractFrontmatter
 
 } // Page

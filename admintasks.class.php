@@ -15,7 +15,6 @@ class AdminTasks
         $this->loggedInUser = $this->auth->getLoggedInUser();
 
         $this->trans->readTransvarsFromFile('~sys/config/admin.yaml');
-//        $this->trans->readTransvarsFromFile('~sys/config/useradmin.yaml');
         $this->userAdminInitialized = file_exists(CONFIG_PATH.$this->lzy->config->admin_usersFile);
     }
 
@@ -485,13 +484,13 @@ EOT;
 
             } else {
                 $this->addUsersToDB([ $email => ['email' => $email, 'groups' => $group]]);
-                writeLog("new admin user added: $email [".getClientIP().']', LOGIN_LOG_FILENAME);
+                writeLogStr("new admin user added: $email [".getClientIP().']', LOGIN_LOG_FILENAME);
                 return true;
             }
 
         } else {
             $this->addUsersToDB([ $email => ['email' => $email, 'groups' => $group]]);
-            writeLog("new guest user added: $email [".getClientIP().']', LOGIN_LOG_FILENAME);
+            writeLogStr("new guest user added: $email [".getClientIP().']', LOGIN_LOG_FILENAME);
             return true;
         }
     } // createGuestUserAccount
@@ -528,7 +527,7 @@ EOT;
         }
         $this->auth->loadKnownUsers();
         $this->auth->setUserAsLoggedIn($user, $userRec);
-        writeLog("email for user changed: $email [".getClientIP().']', LOGIN_LOG_FILENAME);
+        writeLogStr("email for user changed: $email [".getClientIP().']', LOGIN_LOG_FILENAME);
     } // changeEMail
 
 
@@ -648,7 +647,7 @@ EOT;
             $displayName = $submittedEmail;
         }
 
-        $tick = new Ticketing();
+        $tick = new Ticketing(['unambiguous' => true]);
 
         $otRec = ['username' => $user, 'email' => $submittedEmail,'mode' => $mode];
         $hash = $tick->createTicket($otRec, 1, $accessCodeValidyTime);
@@ -663,7 +662,7 @@ EOT;
             $userAcc = new UserAccountForm(null);
 
             $message = $userAcc->renderOnetimeLinkEntryForm($user, $validUntilStr, 'lzy-onetime access link');
-            writeLog("one time link sent to: $submittedEmail -> '$hash'", LOGIN_LOG_FILENAME);
+            writeLogStr("one time link sent to: $submittedEmail -> '$hash'", LOGIN_LOG_FILENAME);
 
         } elseif ($mode === 'email-signup') {
             $subject = "[{{ site_title }}] {{ lzy-email-sign-up-subject }} {$globalParams['host']}";
@@ -736,11 +735,10 @@ EOT;
                 $otRec['accessCode'] = $tick->createHash();
             }
             $hash = $tick->createTicket($otRec, 1, $accessCodeValidyTime);
-//$hash = $tick->createTicket($otRec, 100, $accessCodeValidyTime);
 
             $url = $globalParams['pageUrl'] . $hash . '/';
-            $subject = str_replace(['{site_title}', '{lzy-invitation-default-subject}', '{lzy-invitation-host}'],
-                    ['{{ site_title }}', '{{ lzy-signup-invitation-subject }}', $globalParams['host']], $subject);
+            $subject = str_replace(['{site_title}', '{lzy-invitation-host}'],
+                    ['{{ site_title }}', $globalParams['host']], $subject);
             $message = str_replace(['{lzy-invitation-link}', '{lzy-invitation-expiry-date}'], [$url, $validUntilStr], $text);
 
             $ok = $this->sendMail($email, $subject, $message);

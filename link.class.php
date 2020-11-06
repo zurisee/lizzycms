@@ -233,11 +233,6 @@ class CreateLink
         } else {
             $this->href = resolvePath($this->href, true, true);
         }
-//        if ($this->target) {
-//            $this->target = ($this->target === 'newwin') ? '_blank' : $this->target;
-//            $this->target = " target='{$this->target}' rel='noopener noreferrer'";
-//            // see: https://developers.google.com/web/tools/lighthouse/audits/noopener
-//        }
     } // renderPdfLink
 
 
@@ -356,6 +351,9 @@ class CreateLink
             $hiddenText = '';
         }
 
+        // download link may point to a resource type object, so let resolvePath() auto-determine type:
+        $this->href = resolvePath($this->href, true, true, false);
+        //???        $this->href = resolvePath($this->href, true, true, false, false); // was fixed to type 'page access' (omitting pages/)
         $this->href .= $hash;
         return $hiddenText;
     } // renderRegularLink

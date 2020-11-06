@@ -46,6 +46,10 @@ submit:
     de: absenden
     en: send
 
+Reset:
+    de: Zurücksetzen
+    en: Reset
+
 Confirm:
     de: Bestätigen
     en: Confirm
@@ -73,7 +77,8 @@ lzy-required-value-missing:
     _:  'Please fill in this entry field:'
 
 lzy-form-required-comment:
-    de: 'Mit <span class="lzy-form-required-marker">*</span> bezeichnete Felder sind Pflichtfelder.'
+    de: '<span class="lzy-form-required-marker">*</span> Erforderliche Eingaben.'
+#    de: 'Mit <span class="lzy-form-required-marker">*</span> bezeichnete Felder sind Pflichtfelder.'
     _:  'Fields marked by <span class="lzy-form-required-marker">*</span> are mandatory.'
 
 lzy-yes:
@@ -86,6 +91,59 @@ lzy-no:
 lzy-form-data-preview-title:
     de: 'Bisher empfangene Daten:'
     _:  'Data received until now:'
+
+lzy-form-expired:
+    de: 'Dieses Formular war zu lange offen,<br>Ihre Eingaben konnten nicht mehr akzeptiert werden.<br>Bitte versuchen Sie es erneut.'
+    _:  'Sorry, this form expired.<br>Please try again.'
+
+
+lzy-formelem-info-title:
+    de: 'Erläuterungen: '
+    _:  'Explanations: '
+
+lzy-form-data-received-ok:
+    de: "<p>Ihre Eingaben wurden übermittelt. Besten Dank.</p>"
+    _: "<p>Your entries have been successfully transmitted. Thank you.</p>"
+
+lzy-form-feedback-local: "<strong>Feedback on localhost only:</strong>"
+
+lzy-form-continue:
+    de: Weiter...
+    _:  Continue...
+
+lzy-form-empty-form-warning:
+    de: Sie haben noch keine Eingaben gemacht.
+    _:  You have not entered any data yet.
+
+lzy-form-empty-rec-received:
+    de: '<h2>Hinweis</h2><p>Es wurden keine Daten empfangen.<br>Entsprechend wurde nichts abgespeichert.</p>'
+    _:  '<h2>Note</h2><p>No input has be received on the server.</p><p>Therefore, nothing has been stored.</p>'
+
+lzy-form-override-honeypot:
+    de: '<h3>Vorsichtsmassnahme gegen Spam</h3><p>Bitte geben Sie Ihren Familienname erneut ein, diesmal in GROSSBUCHSTABEN:</p>'
+    _:  '<h3>As a measure of precaution against spam</h3><p>Please enter your last name again, this time in CAPITAL LETTERS:</p>'
+
+lzy-form-override-honeypot-label:
+    de: 'Nachname in <strong>Grossbuchstaben</strong>:'
+    _:  'Last name in <strong>capital letters</strong>:'
+
+lzy-form-duplicate-data:
+    de: '<h2>Hinweis</h2><p>Ihre Eingaben haben wir bereits früher empfangen.<br>Entsprechend wurde jetzt nichts abgespeichert.</p>'
+    _:  '<h2>Note</h2><p>Your input has been received before.</p><p>Therefore, nothing has been stored this time.</p>'
+
+lzy-form-email-confirmation-info:
+    de: 'Wenn Sie Ihre E-Mail Adresse hier eingeben, erhalten Sie eine Bestästigung per E-Mail.'
+    _:  'If you fill in your e-mail address, we will send you confirmation message.'
+
+lzy-form-confirmation-email-sent:
+    de: 'Wir haben Ihnen eine Bestätigung per E-Mail geschickt.'
+    _:  'We have sent a confirmation to your e-mail address.'
+
+lzy-form-response-email-template-not-found:
+    de: 'Keine Template-Datei für das Versenden der E-Mail gefunden.'
+    _:  'Template file for e-mail response not found.'
+
+lzy-form-data-key: DataKey
 
 
 #--- File Upload --------------------------
@@ -132,13 +190,17 @@ opens in new win:
     en: Opens in new window
 
 
-nextPageLabel: "<span class='nextLinkArrow' title='{{ to next page }}'></span>"
-prevPageLabel: "<span class='prevLinkArrow' title='{{ to prev page }}'></span>"
-to next page:
+lzy-next-page-link-label: "<span class='nextLinkArrow lzy-focus-only' title='{{ lzy-to-next-page-title }}'>{{ lzy-to-next-page-title }}$nextLabel</span>"
+lzy-prev-page-link-label: "<span class='prevLinkArrow lzy-focus-only' title='{{ lzy-to-prev-page-title }}'>$prevLabel{{ lzy-to-prev-page-title }}</span>"
+#lzy-next-page-link-label: "<span class='nextLinkArrow' title='{{ lzy-to-next-page-title }}'>$nextLabel</span><span class='lzy-focus-only'>{{ lzy-to-next-page-title }}</span>"
+#lzy-prev-page-link-label: "<span class='prevLinkArrow' title='{{ lzy-to-prev-page-title }}'>$prevLabel</span><span class='lzy-focus-only'>{{ lzy-to-prev-page-title }}</span>"
+#lzy-next-page-label: "<span class='nextLinkArrow' title='{{ lzy-to-next-page-title }}'></span>"
+#lzy-prev-page-label: "<span class='prevLinkArrow' title='{{ lzy-to-prev-page-title }}'></span>"
+lzy-to-next-page-title:
     de: zur nächsten Seite
     _: to next page
 
-to prev page:
+lzy-to-prev-page-title:
     de: zur vorherigen Seite
     _: to previous page
 
@@ -527,6 +589,10 @@ lzy-adm-invite-new-user:
     de: 'Neuen Benutzer einladen'
     _:  'Invite new user'
 
+lzy-add-users-send:
+    de: 'Konto eröffnen'
+    _:  'Create account'
+
 
 #--- Insecure Connection ----------------------------
 Warning insecure connection:
@@ -661,17 +727,6 @@ lzy-config-button:
     _: |
         This field is currently locked because somebody else is editing it.\n\n
         Please try again in a few minutes. (Remember to reload the page when trying again.)
-
-#--- Forms ----------------------------------------
-lzy-form-data-received-ok:
-    de: "<p>Ihre Eingaben wurden übermittelt. Besten Dank.</p>"
-    _: "<p>Your entries have been successfully transmitted. Thank you.</p>"
-
-lzy-form-feedback-local: "<strong>Feedback on localhost only:</strong>"
-
-lzy-form-continue:
-    de: Weiter...
-    en: Continue...
 
 
 #--- magic links ---------------------

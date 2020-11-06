@@ -2,9 +2,9 @@
 // handle screen-size and resize
 (function ( $ ) {
     if ($(window).width() < screenSizeBreakpoint) {
-        $('body').addClass('lzy-small-screen');
+        $('body').addClass('lzy-small-screen').removeClass('lzy-large-screen');
     } else {
-        $('body').addClass('lzy-large-screen');
+        $('body').addClass('lzy-large-screen').removeClass('lzy-small-screen');
     }
 
     $(window).resize(function(){
@@ -14,6 +14,9 @@
         } else {
             $('body').removeClass('lzy-small-screen').addClass('lzy-large-screen');
         }
+    });
+    $('a.lzy-formelem-show-info').click( function ( e ) {
+        e.preventDefault();
     });
 }( jQuery ));
 
@@ -148,17 +151,18 @@ function mylog(txt)
 	}
 
     if ($('body').hasClass('logging-to-server')) {
-        serverLog(txt)
+        serverLog(txt);
     }
 } // mylog
 
 
 
 //--------------------------------------------------------------
-function serverLog(text)
+function serverLog(text, file)
 {
+    file = (typeof file !== 'undefined')? file: '';
     if (text) {
-        $.post( systemPath+'_ajax_server.php?log', { text: text } );
+        $.post( systemPath+'_ajax_server.php?log', { text: text, file: file } );
     }
 } // serverLog
 

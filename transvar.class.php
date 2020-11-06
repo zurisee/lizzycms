@@ -29,6 +29,7 @@ class Transvar
 	private $sysVariables = ['head_injections', 'content', 'body_end_injections'];
 	private $filesLoaded = array();
     public $page;
+    public $notranslate = false;
 
 
 	//....................................................
@@ -107,7 +108,7 @@ class Transvar
             // handle macro-modifiers, e.g. {{# }}
             $var = $this->handleModifers($var);
 
-            if ($this->config->cachingActive && $this->dontCache) {   // don't cache -> shield now and translate after read-cache
+            if ($GLOBALS['globalParams']['cachingActive'] && $this->dontCache) {   // don't cache -> shield now and translate after read-cache
                 $str = $this->shieldVariableInstance($str, $p1, $var, $p2);
 
             } else {
@@ -124,6 +125,7 @@ class Transvar
                     // ----------------------------------------------------------------------- translate now:
                     if (preg_match('/^([\w\-]+)\((.*)\)/', $var, $m)) {    // macro
                         $macro = $m[1];
+                        $macro = str_replace('-', '', $macro);
                         $argStr = $m[2];
                         $val = $this->translateMacro($macro, $argStr);
 
@@ -156,14 +158,22 @@ class Transvar
 
 
     //....................................................
-    public function translateVariable($varName)
+    public function translateVariable($varName, $returnKeyIfUnknown = false, $tryUserCodeIfUnknown = false)
     {
-        $val = $this->getVariable($varName);
-        if ($val === false) {
-            $val = $this->doUserCode($varName, $this->config->custom_permitUserCode);
-            if (is_array($val)) {
-                fatalError($val[1]);
+        if (!$this->notranslate || ($varName === 'content')) {
+            $val = $this->getVariable($varName);
+            if ($val === false) {
+                if ($returnKeyIfUnknown) {
+                    $val = $varName;
+                } elseif ($tryUserCodeIfUnknown) {
+                    $val = $this->doUserCode($varName, $this->config->custom_permitUserCode);
+                    if (is_array($val)) {
+                        fatalError($val[1]);
+                    }
+                }
             }
+        } else {
+            $val = "&#123;&#123; $varName }}";
         }
         return $val;
     } // translateVariable
@@ -188,7 +198,7 @@ class Transvar
             $val = $this->executeMacro($macro);
 
             if ($this->disablePageCaching) {
-                $this->config->cachingActive = false;
+                $GLOBALS['globalParams']['cachingActive'] = false;
             }
 
             if (($val !== null) && ($this->config->isLocalhost || $this->config->isPrivileged) && !$this->optionAddNoComment) {
@@ -243,6 +253,10 @@ class Transvar
     public function getArg($macroName, $name, $help = '', $default = null, $removeNl = true /*, $dynamic = false*/)
     {
         $inx = $this->macroInx++;
+        if (!$name) {
+            $name = ' ';
+        }
+
         $this->macroFieldnames[$macroName][$inx] = $name;
         if (preg_match('/^\d/', $name)) {
             $index = intval($name);
@@ -319,11 +333,14 @@ class Transvar
         if (!$argsHelp) {       // don't show anything if there are no arguments listed
             return '';
         }
-        $out = '';
-        foreach ($argsHelp as $name => $text) {
-            $out .= "\t<dt>$name:</dt>\n\t\t<dd>$text</dd>\n";
+        $out = "<h2>Options for macro <em>$macroName()</em></h2>\n";
+        if (!isset($argsHelp["noArguments"])) {       // don't show anything if there are no arguments listed
+            $out .= "<dl>\n";
+            foreach ($argsHelp as $name => $text) {
+                $out .= "\t<dt>$name:</dt>\n\t\t<dd>$text</dd>\n";
+            }
+            $out .= "</dl>\n";
         }
-        $out = "<h2>Options for macro <em>$macroName()</em></h2>\n<dl>\n$out</dl>\n";
         return $out;
     } // getMacroHelp
 
@@ -639,7 +656,7 @@ class Transvar
                         foreach ($res as $key => $value) {
                             $this->addVariable($key, $value);
                         }
-                    } elseif (is_string($res)) {
+                    } else {
                         $out = $res;
                     }
                 } else {

@@ -45,6 +45,8 @@ define('PATH_TO_APP_ROOT', 	'../');		                            // root folder 
 define('LOCK_TIMEOUT', 		120);	                                // max time till field is automatically unlocked
 define('MAX_URL_ARG_SIZE',  255);
 
+ob_start();
+
 require_once 'vendor/autoload.php';
 require_once 'backend_aux.php';
 require_once 'datastorage2.class.php';
@@ -108,7 +110,7 @@ class AjaxServer
 
 		$this->hash = $_SESSION['lizzy']['hash'];
 		session_write_close();
-        preparePath(DATA_PATH);
+//        preparePath(DATA_PATH);
 
 		$this->remoteAddress = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : 'REMOTE_ADDR';
 		$this->userAgent = isset($_SESSION['lizzy']['userAgent']) ? $_SESSION['lizzy']['userAgent'] : $_SERVER["HTTP_USER_AGENT"];
@@ -133,8 +135,9 @@ class AjaxServer
     {
         if (isset($_GET['log'])) {                                // remote log, write to backend's log
             $msg = $this->get_request_data('text');
-            $this->mylog("Client: $msg");
-            exit;
+            $file = $this->get_request_data('file');
+            $this->mylog("Client: $msg", $file);
+            lzyExit();
         }
         if ($this->get_request_data('info') !== null) {    // respond with info-msg
             $this->info();
@@ -159,9 +162,9 @@ class AjaxServer
 	private function getAllData()
     {
         if (!$this->openDB( )) {
-            exit('failed#save');
+            lzyExit('failed#save');
         }
-        exit($this->prepareClientData().'#get-all');
+        lzyExit($this->prepareClientData().'#get-all');
     } // getAllData
 
 
@@ -171,20 +174,20 @@ class AjaxServer
 	private function getDataRec()
     {
         if (!$this->openDB( )) {
-            exit('failed#save');
+            lzyExit('failed#save');
         }
         $recKey = $this->get_request_data('recKey');
         $dataRec = $this->db->readRecord( $recKey );
         $outData = [];
         if (!$dataRec || !isset($this->config["recDef"])) {
             $json = json_encode(['res' => 'Error: getDataRec() no data found', 'data' => '']);
-            exit( $json );
+            lzyExit( $json );
         }
         foreach ($this->config["recDef"] as $key => $rec) {
             $outData["#fld_".$rec[0]] = isset($dataRec[$key]) ? $dataRec[$key] : '';
         }
         $json = json_encode(['res' => 'Ok', 'data' =>$outData]);
-        exit( $json );
+        lzyExit( $json );
     } // getDataRec
 
 
@@ -194,7 +197,7 @@ class AjaxServer
 	private function saveDataRec()
     {
         if (!$this->openDB( )) {
-            exit('failed#save');
+            lzyExit('failed#save');
         }
         $json = $this->get_request_data('lzy_data_input_form');
         if ($json) {
@@ -212,7 +215,7 @@ class AjaxServer
                 $dataRec = [];
                 if (!isset($this->config["recDef"])) {
                     $json = json_encode(['res' => 'Error: saveDataRec() config data missing', 'data' => '' ]);
-                    exit( $json );
+                    lzyExit( $json );
                 }
                 foreach ($this->config["recDef"] as $k => $rec) {
                     if (isset($dataRec1[ $rec[0] ])) {
@@ -234,7 +237,7 @@ class AjaxServer
             $res = 'Error: no data received';
         }
         $json = json_encode(['res' => $res, 'data' => [] ]);
-        exit( $json );
+        lzyExit( $json );
     } // saveDataRec
 
 
@@ -244,20 +247,20 @@ class AjaxServer
 	private function saveData() {
         $rawData = $this->get_request_data('data');
 		if ($rawData === 'undefined') {
-            exit('failed#save-data');
+            lzyExit('failed#save-data');
         }
 		$data = json_decode($rawData, true);
 		$ticket = $this->get_request_data('ticket');
 		if ($ticket === 'undefined') {
-            exit('failed#save-data');
+            lzyExit('failed#save-data');
         }
 
         if (!$this->openDB( )) {
-            exit('failed#save');
+            lzyExit('failed#save');
         }
         $res = $this->db->write($data);
 
-		exit($this->prepareClientData().'#save-data');
+		lzyExit($this->prepareClientData().'#save-data');
 	} // saveData
 
 
@@ -288,7 +291,7 @@ class AjaxServer
                     $md = file_get_contents($filename);
                 }
             }
-            exit($md);
+            lzyExit($md);
         }
     } // handleFileRequests
 
@@ -318,10 +321,10 @@ class AjaxServer
             if (file_exists($filename) &&
                 rename($filename, $newFilename)) {
                 $this->mylog( "rename($filename, $newFilename)");
-                exit('Ok');
+                lzyExit('Ok');
             }
         }
-        exit('Failed');
+        lzyExit('Failed');
     } // renameFile
 
 
@@ -330,7 +333,7 @@ class AjaxServer
     private function prepareClientData($key = false)
     {
         if (!$this->openDB()) {
-            exit('failed#getData');
+            lzyExit('failed#getData');
         }
         if ($key === '_all') {
             $data = $this->db->read();
@@ -421,12 +424,20 @@ class AjaxServer
 
 
     //---------------------------------------------------------------------------
-    private function mylog($str)
+    private function mylog($str, $file = false)
     {
-        if (!file_exists(dirname(SERVICE_LOG))) {
-            mkdir(dirname(SERVICE_LOG), MKDIR_MASK, true);
+        if (!is_string( $str )) {
+            $str = var_r($str);
         }
-        file_put_contents(SERVICE_LOG, $this->timestamp()." {$this->clientID}{$this->user}:  $str\n", FILE_APPEND);
+        if ($file) {
+            $file = LOG_PATH.$file;
+        } else {
+            $file = SERVICE_LOG;
+        }
+        if (!file_exists(dirname($file))) {
+            mkdir(dirname($file), MKDIR_MASK, true);
+        }
+        file_put_contents($file, $this->timestamp()." {$this->clientID}{$this->user}:  $str\n\n", FILE_APPEND);
     } // mylog
 
 
@@ -507,7 +518,7 @@ class AjaxServer
 	ClientID:	{$this->clientID}
 	</pre>
 EOT;
-        exit($msg);
+        lzyExit($msg);
     } // info
 
 } // class AjaxServer

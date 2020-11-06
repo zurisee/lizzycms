@@ -122,7 +122,9 @@ function initializePanel( widgetSelector, preOpen )
             openPanel( '#lzy-panel-id' + (panelWidgetInstance*100 + parseInt(preOpen)));
         }
         if ($thisWidget.hasClass('lzy-accordion')) {
-            $('.lzy-panel-inner-wrapper', $thisWidget).css('transition-duration', '0.4s');
+            setTimeout( function () {
+                $('.lzy-panel-inner-wrapper', $thisWidget).css('transition-duration', '0.4s');
+            }, 400);
         }
         panelWidgetInstance++;
     });
