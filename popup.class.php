@@ -108,8 +108,8 @@ EOT;
             $this->getArg('horizontal', 0);
             $this->getArg('vertical', 0);
             $this->getArg('transition', '', 'transition');
-            $this->getArg('speed', 0.3);
-            $this->getArg('opacity', 0.5, 'opacity', false);
+            $this->getArg('speed', '0.3');
+            $this->getArg('opacity', '0.5', 'opacity', false);
             $this->getArg('bgColor', '#000', 'color');
 
             if (isset($args[0])) {
