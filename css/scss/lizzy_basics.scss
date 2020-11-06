@@ -1113,9 +1113,13 @@ dd {
 	}
 	.lzy-panel-inner-wrapper {
 		padding: 1em 0;
+		transition: margin-top 0.3s;
 	}
 	input, button {
 		line-height: 2em;
+	}
+	.lzy-panel-page:focus {
+		outline: none;
 	}
 }
 
