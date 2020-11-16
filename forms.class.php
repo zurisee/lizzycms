@@ -1402,7 +1402,7 @@ EOT;
 
 $('.lzy-form-error:first').each(function () {
     const $this = $( this );
-    $('.main, html').animate({
+    $('main, html').animate({
         scrollTop: $this.offset().top - 50
     }, 500);
 });

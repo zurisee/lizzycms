@@ -33,7 +33,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'admin_enableFileManager'           => [false, 'If true, the file-manager (upload, rename, delete) is enabled for privileged users.', 2 ],
     'admin_minPasswordLength'           => [10, '[integer] Minimum length of passwords if "admin_enforcePasswordQuality" is enabled.', 3 ],
 
-    'custom_relatedGitProjects'         => ['', "Git Project(s) to be included in ?getstat command", 3 ],
+    'custom_relatedGitProjects'         => ['', "Git Project(s) to be included in ?gitstat command", 3 ],
     'custom_permitUserCode'             => [false, "Only if true, user-provided code can be executed. And only if located in '".USER_CODE_PATH."'", 1 ],
     'custom_permitUserInitCode'         => [false, "Only if true, user-provided init-code can be executed. And only if located in '".USER_CODE_PATH."'", 1 ],
     'custom_permitUserVarDefs'          => [false, 'Only if true, "_code/user-var-defs.php" will be executed.', 1 ],
@@ -127,8 +127,6 @@ private $userConfigurableSettingsAndDefaults      = [
         // shortcuts for modules to be loaded (upon request):
         // weight value controls the order of invocation. The higher the earlier.
         $this->jQueryWeight = 200;
-        // $this->loadModules['JQUERY']                = array('module' => 'third-party/jquery/jquery-3.5.0.min.js', 'weight' => $this->jQueryWeight);
-        // $this->loadModules['JQUERY3']               = array('module' => 'third-party/jquery/jquery-3.5.0.min.js', 'weight' => $this->jQueryWeight);
         $this->loadModules['JQUERY']                = array('module' => 'third-party/jquery/jquery-3.5.1.min.js', 'weight' => $this->jQueryWeight);
         $this->loadModules['JQUERY3']               = array('module' => 'third-party/jquery/jquery-3.5.1.min.js', 'weight' => $this->jQueryWeight);
         $this->loadModules['JQUERY1']               = array('module' => 'third-party/jquery/jquery-1.12.4.min.js', 'weight' => $this->jQueryWeight);
@@ -193,7 +191,6 @@ private $userConfigurableSettingsAndDefaults      = [
         // elementes that shall be loaded when corresponding classes are found anywhere in the page:
         //   elements: can be any of cssFiles, css, js, jq etc.
         $this->classBasedModules = [
-//            'editable' => ['modules' => 'EDITABLE', 'jq' => "\$('.lzy-editable').editable();"],
             'panels_widget' => ['modules' => 'PANELS'],
             'zoomTarget' => ['jsFiles' => 'ZOOM_TARGET'],
         ];
@@ -274,7 +271,7 @@ private $userConfigurableSettingsAndDefaults      = [
             }
         }
 
-        // fix some values:
+        // === fix some values:
 
         if ($this->path_logPath === '1/') {
             $this->path_logPath = LOGS_PATH;
@@ -441,7 +438,6 @@ EOT;
 
 
 
-    //....................................................
     public function renderConfigOverlay()
     {
         $configCmd = getUrlArg('config', true);
@@ -541,7 +537,7 @@ EOT;
         ksort($configItems);
         foreach ($configItems as $item => $rec) {
             if (is_bool($rec[0])) {
-                $val = $rec[0]? 'false':'true';
+                $val = $rec[0]? 'true' : 'false';
 
             } elseif (is_array($rec[0])) {
                 $str = str_pad("$item:", 45, ' ') . "# {$rec[1]}\n";

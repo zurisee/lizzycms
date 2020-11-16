@@ -330,6 +330,10 @@ page-break: "<div class='lzy-print-page-break'></div>"
 
     
 # --- Login ------------------------------
+lzy-no-users-defined-warning:
+    de: 'Warnung:<br>Es sind noch keine Benutzer definiert<br>&rarr; config/users.yaml'
+    _:  'Warning:<br>no users defined - login mechanism is disabled.<br>&rarr; see config/users.yaml'
+
 lzy-onetimelogin-email-info-title:
     de: "Hilfe: Zugang per E-Mail"
     en: "Help on access by e-mail"

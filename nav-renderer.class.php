@@ -9,7 +9,7 @@ define('NAV_ARROW', '<span class=\'lzy-icon-triangle\'></span>'); // '&#9657;');
 define('NAV_ARROW_TOP', NAV_ARROW);
 define('NAV_SMALL_TREE_THRESHOLD', 15); // if nav tree small larger, mobile nav will be fully expanded initially
 
-$page->addJqFiles('TABBABLE');
+//$page->addJqFiles('TABBABLE');
 
 class NavRenderer
 {
