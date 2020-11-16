@@ -6,7 +6,9 @@
 
 	<meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1.0" />
     <meta name="generator" content="Lizzy {{ lzy-version }}" />
-{{# favicon('~/assets/favicon', '~/assets/favicon/icon.png') }}
+
+{{# favicon() }}
+
 	<link href="~sys/css/__lizzy-core.css" rel="stylesheet" />
 	<link rel="stylesheet" href="~sys/css/__lizzy-aux.css" media="print" onload="this.media='all'">
 	<link href="~/css/__styles.css" rel="stylesheet" />
@@ -51,16 +53,16 @@
 		<footer class="lzy-footer footer">
 			<div class="lzy-footer-left">
 {{^ footer }}
-<span class="lzy-large-only">{{^ large-screen-footer }}</span>
-<span class="lzy-small-only">{{^ small-screen-footer }}</span>
+				<div class="lzy-large-only">{{^ large-screen-footer }}</div>
+				<div class="lzy-small-only">{{^ small-screen-footer }}</div>
 			</div>
 
 	        <div class='lzy-footer-right lzy-logged-in-user'>
 {{ lzy-lang-selection }}
-				<span class="lzy-large-only">{{^ lzy-config--open-button }}
+				<div class="lzy-large-only">{{^ lzy-config--open-button }}
 {{ lzy-toggle-edit-mode }}
 {{ lzy-fileadmin-button }}
-				</span>
+				</div>
 {{ lzy-login-button }}
 	        </div><!-- /lzy-footer-right -->
 		</footer>
