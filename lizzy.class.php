@@ -93,7 +93,7 @@ class Lizzy
 
 
 
-	//....................................................
+
     public function __construct()
     {
         session_start();
@@ -101,6 +101,13 @@ class Lizzy
         $this->debugLogBuffer = "REQUEST_URI: {$_SERVER["REQUEST_URI"]}  FROM: [$user]\n";
         if ($_REQUEST) {
             $this->debugLogBuffer .= "REQUEST: ".var_r($_REQUEST, 'REQUEST', true)."\n";
+        }
+
+        $configFile = DEFAULT_CONFIG_FILE;
+        if (file_exists($configFile)) {
+            $this->configFile = $configFile;
+        } else {
+            die("Error: file not found: ".$configFile);
         }
 
         $this->setDefaultTimezone(); // i.e. timezone of host
@@ -153,16 +160,9 @@ private function loadRequired()
 
 
 
-    //....................................................
+
     private function init()
     {
-        $configFile = DEFAULT_CONFIG_FILE;
-        if (file_exists($configFile)) {
-            $this->configFile = $configFile;
-        } else {
-            die("Error: file not found: ".$configFile);
-        }
-
         $this->sessionId = session_id();
 
         $this->getConfigValues(); // from config/config.yaml
@@ -238,7 +238,7 @@ private function loadRequired()
 
 
 
-    //....................................................
+
     public function render()
     {
 		if ($this->timer) {
@@ -251,6 +251,7 @@ private function loadRequired()
 
         $this->injectAdminCss();
         $this->setTransvars1();
+        $this->addStandardModules();
 
         if ($accessGranted) {
 
@@ -318,6 +319,12 @@ private function loadRequired()
         $this->runUserFinalCode($html );   // optional custom code to operate on final HTML output
 
         $this->storeToCache( $html );
+
+        // translate variables shielded from cache:
+        if (strpos($html, '{|{|') !== false) {
+            $html = $this->trans->translate($html, true);
+        }
+
         return $html;
     } // render
 
@@ -407,7 +414,7 @@ private function loadRequired()
 
 
 
-    //....................................................
+
     private function applyForcedBrowserCacheUpdate( &$html )
     {
         // forceUpdate adds some url-arg to css and js files to force browsers to reload them
@@ -436,7 +443,7 @@ private function loadRequired()
 
 
 
-    //....................................................
+
     private function setupErrorHandling()
     {
         global $globalParams;
@@ -487,7 +494,7 @@ private function loadRequired()
 
 
 
-    //....................................................
+
     private function checkAdmissionToCurrentPage()
     {
         if ($reqGroups = $this->isRestrictedPage()) {     // handle case of restricted page
@@ -512,7 +519,7 @@ private function loadRequired()
 
 
 
-    //....................................................
+
     private function appendLoginForm($accessGranted)
     {
         if ( !$this->auth->getKnownUsers() ) { // don't bother with login if there are no users
@@ -548,7 +555,7 @@ private function loadRequired()
 
 
 
-    //....................................................
+
     private function loadAutoAttrDefinition($file = false)
     {
         if (!$file) {
@@ -566,7 +573,7 @@ private function loadRequired()
 
 
 
-    //....................................................
+
     private function analyzeHttpRequest()
     {
     // appRoot:         path from docRoot to base folder of app, mostly = ''; appRoot == '~/'
@@ -703,7 +710,7 @@ private function loadRequired()
 
 
 
-    //....................................................
+
     private function getConfigValues()
     {
         global $globalParams;
@@ -725,22 +732,29 @@ private function loadRequired()
 
 
 
-    //....................................................
+
     private function loadTemplate()
     {
         $template = $this->getTemplate();
-        $template = $this->page->shieldVariable($template, 'head_injections');
-        $template = $this->page->shieldVariable($template, 'body_tag_injections');
-        $template = $this->page->shieldVariable($template, 'body_top_injections');
-        $template = $this->page->shieldVariable($template, 'content');
-        $template = $this->page->shieldVariable($template, 'body_end_injections');
+
+        // shield those variables that need to be replaced at the very end of rendering:
+        $template = $this->page->shieldVariablesForLateTranslation($template, [
+            'body_classes',
+            'body_tag_attributes',
+            'head_injections',
+            'body_tag_injections',
+            'body_top_injections',
+            'content',
+            'body_end_injections',
+        ]);
+
         $this->page->addTemplate($template);
     } // loadTemplate
 
 
 
 
-	//....................................................
+
 	private function isRestrictedPage()
 	{
 		if (isset($this->siteStructure->currPageRec['restricted!'])) {
@@ -753,7 +767,7 @@ private function loadRequired()
 
 
 
-	//....................................................
+
 	private function injectEditor()
 	{
         $admission = $this->auth->checkGroupMembership('editors');
@@ -776,7 +790,7 @@ private function loadRequired()
 
 
 
-	//....................................................
+
 	private function injectPageSwitcher()
 	{
         if ($this->config->feature_pageSwitcher) {
@@ -794,7 +808,7 @@ private function loadRequired()
 
 
 
-    //....................................................
+
     private function injectAdminCss()
     {
         if ($this->auth->checkGroupMembership('admins') ||
@@ -808,7 +822,15 @@ private function loadRequired()
 
 
 
-    //....................................................
+    private function addStandardModules()
+    {
+        $this->page->addModules('TOOLTIPSTER');
+        $this->page->addJq('$(\'.tooltip\').tooltipster({contentAsHTML: true});');
+    } // addStandardModules
+
+
+
+
 	private function setTransvars0()
 	{
         $requestScheme = ((isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'])) ? $_SERVER['REQUEST_SCHEME'].'://' : 'HTTP://';
@@ -821,28 +843,35 @@ private function loadRequired()
     } // setTransvars0
 
 
-    //....................................................
+
 	private function setTransvars1()
 	{
-	    if ($this->auth->getKnownUsers()) {
-            $userAcc = new UserAccountForm($this);
-            $rec = $this->auth->getLoggedInUser(true);
-            $login = $userAcc->renderLoginLink($rec);
-            $loginMenu = $userAcc->renderLoginMenu($rec);
-            $userName = $userAcc->getUsername();
-
-        } else {
+        $loginMenu = $login = $userName = '';
+	    if (!$this->auth->getKnownUsers()) {    // case when no users defined yet:
             $userName = '';
             $login = <<<EOT
-    <span class="lzy-tooltip-arrow" data-lzy-tooltip-from='login-warning' style="border-bottom:none;">
+    <span class="lzy-tooltip-arrow tooltip" title='{{ lzy-no-users-defined-warning }}'>
         <span class='lzy-icon-error'></span>
     </span>
-    <div id="login-warning" style="display:none;">Warning:<br>no users defined - login mechanism is disabled.<br>&rarr; see config/users.yaml</div>
 
 EOT;
-            $loginMenu = '';
-            $this->page->addModules('TOOLTIPS');
+        } else {
+	        if ($this->auth->isLoggedIn()) {
+                $userAcc = new UserAccountForm($this);
+                $rec = $this->auth->getLoggedInUser(true);
+                $login = $userAcc->renderLoginLink($rec);
+                $loginMenu = $userAcc->renderLoginMenu($rec);
+                $userName = $userAcc->getUsername();
+            } else {
+	            // login icon when not logged in:
+	            $login = <<<EOT
+<div class='lzy-login-link'><a href='{$GLOBALS['globalParams']['pageUrl']}?login' class='lzy-login-link' title="$loggedInUser">{{ lzy-login-icon }}</a></div>
+
+EOT;
+
+            }
         }
+
         $this->trans->addVariable('lzy-login-menu', $loginMenu);
         $this->trans->addVariable('lzy-login-button', $login);
         $this->trans->addVariable('user', $userName, false);
@@ -905,7 +934,7 @@ EOT;
 
 
 
-	//....................................................
+
 	private function setTransvars2()
 	{
         global $globalParams;
@@ -970,7 +999,7 @@ EOT;
 
 
 
-    //....................................................
+
 	private function warnOnErrors()
     {
         global $globalParams;
@@ -990,7 +1019,7 @@ EOT;
 
 
 
-	//....................................................
+
 	private function runUserRenderingStartCode()
 	{
         $codeFile = $this->config->admin_serviceTasks['onPageRenderingStart'];
@@ -1004,7 +1033,7 @@ EOT;
         if ($codeFile && file_exists($codeFile)) {
             require_once $codeFile;
             if (function_exists('renderingStartOperation')) {
-                $html = renderingStartOperation( $this );
+                renderingStartOperation( $this );
             }
         }
 	} // runUserRenderingStartCode
@@ -1012,7 +1041,7 @@ EOT;
 
 
 
-	//....................................................
+
     private function runUserFinalCode( &$html )
     {
         $codeFile = $this->config->admin_serviceTasks['onPageRendered'];
@@ -1034,7 +1063,7 @@ EOT;
 
 
 
-    //....................................................
+
 	private function getTemplate()
 	{
 		if ($tpl = $this->page->get('template')) {
@@ -1054,7 +1083,7 @@ EOT;
 	
 
 
-	//....................................................
+
     private function loadHtmlFile($folder, $file)
 	{
 		$page = &$this->page;
@@ -1075,7 +1104,7 @@ EOT;
 
 
 
-	//....................................................
+
     private function loadFile()
 	{
         global $globalParams;
@@ -1273,7 +1302,7 @@ EOT;
 
 
 
-	//....................................................
+
     private function handleMissingFolder($folder)
 	{
 	    if ($this->auth->getLoggedInUser() || $this->localCall) {
@@ -1288,7 +1317,7 @@ EOT;
 
 
 
-	//....................................................
+
     private function prepareImages($html)
 	{
         $resizer = new ImageResizer($this->config->feature_ImgDefaultMaxDim);
@@ -1306,7 +1335,7 @@ EOT;
 
 
 
-    //....................................................
+
 	private function handleUrlArgs()
 	{
         if ($arg = getNotificationMsg()) {
@@ -1367,7 +1396,7 @@ EOT;
 
 
 
-    //....................................................
+
     private function renderPasswordConverter()
     {
         $html = <<<EOT
@@ -1444,7 +1473,6 @@ EOT;
 
 
 
-	//....................................................
 	private function handleUrlArgs2()
 	{
         if (getUrlArg('reset')) {			            // reset (cache)
@@ -1642,7 +1670,7 @@ EOT;
 
 
 
-    //....................................................
+
     private function createAccessLink($user)
     {
         if (!$user) {
@@ -1662,7 +1690,7 @@ EOT;
 
 
 
-    //....................................................
+
     private function reorganizeCss($filename)
     {
         require_once SYSTEM_PATH.'reorg_css.class.php';
@@ -1675,7 +1703,6 @@ EOT;
 
 
 
-	//....................................................
 	private function selectLanguage()
 	{
 	    global $globalParams;
@@ -1720,7 +1747,7 @@ EOT;
 
 
 
-    //....................................................
+
     public function sendMail($to, $subject, $message, $from = false, $options = null, $exitOnError = true)
     {
         if (!$from) {
@@ -1733,7 +1760,7 @@ EOT;
             $str = <<<EOT
         <div class='lzy-local-mail-sent-overlay'>
             <p><strong>Message sent to "$to" by e-mail when not on localhost:</strong></p>
-            <pre class='debug-mail'>
+            <pre class='lzy-debug-mail'>
                 <div>Subject: $subject</div>
                 <div>$message</div>
             </pre>
@@ -1751,7 +1778,6 @@ EOT;
 
 
 
-	//....................................................
 	private function printall($maxN = true)
 	{
         die('Not implemented yet');
@@ -1759,7 +1785,7 @@ EOT;
 
 
 
-    //....................................................
+
     private function getBrowser()
     {
         $ua = new UaDetector( $this->config->debug_collectBrowserSignatures );
@@ -1769,7 +1795,7 @@ EOT;
 
 
 
-    //....................................................
+
     private function checkInstallation()
     {
         if (version_compare(PHP_VERSION, '7.1.0') < 0) {
@@ -1794,7 +1820,7 @@ EOT;
 
 
 
-    //....................................................
+
     public function postprocess($html)
     {
         $note = $this->trans->postprocess();
@@ -1808,7 +1834,7 @@ EOT;
 
 
 
-    //....................................................
+
     public function getEditingMode()
     {
         return $this->editingMode;
@@ -1817,7 +1843,7 @@ EOT;
 
 
 
-    //....................................................
+
     private function setDataPath()
     {
         $onairDataPath = $this->config->site_dataPath;
@@ -1862,7 +1888,7 @@ EOT;
 
 
 
-    //....................................................
+
     private function setLocale()
     {
         $lang = $this->config->lang;
@@ -2024,6 +2050,7 @@ Available URL-commands:
 <a href='?config'>?config</a>		    list configuration-items in the config-file
 <a href='?convert'>?convert</a>	    convert password to hash
 <a href='?debug'>?debug</a>		    adds 'debug' class to page on non-local host *)
+<a href='?gitstat'>?gitstat</a>		    displays the Lizzy-s GIT-status
 <a href='?notranslate'>?notranslate</a>    show untranslated variables
 <a href='?edit'>?edit</a>		    start editing mode *)
 <a href='?iframe'>?iframe</a>		    show code for embedding as iframe
@@ -2139,7 +2166,7 @@ EOT;
 
 
 
-    //....................................................
+
     private function storeToCache($html)
     {
         if (!$this->config->site_enableCaching || !$GLOBALS['globalParams']['cachingActive']) {
@@ -2160,7 +2187,7 @@ EOT;
 
 
 
-    //....................................................
+
     public function unCachePage()
     {
         $requestedPage = $this->getCacheFilename( false );
@@ -2171,7 +2198,7 @@ EOT;
 
 
 
-    //....................................................
+
     private function checkAndRenderCachePage()
     {
         if (isset($_GET['reset'])) {  // nc = no-caching -> when specified, make sure page cache is cleared
@@ -2199,6 +2226,16 @@ EOT;
         $requestedPage = $this->getCacheFilename();
         if ( $requestedPage ) { // cached page found
             $html = file_get_contents($requestedPage);
+
+            // check for variables shielded from cache and translate them:
+            if (strpos($html, '{|{|') !== false) {
+                $this->loadRequired();
+                $this->getConfigValues(); // from config/config.yaml
+                $trans = new Transvar($this);
+                $trans->readTransvarsFromFiles([ SYSTEM_PATH.'config/sys_vars.yaml', CONFIG_PATH.'user_variables.yaml' ]);
+                $html = $trans->translate($html, true);
+            }
+
             exit ($html);
         }
     } // checkAndRenderCachePage
@@ -2226,9 +2263,7 @@ EOT;
             $lang = ".$lang";
         }
 
-        $requestedPage = trim($requestedpageHttpPath, '/');
-        $requestedPage .= $lang;
-        $requestedPage = PAGE_CACHE_PATH . $requestedPage . "/index$lang.html";
+        $requestedPage = PAGE_CACHE_PATH . fixPath($requestedpageHttpPath) . "index$lang.html";
 
         if ($verify) {
             if (file_exists($requestedPage)) {
