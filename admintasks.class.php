@@ -351,7 +351,7 @@ EOT;
     {
         $this->addUsersToDB($rec);
         $rec = array_pop($rec); //???
-        $str = "<div class='lzy-adduser-wrapper lzy-adduser-response'>{{ lzy-add-user-response }}: {$rec['email']}</div>";
+        $str = "<div class='lzy-adduser-wrapper lzy-adduser-response'>{{ lzy-add-user-response }} {$rec['email']}</div>";
         return $str;
     }
 
