@@ -254,5 +254,79 @@ class ImageResizer
     } // resizeImage
 
 
+
+    public function createFavicons( $srcFile, $destPath )
+    {
+        // inspiration: https://sympli.io/blog/heres-everything-you-need-to-know-about-favicons-in-2020/
+        $srcFile = resolvePath($srcFile);
+        $destPath = resolvePath(fixPath($destPath));
+        $faviconSet = [
+            // generic:
+            [
+                'sizes' => [16, 32, 96],
+                'out'   => "<link rel='icon' type='image/png' href='{$destPath}favicon-\$x$.png' sizes='\$x$'>",
+            ],
+
+            // Apple Touch:
+            [
+                'sizes' => [120,180,152,167],
+                'out'   => "<link rel='apple-touch-icon' href='{$destPath}favicon-\$x$.png' sizes='\$x$'>",
+            ],
+            // Windows:
+            [
+                'sizes' => [70,270,310, '310x150'],
+                'out'   => '',
+            ],
+        ];
+
+        if (!fileExists( $srcFile )) {
+            die("Error: Favicon source file '$srcFile' not found.");
+        }
+
+        $out = '';
+        foreach ($faviconSet as $set) {
+            $sizes = $set['sizes'];
+            foreach ($sizes as $size) {
+                if (is_int($size)) {
+                    $str = str_replace('$', $size, $set['out']);
+                    $out .= "\t$str\n";
+
+                    $dst = $destPath . str_replace('$', $size, 'favicon-$x$.png');
+                    if (!file_exists($dst)) {
+                        $this->resizeImage($srcFile, $dst, $size, $size);
+                    }
+                } else {
+                    list($w, $h) = parseDimString($size);
+                    $dst = $destPath . "favicon-{$w}x{$h}.png";
+                    if (!file_exists($dst)) {
+                        $this->resizeImage($srcFile, $dst, $w, $h, true);
+                    }
+                }
+            }
+        }
+
+        $manifestFilename = 'browserconfig.xml';
+        if (!file_exists($manifestFilename)) {
+            $manifest = <<<EOT
+<?xml version="1.0" encoding="utf-8"?>
+<browserconfig>
+  <msapplication>
+    <tile>
+      <square70x70logo src="{$destPath}mstile-70x70.png"/>
+      <square150x150logo src="{$destPath}mstile-270x270.png"/>
+      <square310x310logo src="{$destPath}mstile-310x310.png"/>
+      <wide310x150logo src="{$destPath}mstile-310x150.png"/>
+      <TileColor>#2b5797</TileColor>
+    </tile>
+  </msapplication>
+</browserconfig>
+
+EOT;
+            file_put_contents($manifestFilename, $manifest);
+        }
+        $out = rtrim($out) . "\n\t<link rel='manifest' href='$manifestFilename'>";
+        return $out;
+    } // createFavicons
+
 } // class ImageResizer
 
