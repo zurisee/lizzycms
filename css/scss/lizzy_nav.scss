@@ -32,28 +32,15 @@ $nav-hover-bg-color: #ddd;
 $nav-focus-border-color: magenta;
 
 
-// mobile header:
-$mobile-header-font-size: 6vw;
-$mobile-header-height:    3rem;;
-$mobile-header-txt-color: #ddd;
-$mobile-header-bg-color:  #444;
 
 // mobile nav:
 $mobile-nav-font-size:    5vw;
 $mobile-nav-txt-color:    #ddd;
-$mobile-nav-bg-color:     #333;
 $mobile-nav-title-indent: 20px;
 $mobile-nav-first-indent: 20px;
 $mobile-nav-indent-step:  20px;
-$mobile-nav-title-color:  #333;
-$mobile-nav-title-bg-color: #ddd;
 $mxCorr: 1.8em;
 
-// mobile footer:
-$mobile-footer-height: 2rem;
-$mobile-footer-txt-color: #ddd;
-$mobile-footer-bg-color: #444;
-$mobile-footer-font-size: 5vw;
 
 
 // lzy-nav-top-horizontal:
@@ -85,6 +72,15 @@ $slidedownX6: calc(var(--lzy-nav-top-horizontal-first-indent, #{$nav-top-horizon
 
 
 // === Generic Nav ===================
+nav ul {
+    padding: 0;
+}
+nav li {
+    list-style-type: none;
+}
+
+
+
 .lzy-nav-wrapper {
     position: relative;
 }
@@ -279,8 +275,7 @@ $slidedownX6: calc(var(--lzy-nav-top-horizontal-first-indent, #{$nav-top-horizon
 
     // nav block:
     > ol {
-        background: white;
-        background: var(--lzy-nav-bg-color, white);
+        background: var(--lzy-nav-bg-color, transparent);
     }
 
     // level dependent:
@@ -681,188 +676,6 @@ $slidedownX6: calc(var(--lzy-nav-top-horizontal-first-indent, #{$nav-top-horizon
 } // lzy-nav-breadcrumb
 
 
-
-
-
-//=== Mobile Page Header
-.lzy-mobile-page-header {
-    text-align: center;
-    height: #{$mobile-header-height};
-    height: var(--lzy-mobile-header-height, #{$mobile-header-height});
-    line-height: #{$mobile-header-height};
-    line-height: var(--lzy-mobile-header-height, #{$mobile-header-height});
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    margin: 0;
-    color: #{$mobile-header-txt-color};
-    color: var(--lzy-mobile-header-txt-color, #{$mobile-header-txt-color});
-    background: #{$mobile-header-bg-color};
-    background: var(--lzy-mobile-header-bg-color, #{$mobile-header-bg-color});
-    h1 {
-        font-size: #{$mobile-header-font-size};
-        font-size: var(--lzy-mobile-header-font-size, #{$mobile-header-font-size});
-        font-weight: bold;
-        margin: 0;
-        //color: var(--lzy-mobile-header-txt-color, $mobile-header-txt-color);
-    }
-    button {
-        height: #{$mobile-header-height};
-        height: var(--lzy-mobile-header-height, #{$mobile-header-height});
-        width: #{$mobile-header-height};
-        width: var(--lzy-mobile-header-height, #{$mobile-header-height});
-        position: absolute;
-        top: 0;
-        left: 0;
-        margin: 0;
-        padding: 0;
-        background: transparent;
-        border: none;
-
-        span {
-            font-size: #{$mobile-header-font-size};
-            font-size: var(--lzy-mobile-header-font-size, #{$mobile-header-font-size});
-            color: #{$mobile-header-txt-color};
-            color: var(--lzy-mobile-header-txt-color, #{$mobile-header-txt-color});
-        }
-    }
-}
-
-
-
-// Small / Mobile Screen:
-$xCorr2: 3em; // avoids displacing arrow to next line
-$yPadding: 0.4em;
-body.lzy-small-screen {
-    font-size: 4.5vw;
-    .page {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        margin: 0;
-        background: #333;
-        height: 100vh;
-        width: 100vw;
-        overflow-y: auto;
-    }
-
-    .main,
-    .header {
-        position: fixed;
-        top: #{$mobile-header-height};
-        top: var(--lzy-mobile-header-height, #{$mobile-header-height});
-        overflow-y: auto;
-        padding-bottom: 15vh;
-    }
-    .header {
-        left: 0;
-        width: 60vw;
-        box-shadow: inset -4px 0 4px 0px #333;
-        height: #{$mobile-footer-height};
-        height: calc(100vh - var(--lzy-mobile-header-height, #{$mobile-header-height}) - var(--lzy-mobile-footer-height, #{$mobile-footer-height}) );
-        .lzy-nav.lzy-nav {
-            a {
-                padding-top: #{$yPadding} !important;
-                padding-bottom: #{$yPadding} !important;
-            }
-        }
-    }
-    &#lzy .header .lzy-nav.lzy-nav {
-    }
-    &#lzy .lzy-nav-wrapper.lzy-primary-nav a {
-        background: none;
-    }
-    .main {
-        left: 0;
-        width: 100vw;
-        height: #{$mobile-footer-height};
-        height: calc(100vh - var(--lzy-mobile-header-height, #{$mobile-header-height}) - var(--lzy-mobile-footer-height, #{$mobile-footer-height}) );
-        background: #fff;
-        padding: 1em;
-        transition: left 0.3s;
-    }
-
-    .lzy-nav-title {
-        color: #{$mobile-nav-title-color};
-        color: var(--lzy-mobile-nav-title-color, #{$mobile-nav-title-color});
-        background: #{$mobile-nav-title-bg-color};
-        background: var(--lzy-mobile-nav-title-bg-color, #{$mobile-nav-title-bg-color});
-        line-height: 2.5em;
-        margin: 0;
-    }
-    header {
-        color: #{$mobile-header-txt-color};
-        color: var(--lzy-mobile-header-txt-color, #{$mobile-header-txt-color});
-        background: #{$mobile-nav-bg-color};
-        background: var(--lzy-mobile-nav-bg-color, #{$mobile-nav-bg-color});
-    }
-    footer {
-        bottom: 0;
-        height: #{$mobile-footer-height};
-        height: var(--lzy-mobile-footer-height, #{$mobile-footer-height});
-        background: #{$mobile-footer-bg-color};
-        background: var(--lzy-mobile-footer-bg-color, #{$mobile-footer-bg-color});
-
-        &, a, .lzy-icon {
-            color: #{$mobile-footer-txt-color};
-            color: var(--lzy-mobile-footer-txt-color, #{$mobile-footer-txt-color});
-            font-size: #{$mobile-footer-font-size};
-            font-size: var(--lzy-mobile-footer-font-size, #{$mobile-footer-font-size});
-        }
-    }
-    header,
-    footer {
-        position: fixed;
-        left: 0;
-        width: 100vw;
-    }
-    footer * {
-        color: #{$mobile-header-txt-color};
-        color: var(--lzy-mobile-header-txt-color, #{$mobile-header-txt-color});
-    }
-    .lzy-mobile-page-header {
-        display: block;
-        z-index: 2;
-    }
-    .lzy-primary-nav {
-        position: relative;
-    }
-    &#lzy .lzy-nav {
-        .lzy-nav-label {
-            display: inline-block;
-            //display: block;
-            //hyphens: auto;
-            //text-overflow: ellipsis;
-            overflow-x: hidden;
-            //width: 90%;
-            //background: cyan;
-        }
-
-        &.lzy-nav-primary a {
-            background: #4f4f4f;
-            margin-bottom: 1px !important;
-        }
-    }
-    &#lzy {
-        .lzy-has-children.lzy-nav-no-content .lzy-nav-for-touch-only {
-            display: none;
-        }
-
-        .lzy-nav-small-tree .lzy-nav-has-content .lzy-nav-for-touch-only {
-            display: none;
-        }
-    }
-    .lzy-nav-primary .lzy-nav-wrapper {
-        min-height: 200vh;
-    }
-}
-#lzy.lzy-nav-mobile-open main {
-    left: 60vw;
-    transition: left 0.3s;
-}
 
 
 

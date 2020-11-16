@@ -20,13 +20,17 @@ class SCssCompiler
         $this->config = $lzy->config;
         $this->page = $lzy->page;
         $this->fromFiles = $lzy->config->path_stylesPath;
-        $this->sysCssFiles = $lzy->config->systemPath.'css/';
+        $this->sysCssPath = $lzy->config->systemPath.'css/';
         $this->isPrivileged = $lzy->config->isPrivileged;
         $this->localCall = $lzy->localCall;
         $this->compiledStylesFilename = $lzy->config->site_compiledStylesFilename;
         $this->compiledSysStylesFilename = '__lizzy.css';
+        $this->compiledSysStylesFilenameV2 = '__lizzy-core.css';
+        $this->compiledSysStylesFilenameV2aux = '__lizzy-aux.css';
         $this->scss = false;
         $this->aggregatedCss = '';
+        $this->aggregatedCssV2 = '';
+        $this->aggregatedCssV2aux = '';
 
         if (isset($_GET['reset'])) {
             $this->deleteCache();
@@ -64,28 +68,34 @@ class SCssCompiler
 
 
         // system styles:
-        $compiledFilename = $this->sysCssFiles.$this->compiledSysStylesFilename;
+        $compiledFilename = $this->sysCssPath.$this->compiledSysStylesFilename;
+        $compiledFilenameV2 = $this->sysCssPath.$this->compiledSysStylesFilenameV2;
+        $compiledFilenameV2aux = $this->sysCssPath.$this->compiledSysStylesFilenameV2aux;
 
-        $files = getDir($this->sysCssFiles.'scss/*.scss');
-        $mustCompile = $this->checkUpToDate($this->sysCssFiles, $files, $compiledFilename);
+        $files = getDir($this->sysCssPath.'scss/*.scss');
+        $mustCompile = $this->checkUpToDate($this->sysCssPath, $files, $compiledFilenameV2);
         if ($mustCompile) {
             // check whether css/ folder is writable:
-            if (!is_writable($this->sysCssFiles)) {
+            if (!is_writable($this->sysCssPath)) {
                 $this->page->addMessage("Warning: unable to update system style files");
                 if ($namesOfCompiledFiles) {
                     writeLog("SCSS files compiled: " . rtrim($namesOfCompiledFiles, ', '));
                 }
-                writeLog("Warning: failed to update css files in ".$this->sysCssFiles);
+                writeLog("Warning: failed to update css files in ".$this->sysCssPath);
                 return $namesOfCompiledFiles;
             }
 
             $this->aggregatedCss = '';
+            $this->aggregatedCssV2 = '';
+            $this->aggregatedCssV2aux = '';
             foreach ($files as $file) {
-                $namesOfCompiledFiles .= $this->doCompile($this->sysCssFiles, $file);
+                $namesOfCompiledFiles .= $this->doCompile($this->sysCssPath, $file);
             }
             file_put_contents($compiledFilename, $this->aggregatedCss);
-            // for compatibility, create copy under old name:
-            copy($compiledFilename, $this->sysCssFiles.'_lizzy.css');
+            file_put_contents($compiledFilenameV2, $this->aggregatedCssV2);
+            file_put_contents($compiledFilenameV2aux, $this->aggregatedCssV2aux);
+            // for compatibility, create copy under old name:       //??? still necessary?
+            //copy($compiledFilename, $this->sysCssPath.'_lizzy.css');
 
             // create minified version:
             //            $this->minify($compiledFilename);
@@ -99,8 +109,53 @@ class SCssCompiler
     } // compile
 
 
-    
-    
+
+    private function doCompile($toPath, $file, $targetFile = false)
+    {
+        if (!$this->scss) {
+            $this->scss = new Compiler;
+            //$this->scss->setLineNumberStyle(Compiler::LINE_COMMENTS);
+            // see: https://scssphp.github.io/scssphp/docs/ -> Source Line Debugging
+        }
+        $fname = basename($file, '.scss');
+
+        // determine kind of source and where to send: '__lizzy' or '__core' or none.
+        list($fname, $includeFile) = $this->getCompiledFileName($fname);
+        if (!$targetFile) {
+            $targetFile = $toPath . "_$fname.css";
+        }
+        $scssStr = $this->getFile($file);
+        $cssStr = '';
+        try {
+            $cssStr .= $this->scss->compile($scssStr);
+        } catch (Exception $e) {
+            fatalError("Error in SCSS-File '$file': " . $e->getMessage(), 'File: ' . __FILE__ . ' Line: ' . __LINE__);
+        }
+
+        if (!$this->compiledStylesFilename) {
+            $cssStr = removeCStyleComments($cssStr);
+            $cssStr = removeEmptyLines($cssStr);
+        }
+        $cssStr = "/**** auto-created from '$file' - do not modify! ****/\n\n$cssStr";
+
+        file_put_contents($targetFile, $cssStr);
+
+        // assemble all generated CSS, unless its filename started with non-alpha char
+        if ($includeFile === '2') {     // append to __core.css
+            $this->aggregatedCssV2 .= $cssStr . "\n\n\n";
+        } elseif ($includeFile) {       // append to __lizzy.css resp __lizzy-aux.css
+            if ($fname !== 'lizzy_basics') {
+                $this->aggregatedCssV2aux .= $cssStr . "\n\n\n";
+            }
+            $this->aggregatedCss .= $cssStr . "\n\n\n";
+        }
+
+        return basename($file).", ";
+    } // doCompile
+
+
+
+
     private function checkUpToDate($path, $files, $compiledBundeledFilename)
     {
         if ($this->forceUpdate || !file_exists($compiledBundeledFilename)) {
@@ -110,9 +165,7 @@ class SCssCompiler
         $t2 = filemtime($compiledBundeledFilename);
         foreach ($files as $file) {
             $baseName = basename($file, '.scss');
-            if (preg_match('/^\W/', $baseName)) {
-                $baseName = substr($baseName, 1);
-            }
+            list($baseName) = $this->getCompiledFileName($baseName);
             $compiledFile = $path . '_' . $baseName . '.css';
             $t0 = filemtime($file);
             $t1 = (file_exists($compiledFile)) ? filemtime($compiledFile) : 0;
@@ -173,48 +226,6 @@ class SCssCompiler
 
 
 
-    private function doCompile($toPath, $file, $targetFile = false)
-    {
-        if (!$this->scss) {
-            $this->scss = new Compiler;
-            //$this->scss->setLineNumberStyle(Compiler::LINE_COMMENTS);
-            // see: https://scssphp.github.io/scssphp/docs/ -> Source Line Debugging
-        }
-        $includeFile = true;
-        $fname = basename($file, '.scss');
-        if (preg_match('/^\W/', $fname)) {
-            $fname = substr($fname,1);
-            $includeFile = false;
-        }
-        if (!$targetFile) {
-            $targetFile = $toPath . "_$fname.css";
-        }
-        $t0 = filemtime($file);
-        $scssStr = $this->getFile($file);
-        $cssStr = '';
-        try {
-            $cssStr .= $this->scss->compile($scssStr);
-        } catch (Exception $e) {
-            fatalError("Error in SCSS-File '$file': " . $e->getMessage(), 'File: ' . __FILE__ . ' Line: ' . __LINE__);
-        }
-
-        if (!$this->compiledStylesFilename) {
-            $cssStr = removeCStyleComments($cssStr);
-            $cssStr = removeEmptyLines($cssStr);
-        }
-        $cssStr = "/**** auto-created from '$file' - do not modify! ****/\n\n$cssStr";
-
-        file_put_contents($targetFile, $cssStr);
-
-        if ($includeFile) {                 // assemble all generated CSS, unless its filename started with non-alpha char
-            $this->aggregatedCss .= $cssStr . "\n\n\n";
-        }
-
-        return basename($file).", ";
-    } // doCompile
-
-
-
     private function compilePageFolderStylesheet($forceUpdate, $namesOfCompiledFiles)
     {
         $files = getDirDeep('pages/*.scss');
@@ -250,6 +261,21 @@ class SCssCompiler
         $__scss = minify_css( $this->aggregatedCss );
         $minifiedFileName = str_replace('.css', '.min.css', $compiledFilename);
         file_put_contents($minifiedFileName, $__scss);
+    }
+
+
+
+    private function getCompiledFileName($fname)
+    {
+        $includeFile = true;
+        if ($fname[0] === '_') {
+            $fname = substr($fname, 1);
+            $includeFile = '2';
+        } elseif (preg_match('/^\W/', $fname)) {
+            $fname = substr($fname, 1);
+            $includeFile = false;
+        }
+        return array($fname, $includeFile);
     }
 
 } // SCssCompiler

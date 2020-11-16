@@ -1,0 +1,693 @@
+/* Lizzy Core CSS
+CSS-Variables:
+--lzy-focus-color:
+
+*/
+
+$focus-color: magenta;
+
+
+
+/*! normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */
+/* Minor adaptions for Lizzy */
+html,
+#lzy .lzy-encapsulated {
+	button,hr,input{overflow:visible}progress,sub,sup{vertical-align:baseline}[type=checkbox],[type=radio],legend{box-sizing:border-box;padding:0}h1{font-size:2em;margin:.67em 0}hr{box-sizing:content-box;height:0}code,kbd,pre,samp{font-family:monospace,monospace;font-size:1em}a{background-color:transparent}abbr[title]{border-bottom:none;text-decoration:underline;text-decoration:underline dotted}b,strong{font-weight:bolder}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative}sub{bottom:-.25em}sup{top:-.5em}img{border-style:none}button,input,optgroup,select,textarea{font-family:inherit;font-size:100%;line-height:1.15;margin:0}button,select{text-transform:none}[type=button],[type=reset],[type=submit],button{-webkit-appearance:button}[type=button]::-moz-focus-inner,[type=reset]::-moz-focus-inner,[type=submit]::-moz-focus-inner,button::-moz-focus-inner{border-style:none;padding:0}[type=button]:-moz-focusring,[type=reset]:-moz-focusring,[type=submit]:-moz-focusring,button:-moz-focusring{outline:ButtonText dotted 1px}fieldset{padding:.35em .75em .625em}legend{color:inherit;display:table;max-width:100%;white-space:normal}textarea{overflow:auto}[type=number]::-webkit-inner-spin-button,[type=number]::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}[type=search]::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}details{display:block}summary{display:list-item}[hidden],template{display:none}
+}
+html{line-height:1.15;-webkit-text-size-adjust:100%}body{margin:0}main{display: block;}
+
+
+
+/* === General =============================== */
+body {
+	min-width: 100vw;
+	min-height: 100vh;
+}
+
+html body, section {
+	position: relative;
+	padding: 0;
+}
+* {
+	box-sizing: border-box;
+}
+
+p {
+	padding: 0;
+	margin: 0.2em 0 0.5em 0;
+	line-height: 1.25em;
+}
+li {
+	padding: 0;
+	margin: 0.2em 0 0.2em 0;
+	line-height: 1.4em;
+}
+li > p {
+	margin: 0;
+}
+
+a {
+	text-decoration: none;
+	border-bottom: 1px dotted gray;
+}
+a:hover, a:focus {
+	border-bottom: 1px solid gray;
+}
+a:focus {
+	box-shadow: 0 0 5px $focus-color;
+	box-shadow: 0 0 5px var(--lzy-focus-color, $focus-color);
+}
+nav a {
+	border-bottom: none;
+}
+
+.lzy-logo a, .lzy-logo a:hover {
+	border-bottom: none;
+}
+kbd {
+	padding: 0 3px;
+	background: #ddd;
+	border-radius: 3px;
+}
+samp {
+	padding: 0 3px;
+	background: #efefff;
+	border-radius: 3px;
+}
+var {
+	padding: 2px 4px 0 4px;
+	background: #555;
+	color: #ffb;
+	border-radius: 3px;
+	font-weight: bold;
+	font-style: normal;
+}
+pre {
+	margin: 0;
+	tab-size: 4;
+	white-space: pre-wrap;
+}
+mark {
+	padding: 0 3px;
+}
+
+.no-underline,
+figure a:hover,
+figure a {
+	text-decoration: none;
+	border-bottom: none;    
+}
+.sup {
+	 vertical-align: super;
+	 font-size: 60%;
+}
+
+.lzy-dispno,
+.dispno,
+.disp-no,
+.disp_no {
+	display: none!important;
+}
+.dispblock {
+	display: block;
+}
+.sr-only,
+.lzy-invisible,
+.invisible,
+.visually-hidden {
+	position: absolute !important;
+	right: 200vw;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	display: inline;
+	clip: rect(1px, 1px, 1px, 1px);
+}
+
+
+
+// === SkipLinks
+.lzy-skiplinks a {
+	position: absolute;
+	top: 0;
+	right: 100%;
+}
+.lzy-skiplinks a:focus {
+	right: auto;
+	left: 5vh;
+	top: 5vh;
+	padding: 1em 2em;
+	text-align: center;
+	z-index: 999;
+	background: #fffaab;
+	box-shadow: none;
+	border: none;
+}
+
+
+// === visible on focus only:
+.lzy-focus-only {
+	display: none;
+	color: transparent;
+	background: transparent;
+	position: absolute;
+	right: -1000vw;
+}
+a:hover > .lzy-focus-only,
+a:focus > .lzy-focus-only {
+	display: inline-block;
+	color: black;
+	background: beige;
+	position: relative;
+	right: unset;
+}
+
+
+
+// === Page Switcher Links
+.lzy-page-switcher-links a {
+	position: absolute;
+	top: 0;
+	border-bottom: none;
+	z-index: 10000;
+}
+.lzy-prev-page-link a {
+	left: 0;
+}
+.lzy-next-page-link a {
+	right: 0;
+}
+.lzy-page-switcher-links a::before {
+	content: ' ';
+	position: absolute;
+	top: -0.8rem;
+	left: 0;
+	bottom: 0;
+	z-index: -1;
+	width: 3rem;
+	height: 3rem;
+}
+.lzy-prev-page-link a::before {
+	right: 0;
+}
+.lzy-page-switcher-links a:hover::before {
+	background: rgba(169, 227, 255, 0.75);
+}
+.lzy-dimmed::before {
+	content: ' ';
+	background: rgba(0,0,0,0.5);
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 999;
+}
+
+
+
+// === Footer
+.lzy-footer {
+	display: flex;
+	justify-content: space-between;
+	padding: 0.5em 0;
+	border-top: 1px solid #bbb;
+	margin-top: 2em;
+	a {
+		border-bottom: none;
+	}
+	.lzy-icon {
+		--lzy-icon-factor: 1.25;
+		opacity: 0.6;
+		&:hover {
+			opacity: 1;
+		}
+	}
+	.lzy-config-button,
+	.lzy-toggle-edit-mode {
+		padding-right: 10px;
+	}
+}
+
+
+
+
+// === Lizzy's tabulator:
+.tabulator_wrapper span.c1,
+.tabulator_wrapper span.c2,
+.tabulator_wrapper span.c3,
+.tabulator_wrapper span.c4 {
+	display: inline-block;
+	line-height: 1.4em;
+	vertical-align: top;
+}
+.tabulator_wrapper span:not(:last-child) {
+	width: 6em;
+}
+
+.lzy-vgap {
+	height: 0;
+}
+
+
+
+// === Images:
+.lzy-img {
+	max-width: 100%;
+	height: auto;
+}
+.lzy-figure {
+	max-width: 100%;
+	max-width: min-content;
+	.lzy-img {
+		max-width: 90vw;
+	}
+}
+
+
+div.lzy-editable-hdr {
+	width: 16em;
+}
+
+
+
+.missing-img {
+    border: 1px dashed magenta;
+    padding: 2em;
+}
+.authors_directive_tag {
+	display: inline-block;
+	background: #fee;
+	padding: 3px 6px;
+	border: #aff;
+	border-radius: 5px;
+}
+
+
+
+.CodeMirror-code,
+.editor-toolbar {
+	font-size: 12pt;
+}
+
+
+
+// === Language Selection:
+.lzy-lang-selection {
+    display: inline-block;
+    margin-right: 0.33em;
+}
+.lzy-lang-elem {
+    width: 1.5em;
+    height: 1.5em;
+	transform: translateY(0.25em);
+    display: inline-block;
+    margin:  0 3px;
+}
+.lzy-lang-selection > span a {
+    border-bottom: none;
+}
+.lzy-lang-icon {
+    width: 1.5em;
+    height: 1.5em;
+    border-radius: 50%;
+    opacity: 0.5;
+}
+.lzy-lang-selection:hover .lzy-lang-icon {
+    opacity: 1;
+}
+.lzy-active-lang .lzy-lang-icon {
+	border: 2px solid black;
+}
+
+
+.lzy-login-form .lzy-form-show-password input {
+    display: none;
+}
+
+.lzy-edit-icon {
+    margin-top: 2px;
+}
+
+
+
+.lzy-debug-mail {
+    border: 1px dashed yellow;
+	font-family: helvetica;
+    background: #ffe;
+    padding: 15px;
+    margin-top: 30px;
+	white-space: pre-wrap;
+}
+
+
+
+.lzy-account-form-wrapper .lzy-delete-profile-popup {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 20em;
+    height: 10em;
+    background: #ffe2c4;
+    border: 1px solid gray;
+    border-radius: 10px;
+    z-index: 999;
+}
+
+/* --- fade out effect --- */
+@-webkit-keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
+@-moz-keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
+@keyframes fadeOut { from { opacity:1; } to { opacity:0; } }
+
+
+
+
+
+/* --- Misc --------------------- */
+#debugInfo {
+    border: 1px dashed lime;
+    background: #efffef;
+    color: gray;
+    padding: 0 10px;
+    margin-top: 4em;
+    font-size: 10pt;
+    font-family: monospace;
+    overflow: auto;
+}
+#debugInfo > p {
+    font-family: arial;
+}
+#debugInfo > .lzy-log {
+    border: 0.1px solid #c3f1c3;
+    margin-bottom: 1em;
+    padding: 5px;
+    white-space: pre;
+    font-size: 80%;
+    max-height: 10em;
+    overflow:auto;
+}
+
+.mark-undefined-variable {
+    background: #ffb;
+}
+
+.lzy-album-error {
+    background: #fee;
+    border: 1px solid red;
+    padding: 1em 2em;
+}
+.lzy-config-viewer dt strong {
+    color: navy;
+}
+.lzy-config-viewer dt code {
+    color: black;
+}
+.lzy-config-viewer-hl,
+.lzy-config-viewer dt code.lzy-config-viewer-hl {
+    color: red;
+}
+.lzy-config-viewer dd {
+	margin-bottom: 1em;
+}
+
+
+
+/* === Links =========================================== */
+.lzy-link {
+	position: relative;
+	white-space: nowrap;
+	padding-left: 1.4em;
+}
+.lzy-link:before {
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: inline-block;
+	font-family: 'Lzy Icons';
+	font-style: normal;
+	font-weight: normal;
+	font-size: 110%;
+	line-height: 1;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+.lzy-page-link {
+	padding-left: 0;
+}
+
+.lzy-download_link,
+.lzy-newwin_link,
+.lzy-external_link {
+	padding-left: 1.2em;
+}
+.lzy-newwin_link:before,
+.lzy-external_link:before {
+	content:'X';
+	font-size: 90%;
+	top: 0.1em;
+}
+.lzy-mail_link:before {
+	content:'Z';
+}
+.lzy-sms_link:before {
+	content:'L';
+}
+.lzy-tel_link:before {
+	content:'I';
+}
+.lzy-gsm_link:before {
+	content:'t';
+}
+.lzy-pdf_link:before {
+	content:'r';
+}
+.lzy-geo_link:before {
+	content:'J';
+}
+.lzy-slack_link:before {
+	content:'q';
+	font-size: 90%;
+}
+.lzy-download_link:before {
+	content:'v';
+	font-size: 90%;
+}
+
+
+/* === Lzy-Buttons ========================= */
+button {
+	cursor: pointer;
+}
+#lzy .lzy-encapsulated .lzy-button,
+.lzy-button {
+	color: #666;
+	font-family: helvetica, arial, sans-serif;
+	border-radius: 4px;
+	border: 1px solid #bcbcbc;
+	-webkit-box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+	box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+	background: -webkit-linear-gradient(#FFF 0%,#EFEFEF 60%,#E1DFE2 100%);
+	background: -ms-linear-gradient(#FFF 0%,#EFEFEF 60%,#E1DFE2 100%);
+	background: linear-gradient(#FFF 0%,#EFEFEF 60%,#E1DFE2 100%);
+	padding: 0.3em 1.5em;
+	cursor: pointer;
+}
+.lzy-button a:visited,
+a.lzy-button:visited,
+.lzy-button a,
+a.lzy-button {
+	color: black;
+}
+#lzy .lzy-encapsulated {
+	.lzy-button a:visited,
+	a.lzy-button:visited,
+	.lzy-button a,
+	a.lzy-button {
+		color: black;
+	}
+}
+
+#lzy .lzy-encapsulated .lzy-button-submit,
+.lzy-button-submit {
+	color: #444;
+	border-color: #444;
+}
+
+
+/* === Forms =================================== */
+::-webkit-input-placeholder { /* Chrome/Opera/Safari */
+  text-align: right;
+  font-style: italic;
+  padding-right: 4px;
+  font-size: 90%;
+}
+::-moz-placeholder { /* Firefox 19+ */
+  text-align: right;
+  font-style: italic;
+  padding-right: 4px;
+  font-size: 90%;
+}
+:-ms-input-placeholder { /* IE 10+ */
+  text-align: right;
+  font-style: italic;
+  padding-right: 4px;
+  font-size: 90%;
+}
+:-moz-placeholder { /* Firefox 18- */
+  text-align: right;
+  font-style: italic;
+  padding-right: 4px;
+  font-size: 90%;
+}
+::placeholder { /* generic */
+  text-align: right;
+  font-style: italic;
+  padding-right: 4px;
+  font-size: 90%;
+}
+
+
+
+/* === Media Queries =================================== */
+@media screen {
+	.print_only,
+	.print-only {
+		display: none;
+	}
+
+
+	.lzy-img-link {
+		background: none;
+		padding-left: 0;
+	}
+
+}
+
+
+
+/* === Printing Support ============================== */
+body.lzy-print-preview {
+	background: #eee;
+	.pagedjs_pages {
+		width: var(--pagedjs-pagebox-width);
+		margin: 60px auto;
+	}
+
+	.pagedjs_sheet {
+		background: #fff;
+		margin: 5mm 0;
+		box-shadow: 0 0 5px 3px #bbb;
+	}
+	.lzy-skiplinks {
+		display: none;
+	}
+}
+.pagedjs_pages .page {
+	margin: 0;
+	padding: 0;
+}
+dd {
+	page-break-before: avoid;
+}
+.lzy-print-btns {
+	position: absolute;
+	top: -40px; left: 0;
+}
+.lzy-print-btns > a {
+	background: linear-gradient(#fff 0%,#fffbe0 60%,#fff7c2 100%);
+	font-size: 12pt;
+	padding: 0.7em 1.5em;
+	margin: 1em 0 0 1em;
+	box-shadow: 0 0 5px 1px gray;
+	cursor: pointer;
+	border-bottom: none; /* for <a> */
+}
+@page {
+	size: A4;
+}
+
+@media print {
+	header,
+	footer,
+	nav,
+	.dont-print,
+    .print_no,
+    .print-no,
+	#lzy-log,
+	.lzy-warning,
+	.lzy-msgbox,
+    #debugInfo,
+    .debugInfo,
+    .lzy-quickview-overlay,
+    .lzy-skiplinks,
+	.lzy-file-uploader-wrapper {
+		display: none!important;
+	}
+	.lzy-print-page-break,
+	.print-page-break {
+		page-break-after: always;
+	}
+}
+@media screen {
+	.print-only {
+		display: none!important;
+	}
+}
+
+
+
+/* === Login ============================== */
+.lzy-small-screen {
+	#lzy-login-form_wrapper * {
+		font-size: 14pt;
+	}
+	.lzy-login-form  {
+		padding: 0;
+	}
+	#lzy-login-form a.lzy-panel-link {
+		color: white;
+	}
+	.lzy-panel-inner-wrapper {
+		padding: 1em 0;
+		transition: margin-top 0.3s;
+	}
+	input, button {
+		line-height: 2em;
+	}
+	.lzy-panel-page:focus {
+		outline: none;
+	}
+}
+
+
+/* === Login Link ========================= */
+.lzy-login-link-menu {
+    position: relative;
+    clear: both;
+	display: inline-block;
+}
+.lzy-login-link-menu div {
+    display: block;
+    clear: both;
+    float: none;
+}
+.lzy-login-menu.lzy-login-menu.lzy-login-menu {
+    background: #fff9b5;
+	width: 20em;
+}
+
+
+.lzy-loading-spinner {
+    width: 24px;
+    height: 24px;
+}
+
+/* === Unite Gallery ==================*/
+/* bug workaround */
+.lzy-gallery.ug-gallery-wrapper {
+	height: unset !important;
+}
+.ug-tiles-preloader {
+	display: none !important;
+}
+
