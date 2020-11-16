@@ -178,7 +178,7 @@ class Page
 
     
 
-    //-----------------------------------------------------------------------
+
     public function merge($page, $propertiesToReplace = '')
     {
         if (!(is_object($page) || is_array($page))) {
@@ -203,7 +203,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function getEncoded()
     {
         $encoded = serialize($this);
@@ -212,7 +212,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addBody($str, $replace = false)
     {
         $this->addToProperty('bodyTopInjections', $str, $replace);
@@ -220,7 +220,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addBodyClasses($str, $replace = false)
     {
         $this->addToProperty('bodyTagClasses', ' '.$str, $replace);
@@ -228,7 +228,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addBodyTagAttributes($str, $replace = false)
     {
         $this->addToProperty('bodyTagInjections', $str, $replace);
@@ -236,7 +236,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addTemplate($str)
     {
         $this->addToProperty('template', $str, true);
@@ -244,7 +244,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addContent($str, $replace = false)
     {
         $this->addToProperty('content', $str, $replace);
@@ -252,7 +252,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addHead($str, $replace = false)
     {
         $this->addToProperty('head', $str, $replace);
@@ -260,7 +260,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addKeywords($str, $replace = false)
     {
         $this->addToListProperty($this->keywords, $str, $replace);
@@ -268,7 +268,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addDescription($str, $replace = false)
     {
         $this->addToListProperty($this->description, $str, $replace);
@@ -276,7 +276,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addCssFiles($str, $replace = false)
     {
         $this->addModules($str, $replace);
@@ -284,7 +284,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addCss($str, $replace = false)
     {
         $this->addToProperty('css', $str, $replace);
@@ -292,7 +292,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addModules($modules, $replace = false)
     {
         if ($replace) {
@@ -314,7 +314,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addJsFiles($str, $replace = false, $persisent = false)
     {
         $this->addModules($str, $replace);
@@ -325,7 +325,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addAutoAttrFiles($str, $replace = false, $persisent = false)
     {
         $this->addToListProperty($this->autoAttrFiles, $str, $replace);
@@ -333,7 +333,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addJs($str, $replace = false)
     {
         $this->addToProperty('js', $str, $replace);
@@ -341,7 +341,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addJQFiles($str, $replace = false)
     {
         $this->addModules($str, $replace);
@@ -349,7 +349,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addJQ($str, $replace = false)
     {
         //??? avoid adding 'lzy-editable' multiple times:
@@ -370,7 +370,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addBodyLateInjections($str, $replace = false)
     {
         $this->addToProperty('bodyLateInjections', $str, $replace);
@@ -378,7 +378,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addBodyEndInjections($str, $replace = false)
     {
         $this->addToProperty('bodyEndInjections', $str, $replace);
@@ -386,7 +386,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addMessage($str, $replace = false)
     {
         $str = str_replace("\n", '<br>', $str);
@@ -395,7 +395,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addPopup($args)
     {
         $this->popupInstance->addPopup($args);
@@ -403,7 +403,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addPageSubstitution($str)
     {
         $this->pageSubstitution = $str;
@@ -411,7 +411,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function removeModule($module, $str)
     {
         $mod = $this->$module;
@@ -423,7 +423,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function setOverrideMdCompile($mdCompile)
     {
         $this->mdCompileModifiedContent = $mdCompile;
@@ -431,7 +431,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addOverride($args, $replace = false, $mdCompile = null)
     {
         if (is_string($args)) {
@@ -456,7 +456,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function setOverlayMdCompile($mdCompile)
     {
         $this->mdCompileModifiedContent = $mdCompile;
@@ -464,7 +464,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addOverlay($args, $replace = false, $mdCompile = null, $closable = true)
     {
         if (is_string($args)) {
@@ -488,7 +488,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addDebugMsg($str, $replace = false)
     {
         $this->addToProperty('debugMsg', $str, $replace);
@@ -496,7 +496,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     public function addRedirect($str)
     {
         $this->addToProperty('redirect', $str, true);
@@ -504,7 +504,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     protected function addToProperty($key, $var, $replace = false)
     {
         if ($replace === 'prepend') {
@@ -518,7 +518,7 @@ class Page
 
 
 
-    //-----------------------------------------------------------------------
+
     protected function addToListProperty(&$property, $var, $replace = false)
     {
         if (is_array($var)) {
@@ -544,7 +544,7 @@ class Page
 
 
 
-    //....................................................
+
     public function applyOverride()
     {
         $override = $this->override;
@@ -588,7 +588,7 @@ class Page
 
 
 
-    //....................................................
+
     public function setOverlayClosable($on = true)
     {
         $this->overlay['closable'] = $on;
@@ -596,7 +596,7 @@ class Page
 
 
 
-    //....................................................
+
     public function applyOverlay()
     {
         if (!$this->overlay) {
@@ -675,7 +675,7 @@ class Page
 
 
 
-    //....................................................
+
     public function applySubstitution()
     {
         $str = $this->pageSubstitution;
@@ -710,7 +710,7 @@ EOT;
 
 
 
-    //....................................................
+
     public function applyDebugMsg()
     {
         if ($debugMsg = $this->debugMsg) {
@@ -727,7 +727,7 @@ EOT;
 
 
 
-    //....................................................
+
     public function applyMessage()
     {
         if ($msg = $this->message) {
@@ -756,7 +756,7 @@ EOT;
     }
 
 
-    //....................................................
+
     public function autoInvokeClassBasedModules($content)
     {
         $modified = false;
@@ -797,7 +797,7 @@ EOT;
 
 
 
-    //....................................................
+
     private function getHeadInjections()
     {
         $headInjections = $this->head;
@@ -834,7 +834,7 @@ EOT;
 
 
 
-    //....................................................
+
     public function prepareBodyEndInjections()
     // interatively collects snippets for css, js, jq
     {
@@ -921,7 +921,7 @@ EOT;
 
 
 
-    //....................................................
+
     private function getModules($type)
     {
         $out = '';
@@ -961,7 +961,7 @@ EOT;
 
 
 
-    //-----------------------------------------------------------------------
+
     public function prepareModuleLists()
     {
         $str = ','.$this->modules.','.$this->cssFiles.','.$this->jsFiles.','.$this->jqFiles;
@@ -1043,26 +1043,21 @@ EOT;
 
 
 
-    //....................................................
-    public function render($processShieldedElements = false)
+
+    public function render()
     {
         $n = 0;
-        $writeToCache = $GLOBALS['globalParams']['cachingActive'];
-        if (!$processShieldedElements) {
-            $processShieldedElements = !$writeToCache;
-        }
-
         do {
             $modified = false;
 
-            $modified |= $this->trans->supervisedTranslate($this, $this->template, $processShieldedElements);
-            $modified |= $this->trans->supervisedTranslate($this, $this->content, $processShieldedElements);
+            $modified |= $this->trans->supervisedTranslate($this, $this->template);
+            $modified |= $this->trans->supervisedTranslate($this, $this->content);
 
-            $modified |= $this->trans->supervisedTranslate($this, $this->assembledJs, $processShieldedElements);
-            $modified |= $this->trans->supervisedTranslate($this, $this->assembledJq, $processShieldedElements);
-            $modified |= $this->trans->supervisedTranslate($this, $this->bodyTopInjections, $processShieldedElements);
-            $modified |= $this->trans->supervisedTranslate($this, $this->bodyLateInjections, $processShieldedElements);
-            $modified |= $this->trans->supervisedTranslate($this, $this->bodyEndInjections, $processShieldedElements);
+            $modified |= $this->trans->supervisedTranslate($this, $this->assembledJs);
+            $modified |= $this->trans->supervisedTranslate($this, $this->assembledJq);
+            $modified |= $this->trans->supervisedTranslate($this, $this->bodyTopInjections);
+            $modified |= $this->trans->supervisedTranslate($this, $this->bodyLateInjections);
+            $modified |= $this->trans->supervisedTranslate($this, $this->bodyEndInjections);
 
             // pageSubstitution replaces everything, including template. I.e. no elements of original page shall remain
             if ($this->pageSubstitution) {
@@ -1102,14 +1097,7 @@ EOT;
             }
         } while ($modified);
 
-        if ($writeToCache) {
-            $this->writeToCache();
-        }
         $html = $this->assembleHtml();
-
-        if ($this->trans->shieldedVariablePresent($html)) {
-            $html = $this->render(true);
-        }
 
         if ($this->config->feature_replaceNLandTabChars) {
             $html = str_replace(['\n', '\t'], ["\n", "\t"], $html);
@@ -1117,6 +1105,7 @@ EOT;
 
         return $html;
     } // render
+
 
 
 
@@ -1132,16 +1121,21 @@ EOT;
             $bodyTagInjections = rtrim(" class='".trim($this->bodyTagClasses)."' ".$bodyTagInjections);
         }
 
-        $html = $this->injectValue($html, 'head_injections',        $this->getHeadInjections());
-        $html = $this->injectValue($html, 'body_tag_injections',    $bodyTagInjections);
         if ($this->bodyTopInjections) {
             $bodyTopInjections = "<!-- body_top_injections -->\n{$this->bodyTopInjections}<!-- /body_top_injections -->\n\n";
         } else {
             $bodyTopInjections = '';
         }
-        $html = $this->injectValue($html, 'body_top_injections', $bodyTopInjections);
-        $html = $this->injectValue($html, 'content',                $this->content);
-        $html = $this->injectValue($html, 'body_end_injections',    $this->getBodyEndInjections());
+        $tuples = [
+            'body_classes' =>           trim($this->bodyTagClasses),
+            'body_tag_attributes' =>    $this->bodyTagInjections,
+            'head_injections' =>        $this->getHeadInjections(),
+            'body_tag_injections' =>    $bodyTagInjections,
+            'body_top_injections' =>    $bodyTopInjections,
+            'content' =>                $this->content,
+            'body_end_injections' =>    $this->getBodyEndInjections(),
+        ];
+        $html = $this->lateTranslateVariables($html, $tuples);
 
         $this->injectAllowOrigin(); // send 'Access-Control-Allow-Origin' in header
 
@@ -1151,7 +1145,7 @@ EOT;
 
 
 
-    //....................................................
+
     private function injectAllowOrigin()
     {
         if (isset($this->allowOrigin)) {  // from frontmatter
@@ -1190,24 +1184,29 @@ EOT;
 
 
 
-    //....................................................
-    private function injectValue( $html, $varName, $varValue)
+
+    private function lateTranslateVariables( $html, $tuples)
     {
-        return str_replace("@@$varName@@", $varValue, $html);
-    } // injectValue
+        foreach ($tuples as $varName => $varValue) {
+            $html = preg_replace("/(?<!\\\\) {@{@ \^? \s* $varName \s* @}@}/x", $varValue, $html);
+        }
+        return $html;
+    } // lateTranslateVariables
 
 
 
-    //....................................................
-    public function shieldVariable($str, $varName)
+
+    public function shieldVariablesForLateTranslation($str, $vars)
     {
-        $str = preg_replace("/\{\{\^?\s*$varName\s*\}\}/", "@@$varName@@", $str);
+        foreach ($vars as $varName) {
+            $str = preg_replace("/(?<!\\\\) {{ \^? \s* $varName \s* }}/x", "{@{@$varName@}@}", $str);
+        }
         return $str;
-    } // shieldVariable
+    } // shieldVariablesForLateTranslation
 
 
 
-    //....................................................
+
     public function renderDebugInfo()
     {
         global $globalParams;
@@ -1251,7 +1250,7 @@ EOT;
 
 
 
-    //....................................................
+
     public function lateApplyMessage($html, $msg)
     {
         $msg = createWarning($msg);
@@ -1269,7 +1268,7 @@ EOT;
 
 
 
-    //....................................................
+
     public function lateApplyDebugMsg($html, $msg)
     {
         if ((($p = strpos($html, '<div id="lzy-log">')) !== false) ||
@@ -1292,31 +1291,6 @@ EOT;
 
 
 
-    private function writeToCache()
-    {
-        $pg2 = clone $this;
-        foreach ($pg2 as $key => $value) {
-            if (is_object($value)) {
-                unset( $pg2->$key );
-            }
-        }
-        writeToCache($pg2);
-    } // writeToCache
-
-
-
-    public function readFromCache()
-    {
-        $pg = readFromCache();
-        if (!$pg) {
-            return false;
-        }
-        $this->merge($pg);
-        return true;
-    }
-
-
-
     private function renderRelLinks()
     {
         $home = rtrim($GLOBALS["globalParams"]["host"], '/') . $GLOBALS["globalParams"]["appRoot"];
@@ -1332,7 +1306,7 @@ EOT;
 
 
 
-    //....................................................
+
     public function extractFrontmatter($str)
     {
         return $this->_extractFrontmatter($str);
@@ -1433,7 +1407,7 @@ EOT;
 
 
 
-    //....................................................
+
     public function extractHtmlBody($html)
     {
         $html = $this->_extractFrontmatter($html);
