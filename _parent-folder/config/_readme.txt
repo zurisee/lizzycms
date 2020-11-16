@@ -3,17 +3,19 @@ Readme: config/
 
 Files:
 ------
-config.yaml				: Lizzy configuration file
-page_template.html		: Page tepmlate file (HTML)
-sitemap.txt				: Definition of site structure
-user_variables.yaml		: Definitions of user variables
+config.yaml							: Lizzy configuration file
+page_template.html					: Default page template file (HTML)
+sitemap.txt							: Definition of site structure
+user_variables.yaml					: Definitions of user variables
+
 
 Optional/sample files:
 ----------------------
-#dev-mode-config.yaml	: Lizzy config file for development phase *)
-#schedule.yaml			: example of a schedule file
-#slack.webhook			: placeholder for a slack-webhook
-#users.yaml				: template for user admin file
+#page_template_v1.html 				: previous version of template file
+#page_template(fat-example).html 	: fat template example
+#schedule.yaml						: example of a schedule file
+#slack.webhook						: placeholder for a slack-webhook
+#users.yaml							: template for user admin file
 
 
 

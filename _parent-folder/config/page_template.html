@@ -3,15 +3,19 @@
 <head>
 	<meta charset="utf-8" />
 	<title>{{ page_title }}</title>
+
 	<meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1.0" />
     <meta name="generator" content="Lizzy {{ lzy-version }}" />
-	<link href="~sys/css/_normalize.css" rel="stylesheet" />
-	<link href="~sys/css/__lizzy.css" rel="stylesheet" />
+{{# favicon('~/assets/favicon', '~/assets/favicon/icon.png') }}
+	<link href="~sys/css/__lizzy-core.css" rel="stylesheet" />
+	<link rel="stylesheet" href="~sys/css/__lizzy-aux.css" media="print" onload="this.media='all'">
 	<link href="~/css/__styles.css" rel="stylesheet" />
+
 {{ head_injections }}
+
 </head>
 
-<body id='lzy'{{  body_tag_injections }}>
+<body id='lzy' class='{{ body_classes }} lzy-default-layout'{{ body_tag_attributes }}>
 {{ body_top_injections }}
 
   <div class="lzy-skiplinks" aria-label="{{ Skip-links }}">
@@ -21,18 +25,20 @@
   </div>
 {{^ lzy-page-switcher-links }}
 
-  <div class='page'>
+  <div class='lzy-page page'>
 
-		<header class='header'>
+		<header class='lzy-header header'>
 
 {{^ header }}
-{{^ nav( top, class:'lzy-nav-colored' ) }}
-
 		</header>
+
+{{ nav( top, class:'lzy-nav-colored' ) }}
+
+
 
 
 <!-- === page content =============== -->
-		<main id='main' class='main'>
+		<main id='main' class='lzy-main main'>
 
 {{ content }}
 
@@ -42,23 +48,29 @@
 
 
 
-		<footer class='lzy-footer lzy-large-screen-footer'>
-			<div>
-{{^ footer }}{{^ large-screen-footer }} 
+		<footer class="lzy-footer footer">
+			<div class="lzy-footer-left">
+{{^ footer }}
+<span class="lzy-large-only">{{^ large-screen-footer }}</span>
+<span class="lzy-small-only">{{^ small-screen-footer }}</span>
 			</div>
-            <div class='lzy-logged-in-user'>{{ lzy-lang-selection }}{{^ lzy-config--open-button }}{{ lzy-toggle-edit-mode }}{{ lzy-fileadmin-button }}{{ lzy-login-menu }}{{ lzy-login-button }}</div>
-		</footer>
-		<footer class='lzy-footer lzy-small-screen-footer'>
-			<div>
-{{^ footer }}{{^ small-screen-footer }}
-			</div>
-            <div class='lzy-logged-in-user'>{{ lzy-lang-selection }}{{^ lzy-config--open-button }}{{ lzy-toggle-edit-mode }}{{ lzy-fileadmin-button }}{{ lzy-login-button }}</div>
+
+	        <div class='lzy-footer-right lzy-logged-in-user'>
+{{ lzy-lang-selection }}
+				<span class="lzy-large-only">{{^ lzy-config--open-button }}
+{{ lzy-toggle-edit-mode }}
+{{ lzy-fileadmin-button }}
+				</span>
+{{ lzy-login-button }}
+	        </div><!-- /lzy-footer-right -->
 		</footer>
 
 {{ lzy-login-menu }}
 
-{{^ nav( small-screen-header ) }}
-  </div><!-- /.page -->
+
+{{ nav( small-screen-header ) }}
+
+  </div><!-- /.lzy-page -->
 
 
 {{ body_end_injections }}

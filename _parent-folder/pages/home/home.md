@@ -1,8 +1,5 @@
 ---
 css: |
-	.page_home .mybutton {
-		padding: 3px 1em;
-	}
 ---
 
 # New Lizzy-Based Website

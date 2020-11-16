@@ -3,8 +3,9 @@
 
 admin_autoAdminOnLocalhost: true
 debug_compileScssWithLineNumbers: true
-#debug_forceBrowserCacheUpdate: true
 debug_errorLogging: true
+
+#debug_forceBrowserCacheUpdate: true
 
 #my_option: true       # custom options available to user code
 
