@@ -9,7 +9,7 @@ $( document ).ready(function() {
 	if ($('body').hasClass('touch')) {
 		console.log('swipe detection activated');
 
-        $('.main').hammer().bind("swipeleft swiperight", function(ev) {
+        $('main').hammer().bind("swipeleft swiperight", function(ev) {
 		    var overflow = $(ev.gesture.target).css('overflowX'); // bug: returns value of 'overflow', not 'overflowX'
             // if ((overflow == 'auto') || (overflow == 'scroll')) { // -> due to bug: not checking for 'auto'
             if (overflow === 'scroll') {

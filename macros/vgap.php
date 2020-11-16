@@ -20,6 +20,6 @@ $this->addMacro($macroName, function () {
 	} elseif (preg_match('/^([\d\.]+)(.*)$/', $gap_size, $m)) {
 		$gap_size = ($m[1] / 2).$m[2];
 	}
-	$str = "\n<div id='$macroName$inx' class='vgap' style='margin:$gap_size 0;'>&nbsp;</div>\n";
+	$str = "\n<div id='$macroName$inx' class='lzy-vgap' style='margin:$gap_size 0;'>&nbsp;</div>\n";
 	return $str;
 });
