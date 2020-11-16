@@ -32,7 +32,7 @@ class Transvar
     public $notranslate = false;
 
 
-	//....................................................
+
 	public function __construct($lzy)
 	{
 	    $this->lzy = $lzy;
@@ -43,22 +43,22 @@ class Transvar
 
 
 
-    //....................................................
-    public function translate($html)
+
+    public function translate($html, $includeShieldedVariables = false)
     {
+        if ($includeShieldedVariables) {
+            $html = $this->unshieldVariablesForCache($html);
+        }
+
         $this->doTranslate($html);
         return $html;
     } // translate
 
 
 
-    //....................................................
-    public function supervisedTranslate($page, &$html, $processShieldedElements = false)
-    {
-        if ($processShieldedElements) {
-            $html = $this->unshieldVariables($html);
-        }
 
+    public function supervisedTranslate($page, &$html)
+    {
         $modified = $this->doTranslate($html);
         if ($modified) {
             $page->merge($this->page);
@@ -78,10 +78,13 @@ class Transvar
 
 
 
-	//....................................................
+
 	private function doTranslate(&$str, $iterationDepth = 0)
 	{
-        $this->page->set('frontmatter', $this->lzy->page->get('frontmatter'));
+	    // when called from lzy->checkAndRenderCachePage() set() is not defined:
+        if (method_exists($this->page, 'set')) {
+            $this->page->set('frontmatter', $this->lzy->page->get('frontmatter'));
+        }
         if ($iterationDepth >= MAX_TRANSVAR_ITERATION_DEPTH) {
             fatalError("Max. iteration depth exeeded.<br>Most likely cause: a recursive invokation of a macro or variable.");
         }
@@ -108,8 +111,9 @@ class Transvar
             // handle macro-modifiers, e.g. {{# }}
             $var = $this->handleModifers($var);
 
-            if ($GLOBALS['globalParams']['cachingActive'] && $this->dontCache) {   // don't cache -> shield now and translate after read-cache
-                $str = $this->shieldVariableInstance($str, $p1, $var, $p2);
+            // if dontCache set for this var/macro -> shield now and translate after read-cache:
+            if ($GLOBALS['globalParams']['cachingActive'] && $this->dontCache) {
+                $str = $this->shieldVariableInstanceForCache($str, $p1, $var, $p2);
 
             } else {
                 if ($this->commmented) {
@@ -157,7 +161,7 @@ class Transvar
 
 
 
-    //....................................................
+
     public function translateVariable($varName, $returnKeyIfUnknown = false, $tryUserCodeIfUnknown = false)
     {
         if (!$this->notranslate || ($varName === 'content')) {
@@ -180,7 +184,7 @@ class Transvar
 
 
 
-    //....................................................
+
     public function translateMacro($macro, $argStr)
     {
         $this->macroArgs[$macro] = parseArgumentStr($argStr);
@@ -232,7 +236,7 @@ class Transvar
 
 
 
-    //....................................................
+
     private function executeMacro($macro)
     {
         $val = $this->macros[$macro]( $this->getArgsArray($macro) );
@@ -241,7 +245,7 @@ class Transvar
 
 
 
-    //....................................................
+
     public function setMacroInfo($macroName, $info)
     {
         $this->macroInfo[] = [$macroName, $info];
@@ -249,7 +253,7 @@ class Transvar
 
 
 
-    //....................................................
+
     public function getArg($macroName, $name, $help = '', $default = null, $removeNl = true /*, $dynamic = false*/)
     {
         $inx = $this->macroInx++;
@@ -289,7 +293,7 @@ class Transvar
 
 
 
-    //....................................................
+
     private function getArgsArray($macroName, $removeNl = true, $argNames = false)
     {
     	//??? unfinished!
@@ -326,7 +330,7 @@ class Transvar
 
 
 
-    //....................................................
+
     private function getMacroHelp($macroName)
     {
         $argsHelp = $this->macroHelp[$macroName];
@@ -347,7 +351,7 @@ class Transvar
 
 
 
-    //....................................................
+
     public function getInvocationCounter($macroName)
     {
         if (!isset($this->invocationCounter[$macroName])) {
@@ -359,16 +363,16 @@ class Transvar
 
 
 
-    //....................................................
+
     public function adaptBraces($str)
     {
-        return str_replace(['{||{','}||}'], ['{{', '}}'], $str);
+        return str_replace(['{|{|','|}|}'], ['{{', '}}'], $str);
     } // adaptBraces
 
 
 
 
-    //....................................................
+
     public function loadAllMacros() {
         $page = $this->page = new Page;
         $sys = '~/'.$this->config->systemPath;
@@ -395,11 +399,12 @@ class Transvar
 
 
 
-    //....................................................
+
     private function loadMacro($macroName)
     {
-        $sys = '~/'.$this->config->systemPath;  // to be available inside marco
-        $page = &$this->page;  // to be available inside marco
+        // variables to be available inside macros:
+        $sys = '~/'.$this->config->systemPath;
+        $page = &$this->page;
 
         $file = $this->config->macrosPath.$macroName.'.php';
         if (file_exists($file)) {	// filename == macroname
@@ -428,7 +433,7 @@ class Transvar
 
 
 
-    //....................................................
+
     public function readTransvarsFromFiles($file, $markSource = false)
     {
         // read from multiple files
@@ -459,7 +464,7 @@ class Transvar
 
 
 
-    //....................................................
+
     public function readTransvarsFromFile($file, $markSource = false, $dontOverwrite = false)
     {
         if ($file[0] === '~') {
@@ -507,7 +512,7 @@ class Transvar
 
 
 
-    //....................................................
+
     public function addVariable($key, $value, $lang = '')
     {
         if ($lang === false) {	// delete first
@@ -542,7 +547,7 @@ class Transvar
 
 
 
-    //....................................................
+
     public function clearVariable($key)
     {
         if (isset($this->transvars[$key])) {
@@ -552,7 +557,7 @@ class Transvar
 
 
 
-    //....................................................
+
     public function addMacro($macroName, $func)
     {
         $this->macros[$macroName] = $func;
@@ -560,7 +565,7 @@ class Transvar
 
 
 
-    //....................................................
+
     public function getVariable($key, $lang = '')
     {
         $lang = ($lang) ? $lang : $_SESSION["lizzy"]["lang"];
@@ -581,7 +586,7 @@ class Transvar
                 $out = $entry;
 
             } elseif (isset($entry['dontCache']) && $entry['dontCache']) {
-                $out = "{||{ $key }||}";
+                $out = "{|{| $key |}|}";
 
             } elseif (isset($entry[$lang])) {
                 $out = $entry[$lang];
@@ -617,7 +622,7 @@ class Transvar
 
 
 
-    //....................................................
+
     public function exportUsedVariables()
     {
         ksort($this->usedVars);
@@ -627,7 +632,7 @@ class Transvar
 
 
 
-    //....................................................
+
     public function loadUserComputedVariables()
     {
         $code = USER_VAR_DEF_FILE;
@@ -639,7 +644,7 @@ class Transvar
 
 
 
-    //....................................................
+
     public function doUserCode($name, $execType = null, $breakOnError = false)
     {
         $out = false;
@@ -687,7 +692,7 @@ class Transvar
 
 
 
-	//....................................................
+
 	public function loadStandardVariables($siteStructure)
 	{
 	    $this->siteStructure = $siteStructure;
@@ -704,7 +709,7 @@ class Transvar
 
 
 
-	//....................................................
+
 	public function readAll($lang = false)
 	{
         $lang = ($lang) ? $lang : $_SESSION["lizzy"]["lang"];
@@ -725,7 +730,7 @@ class Transvar
 
 
 
-	//....................................................
+
 	public function renderAllTranslationObjects($lang = false)
 	{
 		$this->loadAllMacros();
@@ -974,6 +979,8 @@ EOT;
         return $note;
     }
 
+
+
     private function updateUndefinedVarsFile()
     {
         if (!$this->undefinedVars) {
@@ -1022,22 +1029,22 @@ EOT;
 
 
 
-    private function shieldVariableInstance(&$str, $p1, $var, $p2)
+    private function shieldVariableInstanceForCache(&$str, $p1, $var, $p2)
     {
-        return substr($str, 0, $p1) . "{||{ $var }||}" . substr($str, $p2 + 2);
+        return substr($str, 0, $p1) . "{|{| $var |}|}" . substr($str, $p2 + 2);
     }
 
 
 
-    public function shieldedVariablePresent($str)
+    public function hasVariablesShieldedFromCache($str)
     {
-        return (strpos($str, '{||{') !== false);
+        return (strpos($str, '{|{|') !== false);
     }
 
 
-    public function unshieldVariables($str)
+    public function unshieldVariablesForCache($str)
     {
-        return str_replace(["{||{","}||}"], ['{{', '}}'], $str);
+        return str_replace(["{|{|","|}|}"], ['{{', '}}'], $str);
     }
 
 } // Transvar
