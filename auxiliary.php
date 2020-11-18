@@ -2256,15 +2256,16 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
             $from = $m[2];
             $name = $m[1];
         }
+        //webmaster@xn--feldgetliweg-hlb.ch
         if (preg_match("/[^\w\d'-.@]/", $from)) {
             writeLog("lzy-mail-invalid-from-address: $from");
             return 'lzy-mail-invalid-from-address';
         }
         $from = strtolower($from);
-        if (!is_legal_email_address($from)) {
-            writeLog("lzy-mail-invalid-from-address: $from");
-            return 'lzy-mail-invalid-from-address';
-        }
+//        if (!is_legal_email_address($from)) {
+//            writeLog("lzy-mail-invalid-from-address: $from");
+//            return 'lzy-mail-invalid-from-address';
+//        }
 
         if ($name) {
             if ($base64_encode) {
