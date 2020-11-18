@@ -82,6 +82,19 @@ class Authentication
 
 
 
+    public function getUsername()
+    {
+        return $this->loggedInUser;
+    } // getUsername
+
+
+    public function getUsersGroups()
+    {
+        return $this->loggedInUser;
+    } // getUsersGroups
+
+
+
 	private function validateCredentials($credentials)
 	{
 	    // returns username or false, if no valid match was found
@@ -567,6 +580,8 @@ EOT;
         if ($user) {
             $user .= (isset($_SESSION['lizzy']['userDisplayName'])) ? ' (' . $_SESSION['lizzy']['userDisplayName'] . ')' : '';
             writeLogStr("logged out: $user [" . getClientIP(true) . ']', LOGIN_LOG_FILENAME);
+        } else {
+            writeLogStr("logged out: undefined [" . getClientIP(true) . ']', LOGIN_LOG_FILENAME);
         }
 
         $this->unsetLoggedInUser();
