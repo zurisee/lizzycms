@@ -849,6 +849,7 @@ private function loadRequired()
         $loginMenu = $login = $userName = '';
 	    if (!$this->auth->getKnownUsers()) {    // case when no users defined yet:
             $userName = '';
+            $groups = '';
             $login = <<<EOT
     <span class="lzy-tooltip-arrow tooltip" title='{{ lzy-no-users-defined-warning }}'>
         <span class='lzy-icon-error'></span>
@@ -861,7 +862,8 @@ EOT;
                 $rec = $this->auth->getLoggedInUser(true);
                 $login = $userAcc->renderLoginLink($rec);
                 $loginMenu = $userAcc->renderLoginMenu($rec);
-                $userName = $userAcc->getUsername();
+                $userName = $rec['username'];
+                $groups = $rec['groups'];
             } else {
 	            // login icon when not logged in:
 	            $login = <<<EOT
@@ -875,6 +877,7 @@ EOT;
         $this->trans->addVariable('lzy-login-menu', $loginMenu);
         $this->trans->addVariable('lzy-login-button', $login);
         $this->trans->addVariable('user', $userName, false);
+        $this->trans->addVariable('groups', $groups, false);
 
         if ($this->auth->isAdmin()) {
             $url = $GLOBALS["globalParams"]["pageUrl"];
