@@ -1082,10 +1082,10 @@ EOT;
             $modified |= $this->popupInstance->applyPopup();
 
             // check, whether we need to auto-invoke modules based on classes:
-            if ($this->config->feature_autoLoadClassBasedModules) {
-                $modified |= $this->autoInvokeClassBasedModules($this->content);
-                $modified |= $this->autoInvokeClassBasedModules($this->template);
-            }
+//            if ($this->config->feature_autoLoadClassBasedModules) {
+//                $modified |= $this->autoInvokeClassBasedModules($this->content);
+//                $modified |= $this->autoInvokeClassBasedModules($this->template);
+//            }
 
             // get and inject body-end elements, compile them first:
             $modified |= $this->prepareBodyEndInjections();
