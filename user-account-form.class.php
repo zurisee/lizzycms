@@ -71,8 +71,8 @@ EOT;
             return $str;
         }
 
-        $this->page->addOverride($str);
         $this->page->addModules('PANELS');
+        $this->page->addOverride($str);
         $this->page->setOverrideMdCompile(false);
 
         return $this->page;

@@ -184,10 +184,10 @@ EOT;
         } elseif ($this->lzy->config->admin_userAllowSelfAdmin && ($adminTask === 'edit-profile')) {
             $userRec = $this->auth->getLoggedInUser(true);
             $html = $accountForm->renderEditProfileForm($userRec, $notification);
-            $this->page->addOverride($html, true, false);
             $this->page->addModules('PANELS');
             $jq = "initLzyPanel('.lzy-panels-widget', 1);";
             $this->page->addJq( $jq );
+            $this->page->addOverride($html, true, false);
             return '';
 
         } elseif ($adminTask === 'invite-new-user') {
