@@ -73,11 +73,13 @@ $box-width: 300px;
         display: none;
     }
 }
-.lzy-large-screen.lzy-default-layout {
-    font-size: 13pt;
+.lzy-default-layout {
     .lzy-mobile-page-header {
         display: none;
     }
+}
+.lzy-large-screen.lzy-default-layout {
+    font-size: 13pt;
     .lzy-small-screen-footer {
         display: none;
     }
