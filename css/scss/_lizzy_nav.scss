@@ -83,6 +83,9 @@ nav li {
 
 .lzy-nav-wrapper {
     position: relative;
+    .lzy-nav-arrow {
+        min-width: 1.55em;
+    }
 }
 #lzy .lzy-nav-wrapper {
     .lzy-nav-menu-button {
