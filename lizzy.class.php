@@ -99,7 +99,7 @@ class Lizzy
     public function __construct()
     {
         session_start();
-writeLogStr("__construct [" . var_r($_SESSION, '$_SESSION', true). ']', LOGIN_LOG_FILENAME);
+//writeLogStr("__construct [" . var_r($_SESSION, '$_SESSION', true). ']', LOGIN_LOG_FILENAME);
         $user = @$_SESSION['lizzy']['user']? $_SESSION['lizzy']['user']: 'anon';
         $this->debugLogBuffer = "REQUEST_URI: {$_SERVER["REQUEST_URI"]}  FROM: [$user]\n";
         if ($_REQUEST) {
@@ -683,7 +683,7 @@ EOT;
         // security option: permit only regular text in requests, discard Special characters:
         if ($this->config->feature_filterRequestString) {
             // Example: abc[2]/
-            if (preg_match('|[^a-z0-9_/-]*|ix')) {
+            if (preg_match('|[^a-z0-9_/-]|ix', $pagePath)) {
                 writeLogStr("Warning: feature_filterRequestString caught suspicious path: '$pagePath'.");
                 $pagePath = preg_replace('|[^a-z0-9_/-]*|ix', '', $pagePath);
             }
