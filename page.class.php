@@ -8,8 +8,8 @@
  *      -> derived from file-ext
  *      -> rank: counter / from defaults
  *          -> same rank -> replace previous entry
-// *  Modules-Array: $file => [$rank, $type ]
-// * $type: css, js
+ *  Modules-Array: $file => [$rank, $type ]
+ * $type: css, js
 */
 
 define('MAX_ITERATION_DEPTH', 10);
@@ -872,10 +872,12 @@ EOT;
 
         $screenSizeBreakpoint = $this->config->feature_screenSizeBreakpoint;
         $pathToRoot = $this->lzy->pathToRoot;
-        $rootJs  = "\t\tvar appRoot = '$pathToRoot';\n";
-        $rootJs .= "\t\tvar systemPath = '$pathToRoot{$this->config->systemPath}';\n";
-        $rootJs .= "\t\tvar screenSizeBreakpoint = $screenSizeBreakpoint;\n";
-        $rootJs .= "\t\tvar pagePath = '{$this->lzy->pagePath}';\n";
+        $rootJs  = <<<EOT
+        var appRoot = '$pathToRoot';
+        var systemPath = '$pathToRoot{$this->config->systemPath}';
+        var screenSizeBreakpoint = $screenSizeBreakpoint
+        var pagePath = '{$this->lzy->pagePath}';
+EOT;
 
         if ($this->config->debug_allowDebugInfo &&
             ((($this->config->debug_showDebugInfo)) || getUrlArgStatic('debug'))) {
@@ -1082,10 +1084,10 @@ EOT;
             $modified |= $this->popupInstance->applyPopup();
 
             // check, whether we need to auto-invoke modules based on classes:
-//            if ($this->config->feature_autoLoadClassBasedModules) {
-//                $modified |= $this->autoInvokeClassBasedModules($this->content);
-//                $modified |= $this->autoInvokeClassBasedModules($this->template);
-//            }
+            //            if ($this->config->feature_autoLoadClassBasedModules) {
+            //                $modified |= $this->autoInvokeClassBasedModules($this->content);
+            //                $modified |= $this->autoInvokeClassBasedModules($this->template);
+            //            }
 
             // get and inject body-end elements, compile them first:
             $modified |= $this->prepareBodyEndInjections();
