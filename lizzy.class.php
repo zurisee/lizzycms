@@ -528,7 +528,6 @@ private function loadRequired()
             return;
         }
 
-//        if ($this->auth->getLoggedInUser(true)) {   // signal in body tag class whether user is logged in
         if ($this->auth->isLoggedIn()) {   // signal in body tag class whether user is logged in
             $this->page->addBodyClasses('lzy-user-logged-in');  // if user is logged in, there's no need for login form
             return;

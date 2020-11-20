@@ -235,7 +235,6 @@ EOT;
 
 
 
-    //....................................................
     public function sendSignupMail($email, $group = 'guest')
     {
         $accessCodeValidyTime = $this->lzy->config->admin_defaultAccessLinkValidyTime;
@@ -246,7 +245,6 @@ EOT;
 
 
 
-    //....................................................
     public function sendChangeMailAddress_Mail($email)
     {
         $accessCodeValidyTime = $this->lzy->config->admin_defaultAccessLinkValidyTime;
@@ -258,7 +256,6 @@ EOT;
 
 
 
-    //....................................................
     public function addUsers($emails, $group)
     {
         $lines = explode("\n", $emails);
@@ -293,7 +290,6 @@ EOT;
 
 
 
-    //....................................................
     public function signupUser($rec)
     {
         $username = get_post_data('lzy-self-signup-user-username');
@@ -346,7 +342,6 @@ EOT;
 
 
 
-    //....................................................
     public function addUser($rec)
     {
         $this->addUsersToDB($rec);
@@ -357,7 +352,6 @@ EOT;
 
 
 
-    //....................................................
     public function changePassword($user, $password)
     {
         $str = '';
@@ -371,7 +365,6 @@ EOT;
 
 
 
-    //....................................................
     public function changeUsername($newUsername, $displayName)
     {
         $rec = $this->auth->getLoggedInUser( true );
@@ -697,7 +690,6 @@ EOT;
 
 
 
-    //....................................................
     public function sendInvitationByMails($submittedEmail, $accessCodeValidyTime)
     {
         global $globalParams;
@@ -755,7 +747,6 @@ EOT;
 
 
 
-    //....................................................
     public function sendAccessLinkMail()
     {
         if ($pM = $this->auth->getPendingMail()) {
