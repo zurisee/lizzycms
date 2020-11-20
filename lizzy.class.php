@@ -63,7 +63,9 @@ use Symfony\Component\DomCrawler\Crawler;
 require_once SYSTEM_PATH.'auxiliary.php';
 
 $globalParams = array(
-	'pathToRoot' => null,			// ../../
+                                    // example: URL='xy/', folder='pages/xy/'
+	'pathToRoot' => null,			// ../
+	'filepathToRoot' => null,		// ../../
 	'pagePath' => null,				// xy/
 	'pathToPage' => null,			// pages/xy/
     'path_logPath' => null,
@@ -97,6 +99,7 @@ class Lizzy
     public function __construct()
     {
         session_start();
+writeLogStr("__construct [" . var_r($_SESSION, '$_SESSION', true). ']', LOGIN_LOG_FILENAME);
         $user = @$_SESSION['lizzy']['user']? $_SESSION['lizzy']['user']: 'anon';
         $this->debugLogBuffer = "REQUEST_URI: {$_SERVER["REQUEST_URI"]}  FROM: [$user]\n";
         if ($_REQUEST) {
@@ -370,16 +373,15 @@ private function loadRequired()
     private function resolveAllPaths( $html )
     {
         global $globalParams;
-        $appRoot = $globalParams['appRoot'];
+        $appRoot = $globalParams['appRootUrl'];
         $pagePath = $globalParams['pagePath'];
-        $pathToRoot = $globalParams['pathToPage'];
 
         if (!$this->config->admin_useRequestRewrite) {
             resolveHrefs($html);
         }
 
         // Handle resource accesses first: src='~page/...' -> local to page but need full path:
-        $p = $appRoot.$pathToRoot;
+        $p = $appRoot.$this->pathToRoot;
         $html = preg_replace(['|(src=[\'"])(?<!\\\\)~page/|', '|(srcset=[\'"])(?<!\\\\)~page/|'], "$1$p", $html);
 
         // Handle all other special links:
@@ -526,7 +528,8 @@ private function loadRequired()
             return;
         }
 
-        if ($this->auth->getLoggedInUser(true)) {   // signal in body tag class whether user is logged in
+//        if ($this->auth->getLoggedInUser(true)) {   // signal in body tag class whether user is logged in
+        if ($this->auth->isLoggedIn()) {   // signal in body tag class whether user is logged in
             $this->page->addBodyClasses('lzy-user-logged-in');  // if user is logged in, there's no need for login form
             return;
         }
@@ -576,83 +579,129 @@ private function loadRequired()
 
     private function analyzeHttpRequest()
     {
-    // appRoot:         path from docRoot to base folder of app, mostly = ''; appRoot == '~/'
-    // pagePath:        forward-path from appRoot to requested folder, e.g. 'contact/ (-> excludes pages/)
-    // pathToPage:      filesystem forward-path from appRoot to requested folder, e.g. 'pages/contact/ (-> includes pages/)
-    // pathToRoot:      upward-path from requested folder to appRoot, e.g. ../
-    // redirectedPath:  if requests get redirected by .htaccess, this is the skipped folder(s), e.g. 'now_active/'
+        global $globalParams;
 
-    // $globalParams:   -> pagePath, pathToRoot, redirectedPath
-    // $_SESSION:       -> userAgent, pageName, currPagePath, lang
+        $requestUri         = (isset($_SERVER["REQUEST_URI"])) ? rawurldecode($_SERVER["REQUEST_URI"]) : '';
+        $requestedPath      = $requestUri;
+        $urlArgs               = '';
+        if (preg_match('/^ (.*?) [\?#&] (.*)/x', $requestUri, $m)) {
+            $requestedPath = $m[1];
+            $urlArgs = $m[2];
+        }
 
-        global $globalParams, $pathToRoot;
-
-        $absAppRoot     = dir_name($_SERVER['SCRIPT_FILENAME']);
-        $scriptPath     = dir_name($_SERVER['SCRIPT_NAME']);
-        // ignore filename part of request:
-        $requestUri     = (isset($_SERVER["REQUEST_URI"])) ? rawurldecode($_SERVER["REQUEST_URI"]) : '';
-        $accessCode = '';
-        if (preg_match('|(.*)/([A-Z][A-Z0-9]{4,})(\.?)/?$|', $requestUri, $m)) {
-            $requestUri = $m[1].'/';
+        // extract access code, e.g. folder/ABCDEF/ (i.e. at least 4 letters/digits all uppercase)
+        $accessCode         = '';
+        if (preg_match('|(.*)/([A-Z][A-Z0-9]{4,})(\.?)/?$|', $requestedPath, $m)) {
+            $requestedPath = $m[1].'/';
             $accessCode = $m[2];
             $this->keepAccessCode = ($m[3] !== '');
         }
-        if (fileExt($requestUri)) {
-            $requestUri     = dir_name($requestUri);
-        }
-        $appRoot        = fixPath(commonSubstr( $scriptPath, dir_name($requestUri), '/'));
-        $redirectedPath = ($h = substr($scriptPath, strlen($appRoot))) ? $h : '';
-        $requestedPath  = dir_name($requestUri);
-        $ru = preg_replace('/\?.*/', '', $requestUri); // remove opt. '?arg'
-        $requestedpageHttpPath = dir_name(substr($ru, strlen($appRoot)));
-        if ($requestedpageHttpPath === '.') {
-            $requestedpageHttpPath = '';
-        }
 
-        // if operating without request-rewrite, we rely on page request being transmitted in url-arg 'lzy':
-        if (isset($_GET['lzy'])) {
-            $requestedPath = $_GET['lzy'];
-        }
-        if (strpos($requestedPath, $appRoot) === 0) {
-            $pageHttpPath = substr($requestedPath, strlen($appRoot));
-        } else {
-            $pageHttpPath = $requestedPath;
-        }
-        $requestScheme = ((isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'])) ? $_SERVER['REQUEST_SCHEME'].'://' : 'HTTP://';
-        $requestedUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestUri;
-        $globalParams['requestedUrl'] = $requestedUrl;
+        $requestScheme      = $_SERVER['REQUEST_SCHEME'];               // https
+        $domainName         = $_SERVER['HTTP_HOST'];                    // domain.net
+        $docRootUrl         = "$requestScheme://$domainName/";          // https://domain.net/
+        $absAppRootPath     = dirname($_SERVER['SCRIPT_FILENAME']).'/'; // /home/httpdocs/approot/
+        $appRoot            = dirname($_SERVER['SCRIPT_NAME']).'/';     // /approot/
+        $absDocRootPath     = substr($absAppRootPath, 0, -strlen($appRoot)+1); // /home/httpdocs/
+        $appRootUrl         = fixPath(commonSubstr( $appRoot, $requestUri, '/'));
+        $redirectedAppRootUrl = substr($appRoot, strlen($appRootUrl));
+
+        $s = substr($requestedPath, strlen($appRootUrl));
+        $pagePath           = preg_replace('|^'.preg_quote($appRoot).'|', '', $s); // p1/p2/
+        $pagePath			= ltrim($pagePath, '/');
+        $pathToPage         = "pages/$pagePath";                        // pages/p1/p2/
+
+        $absAppRootUrl      = $docRootUrl.$appRootUrl;                    // https://domain.net/approot/
+        $urlToAppRoot       = preg_replace('|[^/]+|', '..', $pagePath); // ../../
+        $pathToAppRoot      = preg_replace('|[^/]+|', '..', $pathToPage); // ../../../
+
+        /*
+        // verification output:
+        $check = <<<EOT
+Basics:
+===========
+\$requestUri        $requestUri         // /approot/p1/p2/?x
+\$requestedPath     $requestedPath      // /approot/p1/p2/
+\$requestScheme     $requestScheme      // https
+\$domainName        $domainName         // domain.net
+
+DocRoot:
+============
+\$docRootUrl        $docRootUrl         // https://domain.net/
+\$absDocRootPath    $absDocRootPath     // /home/httpdocs/
+
+AppRoot:
+============
+\$absAppRootPath    $absAppRootPath     // /home/httpdocs/approot/
+\$appRoot           $appRoot            // /approot/
+\$absAppRootUrl     $absAppRootUrl      // https://domain.net/ or https://domain.net/path
+\$appRootUrl        '$appRootUrl'         // '' or /approot/
+
+Page:
+============
+\$pagePath          $pagePath           // p1/p2/
+\$pathToPage        $pathToPage         // pages/p1/p2/
+
+Up:
+============
+\$urlToAppRoot      $urlToAppRoot       // ../../
+\$pathToAppRoot     $pathToAppRoot      // ../../../
+
+AccessCode:
+============
+\$accessCode        '$accessCode'       // ABCDEF
+
+Url Args:
+============
+\$urlArgs           '$urlArgs'       // ?x
+
+EOT;
+        file_put_contents('check.txt', $check);
+        */
+
+        // set global variables:
+        $globalParams['host'] = $docRootUrl;
+        $globalParams['requestedUrl'] = $requestUri; //???
         $globalParams['pageFolder'] = null;
         $globalParams['pagePath'] = null;
         $globalParams['pathToPage'] = null; // needs to be set after determining actually requested page
-
-        $this->pageUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestedPath;
         $globalParams['pageUrl'] = $this->pageUrl;
+        $globalParams['pagesFolder'] = PAGES_PATH;
+        $globalParams['filepathToRoot'] = $pathToAppRoot;
+        $globalParams['absAppRoot'] = $absAppRootPath;  // path from FS root to base folder of app, e.g. /Volumes/...
+        $globalParams['absAppRootUrl'] = $globalParams["host"] . substr($appRoot, 1);  // path from FS root to base folder of app, e.g. /Volumes/...
+        $globalParams['appRootUrl'] = $appRootUrl;  //
+        $globalParams['appRoot'] = $appRoot;  // path from docRoot to base folder of app, e.g. 'on/'
+        $globalParams['redirectedAppRootUrl'] = $redirectedAppRootUrl;  // the part that has been skipped by .htaccess
 
-        $pageHttpPath       = strtolower($pageHttpPath);
+        $globalParams['filepathToDocroot'] = preg_replace('|[^/]+|', '..', $appRoot);;
+
+        $globalParams['localCall'] = $this->localCall;
+        $globalParams['isLocalhost'] = $this->localCall;
+        $globalParams['pagePath'] = $pagePath;   // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
+        $globalParams['urlArgs'] = $urlArgs;     // all url-args received
+
+        // security option: permit only regular text in requests, discard Special characters:
         if ($this->config->feature_filterRequestString) {
             // Example: abc[2]/
-            $pageHttpPath = preg_replace('/[^a-z_-]+ \w* [^a-z_-]+/ix', '', rtrim($pageHttpPath, '/')).'/';
-        }
-        $pathToRoot = str_repeat('../', sizeof(explode('/', $requestedpageHttpPath)) - 1);
-
-        $globalParams['pagesFolder'] = PAGES_PATH;
-
-        $globalParams['pathToRoot'] = $pathToRoot;  // path from requested folder to root (= ~/), e.g. ../
-        $this->pathToRoot = $pathToRoot;
-        $this->config->pathToRoot = $pathToRoot;
-
-        $globalParams['host'] = $requestScheme.$_SERVER['HTTP_HOST'].'/';
-        $this->appRootUrl = $requestScheme.$_SERVER['HTTP_HOST'] . $appRoot;
-
-        $globalParams['absAppRoot'] = $absAppRoot;  // path from FS root to base folder of app, e.g. /Volumes/...
-        $globalParams['absAppRootUrl'] = $globalParams["host"] . substr($appRoot, 1);  // path from FS root to base folder of app, e.g. /Volumes/...
-
-
-
-        if (!$pageHttpPath) {
-            $pageHttpPath = './';
+            if (preg_match('|[^a-z0-9_/-]*|ix')) {
+                writeLogStr("Warning: feature_filterRequestString caught suspicious path: '$pagePath'.");
+                $pagePath = preg_replace('|[^a-z0-9_/-]*|ix', '', $pagePath);
+            }
         }
 
+        // set session variables:
+        $_SESSION['lizzy']['pagePath'] = $pagePath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
+
+        $_SESSION['lizzy']['pathToPage'] = $pathToPage;
+        $_SESSION['lizzy']['appRootUrl'] = $absAppRootUrl; // https://domain.net/...
+        $_SESSION['lizzy']['absAppRoot'] = $absAppRootPath;
+
+        // set properties:
+        $this->pagePath = $pagePath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
+        $this->reqPagePath = $pagePath; //???ok
+        $this->pageUrl = $requestScheme.$_SERVER['HTTP_HOST'].$requestedPath;
+        $this->pathToRoot = $urlToAppRoot;
 
         // get IP-address
         $ip = $_SERVER["HTTP_HOST"];
@@ -682,28 +731,10 @@ private function loadRequired()
         }
         $globalParams['legacyBrowser'] = $this->config->isLegacyBrowser;
 
-
-        $this->reqPagePath = $pageHttpPath; //???ok
-        if ($pageHttpPath === './') {
-            $pageHttpPath = '';
-        }
-        $globalParams['appRoot'] = $appRoot;  // path from docRoot to base folder of app, e.g. 'on/'
-        $globalParams['redirectedPath'] = $redirectedPath;  // the part that is optionally skippped by htaccess
-        $globalParams['localCall'] = $this->localCall;
-        $globalParams['pagePath'] = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
-        $this->pagePath = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
-
-        $_SESSION['lizzy']['pagePath'] = $pageHttpPath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
-
-        $_SESSION['lizzy']['pathToPage'] = null; //???
-        $_SESSION['lizzy']['pagesFolder'] = PAGES_PATH;
-        $baseUrl = $requestScheme.$_SERVER['SERVER_NAME'];
-        $_SESSION['lizzy']['appRootUrl'] = $baseUrl.$appRoot; // https://domain.net/...
-        $_SESSION['lizzy']['absAppRoot'] = $absAppRoot;
-
         if ($accessCode) {
             $this->auth->handleAccessCodeInUrl($accessCode);
         }
+
     } // analyzeHttpRequest
 
 
@@ -846,10 +877,8 @@ private function loadRequired()
 
 	private function setTransvars1()
 	{
-        $loginMenu = $login = $userName = '';
-	    if (!$this->auth->getKnownUsers()) {    // case when no users defined yet:
-            $userName = '';
-            $groups = '';
+        $loginMenu = $login = $userName = $groups = '';
+        if (!$this->auth->getKnownUsers()) {    // case when no users defined yet:
             $login = <<<EOT
     <span class="lzy-tooltip-arrow tooltip" title='{{ lzy-no-users-defined-warning }}'>
         <span class='lzy-icon-error'></span>
@@ -862,12 +891,12 @@ EOT;
                 $rec = $this->auth->getLoggedInUser(true);
                 $login = $userAcc->renderLoginLink($rec);
                 $loginMenu = $userAcc->renderLoginMenu($rec);
-                $userName = $rec['username'];
-                $groups = $rec['groups'];
+                $userName = @$rec['username'];
+                $groups = @$rec['groups'];
             } else {
 	            // login icon when not logged in:
 	            $login = <<<EOT
-<div class='lzy-login-link'><a href='{$GLOBALS['globalParams']['pageUrl']}?login' class='lzy-login-link' title="$loggedInUser">{{ lzy-login-icon }}</a></div>
+<div class='lzy-login-link'><a href='{$GLOBALS['globalParams']['pageUrl']}?login' class='lzy-login-link'>{{ lzy-login-icon }}</a></div>
 
 EOT;
 
@@ -879,10 +908,12 @@ EOT;
         $this->trans->addVariable('user', $userName, false);
         $this->trans->addVariable('groups', $groups, false);
 
+        $configBtn = '';
         if ($this->auth->isAdmin()) {
             $url = $GLOBALS["globalParams"]["pageUrl"];
-            $this->trans->addVariable('lzy-config--open-button', "<a class='lzy-config-button' href='$url?config'>{{ lzy-config-button }}</a>", false);
+            $configBtn = "<a class='lzy-config-button' href='$url?config'>{{ lzy-config-button }}</a>";
         }
+        $this->trans->addVariable('lzy-config--open-button', $configBtn, false);
 
         if ($this->config->admin_enableFileManager && $this->auth->checkGroupMembership('fileadmins')) {
             $this->trans->addVariable('lzy-fileadmin-button', "<button class='lzy-fileadmin-button' title='{{ lzy-fileadmin-button-tooltip }}'><span class='lzy-icon-docs'></span>{{^ lzy-fileadmin-button-text }}</button>", false);
@@ -1308,14 +1339,13 @@ EOT;
 
     private function handleMissingFolder($folder)
 	{
-	    if ($this->auth->getLoggedInUser() || $this->localCall) {
-            if (!file_exists($folder)) {
-                $mdFile = $folder . basename(substr($folder, 0, -1)) . '.md';
-                mkdir($folder, MKDIR_MASK, true);
-                $name = $this->siteStructure->currPageRec['name'];
-                file_put_contents($mdFile, "---\n// Frontmatter:\ncss: |\n---\n\n# $name\n");
-            }
+        if (file_exists($folder)) {
+            return;
         }
+        $mdFile = $folder . basename(substr($folder, 0, -1)) . '.md';
+        mkdir($folder, MKDIR_MASK, true);
+        $name = $this->siteStructure->currPageRec['name'];
+        file_put_contents($mdFile, "---\n// Frontmatter:\ncss: |\n---\n\n# $name\n");
     } // handleMissingFolder
 
 
@@ -2130,8 +2160,6 @@ EOT;
         $globalParams['pageFolder'] = PAGES_PATH . $this->siteStructure->getPageFolder();      // excludes pages/, may differ from path if page redirected
         $globalParams['pagePath'] = $this->pagePath;        // excludes pages/, takes not showThis into account
         $globalParams['pathToPage'] = $this->pathToPage;
-        $globalParams['filepathToRoot'] = str_repeat('../', substr_count($this->pathToPage, '/'));
-        $globalParams['filepathToDocroot'] = str_repeat('../', substr_count($globalParams["appRoot"], '/')-1);
         $_SESSION['lizzy']['pageFolder'] = $globalParams['pageFolder'];     // for _ajax_server.php and _upload_server.php
         $_SESSION['lizzy']['pagePath'] = $globalParams['pagePath']; // for _ajax_server.php and _upload_server.php
         $_SESSION['lizzy']['pathToPage'] = $this->pathToPage;
