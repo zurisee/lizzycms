@@ -1,15 +1,15 @@
 <?php
-
-// type: [top, side, sitemap, in-page] Specifies the type of output to be rendered.
-// layout: [horizontal, vertical] Specifies direction of top-level items.
-// animation: [dropdown, slidedown, collapsible] Defines the type of animation applied to the rendered tree.
-// options: [top-level, curr-branch, hidden] These are filters that render a subset of items.
+/*
+ *    type: [top, side, sitemap, in-page] Specifies the type of output to be rendered.
+ *    layout: [horizontal, vertical] Specifies direction of top-level items.
+ *    animation: [dropdown, slidedown, collapsible] Defines the type of animation applied to the rendered tree.
+ *    options: [top-level, curr-branch, hidden] These are filters that render a subset of items.
+*/
 
 define('NAV_ARROW', '<span class=\'lzy-icon-triangle\'></span>'); // '&#9657;'); // '&#9013;'; // '&#9657;'; //'&#9656;';
 define('NAV_ARROW_TOP', NAV_ARROW);
 define('NAV_SMALL_TREE_THRESHOLD', 15); // if nav tree small larger, mobile nav will be fully expanded initially
 
-//$page->addJqFiles('TABBABLE');
 
 class NavRenderer
 {
@@ -63,7 +63,7 @@ class NavRenderer
             $primaryClass = ' lzy-primary-nav';
             $options['ariaLabel'] = $options['ariaLabel']? $options['ariaLabel'] : '{{ Main Menu }}';
         }
-//ToDo: check/rename 'editable'
+
         // no specific php-file, so render standard output of predefined types:
         if ($type === 'top') {
             $options['navClass'] = trim($options['navClass'].' lzy-nav-top-horizontal lzy-nav-indented lzy-nav-accordion lzy-nav-collapsed lzy-nav-animated lzy-nav-hoveropen lzy-encapsulated');
@@ -282,6 +282,8 @@ EOT;
             }
             if (isset($elem['goto'])) {
                 $path = $elem['goto'];    // render goto url
+            } elseif ($elem['urlpath'] !== false) {
+                $path = $elem['urlpath']? $elem['urlpath']: '~/';    // render goto url
             } else {
                 $path = (isset($elem['folder'])) ? $elem['folder'] : '';
             }
