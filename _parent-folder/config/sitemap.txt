@@ -16,37 +16,43 @@ Optional Configuration Attributes:
 ----------------------------------
 
 urlPath: 
-	Example: urlPath: path/  
+	Example: { urlPath: 'path/'  }
 	Defines the path, by which a HTTP request can be reached the page.
 	Example: My Page: { urlPath: pg1/ } -> now this page may be opened with the 
 	URL-path HTTP://domain.net/pg1/).
 
 folder: 
-	Example: folder: 'foldername/'	 
+	Example: { folder: 'foldername/' }
 	Overrides the natural folder name (which is derived from the page name. 
 	Use '~/' to define a path starting at the root.
 
 file: 
-	Example: file: file.html	 
+	Example: { file: file.html }
 	Ff set, the specified file will be loaded, but no markdown files
 
 template: 
-	Example: template: file.html 
+	Example: { template: file.html }
 	Specifies the template file, overriding the default which is set in 
 	'_config/config.yaml'
 
 showThis:
-	Example: showThis: foldername/ 
+	Example: { showThis: foldername/ }
 	Shows content of some other page folder (but leave the nav position as is)
 
 goto: 
-	Example: goto: foldername/  
+	Example: { goto: foldername/ }
 	Directly opens target folder, as if that was requested in the URL. 
 	BTW, goto is also the option you can use if you need to link to another site, 
 	such as https://github.com.
 
+lang:
+	Example: { lang: fr }
+	Forces the system to render in specified language. 
+	Only url-arg '?lang=xy' takes precedence. Otherwise, this sitemap-option 
+	overrides the language previously activated (and stored in a session var).
+
 restricted:
-	Example: restricted: "testgroup, admin" 
+	Example: { restricted: "testgroup, admin" }
 	[groupname(s), loggedin, privileged]
 		(where 'privileged' means member of the admins or editors group)
 	If set, the page can only be accessed by users matching the corresponding 
@@ -54,7 +60,7 @@ restricted:
 
 
 hide: 
-	Example: hide: true 
+	Example: { hide: true }
 	[true,false,non-privileged, not-loggedin, groupname(s)]
 	Note: supported keywords: loggedin, privileged. They can be inverted by 
 	prepending "!", "non-" or "not-".
@@ -65,7 +71,7 @@ hide:
 	(Their user groups doesn't matter)
 
 hideFrom, hideTill, showFrom, showTill:
-	Example: hideTill: 2020-01-01 
+	Example: { hideTill: 2020-01-01 }
 	Defines a point in time when a nav element will become visible, resp. when it 
 	will disappear. 
 	The page will only disappear from the navigation tree, but can still be opened 
@@ -74,7 +80,7 @@ hideFrom, hideTill, showFrom, showTill:
 	http://php.net/manual/en/datetime.formats.php for reference.
 
 omitFrom, omitTill (resp. availableFrom, availableTill):
-	Example: omitTill: 2020-01-01 
+	Example: { omitTill: 2020-01-01 }
 	Defines a point in time when a page and its nav element will become available, 
 	resp. when it will become inavailable. 
 	Note: unlike the hideTill-option, the page will be completely inaccessible 

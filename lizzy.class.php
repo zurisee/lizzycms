@@ -959,6 +959,8 @@ EOT;
         } else {
             $this->trans->addVariable('lzy-lang-selection', '');
         }
+        $this->trans->addVariable('lzy-lang-current', $this->trans->translateVariable("lzy-lang-{$this->config->lang}"));
+
         $this->trans->addVariable('lzy-version', getGitTag());
 
 		if ($this->config->feature_pageSwitcher) {
@@ -1736,15 +1738,14 @@ EOT;
 
 
 
-
-	private function selectLanguage()
-	{
-	    global $globalParams;
-        // check sitemap for language setting
+    private function selectLanguage()
+    {
+        global $globalParams;
+        // check sitemap for language option:
         if (isset($this->siteStructure->currPageRec['lang'])) {
             $lang = $this->siteStructure->currPageRec['lang'];
 
-            if (($l = getUrlArgStatic('lang', true)) !== null) { // override if explicitly supplied
+            if (($l = getUrlArg('lang', true)) !== null) { // override if explicitly supplied
                 if ($l) {
                     $lang = $l;
                     setStaticVariable('lang', $lang);
@@ -1753,22 +1754,19 @@ EOT;
                 }
             }
 
-        } elseif ($this->config->site_multiLanguageSupport) {    // no preference in sitemap, use default if not overriden by url-arg
+        // no preference in sitemap -> use previously activated lang or default, unless overriden by url-arg:
+        } else {
             $lang = getUrlArgStatic('lang', true);
-            $supportedLanguages = explode(',', str_replace(' ', '', $this->config->site_supportedLanguages ));
-            if (!in_array($lang, $supportedLanguages)) {
-                $lang = $this->config->site_defaultLanguage;
-
-            } elseif (!$lang) {   // no url-arg found
+            if (!$lang) {   // no url-arg found
                 if ($lang !== null) {   // special case: empty lang -> remove static value
                     setStaticVariable('lang', null);
                 }
                 $lang = $this->config->site_defaultLanguage;
             }
+        }
 
-        } elseif (isset($_SESSION['lizzy']['lang']) && $_SESSION['lizzy']['lang']) {
-            $lang = $_SESSION['lizzy']['lang'];
-        } else {
+        // check that selected language is among supported ones:
+        if (strpos(",{$this->config->site_supportedLanguages},", ",$lang,") === false) {
             $lang = $this->config->site_defaultLanguage;
         }
 
@@ -1777,6 +1775,7 @@ EOT;
         $_SESSION['lizzy']['lang'] = $lang;
         return $lang;
     } // selectLanguage
+
 
 
 
