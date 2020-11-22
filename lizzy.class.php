@@ -550,6 +550,7 @@ private function loadRequired()
         } elseif (!$accessGranted) {
             $loginForm = $this->renderLoginForm( false );
             $this->page->addContent($loginForm);
+            $this->page->addBodyClasses('lzy-page-override');
             $jq = "initLzyPanel('.lzy-panels-widget', 1);";
             $this->page->addJq( $jq );
         }
