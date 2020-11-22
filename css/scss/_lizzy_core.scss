@@ -123,6 +123,10 @@ figure a {
 	display: inline;
 	clip: rect(1px, 1px, 1px, 1px);
 }
+.lzy-disabled {
+	filter: contrast(50%);
+	opacity: 0.7;
+}
 
 
 
