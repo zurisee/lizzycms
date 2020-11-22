@@ -58,6 +58,41 @@ class AdminTasks
             }
 
 
+        } elseif ($requestType === 'createAccessLink') {                // user requests access-link:
+            if ($this->lzy->config->admin_userAllowSelfAccessLink) {
+                $user = $this->loggedInUser;
+                if ($user) {
+                    $userRec = $this->auth->getLoggedInUser(true);
+                    $hash = createHash();
+                    $userRec['accessCode'] = $hash;
+                    $this->updateDbUserRec($user, $userRec);
+                    $link = $GLOBALS['globalParams']['pageUrl'].$hash;
+                    $link = "<div><a href='$link'>$link</a></div>";
+                    $msg = $this->trans->translateVariable('lzy-create-accesslink-response1');
+                    $msg2 = $this->trans->translateVariable('lzy-create-accesslink-response2');
+                    $msg = "<div>$msg</div>$link<div>$msg2</div>";
+                } else {
+                    $msg = "Error";
+                }
+                exit($msg);
+            }
+
+        } elseif ($requestType === 'deleteAccessLink') {                // user requests deletion of access-link:
+            if ($this->lzy->config->admin_userAllowSelfAccessLink) {
+                $user = $this->loggedInUser;
+                if ($user) {
+                    $res = $this->auth->deleteAccessCode();
+                    if ($res) {
+                        $msg = $this->trans->translateVariable('lzy-create-accesslink-deleted-response');
+                    } else {
+                        $msg = $this->trans->translateVariable('lzy-create-accesslink-delete-failed-response');
+                    }
+                } else {
+                    $msg = "Error";
+                }
+                exit($msg);
+            }
+
         } elseif ($requestType === 'lzy-invite-user-email') {           // admin requested invitation mail to new user:
             if ($this->lzy->config->admin_enableSelfSignUp) {
                 $emails = get_post_data('lzy-invite-user-email-addresses');
@@ -608,15 +643,20 @@ EOT;
 
 
 
-    private function updateDbUserRec($user, $rec)
+    public function updateDbUserRec($user, $rec, $overwrite = false)
+//    private function updateDbUserRec($user, $rec)
     {
         $userRecs = $this->auth->getKnownUsers();
         if (!isset($userRecs[$user])) {
             return false;
         }
-        $userRec = &$userRecs[$user];
-        foreach ($rec as $k => $v) {
-            $userRec[$k] = $v;
+        if ($overwrite) {
+            $userRecs[$user] = $rec;
+        } else {
+            $userRec = &$userRecs[$user];
+            foreach ($rec as $k => $v) {
+                $userRec[$k] = $v;
+            }
         }
         writeToYamlFile($this->auth->userDB, $userRecs);
         return true;

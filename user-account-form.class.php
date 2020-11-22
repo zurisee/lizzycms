@@ -292,6 +292,23 @@ EOT;
         $emailForm = $this->createChangeEmailForm($user, $notification, $message, $email);
         $delete = $this->createDeleteProfileForm($user, $notification, $message);
 
+        $accessLinkForm = '';
+        if ($this->config->admin_userAllowSelfAccessLink) {
+            $accessLink = $this->createAccessLinkForm($user, $notification, $message);
+            $accessLinkForm = <<<EOT
+    
+    
+            <div>
+            <h1>{{ lzy-create-accesslink }}</h1>
+            
+            <h2>{{ lzy-create-accesslink }}</h2>
+$accessLink
+
+            </div><!-- /lzy-panel-page -->
+
+EOT;
+        }
+
         $html = <<<EOT
         <h2>{{ lzy-edit-profile }} &laquo;$user&raquo;</h2>
 $message
@@ -328,7 +345,7 @@ $emailForm
 $delete
 
             </div><!-- /lzy-panel-page -->
-    
+$accessLinkForm
     </div><!-- / .lzy-panels-widget -->
 
 EOT;
@@ -791,6 +808,57 @@ EOT;
             'onCancel' => 'lzyReload();',
         ]);
         $this->lzyPage->addJQFiles('USER_ADMIN');
+        return $str;
+    } // createDeleteProfileForm
+
+
+
+
+
+    private function createAccessLinkForm($user, $notification, $message = '')
+    {
+        $message = $this->wrapTag(MSG, $message);
+        $this->inx++;
+        $accessCode = $this->lzy->auth->getAccessCode();
+        $delAccessCode = '';
+        if ($accessCode) {
+            $delAccessCode = '<button class="lzy-button lzy-login-form-button lzy-accesslink-delete-button">{{ lzy-accesslink-delete-button }}</button>';
+        }
+
+        $str = <<<EOT
+
+            <div class="lzy-account-form-wrapper">
+$message
+                <div>{{ lzy-create-accesslink-text }}</div>
+                <button class="lzy-button lzy-login-form-button lzy-accesslink-request-button">{{ lzy-accesslink-request-button }}</button>
+                $delAccessCode
+                <div class="lzy-create-accesslink-response"></div>
+
+            </div><!-- /account-form -->
+
+EOT;
+        $jq = <<<EOT
+$('.lzy-accesslink-request-button').click(function() {
+    console.log('requesting access-link');
+    $( this ).prop('disabled', true).addClass('lzy-disabled');
+    $.ajax({
+          url: "./?lzy-user-admin=createAccessLink"
+    }).done(function( data ) {
+        $('.lzy-create-accesslink-response').html( data );
+    });
+});
+$('.lzy-accesslink-delete-button').click(function() {
+    console.log('requesting deletion of access-link');
+    $( this ).prop('disabled', true).addClass('lzy-disabled');
+    $.ajax({
+          url: "./?lzy-user-admin=deleteAccessLink"
+    }).done(function( data ) {
+        $('.lzy-create-accesslink-response').html( data );
+    });
+});
+EOT;
+        $this->lzy->page->addJq($jq);
+
         return $str;
     } // createPWAccessForm
 

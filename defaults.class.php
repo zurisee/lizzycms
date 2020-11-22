@@ -30,6 +30,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'admin_enforcePasswordQuality'      => [false, 'If true, a minimum password quality is enforced when users create/change their password.', 3 ],
     'admin_useRequestRewrite'           => [true, 'If true, assumes web-server supports request-rewrite (i.e. .htaccess).', 3 ],
     'admin_userAllowSelfAdmin'          => [false, 'If true, user can modify their account after they logged in', 3 ],
+    'admin_userAllowSelfAccessLink'     => [false, 'If true, user can create an "access-link"', 3 ],
     'admin_enableFileManager'           => [false, 'If true, the file-manager (upload, rename, delete) is enabled for privileged users.', 2 ],
     'admin_minPasswordLength'           => [10, '[integer] Minimum length of passwords if "admin_enforcePasswordQuality" is enabled.', 3 ],
 

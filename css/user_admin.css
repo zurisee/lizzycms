@@ -3,6 +3,29 @@
 body {
     --lzy-login-txt-color: black;
 }
+.lzy-create-accesslink-response:empty {
+    display: none;
+}
+.lzy-create-accesslink-response {
+    padding: 1em;
+    border: 1px solid red;
+}
+.lzy-create-accesslink-response > div {
+    padding: 0.5em 0;
+}
+.lzy-create-accesslink-response > div > a {
+    margin-left: 2em;
+    font-size: 125%;
+    font-weight: bold;
+}
+.lzy-accesslink-request-button {
+    margin-bottom: 1em;
+}
+
+
+#lzy .lzy-panels-widget.lzy-account-form {
+    font-size: 10pt;
+}
 
 .lzy-login-menu ol {
     padding-left: 1em;

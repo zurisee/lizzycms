@@ -481,6 +481,40 @@ lzy-delete-account-success-response:
     _: 'Your profile is now deleted.'
 
 
+# Request Access-Link:
+lzy-create-accesslink:
+    de: 'Zugangslink erzeugen'
+    _:  'Create Access-Link'
+
+lzy-create-accesslink-text:
+    de: 'Ein Zugangslink erlaubt den direkten Zugang zu einer Website inklusive Login.<br>Beachten Sie, dass dieser Link ein Sicherheitsproblem darstellen kann.'
+    _:  "An access-link let's you open this webpage and automatically log in. <br>You will not need to log in using your username and password. <br>Be aware that this can pose a security issue."
+
+lzy-accesslink-request-button:
+    de: 'Zugangslink jetzt erzeugen'
+    _:  'Create Access-Link Now'
+
+lzy-create-accesslink-response1:
+    de: 'Hier ist Ihr neuer Zugangslink (&rarr; am besten als Favorit speichern):'
+    _:  'This is your personal access-link (&rarr; to safe as a bookmark):'
+
+lzy-create-accesslink-response2:
+    de: 'Bitte behandeln Sie diesen Link vertraulich, geben Sie ihn nicht weiter. <br>Jede Person, die diesen Link kennt, kann sich in Ihrem Namen anmelden.'
+    _:  "Please keep it safe, don't share it with others. <br>Anybody who knows this link can log in with your identity."
+
+lzy-accesslink-delete-button:
+    de: 'Bestehenden Zugangslink löschen'
+    _:  'Delete existing access-link'
+
+lzy-create-accesslink-deleted-response:
+    de: 'Zugangslink gelöscht'
+    _:  'Access-link deleted'
+
+lzy-create-accesslink-delete-failed-response:
+    de: 'Löschung des Zugangslinks fehlgeschlagen'
+    _:  'Deleting access-link failed'
+
+
 # === Invite Users ========================================
 lzy-invite-user-request-header:
     de: 'Neuen Benutzer einladen'

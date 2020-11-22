@@ -84,7 +84,11 @@ class Authentication
 
     public function getUsername()
     {
-        return $this->loggedInUser;
+        if (isset($this->loggedInUser)) {
+            return $this->loggedInUser;
+        } else {
+            return @$_SESSION['lizzy']['user'];
+        }
     } // getUsername
 
 
@@ -349,6 +353,7 @@ EOT;
 
         $this->loginTimes[$user] = time();
         session_regenerate_id();
+        $this->loggedInUser = $user;
         $_SESSION['lizzy']['user'] = $user;
         $isAdmin = $this->checkAdmission('admins');
         $_SESSION['lizzy']['isAdmin'] = $isAdmin;
@@ -448,6 +453,52 @@ EOT;
         }
         return $rec;
     } // getUserRec
+
+
+
+
+    public function getAccessCode( $username = false )
+    {
+        if (!$this->config->admin_userAllowSelfAccessLink) {
+            return null;    // only allowed if admin_userAllowSelfAccessLink is active
+        }
+        if (!$username) {
+            $rec = $this->userRec;
+        } elseif (isset($this->knownUsers[$username])) {
+            $rec = $this->knownUsers[$username];
+        } else {
+            return '';
+        }
+        if (isset($rec['accessCode'])) {
+            return $rec['accessCode'];
+        }
+        return '';
+    } // getAccessCode
+
+
+
+
+    public function deleteAccessCode( $username = false )
+    {
+        if (!$this->config->admin_userAllowSelfAccessLink) {
+            return null;    // only allowed if admin_userAllowSelfAccessLink is active
+        }
+        if (!$username) {
+            $rec = $this->userRec;
+        } elseif (isset($this->knownUsers[$username])) {
+            $rec = $this->knownUsers[$username];
+        } else {
+            return '';
+        }
+        if (isset($rec['accessCode'])) {
+            unset($rec['accessCode']);
+            $atsk = new AdminTasks($this->lzy);
+            $user = $this->getUsername();
+            $atsk->updateDbUserRec($user, $rec, true);
+            return 'deleted';
+        }
+        return '';
+    } // deleteAccessCode
 
 
 
