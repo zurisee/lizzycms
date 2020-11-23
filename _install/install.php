@@ -1,96 +1,36 @@
 <?php
 
-define('LIZZY_SOURCE_URL', 'https://codeload.github.com/zurisee/lizzycms/zip/master');
-define('LIZZY_ZIP_FILE', 'lizzy-master.zip');
-define('LIZZY_MASTER_PATH', 'lizzycms-master');
+/*********************************************************************************
+ *  Lizzy Installation Script Part 2
+ * -> to be executed right after cloning/downloading Lizzy in to _lizzy/
+ * -> this script will be overwritten by _lizzy/_parent-folder/index.php, 
+ *      which is the file for normal operation.
+ *
+ * For manual installation:
+ *  -> copy all files in _lizzy/_parent-folder/ to the app-root folder and
+ *  -> rename file 'htaccess' to '.htaccess'
+ *********************************************************************************/
 
-if (version_compare(PHP_VERSION, '7.1.0') < 0) {
-    die("Error: Lizzy requires PHP version 7.1 or higher to run.");
-}
 
-if (!is_writable( './' )) {
-    die("Error: no write permission in this folder: ".getcwd()." (current user: ". `whoami` . ")");
-}
-
-if (!file_exists(LIZZY_ZIP_FILE)) {
-	downloadLizzy();
-}
-
-if (!file_exists('_lizzy')) {
-    unpackLizzy();
-}
-
-installLizzy();
+recursive_copy('_lizzy/_parent-folder/','./');
+rename('htaccess', '.htaccess');
 
 header("Location: ./");
 exit;
 
 
-function unpackLizzy()
-{
-    if (!class_exists('ZipArchive')) {
-        die("Error: unable to extract Lizzy from downloaded archive.");
-    }
-    $zip = new ZipArchive;
-    $zip->open(LIZZY_ZIP_FILE);
-    $zip->extractTo('./');
-    $zip->close();
-    rename(LIZZY_MASTER_PATH, '_lizzy');
-    unlink(LIZZY_ZIP_FILE);
-}
-
-
-
-function installLizzy()
-{
-    copyFolder('_lizzy/_parent-folder/', '.');
-    rename('htaccess','.htaccess');
-    unlink('install.php');
-}
-
-
-function downloadLizzy()
-{
-	$fp = fopen(LIZZY_ZIP_FILE, 'w+');
-	if($fp === false){
-		throw new Exception('Could not open: ' . LIZZY_ZIP_FILE);
-	}
-	if (!function_exists('curl_init')) {
-	    die("Error: CURL module not available - unable to download Lizzy.");
-    }
-	$ch = curl_init( LIZZY_SOURCE_URL );
-	curl_setopt($ch, CURLOPT_FILE, $fp);
-	curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-	curl_exec($ch);
-	if(curl_errno($ch)){
-		throw new Exception(curl_error($ch));
-	}
-	$statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-	curl_close($ch);
-	fclose($fp);
-
-	if($statusCode !== 200){
-		exit ("Status Code: " . $statusCode);
-	}
-}
-
-
-
-
-function copyFolder( $source, $target ) {
-    @mkdir( $target );
-    $d = dir( $source );
-    while ( FALSE !== ( $entry = $d->read() ) ) {
-        if ( $entry === '.' || $entry === '..' ) {
-            continue;
+function recursive_copy($src, $dst) {
+    $dir = opendir($src);
+    @mkdir($dst);
+    while(( $file = readdir($dir)) ) {
+        if (( $file != '.' ) && ( $file != '..' )) {
+            if ( is_dir($src . '/' . $file) ) {
+                recursive_copy($src .'/'. $file, $dst .'/'. $file);
+            }
+            else {
+                copy($src .'/'. $file,$dst .'/'. $file);
+            }
         }
-        $Entry = $source . '/' . $entry;
-        if ( is_dir( $Entry ) ) {
-            copyFolder( $Entry, $target . '/' . $entry );
-            continue;
-        }
-        copy( $Entry, $target . '/' . $entry );
     }
-    $d->close();
+    closedir($dir);
 }
-

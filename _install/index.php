@@ -1,35 +1,24 @@
 <?php
 
-/***************************************************************************************************************
- *  Lizzy Installation script
- * -> to be executed right after downloading Lizzy in to _lizzy/
- * -> this script will be overwritten by _lizzy/_parent-folder/index.php, which is the file for normal operation.
- *
- * For manual installation:
- *  -> copy all files in _lizzy/_parent-folder/ to the app-root folder and
- *  -> rename file 'htaccess' to '.htaccess'
- **************************************************************************************************************/
+/*********************************************************************************
+ *  Lizzy Installation Script Part 1
+ * -> clones Lizzy from github and starts the installation process.
+ * -> Lizzy will be installed into the current folder (aka 'app-root').
+ *********************************************************************************/
 
 
-recursive_copy('_lizzy/_parent-folder/','./');
-rename('htaccess', '.htaccess');
-
-header("Location: ./");
-exit;
-
-
-function recursive_copy($src, $dst) {
-    $dir = opendir($src);
-    @mkdir($dst);
-    while(( $file = readdir($dir)) ) {
-        if (( $file != '.' ) && ( $file != '..' )) {
-            if ( is_dir($src . '/' . $file) ) {
-                recursive_copy($src .'/'. $file, $dst .'/'. $file);
-            }
-            else {
-                copy($src .'/'. $file,$dst .'/'. $file);
-            }
-        }
-    }
-    closedir($dir);
+// clone Lizzy:
+if (!@$_GET['dev']) {
+	shell_exec('git clone https://github.com/zurisee/lizzycms.git _lizzy');
+} else {
+	// clone Dev branch:
+	shell_exec('git clone -b Dev https://github.com/zurisee/lizzycms.git _lizzy');
 }
+
+
+// copy Lizzy's install.php script to the app root naming it index.php
+// (and thereby overwriting this initial installation file):
+copy('_lizzy/_install/install.php', 'index.php');
+
+// now force the browser to reload the page and start the local installation process:
+header("Location: ./");
