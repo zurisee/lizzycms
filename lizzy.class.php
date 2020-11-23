@@ -1968,6 +1968,12 @@ EOT;
     {
         $accForm = new UserAccountForm($this);
         $html = $accForm->renderLoginForm($this->auth->message, false, true);
+        $html = <<<EOT
+    <div class='lzy-required-login-wrapper'>
+$html
+    </div>
+EOT;
+
         $this->page->addModules('PANELS');
         if ($asPopup) {
             $this->page->addBodyEndInjections("\t<div class='lzy-invisible'>\n\t  <div id='lzy-login-form'>\n$html\n\t  </div><!-- /#lzy-login-form -->\n\t</div><!-- /login form wrapper -->\n");
