@@ -8,7 +8,7 @@
 
 
 // clone Lizzy:
-if (!@$_GET['dev']) {
+if (!isset( $_GET['dev'] )) {
 	shell_exec('git clone https://github.com/zurisee/lizzycms.git _lizzy');
 } else {
 	// clone Dev branch:
