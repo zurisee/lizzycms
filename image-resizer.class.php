@@ -264,13 +264,13 @@ class ImageResizer
             // generic:
             [
                 'sizes' => [16, 32, 96],
-                'out'   => "<link rel='icon' type='image/png' href='{$destPath}favicon-\$x$.png' sizes='\$x$'>",
+                'out'   => "<link rel='icon' type='image/png' href='~/{$destPath}favicon-\$x$.png' sizes='\$x$'>",
             ],
 
             // Apple Touch:
             [
                 'sizes' => [120,180,152,167],
-                'out'   => "<link rel='apple-touch-icon' href='{$destPath}favicon-\$x$.png' sizes='\$x$'>",
+                'out'   => "<link rel='apple-touch-icon' href='~/{$destPath}favicon-\$x$.png' sizes='\$x$'>",
             ],
             // Windows:
             [
