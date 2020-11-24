@@ -528,11 +528,6 @@ private function loadRequired()
             return;
         }
 
-        if ($this->auth->isLoggedIn()) {   // signal in body tag class whether user is logged in
-            $this->page->addBodyClasses('lzy-user-logged-in');  // if user is logged in, there's no need for login form
-            return;
-        }
-
         if (($user = getUrlArg('login', true)) !== null) {
             $this->page->addPopup(['contentFrom' => '#lzy-login-form', 'triggerSource' => '.lzy-login-link', 'autoOpen' => true]);
             $this->renderLoginForm();
@@ -553,6 +548,11 @@ private function loadRequired()
             $this->page->addBodyClasses('lzy-page-override');
             $jq = "initLzyPanel('.lzy-panels-widget', 1);";
             $this->page->addJq( $jq );
+        }
+
+        if ($this->auth->isLoggedIn()) {   // signal in body tag class whether user is logged in
+            $this->page->addBodyClasses('lzy-user-logged-in');  // if user is logged in, there's no need for login form
+            return;
         }
     } // appendLoginForm
 
@@ -1519,7 +1519,7 @@ EOT;
 
         // user wants to login in and is not already logged in:
 		if (getUrlArg('login')) {                                               // login
-		    if (getStaticVariable('user')) {    // already logged in -> logout first
+		    if (getStaticVariable('user')) {    // already logged in
                 $this->userRec = false;
                 setStaticVariable('user',false);
             }

@@ -839,6 +839,10 @@ EOT;
                     $res = $name;
                     break;
 
+                } elseif (isset($rec['email']) && ($rec['email'] === $username)) {
+                    $res = $name;
+                    break;
+
                 } elseif (isset($rec['username']) && ($rec['username'] === $username)) {
                     $res = $name;
                     break;

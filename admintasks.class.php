@@ -37,7 +37,7 @@ class AdminTasks
             if ($this->isInvalidEmailAddress($email)) {
                 $res = [false, '{{ lzy-invalid-email-address }}', 'Message'];
             } else {
-                $pw = get_post_data('lzy-add-user-password-password');
+                $pw = get_post_data('lzy-add-user-password');
                 if ($pw) {
                     $pw = password_hash($pw, PASSWORD_DEFAULT);
                 } else {
