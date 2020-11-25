@@ -663,6 +663,7 @@ EOT;
         $rec->autocomplete = (isset($args['autocomplete'])) ? $args['autocomplete'] : '';
         $rec->description = (isset($args['description'])) ? $args['description'] : '';
         $rec->errorMsg = (isset($args['errorMsg'])) ? $args['errorMsg'] : '';
+        $rec->autoGrow = (isset($args['autoGrow'])) ? $args['autoGrow'] : true;
 
         foreach (['min', 'max', 'pattern', 'placeholder'] as $attr) {
             if (isset($args[$attr])) {
@@ -819,7 +820,11 @@ EOT;
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $value = @$this->currRec->prefill;
         $out = $this->getLabel();
-        $out .= "<textarea id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls>$value</textarea>\n";
+        if ($this->currRec->autoGrow) {
+            $out .= "\n\t\t\t<div class='lzy-textarea-autogrow'>\n\t\t\t\t<textarea id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls onInput='this.parentNode.dataset.replicatedValue = this.value'>$value</textarea>\n\t\t\t</div>\n";
+        } else {
+            $out .= "<textarea id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls>$value</textarea>\n";
+        }
         return $out;
     } // renderTextarea
 

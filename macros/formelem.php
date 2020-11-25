@@ -73,6 +73,8 @@ $this->addMacro($macroName, function () {
 
         $this->getArg($macroName, 'max', 'For number and range type: the max value (see HTML).', '');
 
+        $this->getArg($macroName, 'autoGrow', 'For textarea only: if true, the textarea will automatically grow when user adds lines. Default: true', '');
+
         $this->getArg($macroName, 'path', 'For upload type', '');
 
         $this->getArg($macroName, 'target', '[selector] For type "reveal": specifies the DOM element that shall be manipulated.', '');

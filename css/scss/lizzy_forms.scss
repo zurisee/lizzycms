@@ -165,11 +165,34 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
             display: block;
             margin: 0 0 0.5em;
             width: 100%;
-            height: 5em;
+            min-height: 5em;
             box-sizing: border-box;
             padding: 0.2em 0.4em;
         }
     }
+    // auto-grow feature:
+    .lzy-textarea-autogrow {
+        // Reference: https://css-tricks.com/the-cleanest-trick-for-autogrowing-textareas/?mc_cid=dc1f45ab23&mc_eid=25d6a6e323
+        display: grid;
+        &::after {
+            content: attr(data-replicated-value) " ";
+            white-space: pre-wrap;
+            visibility: hidden;
+        }
+        & > textarea {
+            resize: none;
+            overflow: hidden;
+        }
+        & > textarea,
+        &::after {
+            border: 1px solid black;
+            padding: 0.5rem;
+            font: inherit;
+            grid-area: #{ 1 } / #{ 1 } / #{ 2 } / #{ 2 };
+        }
+    }
+
+
     // horizontal variant
     .lzy-horizontal.lzy-form-field-type-textarea {
         * {
