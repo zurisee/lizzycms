@@ -125,12 +125,14 @@ class SCssCompiler
             $targetFile = $toPath . "_$fname.css";
         }
         $scssStr = $this->getFile($file);
+        $scssStr = preg_replace('/\#\{([\d\s]+)\}/', "XXX$1YYY", $scssStr);
         $cssStr = '';
         try {
-            $cssStr .= $this->scss->compile($scssStr);
+            $cssStr = $this->scss->compile($scssStr);
         } catch (Exception $e) {
             fatalError("Error in SCSS-File '$file': " . $e->getMessage(), 'File: ' . __FILE__ . ' Line: ' . __LINE__);
         }
+        $cssStr = preg_replace('/XXX(.*?)YYY/', "$1", $cssStr);
 
         if (!$this->compiledStylesFilename) {
             $cssStr = removeCStyleComments($cssStr);
