@@ -1387,6 +1387,17 @@ EOT;
             }
         }
 
+        if (getUrlArg('hash')) {		// nc
+            $hash = createHash();
+            $html = <<<EOT
+    <div class='lzy-create-hash-wrapper'>
+        <h1>New Hash Value</h1>
+        <p>$hash</p>
+    </div>
+EOT;
+            $this->page->addOverride($html);
+        }
+
         $this->timer = getUrlArgStatic('timer');				// timer
 
         if (($this->config->localCall) && getUrlArg('purge')) {     // empty recycleBins and caches
@@ -2091,6 +2102,7 @@ Available URL-commands:
 <a href='?convert'>?convert</a>	    convert password to hash
 <a href='?debug'>?debug</a>		    adds 'debug' class to page on non-local host *)
 <a href='?gitstat'>?gitstat</a>		    displays the Lizzy-s GIT-status
+<a href='?hash'>?hash</a>		    create a hash value e.g. for accessCodes
 <a href='?notranslate'>?notranslate</a>    show untranslated variables
 <a href='?edit'>?edit</a>		    start editing mode *)
 <a href='?iframe'>?iframe</a>		    show code for embedding as iframe
