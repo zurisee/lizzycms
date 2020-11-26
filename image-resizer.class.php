@@ -324,6 +324,7 @@ class ImageResizer
 EOT;
             file_put_contents($manifestFilename, $manifest);
         }
+        $manifestFilename = $GLOBALS["globalParams"]["appRootUrl"] . $manifestFilename;
         $out = rtrim($out) . "\n\t<link rel='manifest' href='$manifestFilename'>";
         return $out;
     } // createFavicons
