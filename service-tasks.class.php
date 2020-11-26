@@ -130,6 +130,9 @@ class ServiceTasks
 
                  if (isset($_GET[ $urlArg ]) && $_GET[ $urlArg ]) {
                      $file = $_GET[$urlArg];
+                     if (isset($_GET[ $urlArg ])) {
+                         unset($_GET[$urlArg]);
+                     }
                      $this->executeServiceTask($file, $functionToCall);
                  }
              }
