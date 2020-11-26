@@ -8,6 +8,7 @@ class ImageTag
     private $aspRatio = null;
     private $imgFullsizeWidth = null;
     private $imgFullsizeHeight = null;
+    private $sizesFactor = null;
 
     public function __construct($obj, $args) {
         list($feature_image_default_max_width) = parseDimString($obj->config->feature_ImgDefaultMaxDim);
@@ -102,21 +103,37 @@ class ImageTag
 
         $basename = '_/'.base_name($srcFile, false);
         $ext = '.'.fileExt($srcFile);
-        $path = $GLOBALS["globalParams"]["appRoot"].$GLOBALS["globalParams"]["pathToPage"]; // absolute path from app root
+        $path = $GLOBALS["globalParams"]["appRoot"].$GLOBALS["globalParams"]["pageFilePath"]; // absolute path from app root
 
         if ($this->srcset) {   // activate only if source file is largen than 50kb
-            $w1 = ($this->w) ? $this->w : 300;
-            $h1 = ($this->h) ? $this->h : round(300 * $this->aspRatio);
+            $w1 = ($this->w && ($this->w < $this->imgFullsizeWidth)) ? $this->w : $this->feature_SrcsetDefaultStepSize;
+            $h1 = ($this->h && ($this->h < $this->imgFullsizeHeight)) ? $this->h : intval( round($this->feature_SrcsetDefaultStepSize * $this->aspRatio) );
             $this->srcset = '';
+            $sizes = '';
             while (($w1 < $this->imgFullsizeWidth) && ($w1 < $this->feature_image_default_max_width)) {
                 $f = $basename . "({$w1}x{$h1})" . $ext;
                 $this->srcset .= "$path$f {$w1}w, ";
+                if ($this->sizesFactor) {
+                    $wMax = intval($w1 * $this->sizesFactor / 2);
+                    $wSlot = intval($w1 / 2);
+                    $sizes .= "(max-width: {$wMax}px) {$wSlot}px, ";
+                }
                 $w1 += $this->feature_SrcsetDefaultStepSize;
                 $h1 = round($w1 * $this->aspRatio);
             }
+
+            // Source-set assembled, now add it to page:
             if ($this->srcset) {
                 $this->srcset = " {$this->lateImgLoadingPrefix}srcset='" . substr($this->srcset, 0, -2) . "'";
-                $this->srcset .= ($this->w) ? " sizes='{$this->w}px'" : '';
+
+                // Add 'sizes' attribute
+                if ($this->sizesFactor) {
+                    $sizes .= "{$w1}px";
+                }
+                // e.g. $sizes = "(max-width: 600px) 125px, (max-width: 1200px) 250px, 900px"; // for img-width 25% of win width
+                if ($sizes) {
+                    $this->srcset .= " sizes='$sizes'";
+                }
             }
 
         } elseif (is_string($this->srcset)) {
@@ -137,11 +154,19 @@ class ImageTag
         // file type
 
         list($w, $h) = $this->parseFileName($this->origSrc);
+        if (is_float($w)) {
+            $this->sizesFactor = 1/$w;
+            $w = null;
+        }
         list($w0, $h0) = getimagesize($this->srcFile);
         if ($w && $h) {
             $aspectRatio = $h / $w;
         } else {
             $aspectRatio = $h0 / $w0;
+        }
+        if (($w === null) && ($h === null)) {
+            $w = $w0;
+            $h = $h0;
         }
         if (!$w && $h) {
             $w = (int)round($h / $aspectRatio);
@@ -162,7 +187,7 @@ class ImageTag
         $src = base_name($src, false);
         if (preg_match('/ \( (.*?) \) $/x', $src, $m)) {    // (WxH) size specifier present?
             return parseDimString($m[1]);
-        } elseif (preg_match('/ \[ (.*?) \] $/x', $src, $m)) {    // (WxH) size specifier present?
+        } elseif (preg_match('/ \[ (.*?) \] $/x', $src, $m)) {    // [WxH] size specifier present?
             return parseDimString($m[1]);
         }
 
