@@ -35,6 +35,9 @@ RewriteCond %{REQUEST_URI} !(_ajax_server|_live_data_service|_upload_server|back
 # Path through resource files, such as CSS, graphics etc.:
 RewriteCond %{REQUEST_URI} !\.(?:css|js|jpe?g|gif|png|pdf|mp3|vtt|webm|m4v|mp4|ogv|svg|eot|ttf|woff2?|map|csv)(\?.*)?$ [NC]
 
+# Path through specific files:
+RewriteCond %{REQUEST_URI} !(robots.txt|browserconfig.xml) [NC]
+
 # Pass through spedific folders:
 RewriteCond %{REQUEST_URI} !(/assets|/download)
 
