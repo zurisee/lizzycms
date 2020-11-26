@@ -2345,9 +2345,12 @@ function handleFatalPhpError() {
 
 function parseDimString($str)
 {
-    // E.g. 200x150, or 200x  or x150 or 200 etc.
+    // E.g. 200x150, or 200x  or x150 or 200 etc., or 25%
     $h = $w = null;
-    if (preg_match('/(\d*)x(\d*)/', $str, $m)) {
+    if (preg_match('/(\d*)%/', $str, $m)) {
+        $s = intval($m[1]) / 100;
+        return [$s, null];
+    } elseif (preg_match('/(\d*)x(\d*)/', $str, $m)) {
         $w = intval($m[1]);
         $h = intval($m[2]);
     } elseif (preg_match('/(\d+)/', $str, $m)) {
