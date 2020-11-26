@@ -112,6 +112,7 @@ EOT;
 
 
 	}
+    $styleWrapper = '';
 	if ($bgColor) {
 		$borderCol = darken($bgColor, 3);
 		$styleWrapper = " style='background: $bgColor;border-left: 1px solid $borderCol;border-bottom: 1px solid $borderCol;'";
