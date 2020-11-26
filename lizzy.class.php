@@ -2176,7 +2176,10 @@ EOT;
 
         $this->pagePath = $this->siteStructure->getPagePath();
         $this->pathToPage = PAGES_PATH . $this->pagePath;   //  includes pages/
-        $globalParams['pageFolder'] = PAGES_PATH . $this->siteStructure->getPageFolder();      // excludes pages/, may differ from path if page redirected
+        $pageFilePath = PAGES_PATH . $this->siteStructure->getPageFolder();      // excludes pages/, may differ from path if page redirected
+
+        $globalParams['pageFolder'] = $pageFilePath;      // excludes pages/, may differ from path if page redirected
+        $globalParams['pageFilePath'] = $pageFilePath;      // excludes pages/, may differ from path if page redirected
         $globalParams['pagePath'] = $this->pagePath;        // excludes pages/, takes not showThis into account
         $globalParams['pathToPage'] = $this->pathToPage;
         $_SESSION['lizzy']['pageFolder'] = $globalParams['pageFolder'];     // for _ajax_server.php and _upload_server.php
