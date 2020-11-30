@@ -107,12 +107,14 @@ function fatalError($msg)
 //------------------------------------------------------------
 function resolvePath($path)
 {
+    // Note: resolvePath() on backend always resolves for file-access (not HTTP access):
     if (strpos($path, ':') !== false) {   // https://, tel:, sms:, etc.
         return $path;
     }
     $path = trim($path);
-    $dataPath = isset($_SESSION["lizzy"]["dataPath"])? $_SESSION["lizzy"]["dataPath"]: 'data/';
-    $pathToPage = isset($_SESSION["lizzy"]["pathToPage"])? $_SESSION["lizzy"]["pathToPage"]: '';
+    $dataPath = isset($_SESSION['lizzy']['dataPath'])? $_SESSION['lizzy']['dataPath']: 'data/';
+//    $pathToPage = isset($_SESSION["lizzy"]["pathToPage"])? $_SESSION["lizzy"]["pathToPage"]: '';
+    $pageFolder = isset($_SESSION['lizzy']['pageFolder'])? $_SESSION['lizzy']['pageFolder']: '';
 
     $from = [
         '|~/|',
@@ -124,19 +126,10 @@ function resolvePath($path)
     $to = [
         PATH_TO_APP_ROOT,
         PATH_TO_APP_ROOT.$dataPath,
-//        PATH_TO_APP_ROOT.$_SESSION["lizzy"]["dataPath"],
         SYSTEM_PATH,
         PATH_TO_APP_ROOT.EXTENSIONS_PATH,
-        PATH_TO_APP_ROOT.$pathToPage,
-//        PATH_TO_APP_ROOT.$_SESSION["lizzy"]["pathToPage"],
+        PATH_TO_APP_ROOT.$pageFolder,
     ];
-//    $to = [
-//        '',
-//        $_SESSION["lizzy"]["dataPath"],
-//        SYSTEM_PATH,
-//        EXTENSIONS_PATH,
-//        $_SESSION["lizzy"]["pathToPage"],
-//    ];
 
     $path = preg_replace($from, $to, $path);
     return $path;
@@ -153,16 +146,16 @@ function mylog($str, $user = false)
 
 
 //---------------------------------------------------------------------------
-function writeLog($str, $user = false)
+function writeLog($str, $user = false, $destFile = SERVICE_LOG)
 {
     if (!$user) {
         $user = isset($_SESSION['lizzy']['user']) && $_SESSION['lizzy']['user'] ? $_SESSION['lizzy']['user'] : 'anonymous';
     }
-    $path = dirname(SERVICE_LOG);
+    $path = dirname($destFile);
     if (!file_exists($path)) {
         mkdir($path, MKDIR_MASK, true);
     }
-    file_put_contents(SERVICE_LOG, timestamp()." user $user:  $str\n", FILE_APPEND);
+    file_put_contents($destFile, timestamp()." user $user:  $str\n\n", FILE_APPEND);
 } // writeLog
 
 
