@@ -14,7 +14,7 @@ class AdminTasks
         $this->trans = $lzy->trans;
         $this->loggedInUser = $this->auth->getLoggedInUser();
 
-        $this->trans->readTransvarsFromFile('~sys/config/admin.yaml');
+        $this->trans->readTransvarsFromFile('~sys/config/admin.yaml', false, true);
         $this->userAdminInitialized = file_exists(CONFIG_PATH.$this->lzy->config->admin_usersFile);
     }
 
