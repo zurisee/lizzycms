@@ -655,7 +655,6 @@ EOT;
         $GLOBALS['globalParams']['isLoggedin'] = false;
         $GLOBALS['globalParams']['isPrivileged'] = false;
         $this->lzy->unCachePage();
-        writeLogStr("unsetLoggedInUser() [" . getClientIP() . ']', LOGIN_LOG_FILENAME);
     } // unsetLoggedInUser
 
 
