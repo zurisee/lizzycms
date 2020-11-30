@@ -326,8 +326,8 @@ lzy-onetime access link sent2:
     _:  "This link and this code only work until:"
     
 lzy-onetime access link sent3:
-    de: "<p><br />Alternativ können Sie sich auch mit Benutzername und Kennwort anmelden.</p>"
-    _:  "<p><br />Alternatively, if you have a valid username and password you may log in directly.</p>"
+    de: ".<p><br />Alternativ können Sie sich auch mit Benutzername und Kennwort anmelden.</p>"
+    _:  ".<p><br />Alternatively, if you have a valid username and password you may log in directly.</p>"
 
 #lzy-sign-up further info:
 #    de: "<p>Weitere Informationen finden Sie unter: <a href='https://getlizzy.net' target='_blank'>getlizzy.net</a></p><p><br />(Mit der Taste ESC dieses Overlay schliessen)</p>"
