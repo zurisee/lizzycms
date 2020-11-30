@@ -52,7 +52,7 @@ lzy-email-access-link1:
     _:  "\n\nSomebody requested an access code using your e-mail address.\nIf you know nothing about it, please ignore this message.\n\nHere is the link with which you can access the webpage: \n\n\t"
 
 lzy-email-access-link2:
-    de: "\n\nSie können auch den folgenden Code ins Eigabefeld in der Website eintragen:"
+    de: "\n\nSie können auch den folgenden Code ins Eingabefeld in der Website eintragen:"
     _:  "\n\nOr you can enter the following code into the entry field in the webpage:"
 
 lzy-email-access-link3:
