@@ -32,7 +32,7 @@ class UserAccountForm
             } else {
                 $this->trans = $lzy;
             }
-            $this->trans->readTransvarsFromFile('~sys/config/admin.yaml');
+            $this->trans->readTransvarsFromFile('~sys/config/admin.yaml', false, true);
             $this->checkInsecureConnection();
             $this->lzyPage->addModules('USER_ADMIN, JS_POPUPS');
         } else {
@@ -176,7 +176,6 @@ function checkUn( ok ) {
 EOT;
         $this->lzyPage->addJs( $js );
         $minPwLength = $this->config->admin_minPasswordLength;
-//        $minPwLength = PW_MIN_LENGTH;
 
         $jq = <<<EOT
 \$('.lzy-signup-submit-btn').click(function(e) {
@@ -254,7 +253,6 @@ EOT;
         <input type="hidden" value="$user" name="lzy-login-user" />
         <input id="lzy-onetime-code" type="text" name="lzy-onetime-code" style="text-transform:uppercase;width:6em;" />
         <input type="submit" class='lzy-button lzy-admin-submit-button' value="{{ submit }}" />
-<!--        <input type="submit" class='lzy-button' value="{{ submit }}" />-->
     </form>
 
     <p> {{ $prefix sent2 }} $validUntilStr</p>
@@ -873,10 +871,6 @@ EOT;
                     <input type="submit" id="lzy-login-submit-button{$this->inx}" class="$class {$prefix}submit-button lzy-button" value="{{ {$prefix}send }}">
 
 EOT;
-//        return <<<EOT
-//                    <button type="submit" id="lzy-login-submit-button{$this->inx}" class="$class {$prefix}submit-button lzy-button">{{ {$prefix}send }}</button>
-//
-//EOT;
     } // createSubmitButton
 
 
@@ -1189,4 +1183,4 @@ EOT;
         return $str;
     }
 
-}
+} // class
