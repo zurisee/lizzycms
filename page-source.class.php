@@ -101,7 +101,6 @@ class PageSource
     public static function getRecycledFilename($filename, $edition = 0)
     {
         $pat = PageSource::composeRecycleFilename($filename, false).'*';
-//        $dir = array_reverse(getDir($pat));
         $dir = array_reverse( glob($pat) );
         if (isset($dir[$edition])) {
             return $dir[$edition];
@@ -113,11 +112,11 @@ class PageSource
 
 
     //....................................................
-    public static function getRecycledFilenames($filename, $recycleBin = false)
+    public static function getRecycledFilenames($filename, $recycleBin = false, $inOrigPath = false)
     {
         //        $pat = PageSource::composeRecycleFilename($filename, false, $recycleBin).'*';
         //        return array_reverse( getDir($pat) );
-        $pat = PageSource::composeRecycleFilename($filename, false, $recycleBin).'*';
+        $pat = PageSource::composeRecycleFilename($filename, false, $recycleBin, $inOrigPath).'*';
         return array_reverse( glob($pat) );
     } // getRecycledFilenames
 
@@ -190,21 +189,25 @@ class PageSource
 
 
 
-    //....................................................
-    public static function copyFileToRecycleBin($filename, $recycleBin = false)
+
+    public static function copyFileToRecycleBin($filename, $recycleBin = false, $inOrigPath = false)
     {
         if (file_exists($filename)) {
             $destFolder = ($recycleBin) ? $recycleBin : RECYCLE_BIN_PATH;
-            $destFolder = resolvePath($destFolder);
+            if ($inOrigPath) {
+                $destFolder = dir_name($filename) . basename(RECYCLE_BIN_PATH ) . '/';
+            } else {
+                $destFolder = resolvePath($destFolder);
+            }
             preparePath($destFolder);
 
             $currContent = file_get_contents($filename);
-            foreach (PageSource::getRecycledFilenames($filename, $recycleBin) as $f) {
+            foreach (PageSource::getRecycledFilenames($filename, $recycleBin, $inOrigPath) as $f) {
                 if ($currContent === file_get_contents($f)) {
                     return 0; // file already present in recycleBin
                 }
             }
-            $recycleFile = PageSource::composeRecycleFilename($filename, true, $recycleBin);
+            $recycleFile = PageSource::composeRecycleFilename($filename, true, $recycleBin, $inOrigPath);
             copy($filename, $recycleFile);
             return 1;
         }
@@ -213,11 +216,10 @@ class PageSource
 
 
 
-//....................................................
+
     public static function copyFileFromRecycleBin($filename, $edition, $recycleBin = false)
     {
         $pat = PageSource::composeRecycleFilename($filename, false, $recycleBin).'*';
-//        $dir = array_reverse(getDir($pat));
         $dir = array_reverse( glob($pat) );
         $edition--;
         if (isset($dir[$edition])) {
@@ -228,13 +230,16 @@ class PageSource
 
 
 
-//....................................................
-    public static function composeRecycleFilename($filename, $appendTimestamp = true, $recycleBin = false)
+    public static function composeRecycleFilename($filename, $appendTimestamp = true, $recycleBin = false, $inOrigPath = false)
     {
-        if (!$recycleBin) {
-            $recycleBin = RECYCLE_BIN_PATH;
+        if ($inOrigPath) {
+            $recycleBin = dir_name($filename) . basename(RECYCLE_BIN_PATH ) . '/';
         } else {
-            $recycleBin = fixPath($recycleBin);
+            if (!$recycleBin) {
+                $recycleBin = RECYCLE_BIN_PATH;
+            } else {
+                $recycleBin = fixPath($recycleBin);
+            }
         }
         if (strpos($recycleBin, '~page/') === false) {
             $filename = trunkPath($filename, -1, false);

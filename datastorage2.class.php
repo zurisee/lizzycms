@@ -1499,7 +1499,7 @@ EOT;
             if ($this->useRecycleBin) {
                 require_once SYSTEM_PATH.'page-source.class.php';
                 $ps = new PageSource;
-                $ps->copyFileToRecycleBin($filename);
+                $ps->copyFileToRecycleBin($filename, false, true);
             }
 
             $data = $this->getData(true);
