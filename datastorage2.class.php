@@ -1605,6 +1605,7 @@ EOT;
         $this->mode = isset($args['mode']) ? $args['mode'] : 'readonly';
         $this->format = isset($args['format']) ? $args['format'] : '';
         $this->secure = isset($args['secure']) ? $args['secure'] : true;
+        $this->userCsvFirstRowAsLabels = isset($args['userCsvFirstRowAsLabels']) ? $args['userCsvFirstRowAsLabels'] : true;
         $this->useRecycleBin = isset($args['useRecycleBin']) ? $args['useRecycleBin'] : false;
         $this->format = ($this->format) ? $this->format : pathinfo($this->dataFile, PATHINFO_EXTENSION) ;
         $this->tableName = isset($args['tableName']) ? $args['tableName'] : '';
@@ -1637,6 +1638,18 @@ EOT;
 
         } elseif (($fileFormat === 'csv') || ($this->format === 'txt')) {
             $data = $this->parseCsv($rawData);
+
+            // if not suppressed: use first data row as element-labels:
+            if ($this->userCsvFirstRowAsLabels) {
+                $labels = array_shift( $data );
+                $out = [];
+                foreach ($data as $r => $rec) {
+                    foreach ($labels as $i => $label) {
+                        $out[$r][$label] = $rec[$i];
+                    }
+                }
+                $data = $out;
+            }
 
         } else {    // unknown fileType:
             $data = false;
