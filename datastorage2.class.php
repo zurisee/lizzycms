@@ -1694,16 +1694,18 @@ EOT;
         }
 
         if ($fileFormat === 'yaml') {
-            if ($rawData[0] === '-') {
+            $raw = trim( file_get_contents( $rawData['origFile'] ));
+            if ($raw && ($raw[0] === '-')) {
                 $structure['key'] = 'index';
             } else {
-                $key0 = substr($rawData, 0, strpos($rawData, ':'));
+                $key0 = substr($raw, 0, strpos($raw, ':'));
             }
         } elseif ($fileFormat === 'json') {
-            if ($rawData[0] === '[') {
+            $raw = trim( file_get_contents( $rawData['origFile'] ));
+            if ($raw && ($raw[0] === '[')) {
                 $structure['key'] = 'index';
             } else {
-                if (!preg_match('/^{"(.*?)"/', $rawData, $m)) {
+                if (!preg_match('/^{"(.*?)"/', $raw, $m)) {
                     exit("Error in json file");
                 }
                 $key0 = $m[1];
