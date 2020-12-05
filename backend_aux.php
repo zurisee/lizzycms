@@ -19,7 +19,9 @@ if (!defined('MKDIR_MASK')) {
 }
 define('DEFAULT_EDITABLE_DATA_FILE', 'editable.yaml');
 
-$appRoot = preg_replace('/_lizzy\/.*$/', '', getcwd().'/');
+// Note: this assumes that backend script is located in _lizzy/ or code/
+// (i.e. one below appRoot)
+$appRoot = trunkPath(getcwd().'/', 1);
 
 //------------------------------------------------------------------------------
 function explodeTrim($sep, $str)
@@ -82,6 +84,23 @@ function preparePath($path)
 
 
 
+function fileExt($file0, $reverse = false)
+{
+    $file = basename($file0);
+    $file = preg_replace(['|^\w{1,6}://|', '/[#?&:].*/'], '', $file);
+    if ($reverse) {
+        $path = dirname($file0).'/';
+        if ($path === './') {
+            $path = '';
+        }
+        $file = pathinfo($file, PATHINFO_FILENAME);
+        return $path.$file;
+
+    } else {
+        return pathinfo($file, PATHINFO_EXTENSION);
+    }
+} // fileExt
+
 //------------------------------------------------------------
 function lzyExit( $str = '' )
 {
@@ -113,7 +132,6 @@ function resolvePath($path)
     }
     $path = trim($path);
     $dataPath = isset($_SESSION['lizzy']['dataPath'])? $_SESSION['lizzy']['dataPath']: 'data/';
-//    $pathToPage = isset($_SESSION["lizzy"]["pathToPage"])? $_SESSION["lizzy"]["pathToPage"]: '';
     $pageFolder = isset($_SESSION['lizzy']['pageFolder'])? $_SESSION['lizzy']['pageFolder']: '';
 
     $from = [
