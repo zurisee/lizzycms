@@ -508,8 +508,14 @@ $box-width: 300px;
     transform:  translateX(-100%);
     transition: transform var(--lzy-msg-transition-time, 0.6s);
 }
-
-
+#lzy.lzy-large-screen {
+    .lzy-msgbox,
+    .lzy-warning-box {
+        &, p, a, div, span {
+            font-size: 12pt;
+        }
+    }
+}
 
 
 // === in-browser Logging Output

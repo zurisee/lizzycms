@@ -180,8 +180,9 @@ input.lzy-form-checkbox {
 	display: none;
 }
 
-.lzy-large-screen #lzy-login-form {
-    width: 550px;
+#lzy.lzy-large-screen #lzy-login-form {
+    font-size: 11pt;
+    width: 42em;
 }
 
 .lzy-login-submit-button,
