@@ -1,6 +1,6 @@
 /* Lizzy Core CSS
 CSS-Variables:
---lzy-focus-color:
+	--lzy-focus-color:
 
 */
 
@@ -663,6 +663,12 @@ dd {
 	}
 }
 
+.lzy-logged-in-user > div {
+	display: inline-block;
+}
+#lzy-onetime-code {
+	padding: 3px 6px;
+}
 
 /* === Login Link ========================= */
 .lzy-login-link-menu {

@@ -3,9 +3,10 @@
 
 class Authentication
 {
-	public $message = '';
+	public  $message = '';
 	private $userRec = false;
 	private $knownUsers = null;
+	private $lastLogMsg = false;
 
 
     public function __construct($lzy)
@@ -154,6 +155,8 @@ class Authentication
         if ($this->validateAccessCode($codeCandidate)) {   // check access code in user records and log in if found
             return '';
         }
+
+        writeLogStr($this->lastLogMsg, LOGIN_LOG_FILENAME);
         $this->handleFailedLoginAttempts($codeCandidate);
 
         $path = $GLOBALS["globalParams"]["host"].$_SERVER["REQUEST_URI"];
@@ -209,10 +212,8 @@ EOT;
         $code = strtoupper($code);
         $ticket = $tick->consumeTicket($code);
         if (!$ticket) {
-            $this->monitorFailedLoginAttempts();
             $errMsg = $tick->getLastError();
-
-            writeLogStr("*** one-time link rejected: $code ($errMsg) [".getClientIP().']', LOGIN_LOG_FILENAME);
+            $this->lastLogMsg = "*** one-time link rejected: $code ($errMsg) [".getClientIP().']';
             return false;
         }
         $username = $ticket['username'];
@@ -278,15 +279,16 @@ EOT;
                             return false;
                         }
                     }
+                    $keepAccessCode = $this->lzy->keepAccessCode || !$_SESSION['lizzy']['user'];
                     $this->setUserAsLoggedIn($user, $rec);
-                    $requestedUrl = $GLOBALS['globalParams']['requestedUrl'];
-                    $requestedUrl = preg_replace('|/[A-Z][A-Z0-9]{4,}/?$|', '', $requestedUrl);
-                    writeLog("*** user '$user' successfully logged in via access link ($codeCandidate).");
-                    if (!$this->lzy->keepAccessCode) {
-                        reloadAgent($requestedUrl, 'lzy-login-successful');
-                    } else {
+                    writeLogStr("user '$user' successfully logged in via access link ($codeCandidate). [".getClientIP().']', LOGIN_LOG_FILENAME);
+                    if ($keepAccessCode) {
                         $this->lzy->page->addMessage('{{ lzy-login-successful }}');
                         return true;
+                    } else {
+                        $requestedUrl = $GLOBALS['globalParams']['requestedUrl'];
+                        $requestedUrl = preg_replace('|/[A-Z][A-Z0-9]{4,}/?|', '/', $requestedUrl);
+                        reloadAgent($requestedUrl);
                     }
                 }
             }
