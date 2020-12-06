@@ -857,6 +857,21 @@ $('.lzy-accesslink-delete-button').click(function() {
 EOT;
         $this->lzy->page->addJq($jq);
 
+        // logout before invoking access-link
+        // -> this is to make sure that the access-links remains visible to the user, so he can create a bookmark or desktop icon
+        $js = <<<EOT
+
+function lzyInvokeAccessLink(url) {
+    $.ajax({
+        url: "./?logout"
+    }).done(function() {
+        window.location = url;
+    });
+}
+
+EOT;
+        $this->lzy->page->addJs($js);
+
         return $str;
     } // createPWAccessForm
 

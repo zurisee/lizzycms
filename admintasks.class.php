@@ -67,7 +67,7 @@ class AdminTasks
                     $userRec['accessCode'] = $hash;
                     $this->updateDbUserRec($user, $userRec);
                     $link = $GLOBALS['globalParams']['pageUrl'].$hash;
-                    $link = "<div><a href='$link'>$link</a></div>";
+                    $link = "<div><a href='#' onclick=\"lzyInvokeAccessLink('$link')\">$link</a></div>";
                     $msg = $this->trans->translateVariable('lzy-create-accesslink-response1');
                     $msg2 = $this->trans->translateVariable('lzy-create-accesslink-response2');
                     $msg = "<div>$msg</div>$link<div>$msg2</div>";
