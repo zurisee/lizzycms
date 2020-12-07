@@ -1481,8 +1481,8 @@ EOT;
     {
         $rawData = $this->lowlevelReadRawData();
         if ($this->exportRequired) {
-            if (isset($GLOBALS["appRoot"])) {
-                $filename = $GLOBALS["appRoot"] . $rawData['origFile'];
+            if (isset($GLOBALS['appRoot'])) {
+                $filename = $GLOBALS['appRoot'] . $rawData['origFile'];
 
             } else {
                 $filename = PATH_TO_APP_ROOT . $rawData['origFile'];
@@ -1694,18 +1694,22 @@ EOT;
         }
 
         if ($fileFormat === 'yaml') {
-            $raw = trim( file_get_contents( $rawData['origFile'] ));
-            if ($raw && ($raw[0] === '-')) {
+            if (isset($rawData['origFile'])) {
+                $rawData = trim(file_get_contents($rawData['origFile']));
+            }
+            if ($rawData && ($rawData[0] === '-')) {
                 $structure['key'] = 'index';
             } else {
-                $key0 = substr($raw, 0, strpos($raw, ':'));
+                $key0 = substr($rawData, 0, strpos($raw, ':'));
             }
         } elseif ($fileFormat === 'json') {
-            $raw = trim( file_get_contents( $rawData['origFile'] ));
-            if ($raw && ($raw[0] === '[')) {
+            if (isset($rawData['origFile'])) {
+                $rawData = trim(file_get_contents($rawData['origFile']));
+            }
+            if ($rawData && ($rawData[0] === '[')) {
                 $structure['key'] = 'index';
             } else {
-                if (!preg_match('/^{"(.*?)"/', $raw, $m)) {
+                if (!preg_match('/^{"(.*?)"/', $rawData, $m)) {
                     exit("Error in json file");
                 }
                 $key0 = $m[1];
