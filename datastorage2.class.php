@@ -1700,7 +1700,7 @@ EOT;
             if ($rawData && ($rawData[0] === '-')) {
                 $structure['key'] = 'index';
             } else {
-                $key0 = substr($rawData, 0, strpos($raw, ':'));
+                $key0 = substr($rawData, 0, strpos($rawData, ':'));
             }
         } elseif ($fileFormat === 'json') {
             if (isset($rawData['origFile'])) {
