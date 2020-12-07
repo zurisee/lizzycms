@@ -19,9 +19,13 @@ if (!defined('MKDIR_MASK')) {
 }
 define('DEFAULT_EDITABLE_DATA_FILE', 'editable.yaml');
 
-// Note: this assumes that backend script is located in _lizzy/ or code/
-// (i.e. one below appRoot)
-$appRoot = trunkPath(getcwd().'/', 1);
+$appRoot = getcwd().'/';
+if (strpos($appRoot, '_lizzy/') !== false) {
+    $appRoot = preg_replace('/_lizzy\/.*$/', '', $appRoot);
+} else {
+    // if script not located below _lizzy/ it must be in code/, so appRoot must be one above:
+    $appRoot = trunkPath(getcwd().'/', 1);
+}
 
 //------------------------------------------------------------------------------
 function explodeTrim($sep, $str)
