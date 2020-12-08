@@ -2139,6 +2139,7 @@ function initAntiSpamPopup() {
 
 EOT;
             $this->page->addJs($js);
+            $this->page->addModules('JS_POPUPS');
         }
     } // initAntiSpam
 
