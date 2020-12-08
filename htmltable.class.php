@@ -301,6 +301,9 @@ EOT;
     private function addCol($cellInstructions)
     {
         $data = &$this->data;
+        if (!$data) {
+            return;
+        }
         $this->instructions = $cellInstructions;
 
         $newCol = $this->getArg('column'); // starting at 1
@@ -653,6 +656,9 @@ EOT;
 
     private function getArg( $name )
     {
+        if (!$this->data || !is_array($this->data)) {
+            return '';
+        }
         if ($name === 'phpExpr') {
             $this->phpExpr = [];
             for ($c = 1; $c <= sizeof($this->data[0]); $c++) {
