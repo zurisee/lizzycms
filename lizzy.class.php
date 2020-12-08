@@ -236,6 +236,7 @@ private function loadRequired()
             }
         }
         $GLOBALS['globalParams']['cachingActive'] = $this->config->site_enableCaching;
+        $GLOBALS['globalParams']['site_title'] = $this->trans->translateVariable('site_title');
     } // init
 
 
