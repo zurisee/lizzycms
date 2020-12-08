@@ -284,6 +284,7 @@ class ImageResizer
         }
 
         $out = '';
+        $manifestStr = '';
         foreach ($faviconSet as $set) {
             $sizes = $set['sizes'];
             foreach ($sizes as $size) {
@@ -295,6 +296,15 @@ class ImageResizer
                     if (!file_exists($dst)) {
                         $this->resizeImage($srcFile, $dst, $size, $size);
                     }
+                    $manifestStr .= <<<EOT
+        {
+            "src": "$dst",
+            "sizes": "{$size}x{$size}",
+            "type": "image/png"
+        },
+
+EOT;
+
                 } else {
                     list($w, $h) = parseDimString($size);
                     $dst = $destPath . "favicon-{$w}x{$h}.png";
@@ -305,21 +315,20 @@ class ImageResizer
             }
         }
 
-        $manifestFilename = 'browserconfig.xml';
+        $manifestStr = rtrim($manifestStr, "\n,");
+        $manifestFilename = 'manifest.json';
         if (!file_exists($manifestFilename)) {
             $manifest = <<<EOT
-<?xml version="1.0" encoding="utf-8"?>
-<browserconfig>
-  <msapplication>
-    <tile>
-      <square70x70logo src="{$destPath}mstile-70x70.png"/>
-      <square150x150logo src="{$destPath}mstile-270x270.png"/>
-      <square310x310logo src="{$destPath}mstile-310x310.png"/>
-      <wide310x150logo src="{$destPath}mstile-310x150.png"/>
-      <TileColor>#2b5797</TileColor>
-    </tile>
-  </msapplication>
-</browserconfig>
+{
+    "name": "{$GLOBALS["globalParams"]["site_title"]}",
+    "short_name": "{$GLOBALS["globalParams"]["site_title"]}",
+    "icons": [
+$manifestStr
+    ],
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff",
+    "display": "standalone"
+}
 
 EOT;
             file_put_contents($manifestFilename, $manifest);

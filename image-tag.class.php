@@ -8,6 +8,7 @@ class ImageTag
     private $aspRatio = null;
     private $imgFullsizeWidth = null;
     private $imgFullsizeHeight = null;
+//    private $sizesFactor = 4;
     private $sizesFactor = null;
 
     public function __construct($obj, $args) {
@@ -132,7 +133,8 @@ class ImageTag
                 }
                 // e.g. $sizes = "(max-width: 600px) 125px, (max-width: 1200px) 250px, 900px"; // for img-width 25% of win width
                 if ($sizes) {
-                    $this->srcset .= " sizes='$sizes'";
+                    $this->srcset .= " sizes='$sizes' width='{$this->w}' height='{$this->h}'";
+//                    $this->srcset .= " sizes='$sizes'";
                 }
             }
 
@@ -142,6 +144,7 @@ class ImageTag
         } else {
             $this->srcset = '';
         }
+//$this->srcset = " width='{$this->w}' height='{$this->h}'";
         return $this->srcset;
     } // renderSrcset
 
@@ -178,6 +181,9 @@ class ImageTag
         $this->aspRatio = $aspectRatio;
         $this->imgFullsizeWidth = $w0;
         $this->imgFullsizeHeight = $h0;
+        if (!$this->sizesFactor) {
+            $this->sizesFactor = 900 / $w; // default
+        }
     } // getFileInfo
 
 
