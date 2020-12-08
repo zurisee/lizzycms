@@ -11,7 +11,7 @@ $('.lzy-reveal-controller-elem').each(function() {
 			$target = $( $(this).attr('data-reveal-target') );
 			if (!$target.parent().hasClass('lzy-reveal-container')) {
 				$target.wrap("<div class='lzy-reveal-container'></div>").show();
-				$target.css('margin-top', '-1000vh');
+				$target.css('margin-top', '-10000px');
 			}
 			if ( this.selected ) {
 				$target.parent().addClass('lzy-elem-revealed');
@@ -25,7 +25,7 @@ $('.lzy-reveal-controller-elem').each(function() {
 		$target = $( $this.attr('data-reveal-target') );
 		if (!$target.parent().hasClass('lzy-reveal-container')) {
 			$target.wrap("<div class='lzy-reveal-container'></div>").show();
-			$target.css('margin-top', '-1000vh');
+			$target.css('margin-top', '-10000px');
 		}
 		if (this.checked) {
 			$this.attr('aria-expanded', 'true');
