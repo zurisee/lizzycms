@@ -32,6 +32,9 @@ class HtmlTable
         $this->nCols 		        = $this->getOption('nCols', '(optional) Number of columns: if set the table is forced to this number of columns');
         $this->includeKeys          = $this->getOption('includeKeys', '[true|false] If true and not a .csv source: key elements will be included in data.');
         $this->interactive          = $this->getOption('interactive', '[true|false] If true, module "Datatables" is activated, providing for interactive features such as sorting, searching etc.');
+        $this->liveData             = $this->getOption('liveData', '[true|false] If true, Lizzy\'s "liveData" mechanism is activated. If the dataSource is modified on the server, changes are immediately mirrored in the webpage.');
+        $this->dataSelector         = $this->getOption('dataSelector', '[true|false] If true, Lizzy\'s "liveData" mechanism is activated. If the dataSource is modified on the server, changes are immediately mirrored in the webpage.', '*,*');
+        $this->targetSelector       = $this->getOption('targetSelector', '[true|false] If true, Lizzy\'s "liveData" mechanism is activated. If the dataSource is modified on the server, changes are immediately mirrored in the webpage.', '.lzy-row-* .lzy-col-*');
         $this->paging               = $this->getOption('paging', '[true|false] When using "Datatables": turns paging on or off (default is on)');
         $this->initialPageLength    = $this->getOption('initialPageLength', '[int] When using "Datatables": defines the initial page length (default is 10)');
         $this->excludeColumns       = $this->getOption('excludeColumns', '(optional) Allows to exclude specific columns, e.g. "excludeColumns:2,4-5"');
@@ -79,18 +82,57 @@ class HtmlTable
 
         $this->applyHeaders();
 
-        $this->loadProcessingInstructions();
-        $this->applyProcessingToData();
+        $out = '';
+        if ($this->liveData) {
+            $out = $this->activateLiveData();
+        } else {
+            $this->loadProcessingInstructions();
+            $this->applyProcessingToData();
+        }
 
         $this->convertLinks();
         $this->convertTimestamps();
 
         if ($this->renderAsDiv) {
-            return $this->renderDiv();
+            return $out . $this->renderDiv();
         } else {
-            return $this->renderHtmlTable();
+            return $out . $this->renderHtmlTable();
         }
     } // render
+
+
+
+
+    private function activateLiveData()
+    {
+        $file = SYSTEM_PATH.'extensions/livedata/code/live-data.class.php';
+        if (!file_exists($file)) {
+            die("Error: HTMLtables with activated liveData option requires Lizzy Extensions to be installed.");
+        }
+        require_once $file;
+        $this->page->addModules('~ext/livedata/js/live_data.js');
+        $jq = <<<EOT
+
+if ($('[data-lzy-data-ref]').length) {
+    initLiveData();
+}
+
+EOT;
+        $this->page->addJq($jq);
+        if ($this->id) {
+            $targetSelector = "#$this->id $this->targetSelector";
+        } else {
+            $targetSelector = ".lzy-table-{$this->tableCounter} $this->targetSelector";
+        }
+        $args = [
+            'dataSource' => '~/'.$this->dataSource,
+            'dataSelector' => $this->dataSelector,
+            'targetSelector' => $targetSelector,
+            'manual' => 'silent',
+        ];
+        $ld = new LiveData($this->lzy, $args);
+        return $ld->render() . "\n";
+    } // activateLiveData
 
 
 
@@ -151,17 +193,18 @@ class HtmlTable
     {
         $data = &$this->data;
         $header = ($this->headers !== false);
-        $tableClass = trim('lzy-table '.$this->tableClass);
+        $tableClass = trim("lzy-table lzy-table-{$this->tableCounter} ".$this->tableClass);
+//        $tableClass = trim('lzy-table '.$this->tableClass);
         $thead = '';
         $tbody = '';
         $nRows = sizeof($data);
         $nCols = sizeof($data[0]);
         $rowClass0 = $this->rowClass;
 
+        $rInx = 0;
         for ($r = 0; $r < $nRows; $r++) {
-            $rowClass = str_replace('*', ($r + 1), $rowClass0);
-
             if ($header && ($r === 0)) {
+                $rowClass = str_replace('*', '0', $rowClass0);
                 $thead = "\t<thead>\n\t\t<tr class='$rowClass'>\n";
                 if ($this->showRowNumbers) {
                     $thead .= "\t\t\t<th class='lzy-table-row-nr'></th>\n";
@@ -172,6 +215,8 @@ class HtmlTable
                 }
                 $thead .= "\t\t</tr>\n\t</thead>\n";
             } else {
+                $rInx++;
+                $rowClass = str_replace('*', $rInx, $rowClass0);
                 $tbody .= "\t\t<tr class='$rowClass'>\n";
                 if ($this->showRowNumbers) {
                     if ($this->headers) {
