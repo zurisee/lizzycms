@@ -110,10 +110,12 @@ class HtmlTable
         }
         require_once $file;
         $this->page->addModules('~ext/livedata/js/live_data.js');
+
+        // skipInitialUpdate: initLiveData( true );
         $jq = <<<EOT
 
 if ($('[data-lzy-data-ref]').length) {
-    initLiveData();
+    initLiveData( true );
 }
 
 EOT;
@@ -128,6 +130,7 @@ EOT;
             'dataSelector' => $this->dataSelector,
             'targetSelector' => $targetSelector,
             'manual' => 'silent',
+            //'pollingTime' => 10, // for testing
         ];
         $ld = new LiveData($this->lzy, $args);
         return $ld->render() . "\n";
@@ -193,7 +196,6 @@ EOT;
         $data = &$this->data;
         $header = ($this->headers !== false);
         $tableClass = trim("lzy-table lzy-table-{$this->tableCounter} ".$this->tableClass);
-//        $tableClass = trim('lzy-table '.$this->tableClass);
         $thead = '';
         $tbody = '';
         $nRows = sizeof($data);
