@@ -47,7 +47,6 @@ class DataStorage2
 	private $defaultPollingSleepTime = LZY_DB_POLLING_CYCLE_TIME; // [us]
 
 
-    //--------------------------------------------------------------
     public function __construct($args)
     {
         if ( session_status() !== PHP_SESSION_ACTIVE ) {
@@ -74,7 +73,6 @@ class DataStorage2
 
 
 
-    //---------------------------------------------------------------------------
     public function __destruct()
     {
         if (!isset($this->appPath)) {
@@ -100,6 +98,32 @@ class DataStorage2
         }
         return $data;
     } // read
+
+
+
+    public function readModified( $since )
+    {
+        $data = $this->getData(true);
+        if (!$data) {
+            $data = [];
+        }
+        if (!$since) {
+            return $data;
+        }
+
+        $rawLastRecModif = $this->lowlevelReadRawData('recLastUpdates');
+        $lastRecModifs = $this->jsonDecode($rawLastRecModif);
+        $outData = [];
+        foreach ($data as $key => $rec) {
+            if (isset($lastRecModifs[ $key ])) {
+                if ($lastRecModifs[ $key ] > $since) {
+                    $outData[$key] = $rec;
+                }
+            }
+        }
+
+        return $outData;
+    } // readModified
 
 
 
@@ -638,7 +662,6 @@ class DataStorage2
 
 
 
-    //---------------------------------------------------------------------------
     public function findRecByContent($key, $value, $returnKey = false)
     {
         // find rec for which key AND value match
@@ -665,7 +688,6 @@ class DataStorage2
 
 
 
-    //---------------------------------------------------------------------------
     public function getDbRecStructure()
     {
         $rawData = $this->lowlevelReadRawData();
@@ -680,17 +702,22 @@ class DataStorage2
 
 
 
-    //---------------------------------------------------------------------------
     public function lastDbModified()
     {
         $rawData = $this->lowlevelReadRawData();
-        return $rawData['lastUpdate'];
+        $filemtime = (float) filemtime( $this->dataFile );
+        $lastModified = $rawData['lastUpdate'];
+        if ($filemtime > $lastModified) {
+            $lastModified = $filemtime;
+//            $this->updateDbModifTime($filemtime + 0.00000001);
+            $this->importFromFile();
+        }
+        return $lastModified;
     } // lastModified
 
 
 
 
-    //---------------------------------------------------------------------------
     public function checkNewData($lastUpdate, $returnJson = false)
     {
         // checks whether new data has been saved since the given time:
@@ -711,7 +738,6 @@ class DataStorage2
 
 
  // === depricated ======================
-    //---------------------------------------------------------------------------
     public function doLockDB()  // alias for compatibility
     {
         die("Method lockDB() has been depricated - use lockDB() instead");
@@ -1157,7 +1183,7 @@ class DataStorage2
 
 
 
-    // === Low Level Operations ===========================================================
+ // === Low Level Operations ===========================================================
     private function lowlevelReadRecLocks()
     {
         $query = "SELECT \"recLocks\" FROM \"{$this->tableName}\"";
@@ -1295,6 +1321,30 @@ EOT;
 
 
 
+    private function updateDbModifTime( $modifTime = false )
+    {
+        $this->openDbReadWrite();
+
+        if (!$modifTime) {
+            $modifTime = str_replace(',', '.', microtime(true)); // fix float->str conversion problem
+        }
+        $sql = <<<EOT
+UPDATE "{$this->tableName}" SET 
+    "lastUpdate" = $modifTime;
+
+EOT;
+        try {
+            $res = $this->lzyDb->query($sql);
+        }
+        catch (exception $e) {
+            fatalError($e->getMessage());
+        }
+        $this->rawData = $this->lowlevelReadRawData();
+    } // updateDbModifTime
+
+
+
+
     private function updateRecLastUpdate( $recId )
     {
         $query = "SELECT \"recLastUpdates\" FROM \"{$this->tableName}\"";
@@ -1331,7 +1381,6 @@ EOT;
 
 
 
-    //---------------------------------------------------------------------------
     private function initLizzyDB()
     {
         if (!file_exists(LIZZY_DB)) {
@@ -1370,7 +1419,6 @@ EOT;
 
 
 
-    //---------------------------------------------------------------------------
     private function initDbTable()
     {
         // 'dataFile' refers to a yaml or csv file that contains the original data source
@@ -1451,13 +1499,26 @@ EOT;
 
 
 
-    //--------------------------------------------------------------
     private function importFromFile($initial = false)
     {
         $this->openDbReadWrite();
         $rawData = $this->loadFile();
-        $json = $this->decode($rawData, false, true, $initial);
-        $json = $this->jsonEncode($json, true);
+
+        if ($this->logModifTimes) {
+            $oldDat = $this->getData();
+            $newData = $this->decode($rawData, false, false, $initial);
+            foreach ($newData as $key => $rec) {
+                if ($rec !== $oldDat[$key]) {
+                    $this->updateRecLastUpdate( $key );
+                }
+            }
+            $json = $this->jsonEncode($newData, false);
+
+        } else {
+            $json = $this->decode($rawData, false, true, $initial);
+            $json = $this->jsonEncode($json, true);
+        }
+
         $json = SQLite3::escapeString($json);
         $sql = <<<EOT
 UPDATE "{$this->tableName}" SET 
@@ -1470,6 +1531,7 @@ EOT;
         catch (exception $e) {
             fatalError($e->getMessage());
         }
+        $this->updateDbModifTime();
         $this->rawData = $this->lowlevelReadRawData();
     } // importFromFile
 
@@ -1591,7 +1653,6 @@ EOT;
 
 
 
-    //---------------------------------------------------------------------------
     private function parseArguments($args)
     {
         if (is_string($args)) {
@@ -1620,7 +1681,6 @@ EOT;
 
 
 
-    //---------------------------------------------------------------------------
     private function decode($rawData, $fileFormat = false, $outputAsJson = false, $analyzeStructure = false)
     {
         if (!$rawData) {
@@ -1743,7 +1803,6 @@ EOT;
 
 
 
-    //--------------------------------------------------------------
     private function convertYaml($str)
     {
         $data = null;
@@ -1763,7 +1822,6 @@ EOT;
 
 
 
-    //--------------------------------------------------------------
     private function parseCsv($str, $delim = false, $enclos = false) {
 
         if (!$delim) {
