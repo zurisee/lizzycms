@@ -83,11 +83,10 @@ class HtmlTable
         $this->applyHeaders();
 
         $out = '';
+        $this->loadProcessingInstructions();
+        $this->applyProcessingToData();
         if ($this->liveData) {
             $out = $this->activateLiveData();
-        } else {
-            $this->loadProcessingInstructions();
-            $this->applyProcessingToData();
         }
 
         $this->convertLinks();
