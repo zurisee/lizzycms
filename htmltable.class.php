@@ -111,7 +111,7 @@ class HtmlTable
         require_once $file;
         $this->page->addModules('~ext/livedata/js/live_data.js');
 
-        // skipInitialUpdate: initLiveData( true );
+        // skipInitialUpdate: initLiveData( false );
         $jq = <<<EOT
 
 if ($('[data-lzy-data-ref]').length) {
