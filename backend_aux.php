@@ -27,6 +27,42 @@ if (strpos($appRoot, '_lizzy/') !== false) {
     $appRoot = trunkPath(getcwd().'/', 1);
 }
 
+
+function translateToIdentifier($str, $removeDashes = false, $removeNonAlpha = false)
+{
+    // translates special characters (such as , , ) into identifier which contains but safe characters:
+    $str = mb_strtolower($str);		// all lowercase
+    $str = strToASCII( $str );		// replace umlaute etc.
+    $str = strip_tags( $str );							// strip any html tags
+    if ($removeNonAlpha) {
+        $str = preg_replace('/[^a-zA-Z]/ms', '', $str);
+
+    } elseif (preg_match('/^ \W* (\w .*? ) \W* $/x', $str, $m)) { // cut leading/trailing non-chars;
+        $str = trim($m[1]);
+    }
+    $str = preg_replace('/\s+/', '_', $str);			// replace blanks with _
+    $str = preg_replace("/[^[:alnum:]_-]/m", '', $str);	// remove any non-letters, except _ and -
+    if ($removeDashes) {
+        $str = str_replace("-", '_', $str);				// remove -, if requested
+    }
+    return $str;
+} // translateToIdentifier
+
+
+
+function strToASCII($str)
+{
+    // transliterate special characters (such as ä, ö, ü) into pure ASCII
+    $specChars = array('ä','ö','ü','Ä','Ö','Ü','é','â','á','à',
+        'ç','ñ','Ñ','Ç','É','Â','Á','À','ẞ','ß','ø','å');
+    $specCodes2 = array('ae','oe','ue','Ae',
+        'Oe','Ue','e','a','a','a','c',
+        'n','N','C','E','A','A','A',
+        'SS','ss','o','a');
+    return str_replace($specChars, $specCodes2, $str);
+} // strToASCII
+
+
 //------------------------------------------------------------------------------
 function explodeTrim($sep, $str)
 {
