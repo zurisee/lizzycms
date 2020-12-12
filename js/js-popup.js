@@ -2,6 +2,8 @@
 *   Options:
 *       text            : text (html) to be displayed in popup
 *       content         : synonyme for text
+*       contentFrom     : selector of DOM element to import and popup
+*       contentRef      : selector (or JQ object) of DOM element to directly popop
 *       trigger         : how to open popup: true = immediately, false = not (i.e. opened elsewhere), string = selector of button or link
 *       closeOnBgClick  : If true, clicks on background close the popup (default: true)
 *       closeButton     : If true, activates a close button in the upper right corner (default: true)
@@ -65,10 +67,14 @@ function lzyPopup( options ) {
     }
 
     if (contentFrom) {
-        if ((contentFrom.charAt(0) !== '#') && (contentFrom.charAt(0) !== '.')) {
-            contentFrom = '#' + contentFrom;
+        if (typeof contentFrom[0] !== 'undefined') {
+            content = content + contentFrom.html();
+        } else {
+            if ((contentFrom.charAt(0) !== '#') && (contentFrom.charAt(0) !== '.')) {
+                contentFrom = '#' + contentFrom;
+            }
+            content = content + $( contentFrom ).html();
         }
-        content = content + $( contentFrom ).html();
     }
 
     if (content) {      // content supplied as literal:
@@ -88,10 +94,15 @@ function lzyPopup( options ) {
     } else {
         if (contentRef) {       // content as reference to DOM element:
             transient = false;
-            if ((contentRef.charAt(0) !== '#') && (contentRef.charAt(0) !== '.')) {
-                contentRef = '#' + contentRef;
+            var $popupElem = null;
+            if (typeof contentRef[0] !== 'undefined') {
+                $popupElem = contentRef;
+            } else {
+                if ((contentRef.charAt(0) !== '#') && (contentRef.charAt(0) !== '.')) {
+                    contentRef = '#' + contentRef;
+                }
+                $popupElem = $(contentRef);
             }
-            var $popupElem = $( contentRef );
             if (!$popupElem.hasClass('lzy-js-popup-bg')) {
                 $popupElem.addClass('lzy-js-popup-bg').addClass('lzy-js-popup-' + inx);
                 if (popupclass) {
