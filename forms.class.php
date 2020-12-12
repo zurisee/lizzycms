@@ -48,6 +48,7 @@ class Forms
     private $revealJsAdded = false;
     protected $skipRenderingForm = false;
     protected $formId = false;
+    public  $file = false;
 
     //-------------------------------------------------------------
 	public function __construct($lzy, $skipUserDataEval = false)
@@ -452,6 +453,7 @@ class Forms
         $currForm->options = str_replace('-', '', $currForm->options);
 
         $currForm->ticketPayload = (isset($args['ticketPayload'])) ? $args['ticketPayload'] : null;
+        $currForm->ticketHash = (isset($args['ticketHash'])) ? $args['ticketHash'] : false;
 
         return 'form-head';
     } // parseHeadElemArgs
@@ -514,6 +516,7 @@ class Forms
         }
         $rec->name = $name;
         $_name = " name='$name'";
+        $rec->dataSelector = @$args['dataSelector']? $args['dataSelector']: $name;
 
         // whether to translate a label: form-wide translateLabels or per-element translateLabel or '-' in front of label:
         $rec->translateLabel = false;
@@ -704,7 +707,11 @@ EOT;
         $this->userSuppliedData = $this->getUserSuppliedDataFromCache($formId);
         $currForm->creationTime = time();
 
-        $this->formHash = $this->tck->createTicket( $currForm->ticketPayload );
+        if (!$currForm->ticketHash || !$this->tck->ticketExists($currForm->ticketHash)) {
+            $this->formHash = $this->tck->createTicket($currForm->ticketPayload, false, null, false, $currForm->ticketHash);
+        } else {
+            $this->formHash = $currForm->ticketHash; // if ticket provided by caller
+        }
 
         $id = " id='{$this->formId}'";
 
@@ -763,7 +770,7 @@ EOT;
         $out .= "\t  <form$id$_class$_method$_action$novalidate>\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form-id' value='{$this->formInx}' />\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form-label' value='{$currForm->formName}' />\n";
-		$out .= "\t\t<input type='hidden' name='_lizzy-form' value='{$this->formHash}' />\n";
+		$out .= "\t\t<input type='hidden' name='_lizzy-form' value='{$this->formHash}' class='lzy-form-hash' />\n";
 		$out .= "\t\t<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-cmd' value='{$currForm->next}' />\n";
 
 		if ($currForm->antiSpam) {
@@ -900,6 +907,7 @@ EOT;
         $presetValues = isset($this->currRec->prefill)? $this->currRec->prefill: false;
         $groupName = translateToIdentifier($this->currRec->label);
         $label = $this->getLabel(false, false);
+        $wrapperId = @$rec->wrapperId ? " id='$rec->wrapperId'": '';
 
         $target = $this->currRec->target;
         if ($target) {
@@ -908,7 +916,7 @@ EOT;
             $target = explodeTrim(',|', "|$target||||||||||||||||");
         }
 
-        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-checkbox-label'><legend class='lzy-legend'>$label</legend>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
+        $out = "\t\t\t<fieldset$wrapperId class='lzy-form-label lzy-form-checkbox-label'><legend class='lzy-legend'>$label</legend>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
 
         foreach($rec->optionLabels as $i => $optionLabel) {
             if ($i === 0) { continue; } // skip group name
@@ -1509,7 +1517,15 @@ EOT;
             $this->errorDescr['generic']['_announcement_'] = '{{ lzy-form-error-formhash-lost }}';
             return;
         }
-        $this->tck->updateTicket( $this->formHash, ['form' => $str] );
+        $dataSelectors = [];
+        foreach ($form->formElements as $element) {
+            if ($element->type !== 'button') {
+                $dataSelectors[$element->dataSelector] = $element->labelInOutput;
+//                $dataSelectors[$element->dataSelector] = $element->name;
+            }
+        }
+        $this->tck->updateTicket( $this->formHash, ['form' => $str, 'dataSelectors' => $dataSelectors] );
+//        $this->tck->updateTicket( $this->formHash, ['form' => $str] );
 	} // saveFormDescr
 
 
