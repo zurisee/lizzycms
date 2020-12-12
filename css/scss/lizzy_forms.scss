@@ -76,6 +76,7 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         width: 7em;
         width: var(--lzy-label-width, $label-width);
         display: inline-block;
+        text-align: left;
     }
 
     input {
