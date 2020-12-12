@@ -278,7 +278,11 @@ class DataStorage2
         $data = $this->getData(true);
 
         if ($recId !== false) {
-            $data[$recId] = $recData;
+            if (@$this->structure['indexes'][0] === 0) { // maintain original data format
+                $data[$recId] = array_values( $recData );
+            } else {
+                $data[$recId] = $recData;
+            }
         } else {
             $data[] = $recData;
         }
@@ -709,7 +713,6 @@ class DataStorage2
         $lastModified = $rawData['lastUpdate'];
         if ($filemtime > $lastModified) {
             $lastModified = $filemtime;
-//            $this->updateDbModifTime($filemtime + 0.00000001);
             $this->importFromFile();
         }
         return $lastModified;
@@ -1608,7 +1611,14 @@ EOT;
         if (!is_array($array)) {
             return false;
         }
+        // prepend header row:
+        $outData[0] = array_values($this->structure['labels']);
+        // remove field labels:
         foreach ($array as $row) {
+            $outData[] = array_values($row);
+        }
+        // transform into CSV format:
+        foreach ($outData as $row) {
             if (!is_array($row)) { continue; }
             foreach ($row as $i => $elem) {
                 if (is_array($elem)) {
@@ -1777,7 +1787,8 @@ EOT;
         } else {    // csv
             $structure['key'] = 'index';
             $rec0 = reset($data);
-            $structure['labels'] = is_array($rec0) ? $rec0: [];
+            // note: this requires that CSV file has been transformed already, ie first row used as labels.
+            $structure['labels'] = is_array($rec0) ? array_keys( $rec0 ): [];
         }
 
         if (!$structure['key']) {
@@ -1793,7 +1804,14 @@ EOT;
         $rec0 = reset($data);
         $l = is_array($rec0) ? sizeof($rec0) : 0;
         if (!$structure['labels']) {
-            $structure['labels'] = is_array($rec0) ? array_keys($rec0) : [];
+            $indexes = array_keys($rec0);
+            $labels = $indexes;
+            // if data has numeric rec-keys, use first row as labels:
+            if (is_int($labels[0])) {
+                $labels = array_values($rec0);
+            }
+            $structure['labels'] = is_array($rec0) ? $labels : [];
+            $structure['indexes'] = $indexes;
         }
         $structure['types'] = array_fill(0, $l, 'string');
         // types only makes sense if supplied in '_structure' record within data.
