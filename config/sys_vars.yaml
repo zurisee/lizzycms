@@ -761,3 +761,7 @@ lzy-invalid-email-address:
     _: 'Invalid e-mail address'
 
 
+#--- Edit Tables --------------------
+lzy-edit-form-rec:
+    de: 'Bearbeiten'
+    _:  'Edit'
