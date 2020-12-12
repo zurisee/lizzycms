@@ -2162,6 +2162,35 @@ function isLocalCall()
 
 
 
+function checkPermission($str, $lzy = false) {
+    $neg = false;
+    $res = false;
+    if (preg_match('/^((non|not|\!)\-?)/i', $str, $m)) {
+        $neg = true;
+        $str = substr($str, strlen($m[1]));
+    }
+
+    if (preg_match('/privileged/i', $str)) {
+        $res = $GLOBALS['globalParams']['isPrivileged'];
+    } elseif (preg_match('/loggedin/i', $str)) {
+        $res = $GLOBALS['globalParams']['isLoggedin'] || $GLOBALS['globalParams']['isAdmin'];
+    } elseif (($str !== 'true') && !is_bool($str)) {
+        if ($lzy) {
+            // if not 'true', it's interpreted as a group
+            $res = $lzy->auth->checkGroupMembership($str);
+        } else {
+            $res = false;
+        }
+    }
+    if ($neg) {
+        $res = !$res;
+    }
+    return $res;
+} // checkPermission
+
+
+
+
 
 function getGitTag($shortForm = true)
 {
@@ -2256,16 +2285,15 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
             $from = $m[2];
             $name = $m[1];
         }
-        //webmaster@xn--feldgetliweg-hlb.ch
         if (preg_match("/[^\w\d'-.@]/", $from)) {
             writeLog("lzy-mail-invalid-from-address: $from");
             return 'lzy-mail-invalid-from-address';
         }
         $from = strtolower($from);
-//        if (!is_legal_email_address($from)) {
-//            writeLog("lzy-mail-invalid-from-address: $from");
-//            return 'lzy-mail-invalid-from-address';
-//        }
+        if (!is_legal_email_address($from)) {
+            writeLog("lzy-mail-invalid-from-address: $from");
+            return 'lzy-mail-invalid-from-address';
+        }
 
         if ($name) {
             if ($base64_encode) {
@@ -2345,12 +2373,9 @@ function handleFatalPhpError() {
 
 function parseDimString($str)
 {
-    // E.g. 200x150, or 200x  or x150 or 200 etc., or 25%
+    // E.g. 200x150, or 200x  or x150 or 200 etc.
     $h = $w = null;
-    if (preg_match('/(\d*)%/', $str, $m)) {
-        $s = intval($m[1]) / 100;
-        return [$s, null];
-    } elseif (preg_match('/(\d*)x(\d*)/', $str, $m)) {
+    if (preg_match('/(\d*)x(\d*)/', $str, $m)) {
         $w = intval($m[1]);
         $h = intval($m[2]);
     } elseif (preg_match('/(\d+)/', $str, $m)) {
