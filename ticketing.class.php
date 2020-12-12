@@ -46,25 +46,31 @@ class Ticketing
 
 
 
-    public function createTicket($rec = [], $maxConsumptionCount = false, $validityPeriod = null, $type = false)
+    public function createTicket($rec = [], $maxConsumptionCount = false, $validityPeriod = null, $type = false, $givenHash = false)
     {
         $type = $type? $type : $this->defaultType;
         $maxConsumptionCount = $maxConsumptionCount ?$maxConsumptionCount : $this->defaultMaxConsumptionCount;
         $pathToPage = @$GLOBALS['globalParams']['pathToPage'];
 
-        // first check whether ticket already exists for this page:
-        $ticketHash = getStaticVariable( "$pathToPage.tickets.$type" );
+        if ($givenHash) {
+            $ticketHash = $givenHash;
+        } else {
+            // first check whether ticket already exists for this page:
+            $ticketHash = getStaticVariable("$pathToPage.tickets.$type");
+        }
         if ($ticketHash !== null) {
             foreach (explodeTrim(',', $ticketHash) as $tHash) {
                 $ticketRec = $this->ds->readRecord($tHash);
-                if ($ticketRec && is_array($ticketRec) && is_array($rec)) {
-                    $rec = array_merge($ticketRec, $rec);
-                    $this->updateTicket($tHash, $rec);
+                if ($ticketRec && is_array($ticketRec)) {
+                    if ($rec && is_array($rec)) {
+                        $rec = array_merge($ticketRec, $rec);
+                        $this->updateTicket($tHash, $rec);
+                    }
                     return $tHash;
                 }
             }
         }
-        $ticketHash = $this->_createTicket($rec, $maxConsumptionCount, $validityPeriod, $type);
+        $ticketHash = $this->_createTicket($rec, $maxConsumptionCount, $validityPeriod, $type, $givenHash);
         setStaticVariable("$pathToPage.tickets.$type", $ticketHash, ',');
         return $ticketHash;
     } // createTicket
@@ -72,7 +78,7 @@ class Ticketing
 
 
 
-    public function _createTicket($rec, $maxConsumptionCount = false, $validityPeriod = null, $type = false)
+    public function _createTicket($rec, $maxConsumptionCount = false, $validityPeriod = null, $type = false, $givenHash = false)
     {
         $ticketRec = $rec;
         $ticketRec['lzy_maxConsumptionCount'] = $maxConsumptionCount ?$maxConsumptionCount : $this->defaultMaxConsumptionCount;
@@ -91,7 +97,12 @@ class Ticketing
         } else {
             $ticketRec['lzy_ticketValidTill'] = time() + $validityPeriod;
         }
-        $ticketHash = $this->createHash();
+
+        if ($givenHash) {
+            $ticketHash = $givenHash;
+        } else {
+            $ticketHash = $this->createHash();
+        }
 
         $this->ds->writeRecord($ticketHash, $ticketRec);
 
@@ -195,8 +206,17 @@ class Ticketing
     }
 
 
-    public function createHash()
+    public function createHash( $checkExisting = false)
     {
+        // supply type in $checkExisting if desired
+        if ($checkExisting) {
+            $type = ($checkExisting !== true)? $checkExisting : $this->defaultType;
+            $pathToPage = @$GLOBALS['globalParams']['pathToPage'];
+            $ticketHash = getStaticVariable( "$pathToPage.tickets.$type" );
+            if ($ticketHash && $this->ticketExists( $ticketHash )) {
+                return $ticketHash;
+            }
+        }
         return createHash( $this->hashSize, $this->unambiguous );
     } // createHash
 
