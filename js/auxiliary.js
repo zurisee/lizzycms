@@ -30,17 +30,20 @@ function isValidEmail(email) {
 
 
 //--------------------------------------------------------------
-function execAjax(data, cmd, doneFun, url) {
+function execAjax(payload, cmd, doneFun, url) {
 
     if (typeof url === 'undefined') {
         url = appRoot + '_lizzy/_ajax_server.php';
     }
     url = appendToUrl(url, cmd);
+    const json = JSON.stringify( payload );
+    mylog('Sending AJAX:' + json);
     ajaxHndl = $.ajax({
+        method: 'POST',
         url: url,
-        type: 'POST',
-        data: data,
-    }).done(function ( json ) {
+        data: { data: json }
+    })
+        .done(function ( json ) {
         if (typeof doneFun === 'function') {
             doneFun( json );
         }
