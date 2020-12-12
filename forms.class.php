@@ -1521,11 +1521,9 @@ EOT;
         foreach ($form->formElements as $element) {
             if ($element->type !== 'button') {
                 $dataSelectors[$element->dataSelector] = $element->labelInOutput;
-//                $dataSelectors[$element->dataSelector] = $element->name;
             }
         }
         $this->tck->updateTicket( $this->formHash, ['form' => $str, 'dataSelectors' => $dataSelectors] );
-//        $this->tck->updateTicket( $this->formHash, ['form' => $str] );
 	} // saveFormDescr
 
 
