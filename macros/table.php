@@ -53,6 +53,9 @@ function renderTableHelp($trans, $macroName)
     $dataTable = new HtmlTable($trans->lzy, 0, 'help');
     $help = $dataTable->render('help');
     array_shift($help);
+    usort( $help, function($a, $b) {
+        return ($a['option'] > $b['option']);
+    });
     foreach ($help as $rec) {
         $trans->getArg($macroName, $rec['option'], $rec['text']);
     }
