@@ -14,15 +14,17 @@ class HtmlTable
         $this->page 		= $lzy->page;
         $this->tableCounter = &$GLOBALS["globalParams"]['tableCounter'][ $GLOBALS["globalParams"]["pagePath"] ];
         $this->tableCounter++;
-        $this->helpText = false;
+        $this->helpText     = false;
+        $this->tickHash     = false;
         if ($options === 'help') {
             $this->helpText = [];
             $options = [];
         }
 
         $this->dataSource	        = $this->getOption('dataSource', '(optional if nCols is set) Name of file containing data. Format may be .cvs or .yaml and is expected be local to page folder.');
+        $this->inMemoryData	        = $this->getOption('data', 'Alternative to "dataSource": provide data directly as array. E.g. data: $array,');
         $this->id 			        = $this->getOption('id', '(optional) Id applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
-        $this->tableClass 	        = $this->getOption('tableClass', '(optional) Class applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
+        $this->tableClass 	        = $this->getOption('tableClass', '(optional) Class applied to the table tag (resp. wrapping div tag if renderAsDiv is set). Use "lzy-table-default" to apply default styling.');
         $this->tableClass 	        = $this->getOption('class', 'Synonyme for tableClass', $this->tableClass);
         $this->cellClass 	        = $this->getOption('cellClass', '(optional) Class applied to each table cell');
         $this->cellWrapper 	        = $this->getOption('cellWrapper', '(optional) If true, each cell is wrapped in a DIV element; if it\'s a string, the cell is wrapped in a tag of given name.');
@@ -33,8 +35,8 @@ class HtmlTable
         $this->includeKeys          = $this->getOption('includeKeys', '[true|false] If true and not a .csv source: key elements will be included in data.');
         $this->interactive          = $this->getOption('interactive', '[true|false] If true, module "Datatables" is activated, providing for interactive features such as sorting, searching etc.');
         $this->liveData             = $this->getOption('liveData', '[true|false] If true, Lizzy\'s "liveData" mechanism is activated. If the dataSource is modified on the server, changes are immediately mirrored in the webpage.');
-        $this->dataSelector         = $this->getOption('dataSelector', '[true|false] If true, Lizzy\'s "liveData" mechanism is activated. If the dataSource is modified on the server, changes are immediately mirrored in the webpage.', '*,*');
-        $this->targetSelector       = $this->getOption('targetSelector', '[true|false] If true, Lizzy\'s "liveData" mechanism is activated. If the dataSource is modified on the server, changes are immediately mirrored in the webpage.', '.lzy-row-* .lzy-col-*');
+        $this->dataSelector         = $this->getOption('dataSelector', '(optional string) If defined and "liveData" is activated, this option defines how to access data elements from the DB. (Default: \'*,*\')', '*,*');
+        $this->targetSelector       = $this->getOption('targetSelector', '(optional string) If defined and "liveData" is activated, this option defines how to assign data elements to DOM-elements. (Default: \'.lzy-row-* .lzy-col-*\')', '.lzy-row-* .lzy-col-*');
         $this->paging               = $this->getOption('paging', '[true|false] When using "Datatables": turns paging on or off (default is on)');
         $this->initialPageLength    = $this->getOption('initialPageLength', '[int] When using "Datatables": defines the initial page length (default is 10)');
         $this->excludeColumns       = $this->getOption('excludeColumns', '(optional) Allows to exclude specific columns, e.g. "excludeColumns:2,4-5"');
@@ -63,6 +65,7 @@ class HtmlTable
         $this->processInstructionsFile	= $this->getOption('processInstructionsFile', 'The same as \'process\' except that instructions are retrieved from a .yaml file');
         $this->suppressError        = $this->getOption('suppressError', '(optional) Suppresses the error message in case dataSource is not available.');
         $this->enableTooltips       = $this->getOption('enableTooltips', '(optional) Enables tooltips, e.g. for cells containing too much text. To use, apply a class-name containing "tooltip" to the targeted cell, e.g. "tooltip1".');
+        $this->editableBy           = $this->getOption('editableBy', '[false,true,loggedin,privileged,admins,editors] Defines who may edit data. Default: false. (only available when using option "dataSource")');
 
         $this->checkArguments($inx);
         
@@ -193,6 +196,14 @@ EOT;
 
     private function renderHtmlTable()
     {
+        $injectEditForm = checkPermission($this->editableBy, $this->lzy);
+//        if ($injectEditForm) {
+//            $this->injectEditButton();
+//            $injectEditForm = true;
+//            $tck = new Ticketing();
+//            $this->tickHash = $tck->createHash( 'lzy-form' );
+//            $this->tableDataAttr .= " data-table-hash='{$this->tickHash}' data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
+//        }
         $data = &$this->data;
         $header = ($this->headers !== false);
         $tableClass = trim("lzy-table lzy-table-{$this->tableCounter} ".$this->tableClass);
@@ -251,6 +262,10 @@ $tbody	</tbody>
 </table>
 
 EOT;
+
+//        if ($injectEditForm) {
+//            $out .= $this->renderEditingForm();
+//        }
         return $out;
     } // renderHtmlTable
 
@@ -780,7 +795,6 @@ EOT;
             }
         }
         return "<$tag$tdId$tdClass$ref$title>$cell</$tag>";
-//        return "<$tag$tdId$tdClass$ref$title><div>$cell</div></$tag>";
     } // getDataElem
 
 
@@ -858,8 +872,12 @@ EOT;
                 if (!file_exists($this->dataSource)) {
                     $this->dataSource = false;
                 }
-            } elseif (is_array($this->dataSource)) {
-                $this->data = $this->dataSource;
+            } else {
+                if ($this->inMemoryData && is_array($this->inMemoryData)) {
+                    $this->data = $this->inMemoryData;
+                } elseif (is_array($this->dataSource)) {    // for backward compatibility
+                    $this->data = $this->dataSource;
+                }
                 if ($this->headers === true) {
                     $this->headerElems = array_shift($this->data);
                 } else {
@@ -879,15 +897,11 @@ EOT;
             $this->ds = $ds;
             $this->data = $ds->read();
             if ($this->headers === true) {
-                if ($ds->getSourceFormat() === 'csv') {
+                $structure = $this->ds->getDbRecStructure();
+                if (isset($structure['labels'][0]) && is_int($structure['labels'][0])) {
                     $this->headerElems = array_shift($this->data);
                 } else {
-                    $structure = $this->ds->getDbRecStructure();
-                    if (isset($structure['labels'][0]) && is_int($structure['labels'][0])) {
-                        $this->headerElems = array_shift($this->data);
-                    } else {
-                        $this->headerElems = $structure['labels'];
-                    }
+                    $this->headerElems = $structure['labels'];
                 }
             }
 
@@ -921,6 +935,224 @@ EOT;
 
 
 
+//    private function renderEditingForm()
+//    {
+//        if ($this->inMemoryData) {
+//            die("Error: table->editableBy not possible when data supplied in-memory. Please use argument 'dataSource'.");
+//        }
+//        $out = $this->renderForm();
+//        $this->page->addModules('JS_POPUPS');
+//
+//        $jq = <<<EOT
+//$('.lzy-edit-rec-btn').click(function(e) {
+//    e.preventDefault();
+//    e.stopPropagation();
+//
+//    const \$this = $( this );
+//    const \$table = \$this.closest('[data-form-id]');
+//    const formId = \$table.attr('data-form-id');
+//    const \$form = $( formId );
+//    const \$popup = $( formId ).closest('.lzy-edit-rec-form');
+//    const recKey = parseInt( $( this ).attr('href').substr(1) ) - 1;
+//    const formHash = $(this).closest('[data-table-hash]').data('tableHash');
+//    \$form.data('recKey', recKey);
+//    $('.lzy-form-field-wrapper input', \$form).val('⌛');
+//    $('textarea', \$form).val('⌛');
+//
+//    // get data by ajax
+//    const req = '?get-rec&ds=' + formHash + '&recKey=' + recKey;
+//    execAjax(false, req, function(json){
+//        handleResponse(recKey, formId, json);
+//    });
+//
+//    lzyPopup({
+//        contentRef: \$popup,
+//        closeButton: true,
+//    });
+//});
+//
+//$('.lzy-edit-data-form input[type=reset]').click(function(e) {
+//    e.preventDefault();
+//    e.stopPropagation();
+//    mylog('cancelCallback');
+//    lzyPopupClose();
+//});
+//$('.lzy-edit-data-form input[type=submit]').click(function(e) {
+//    e.preventDefault();
+//    e.stopPropagation();
+//    mylog('okCallback');
+//    sendToHost( this );
+//    lzyPopupClose();
+//});
+//$('#lzy-edit-rec-delete-checkbox input[type=checkbox]').click(function(e) {
+//    e.preventDefault();
+//    e.stopPropagation();
+//    $('#btn_lzy-edit-data-form-1_submit').val('{{ lzy-edit-rec-delete-btn }}');
+//    $('.lzy-edit-data-form').data('delete', true);
+//    mylog('delete');
+//});
+//EOT;
+//
+//        $js = <<<EOT
+//function handleResponse( recKey, formId, json )
+//{
+//    mylog( recKey );
+//    mylog( json );
+//    try {
+//        var data = JSON.parse(json);
+//    } catch (e) {
+//        console.log('Error condition detected');
+//        console.log(json);
+//        return false;
+//    }
+//    var i, val;
+//    var sel;
+//    for (i in data.data) {
+//        val = data.data[ i ];
+//        sel ='[name=' + i + ']';
+//        $( sel, formId ).val( val );
+//    }
+//}
+//
+//function sendToHost( that )
+//{
+//    var \$form = $( that ).closest('form');
+//    const recKey = \$form.data('recKey');
+//    const formHash = $( '.lzy-form-hash', \$form ).val();
+//    const doDelete = $('.lzy-edit-data-form').data('delete');
+//    var data = {};
+//
+//    \$('input', \$form).each(function() {
+//        const \$inp = $( this );
+//        const name = \$inp.attr('name');
+//        const type = \$inp.attr('type');
+//        if ((type !== 'submit') && (type !== 'reset') && (name.charAt(0) !== '_')) {
+//            const val = \$inp.val();
+//            data[name] = val;
+//        }
+//    });
+//    mylog('sending to host: ');
+//    mylog(data);
+//    var req = '';
+//    if (doDelete) {
+//        req = '?del-rec&ds=' + formHash + '&recKey=' + recKey;
+//    } else {
+//        req = '?save-rec&ds=' + formHash + '&recKey=' + recKey;
+//    }
+////    const req = '?save-rec&ds=' + formHash + '&recKey=' + recKey;
+//    execAjax(data, req, function(json){
+//        mylog( json );
+//        updateUI( json );
+//    });
+//} // sendToHost
+//
+//function updateUI( json )
+//{
+//    try {
+//        var data = JSON.parse(json);
+//    } catch (e) {
+//        console.log('Error condition detected');
+//        console.log(json);
+//        return false;
+//    }
+//    data1 = data.data;
+//    var targ = '';
+//    var val = '';
+//    var i = 1;
+//    const recKey = parseInt(data1.recKey) + 1;
+//    for (var k in data1.rec) {
+//        val = data1.rec[ k ];
+//        targ = '.lzy-row-' + recKey + ' .lzy-col-' + (i + 1);
+//        $( targ ).text( val );
+//        i++;
+//    }
+//} // updateUI
+//
+//EOT;
+//        $this->page->addJs($js);
+//        $this->page->addJq($jq);
+//
+//        return $out;
+//    } // renderEditingForm
+//
+//
+//
+//    public function renderForm()
+//    {
+//        if (@!$this->recStructure) {
+//            $recStructure = $this->ds->getDbRecStructure();
+//        }
+//        require_once SYSTEM_PATH.'forms.class.php';
+//        $form = new Forms( $this->lzy );
+//
+//        // Form Head:
+//        $args = [
+//            'type' => 'form-head',
+//            'id' => 'lzy-edit-data-form-' . $this->tableCounter,
+//            'class' => 'lzy-form lzy-edit-data-form',
+//            'file' => '~/'.$this->dataSource,
+//            'ticketPayload' => [ 'file' => '~/'.$this->dataSource ],
+//            'warnLeavingPage' => false, //???
+//            'ticketHash' => $this->tickHash,
+//            'formHeader' => '<h3>{{ lzy-edit-form-rec }}</h3>',
+//        ];
+//        if (isset( $this->exportFile )) {
+//            $args[ 'export' ] = $this->exportFile;
+//        }
+//        $out = $form->render( $args );
+//
+//        // Form Fields:
+//        foreach ($recStructure['labels'] as $i => $label) {
+//            $args = [
+//                'type' => 'text',
+//                'label' => $label,
+//                'value' => '',
+//            ];
+//            $out .= $form->render($args);
+//        }
+//
+//        // Form Delete:
+//        $out .= $form->render( [
+//            'type' => 'checkbox',
+//            'wrapperId' => 'lzy-edit-rec-delete-checkbox',
+//            'label' => 'Delete',
+//            'value' => 'delete',
+//            'options' => 'lzy-edit-rec-delete-option',
+//        ] );
+//
+//        // Form Buttons:
+//        $out .= $form->render( [
+//            'type' => 'button',
+//            'label' => 'Cancel | Submit',
+//            'value' => 'cancel|submit',
+//        ] );
+//
+//        // Form Tail:
+//        $out .= $form->render( ['type' => 'form-tail'] );
+//        $out = rtrim($out);
+//
+//        $out = <<<EOT
+//  <div class='lzy-edit-rec-form lzy-edit-rec-form-{$this->tableCounter}' style='display:none'>
+//$out
+//  </div><!-- /lzy-edit-rec-form -->
+//EOT;
+//
+//        return $out;
+//    } // renderRecForm
+//
+//
+//
+//    private function injectEditButton()
+//    {
+//        $cellInstructions = [
+//            'column' => 1,
+//            'header' => 'Edit',
+//            'phpExpr' => 'return "<a class=\'lzy-edit-rec-btn\' href=\'#$r\'><span class=\'lzy-icon lzy-icon-edit\'></span></a>";',
+//        ];
+//        $this->addCol($cellInstructions);
+//    } // injectEditButton
+//
+//
 
     private function loadProcessingInstructions()
     {
