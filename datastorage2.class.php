@@ -112,16 +112,19 @@ class DataStorage2
         }
 
         $rawLastRecModif = $this->lowlevelReadRawData('recLastUpdates');
-        $lastRecModifs = $this->jsonDecode($rawLastRecModif);
-        $outData = [];
-        foreach ($data as $key => $rec) {
-            if (isset($lastRecModifs[ $key ])) {
-                if ($lastRecModifs[ $key ] > $since) {
-                    $outData[$key] = $rec;
+        if ($rawLastRecModif && ($rawLastRecModif !== '[]')) {
+            $lastRecModifs = $this->jsonDecode($rawLastRecModif);
+            $outData = [];
+            foreach ($data as $key => $rec) {
+                if (isset($lastRecModifs[$key])) {
+                    if ($lastRecModifs[$key] > $since) {
+                        $outData[$key] = $rec;
+                    }
                 }
             }
+        } else {
+            $outData = $data;
         }
-
         return $outData;
     } // readModified
 
