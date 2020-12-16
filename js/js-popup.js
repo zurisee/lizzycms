@@ -95,7 +95,7 @@ function lzyPopup( options ) {
         if (contentRef) {       // content as reference to DOM element:
             transient = false;
             var $popupElem = null;
-            if (typeof contentRef[0] !== 'undefined') {
+            if (typeof contentRef === 'object') {
                 $popupElem = contentRef;
             } else {
                 if ((contentRef.charAt(0) !== '#') && (contentRef.charAt(0) !== '.')) {
