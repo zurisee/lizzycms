@@ -37,6 +37,7 @@ class HtmlTable
         $this->liveData             = $this->getOption('liveData', '[true|false] If true, Lizzy\'s "liveData" mechanism is activated. If the dataSource is modified on the server, changes are immediately mirrored in the webpage.');
         $this->dataSelector         = $this->getOption('dataSelector', '(optional string) If defined and "liveData" is activated, this option defines how to access data elements from the DB. (Default: \'*,*\')', '*,*');
         $this->targetSelector       = $this->getOption('targetSelector', '(optional string) If defined and "liveData" is activated, this option defines how to assign data elements to DOM-elements. (Default: \'.lzy-row-* .lzy-col-*\')', '.lzy-row-* .lzy-col-*');
+        $this->editableBy           = $this->getOption('editableBy', '[false,true,loggedin,privileged,admins,editors] Defines who may edit data. Default: false. (only available when using option "dataSource")');
         $this->paging               = $this->getOption('paging', '[true|false] When using "Datatables": turns paging on or off (default is on)');
         $this->initialPageLength    = $this->getOption('initialPageLength', '[int] When using "Datatables": defines the initial page length (default is 10)');
         $this->excludeColumns       = $this->getOption('excludeColumns', '(optional) Allows to exclude specific columns, e.g. "excludeColumns:2,4-5"');
@@ -65,7 +66,6 @@ class HtmlTable
         $this->processInstructionsFile	= $this->getOption('processInstructionsFile', 'The same as \'process\' except that instructions are retrieved from a .yaml file');
         $this->suppressError        = $this->getOption('suppressError', '(optional) Suppresses the error message in case dataSource is not available.');
         $this->enableTooltips       = $this->getOption('enableTooltips', '(optional) Enables tooltips, e.g. for cells containing too much text. To use, apply a class-name containing "tooltip" to the targeted cell, e.g. "tooltip1".');
-        $this->editableBy           = $this->getOption('editableBy', '[false,true,loggedin,privileged,admins,editors] Defines who may edit data. Default: false. (only available when using option "dataSource")');
 
         $this->checkArguments($inx);
         
@@ -91,6 +91,9 @@ class HtmlTable
         if ($this->liveData) {
             $out = $this->activateLiveData();
         }
+        if ($this->editableBy) {
+            $out .= $this->activateEditable();
+        }
 
         $this->convertLinks();
         $this->convertTimestamps();
@@ -103,6 +106,49 @@ class HtmlTable
     } // render
 
 
+
+
+    private function activateEditable()
+    {
+        $file = SYSTEM_PATH.'extensions/livedata/code/live-data.class.php';
+        if (!file_exists($file)) {
+            die("Error: HTMLtables with activated EditableBy option requires Lizzy Extensions to be installed.");
+        }
+        require_once $file;
+
+        $page = $this->page;
+        require_once SYSTEM_PATH.'extensions/editable/code/editable.class.php';
+
+        $this->lzy->trans->readTransvarsFromFile( SYSTEM_PATH.'extensions/editable/config/vars.yaml', false, true);
+
+        $GLOBALS['lizzy']['editableLiveDataInitialized'] = false;
+        $page->addModules('EDITABLE');
+
+        $this->cellClass .= " lzy-editable";
+        $edbl = new Editable( $this->lzy, [
+            'dataSource' => '~/'. $this->dataSource,
+            'dataSelector' => '*,*',
+            'targetSelector' => '#lzy-table1 .lzy-row-* .lzy-col-*',
+            'output' => false,
+//            'showButton' => @$this->options['showButton'],
+        ] );
+        $out = $edbl->render();
+        if (@$this->options['showButton']) {
+            $this->cellClass .= " lzy-editable-show-buttons";
+        }
+        return $out;
+
+//        // skipInitialUpdate: initLiveData( false );
+//        $jq = <<<EOT
+//
+//if ($('[data-lzy-data-ref]').length) {
+//    initLiveData( false );
+//}
+//
+//EOT;
+//        $this->page->addJq($jq);
+
+    } // activateEditable
 
 
     private function activateLiveData()
