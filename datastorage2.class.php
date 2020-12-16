@@ -596,10 +596,6 @@ class DataStorage2
         // syntax variant 'd3,d31,d312'
         if (strpos($key, ',') !== false) {
             $keys = explode(',', $key);
-            $key0 = $keys[0];
-            if ($this->format === 'csv') {
-                $keys = array_reverse($keys);
-            }
             $rec = &$data;
             foreach ($keys as $k) {
                 $k = trim($k, '\'"');
@@ -608,7 +604,13 @@ class DataStorage2
                     $k = $n;
                 }
                 if (!isset($rec[$k])) {
-                    $rec[$k] = null;    // instantiate element if not existing
+                    // if not as is, try to get element label:
+                    $k1 = $this->resolveElementKey( $k );
+                    if (!isset($rec[$k1])) {
+                        $rec[$k] = null;    // instantiate element if not existing
+                    } else {
+                        $k = $k1;
+                    }
                 }
                 $rec = &$rec[$k];
             }
@@ -807,6 +809,19 @@ class DataStorage2
         $this->data = $data;
         return $data;
     } // getData
+
+
+
+
+    private function resolveElementKey( $id )
+    {
+        $rec0 = reset( $this->data );
+        if (isset($rec0[ $id ])) {
+            return $id;
+        }
+        return @array_keys($rec0)[ $id ];
+    } // resolveElementKey
+
 
 
 
