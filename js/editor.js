@@ -77,34 +77,34 @@ function setupKeyHandlers()
     document.onkeydown = function (e) {     // intercept cmd-s and ctrl-s to save
         var keyCode = (window.event) ? event.keyCode : e.keyCode;
         if ( simplemde !== null) {  // only when editor is active:
-            if ((keyCode == 13) && (event.ctrlKey || macKeys.cmdKey)) {
+            if ((keyCode === 13) && (event.ctrlKey || macKeys.cmdKey)) {
                 event.preventDefault();
                 console.log('meta-s intercepted');
                 saveData( true );
                 return false;
             }
 
-            if ((keyCode == 83) && (event.ctrlKey || macKeys.cmdKey)) {
+            if ((keyCode === 83) && (event.ctrlKey || macKeys.cmdKey)) {
                 event.preventDefault();
                 console.log('meta-s intercepted');
                 saveData( false );
                 return false;
             }
 
-            if (keyCode == 27) {	// ESC -> end editing mode
+            if (keyCode === 27) {	// ESC -> end editing mode
                 abortEditor();
                 lzyReload();
                 return false;
             }
         }
 
-        if (keyCode == 27) {	// ESC -> end editing mode
+        if (keyCode === 27) {	// ESC -> end editing mode
             console.log('ESC intercepted');
             var call = window.location.pathname.replace(/\?.*/, '') + '?edit=false';
             window.location.assign(call);
         }
 
-        if (keyCode == 115) {   // F4
+        if (keyCode === 115) {   // F4
             var $editBtns = $('main .lzy-editor-btn');
             $editBtn = $editBtns.first();
             if (simplemde === null) {
