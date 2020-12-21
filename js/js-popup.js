@@ -67,13 +67,14 @@ function lzyPopup( options ) {
     }
 
     if (contentFrom) {
-        if (typeof contentFrom[0] !== 'undefined') {
-            content = content + contentFrom.html();
-        } else {
-            if ((contentFrom.charAt(0) !== '#') && (contentFrom.charAt(0) !== '.')) {
+        if (typeof contentFrom === 'string') {
+                if ((contentFrom.charAt(0) !== '#') && (contentFrom.charAt(0) !== '.')) {
                 contentFrom = '#' + contentFrom;
             }
             content = content + $( contentFrom ).html();
+
+        } else if (typeof contentFrom === 'object') { // case JQ-object
+            content = content + contentFrom.html();
         }
     }
 
