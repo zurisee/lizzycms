@@ -252,7 +252,9 @@ EOT;
 //        }
         $data = &$this->data;
         $header = ($this->headers !== false);
-        $tableClass = trim("lzy-table lzy-table-{$this->tableCounter} ".$this->tableClass);
+
+        $tableClass = $this->options['tableClass'] ? $this->options['tableClass']. ' ' : "lzy-table lzy-table-{$this->tableCounter} ";
+        $tableClass .= $this->tableClass;
         $thead = '';
         $tbody = '';
         $nRows = sizeof($data);
@@ -955,6 +957,9 @@ EOT;
             $ir = 0;
             foreach ($this->data as $r => $rec) {
                 $ic = 0;
+                if (!is_array($rec)) {
+                    continue;
+                }
                 foreach ($rec as $c => $item) {
                     if (is_array($item)) {
                         $item = '<span class="lzy-array-elem">' . implode('</span><span class="lzy-array-elem">', $item) . '</span>';
