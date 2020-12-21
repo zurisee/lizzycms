@@ -732,6 +732,14 @@ lzy-config-button:
         This field is currently locked because somebody else is editing it.\n\n
         Please try again in a few minutes. (Remember to reload the page when trying again.)
 
+lzy-editable-ok-text:
+    de: 'Ok, Eingaben speichern'
+    _:  'Ok, save modifications'
+
+lzy-editable-cancel-text:
+    de: 'Eingaben abbrechen'
+    _:  'Cancel input'
+
 
 #--- magic links ---------------------
 lzy-link-expired:
