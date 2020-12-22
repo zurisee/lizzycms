@@ -555,6 +555,10 @@ a.lzy-button {
 
 /* === Tables =================================== */
 .lzy-table-default {
+	border-collapse:collapse;
+	tr {
+		vertical-align: top;
+	}
 	td, th {
 		padding: 0.3em 0.6em;
 		border: 1px solid #ddd;
