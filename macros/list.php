@@ -10,7 +10,8 @@ $this->addMacro($macroName, function () {
 	$this->invocationCounter[$macroName] = (!isset($this->invocationCounter[$macroName])) ? 0 : ($this->invocationCounter[$macroName]+1);
 	$inx = $this->invocationCounter[$macroName] + 1;
 
-	$source = $this->getArg($macroName, 'source', '', '');
+	$source = $this->getArg($macroName, 'source', '[registeredUsers] Specifies what elements shall be listed.', '');
+    // $source = $this->getArg($macroName, 'source', '[registeredUsers,loggedInUsers] Specifies what elements shall be listed.', '');
 
     if ($source === 'help') {
         $this->getArg($macroName, 'prefix', '(optional) String added in front of every element.', '');
@@ -23,6 +24,7 @@ $this->addMacro($macroName, function () {
         $this->getArg($macroName, 'options', '[capitalize] Modification to apply to every element.', '');
         $this->getArg($macroName, 'exclude', '(optional) Regex expression used to exclude specific elements from the list. E.g. "\\banon\\b"', '');
         $this->getArg($macroName, 'sort', '[ascending,descending] If defined, sorting is applied to the list of elements.', '');
+        $this->getArg($macroName, 'mode', '[ul,ol] Short-hand.', '');
         $this->getArg($macroName, 'disableCaching', 'If true, page caching will be disabled (this may be useful in case of elements that may change over time, e.g. loggedInUsers).', false);
         return '';
     }
@@ -34,7 +36,7 @@ $this->addMacro($macroName, function () {
     $str = $lst->render( $args );
 
     $this->optionAddNoComment = true;
-	// $this->compileMd = true;
+
 	return $str;
 });
 
@@ -68,7 +70,7 @@ class OutputList
         }
 
         if ($this->sort) {
-            if (strpos($this->sort, 'de') === false) {
+            if ($this->sort && ($this->sort[0] === 'd')) {
                 sort($elements, SORT_NATURAL | SORT_FLAG_CASE);
             } else {
                 rsort($elements, SORT_NATURAL | SORT_FLAG_CASE);
@@ -138,8 +140,18 @@ EOT;
 
         $this->exclude = @$this->args['exclude']? $this->args['exclude']: '';
         $this->sort = @$this->args['sort']? $this->args['sort']: '';
+        $this->mode = @$this->args['mode']? $this->args['mode']: '';
+        $this->capitalize = @$this->args['capitalize']? $this->args['capitalize']: false;
         $this->options = @$this->args['options']? $this->args['options']: '';
-        $this->capitalize = (strpos($this->options, 'capitalize') !== false);
+        if (strpos($this->options, 'capitalize') !== false) {
+            $this->capitalize = true;
+        }
+
+        // short-hands:
+        if (($this->mode === 'ul') || ($this->mode === 'ol')) {
+            $this->wrapperTag = 'li';
+            $this->outerWrapperTag = $this->mode;
+        }
     }
 
 } // class OutputList
