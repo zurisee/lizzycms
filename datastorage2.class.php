@@ -130,8 +130,8 @@ class DataStorage2
 
 
 
-    // anybody usint write() should do DB-locking explizitly:
-    public function write($data, $replace = true, $locking = false, $blocking = true)
+    // Remember: anybody using write() should do DB-locking explizitly
+    public function write($data, $replace = true, $locking = false, $blocking = true, $logModifTimes = false)
     {
         if ($locking && !$this->lockDB( $blocking )) {
             return false;
@@ -147,6 +147,11 @@ class DataStorage2
 
         if ($locking) {
             $this->unlockDB();
+        }
+        if ($this->logModifTimes || $logModifTimes) {
+            foreach ($data as $recId => $rec) {
+                $this->updateRecLastUpdate($recId);
+            }
         }
 
         $this->getData(true);
@@ -252,7 +257,7 @@ class DataStorage2
     } // readRecord
 
 
-    public function writeRecord($recId, $recData = null, $locking = true, $blocking = true)
+    public function writeRecord($recId, $recData = null, $locking = true, $blocking = true, $logModifTimes = false)
     {
         // $supportedArgs defines the expected args, their default values, where null means required arg.
         $supportedArgs = ['recId' => null, 'recData' => null, 'locking' => false, 'blocking' => false];
@@ -263,7 +268,6 @@ class DataStorage2
             list($recId, $recData, $locking, $blocking) = $recId;
         }
 
-//??? what was this for?
         if (($recId === false) || !$recData) {
             return false;
         } elseif (is_array($recId)) {
@@ -291,11 +295,13 @@ class DataStorage2
         }
 
         $this->lowLevelWrite($data);
+
+        if ($this->logModifTimes || $logModifTimes) {
+            $this->updateRecLastUpdate( $recId );
+        }
+
         if ($locking) {
             $this->unlockRec($recId);
-        }
-        if ($this->logModifTimes || $locking) {
-            $this->updateRecLastUpdate( $recId );
         }
         $this->getData(true);
         return true;
@@ -303,7 +309,7 @@ class DataStorage2
 
 
 
-    public function appendRecord($recId, $recData, $locking = true, $blocking = true)
+    public function appendRecord($recId, $recData, $locking = true, $blocking = true, $logModifTimes = false)
     {
         if (!$this->_awaitRecLockEnd($recId, $blocking, false)) {
             return false;
@@ -329,7 +335,13 @@ class DataStorage2
                 }
             }
         }
+
         $res = $this->writeRecord($inx, $recData, false, false);
+
+        if ($this->logModifTimes || $logModifTimes) {
+            $this->updateRecLastUpdate( $recId );
+        }
+
         if ($locking) {
             $this->unlockRec($recId);
         }
@@ -339,9 +351,9 @@ class DataStorage2
 
 
 
-    public function writeRecordElement($recId, $elemName = null, $value = null, $locking = true, $blocking = true, $append = false)
+    // like writeRecord but with separate args recId, elemName and value:
+    public function writeRecordElement($recId, $elemName = null, $value = null, $locking = true, $blocking = true, $append = false, $logModifTimes = false)
     {
-        // like writeRecord but with separate args recId, elemName and value
         $supportedArgs = ['recId' => null, 'elemName' => null, 'value' => null, 'locking' => false, 'blocking' => true, 'append' => false];
         if (($recId = $this->fixRecId($recId, false, $supportedArgs)) === false) {
             return false;
@@ -374,6 +386,10 @@ class DataStorage2
         $this->lowLevelWrite($data);
 
         if ($this->logModifTimes || $locking) {
+            $this->updateRecLastUpdate( $recId );
+        }
+
+        if ($this->logModifTimes || $logModifTimes) {
             $this->updateRecLastUpdate( $recId );
         }
 
@@ -581,7 +597,7 @@ class DataStorage2
 
 
 
-    public function writeElement($key, $value, $locking = true, $blocking = true)
+    public function writeElement($key, $value, $locking = true, $blocking = true, $logModifTimes = false)
     {
         if ($locking && !$this->lockDB( false, $blocking )) {
             return false;
@@ -619,12 +635,12 @@ class DataStorage2
         } else {
             $data[$key] = $value;
         }
+        $res = $this->lowLevelWrite($data);
 
-        if ($this->logModifTimes) {
+        if ($this->logModifTimes || $logModifTimes) {
             $this->updateRecLastUpdate( $key );
         }
 
-        $res = $this->lowLevelWrite($data);
         if ($locking) {
             $this->unlockDB();
         }
@@ -766,10 +782,6 @@ class DataStorage2
     public function getDbRef()
     {
         die("Method getDbRef() has been depricated");
-    //        if (!$this->lzyDb) {
-    //            $this->openDbReadWrite();
-    //        }
-    //        return $this->lzyDb;
     } // getDbRef
 
     
@@ -1044,6 +1056,7 @@ class DataStorage2
 
 
 
+
     private function _lockRec( $recId, $lockForAll = false )
     {
 
@@ -1093,7 +1106,6 @@ class DataStorage2
         }
         return true;
     } // _unlockAllRecs
-
 
 
 
@@ -1317,6 +1329,7 @@ EOT;
 
 
 
+
     private function updateRawDbMetaData($rawData)
     {
         $this->openDbReadWrite();
@@ -1368,6 +1381,9 @@ EOT;
 
     private function updateRecLastUpdate( $recId )
     {
+        // $recId can be of form 'r,c', if so, we need to drop the part ',c' in order to refer to the record:
+        $recId = preg_replace('/(,.*)/', '', $recId);
+
         $query = "SELECT \"recLastUpdates\" FROM \"{$this->tableName}\"";
         $rawData = $this->lzyDb->querySingle($query, true);
         $recLastUpdates = $this->jsonDecode($rawData['recLastUpdates']);
@@ -1559,7 +1575,6 @@ EOT;
 
 
 
-    //--------------------------------------------------------------
     private function exportToFile()
     {
         $rawData = $this->lowlevelReadRawData();
@@ -1602,7 +1617,6 @@ EOT;
 
 
 
-    //--------------------------------------------------------------
     private function writeToYamlFile($filename, $data)
     {
         $yaml = Yaml::dump($data, 3);
@@ -1622,7 +1636,6 @@ EOT;
 
 
 
-    //--------------------------------------------------------------
     private function writeToCsvFile($filename, $array, $quote = '"', $delim = ';', $forceQuotes = true)
     {
         $out = '';
@@ -1766,6 +1779,7 @@ EOT;
 
 
 
+
     private function analyseStructure($data, &$rawData, $fileFormat = false)
     {
         $structure = [
@@ -1832,10 +1846,11 @@ EOT;
             $structure['indexes'] = $indexes;
         }
         $structure['types'] = array_fill(0, $l, 'string');
-        // types only makes sense if supplied in '_structure' record within data.
+        // note: types only makes sense if supplied in '_structure' record within data.
         $this->structure = $structure;
         return $structure;
     } // analyseStructure
+
 
 
 
