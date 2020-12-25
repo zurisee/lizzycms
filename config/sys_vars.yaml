@@ -773,3 +773,14 @@ lzy-invalid-email-address:
 lzy-edit-form-rec:
     de: 'Bearbeiten'
     _:  'Edit'
+
+
+#--- DataTables ----------------------
+lzy-datatables-search-button:
+    de: Suchen
+    _:  Find
+
+lzy-datatables-records:
+    de: Datensätze
+    _:  Records
+

@@ -6,6 +6,7 @@ $GLOBALS["globalParams"]['tableCounter'][ $GLOBALS["globalParams"]["pagePath"] ]
 class HtmlTable
 {
     private $errMsg = '';
+    private $dataTableObj = null;
 
     public function __construct($lzy, $inx, $options)
     {
@@ -88,10 +89,14 @@ class HtmlTable
         $out = '';
         $this->loadProcessingInstructions();
         $this->applyProcessingToData();
+
+        // option liveData:
         if ($this->liveData) {
             $out = $this->activateLiveData();
         }
-        if ($this->editableBy) {
+
+        // option editable:
+        if ($this->editableBy && checkPermission($this->editableBy, $this->lzy)) {
             $out .= $this->activateEditable();
         }
 
@@ -124,31 +129,41 @@ class HtmlTable
         $GLOBALS['lizzy']['editableLiveDataInitialized'] = false;
         $page->addModules('EDITABLE');
 
-        $this->cellClass .= " lzy-editable";
+        // show buttons:
+        if (isset( $this->options['showButton'] )) {
+            if (($this->options['showButton'] === 'auto')) {
+                $this->tableClass .= " lzy-editable-show-buttons";
+
+            } elseif ($this->options['showButton'] !== false) {
+                $this->tableClass .= " lzy-editable-show-buttons";
+            }
+        } else {
+            $this->tableClass .= " lzy-editable-auto-show-button";
+        }
+
+        $initEditable = true;
+        if (isset( $this->options['init'] )) {
+            $initEditable = $this->options['init'];
+            $this->cellClass .= " lzy-editable-inactive";
+        } else {
+            $this->cellClass .= " lzy-editable";
+        }
         $edbl = new Editable( $this->lzy, [
             'dataSource' => '~/'. $this->dataSource,
             'dataSelector' => '*,*',
-            'targetSelector' => '#lzy-table1 .lzy-row-* .lzy-col-*',
+            'targetSelector' => "#{$this->id} .lzy-row-* .lzy-col-*",
             'output' => false,
-//            'showButton' => @$this->options['showButton'],
+            'init' => $initEditable,
         ] );
+
+        $this->tableClass .= ' lzy-table-editable';
+        $this->page->addJq("$('.lzy-table-editable').closest('.dataTables_wrapper').addClass('lzy-datatable-editable')\n");
+
         $out = $edbl->render();
-        if (@$this->options['showButton']) {
-            $this->cellClass .= " lzy-editable-show-buttons";
-        }
         return $out;
-
-//        // skipInitialUpdate: initLiveData( false );
-//        $jq = <<<EOT
-//
-//if ($('[data-lzy-data-ref]').length) {
-//    initLiveData( false );
-//}
-//
-//EOT;
-//        $this->page->addJq($jq);
-
     } // activateEditable
+
+
 
 
     private function activateLiveData()
@@ -169,11 +184,25 @@ if ($('[data-lzy-data-ref]').length) {
 
 EOT;
         $this->page->addJq($jq);
+
+        $js = '';
+        foreach ($this->dataTableObj as $dataTableObj) {
+            $js .= "\t$dataTableObj.draw();\n";
+        }
+        $js = <<<EOT
+
+function redrawTables() {
+$js}
+
+EOT;
+        $this->page->addJs($js);
+
         if ($this->id) {
             $targetSelector = "#$this->id $this->targetSelector";
         } else {
             $targetSelector = ".lzy-table-{$this->tableCounter} $this->targetSelector";
         }
+
         $args = [
             'dataSource' => '~/'.$this->dataSource,
             'dataSelector' => $this->dataSelector,
@@ -181,6 +210,12 @@ EOT;
             'manual' => 'silent',
             //'pollingTime' => 10, // for testing
         ];
+
+        // if dataTables are active, make sure they are redrawn when new data arrives:
+        if ($this->interactive) {
+            $args['postUpdateCallback'] = 'redrawTables';
+        }
+
         $ld = new LiveData($this->lzy, $args);
         return $ld->render() . "\n";
     } // activateLiveData
@@ -873,41 +908,50 @@ EOT;
 
     private function handleDatatableOption($page)
     {
-        if ($this->interactive) {
-            $page->addModules('DATATABLES');
-            $this->tableClass = trim($this->tableClass.' lzy-datatable');
-            $order = '';
-            if ($this->sort) {
-                $sortCols = csv_to_array($this->sort);
-                $headers = $this->data[0];
-                foreach ($sortCols as $sortCol) {
-                    $sortCol = alphaIndexToInt($sortCol, $headers) - 1;
-                    $order .= "[ $sortCol, 'asc' ],";
-                }
-                $order = rtrim($order, ',');
-                $order = " 'order': [$order],";
+        if (!$this->interactive) {
+            return;
+        }
+        $page->addModules('DATATABLES');
+        $this->tableClass = trim($this->tableClass.' lzy-datatable');
+        $order = '';
+        if ($this->sort) {
+            $sortCols = csv_to_array($this->sort);
+            $headers = $this->data[0];
+            foreach ($sortCols as $sortCol) {
+                $sortCol = alphaIndexToInt($sortCol, $headers) - 1;
+                $order .= "[ $sortCol, 'asc' ],";
             }
-            $paging = '';
-            if (!$this->paging) {
-                $paging = ' paging: false,';
-            }
-            $pageLength = '';
-            if ($this->initialPageLength) {
-                $pageLength = " pageLength: {$this->initialPageLength},";
-            }
-            $jq = <<<EOT
+            $order = rtrim($order, ',');
+            $order = " 'order': [$order],";
+        }
+        $paging = '';
+        if (!$this->paging) {
+            $paging = ' paging: false,';
+        }
+        $pageLength = '';
+        if ($this->initialPageLength) {
+            $pageLength = " pageLength: {$this->initialPageLength},";
+        }
 
-lzyTable{$this->tableCounter} = $('#lzy-table{$this->tableCounter}').DataTable({
-    'language':{'search':'{{QuickSearch}}:', 'info': '_TOTAL_ {{Records}}'},
-    $order$paging$pageLength
+//        $dataTableObj = $this->dataTableObj[$this->tableCounter] = "lzyTable{$this->tableCounter}";
+        $dataTableObj = $this->dataTableObj[$this->tableCounter] = "lzyTable[{$this->tableCounter}]";
+
+        // launch init code:
+        $jq = <<<EOT
+
+$dataTableObj = $('#{$this->id}').DataTable({
+'language':{'search':'{{ lzy-datatables-search-button }}:', 'info': '_TOTAL_ {{ lzy-datatables-records }}'},
+$order$paging$pageLength
 });
 
 EOT;
-            $page->addJq($jq);
-            if (!$this->headers) {
-                $this->headers = true;
-            }
+        $page->addJq($jq);
+        $page->addJs("\nvar lzyTable = [];");
+
+        if (!$this->headers) {
+            $this->headers = true;
         }
+        $this->tableClass .= ' display';
     } // handleDatatableOption
 
 
