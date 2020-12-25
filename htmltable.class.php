@@ -179,7 +179,7 @@ class HtmlTable
         $jq = <<<EOT
 
 if ($('[data-lzy-data-ref]').length) {
-    initLiveData( false );
+    LiveData.init( false );
 }
 
 EOT;
