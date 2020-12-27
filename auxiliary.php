@@ -1519,18 +1519,18 @@ function preparePath($path)
 
 
 
-function is_legal_email_address($str)
+function is_legal_email_address($email)
  // multiple address allowed, if separated by comma.
 {
-    if (!is_safe($str)) {
+    if (!is_safe($email)) {
         return false;
     }
-    foreach (explode(',', $str) as $s) {
-        if (!preg_match('/^\w(([_\.\-\']?\w+)*)@(\w+)(([\.\-]?\w+)*)\.([a-z]{2,})$/i', trim($s))) {
-            return false;
-        }
+    $res = true;
+    foreach (explode(',', $email) as $s) {
+        $s = filter_var($s, FILTER_VALIDATE_EMAIL);
+        $res = $res && $s;
     }
-    return true;
+    return $res;
 } // is_legal_email_address
 
 
@@ -1538,7 +1538,8 @@ function is_legal_email_address($str)
 
 function isValidUrl( $url )
 {
-    return preg_match("/(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))/", $url);
+    return preg_match("/(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]".
+        "+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))/", $url);
 } // isValidUrl
 
 
@@ -1546,14 +1547,11 @@ function isValidUrl( $url )
 
 function is_safe($str, $multiline = false)
 {
- //??? not implemented correctly yet!
 	if ($multiline) {
 		$str = str_replace(PHP_EOL, '', $str);
 		$str = str_replace("\r", '', $str);
-		return !preg_match("/[^\pL\pS\pP\pN\pZ]/um", $str);
-	} else {
-		return !preg_match("/[^\pL\pS\pP\pN\pZ]/um", $str);
 	}
+    return !preg_match("/[^\pL\pS\pP\pN\pZ]/um", $str);
 } // is_safe
 
 
