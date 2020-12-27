@@ -70,7 +70,7 @@ class OutputList
         }
 
         if ($this->sort) {
-            if ($this->sort && ($this->sort[0] !== 'd')) {
+            if (($this->sort === true) || ($this->sort && ($this->sort[0] !== 'd'))) {
                 sort($elements, SORT_NATURAL | SORT_FLAG_CASE);
             } else {
                 rsort($elements, SORT_NATURAL | SORT_FLAG_CASE);
