@@ -63,7 +63,8 @@ function strToASCII($str)
 } // strToASCII
 
 
-//------------------------------------------------------------------------------
+
+
 function explodeTrim($sep, $str)
 {
     if (!$str) {
@@ -83,7 +84,7 @@ function explodeTrim($sep, $str)
 
 
 
-//---------------------------------------------------------------------------
+
 function array2DKey(&$key)
 {
     $key = str_replace(' ','', $key);
@@ -98,9 +99,6 @@ function array2DKey(&$key)
 
 
 
-
-
-//-----------------------------------------------------------------------------
 function trunkPath($path, $n = 1)
 {
     $path = ($path[strlen($path)-1] === '/') ? rtrim($path, '/') : dirname($path);
@@ -110,7 +108,6 @@ function trunkPath($path, $n = 1)
 
 
 
-//------------------------------------------------------------
 function preparePath($path)
 {
     $path = dirname($path.'x');
@@ -141,7 +138,9 @@ function fileExt($file0, $reverse = false)
     }
 } // fileExt
 
-//------------------------------------------------------------
+
+
+
 function lzyExit( $str = '' )
 {
     if (strlen($buff = ob_get_clean ()) > 1) {
@@ -153,7 +152,7 @@ function lzyExit( $str = '' )
 
 
 
-//------------------------------------------------------------
+
 function fatalError($msg)
 {
     $msg = date('Y-m-d H:i:s')." [_ajax_server.php]\n$msg\n";
@@ -163,7 +162,62 @@ function fatalError($msg)
 
 
 
-//------------------------------------------------------------
+
+function checkPermission($str) {
+    $neg = false;
+    $res = false;
+    if (preg_match('/^((non|not|\!)\-?)/i', $str, $m)) {
+        $neg = true;
+        $str = substr($str, strlen($m[1]));
+    }
+
+    if ( ($str === true) || ($str === 'true') ) {
+        $res = true;
+
+    } elseif ( ($str === false) || ($str === 'false') ) {
+        $res = false;
+
+    } elseif (preg_match('/privileged/i', $str)) {
+        $res = $_SESSION['lizzy']['isPrivileged'];
+
+    } elseif (preg_match('/loggedin/i', $str)) {
+        $res = ($_SESSION['lizzy']['user'] || $_SESSION['lizzy']['isAdmin']);
+
+    } elseif (($str !== 'true') && !is_bool($str)) {
+        $res = checkGroupMembership($str);
+    }
+
+    if ($neg) {
+        $res = !$res;
+    }
+    return $res;
+} // checkPermission
+
+
+
+
+function checkGroupMembership($requiredGroup)
+{
+    if (!isset($_SESSION['lizzy']['userRec']['groups'])) {
+        return false;
+    }
+
+    $usersGroup = $_SESSION['lizzy']['userRec']['groups'];
+    $requiredGroups = explode(',', $requiredGroup);
+    $usersGroups = strtolower(str_replace(' ', '', ",$usersGroup,"));
+    foreach ($requiredGroups as $rG) {
+        $rG = strtolower(trim($rG));
+        if ((strpos($usersGroups, ",$rG,") !== false) ||
+            (strpos($usersGroups, ",admins,") !== false)) {
+            return true;
+        }
+    }
+    return false;
+} // checkGroupMembership
+
+
+
+
 function resolvePath($path)
 {
     // Note: resolvePath() on backend always resolves for file-access (not HTTP access):
@@ -196,14 +250,14 @@ function resolvePath($path)
 
 
 
-//---------------------------------------------------------------------------
 function mylog($str, $user = false)
 {
     writeLog($str, $user);
 } // mylog
 
 
-//---------------------------------------------------------------------------
+
+
 function writeLog($str, $user = false, $destFile = SERVICE_LOG)
 {
     if (!$user) {
@@ -218,7 +272,7 @@ function writeLog($str, $user = false, $destFile = SERVICE_LOG)
 
 
 
-//---------------------------------------------------------------------------
+
 function timestamp($short = false)
 {
     if (!$short) {
@@ -230,7 +284,7 @@ function timestamp($short = false)
 
 
 
-//---------------------------------------------------------------------------
+
 function var_r($var)
 {
     return str_replace("\n", '', var_export($var, true));
