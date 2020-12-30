@@ -2170,6 +2170,8 @@ function checkPermission($str, $lzy = false) {
 
     if ( ($str === true) || ($str === 'true') ) {
         $res = true;
+    } elseif ( ($str === false) || ($str === 'false') ) {
+        $res = false;
     } elseif (preg_match('/privileged/i', $str)) {
         $res = $GLOBALS['globalParams']['isPrivileged'];
     } elseif (preg_match('/loggedin/i', $str)) {
