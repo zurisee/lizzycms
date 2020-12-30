@@ -825,6 +825,28 @@ class DataStorage2
 
 
 
+    // bare-data: excluding keys starting with '_'
+    private function getBareData()
+    {
+        $rawData = $this->lowlevelReadRawData();
+        $json = $rawData['data'];
+        $json = str_replace('⌑⌇⌑', '"', $json);
+        $data = $this->jsonDecode($json);
+        $rec0 = reset($data);
+        $s = implode(',', array_keys($rec0));
+        if (strpos($s, ',_')) {
+            foreach ($data as $key => $rec) {
+                if (is_string($key) && $key && ($key[0] === '_')) {
+                    unset($data[ $key ]);
+                }
+            }
+        }
+        return $data;
+    } // getBareData
+
+
+
+
     private function resolveElementKey( $id )
     {
         $rec0 = reset( $this->data );
@@ -1600,7 +1622,7 @@ EOT;
                 $ps->copyFileToRecycleBin($filename, false, true);
             }
 
-            $data = $this->getData(true);
+            $data = $this->getBareData();
             if ($this->format === 'yaml') {
                 $this->writeToYamlFile($filename, $data);
 
@@ -1706,6 +1728,7 @@ EOT;
         $this->sid = isset($args['sid']) ? $args['sid'] : '';
         $this->mode = isset($args['mode']) ? $args['mode'] : 'readonly';
         $this->format = isset($args['format']) ? $args['format'] : '';
+        $this->includeKeys = isset($args['includeKeys']) ? $args['includeKeys'] : false;
         $this->secure = isset($args['secure']) ? $args['secure'] : true;
         $this->userCsvFirstRowAsLabels = isset($args['userCsvFirstRowAsLabels']) ? $args['userCsvFirstRowAsLabels'] : true;
         $this->useRecycleBin = isset($args['useRecycleBin']) ? $args['useRecycleBin'] : false;
@@ -1770,6 +1793,13 @@ EOT;
         if (!$data) {
             $data = array();
         }
+
+        if ($this->includeKeys) {
+            foreach ($data as $key => $rec) {
+                $data[ $key]['_key'] = $key;
+            }
+        }
+
         $this->data = $data;
         if ($outputAsJson) {
             return $this->jsonEncode($data);
