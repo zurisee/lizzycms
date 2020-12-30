@@ -166,6 +166,7 @@ class Forms
                 return $this->renderFormHead();
             
             case 'text':
+            case 'string':
                 $elem = $this->renderText();
                 break;
             
