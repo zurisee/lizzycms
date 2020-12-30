@@ -357,13 +357,17 @@ EOT;
         session_regenerate_id();
         $this->loggedInUser = $user;
         $_SESSION['lizzy']['user'] = $user;
+        $_SESSION['lizzy']['userRec'] = $rec;
         $isAdmin = $this->checkAdmission('admins');
+        $isPrivileged = $isAdmin || $this->checkAdmission('editors');
+
         $_SESSION['lizzy']['isAdmin'] = $isAdmin;
+        $_SESSION['lizzy']['isPrivileged'] = $isPrivileged;
         $_SESSION['lizzy']['loginTimes'] = serialize($this->loginTimes);
         $_SESSION['lizzy']['loginEmail'] = $loginEmail;
 
         $GLOBALS['globalParams']['isLoggedin'] = boolval( $user );
-        $GLOBALS['globalParams']['isPrivileged'] = $this->checkAdmission('admins,editors');
+        $GLOBALS['globalParams']['isPrivileged'] = $isPrivileged;
         $GLOBALS['globalParams']['isAdmin'] = $isAdmin;
 
         if (isset($rec['displayName'])) {
