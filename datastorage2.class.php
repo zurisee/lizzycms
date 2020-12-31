@@ -788,14 +788,16 @@ class DataStorage2
 
 
  // === aux methods ======================
-    public function dumpDb( $raw = false)
+    public function dumpDb( $raw = false, $flat = true )
     {
         if ($raw) {
             $d = $this->lowlevelReadRawData();
         } else {
             $d = $this->getData( true );
         }
-        return var_r($d, 'DB "' . basename($this->dataFile).'"');
+        $s = var_r($d, 'DB "' . basename($this->dataFile).'"', $flat, false);
+        $s = str_replace('⌑⌇⌑', '"', $s);
+        return $s;
     } // dumpDb
 
 
