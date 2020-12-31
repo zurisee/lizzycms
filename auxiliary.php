@@ -1842,7 +1842,7 @@ function var_r($var, $varName = '', $flat = false)
         $out = "<div><pre>$varName: ".var_export($var, true)."\n</pre></div>\n";
     }
 	return $out;
-}
+} // var_r
 
 
 
