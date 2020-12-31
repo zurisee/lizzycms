@@ -285,7 +285,31 @@ function timestamp($short = false)
 
 
 
-function var_r($var)
+function var_r($var, $varName = '', $flat = false, $asHtml = true)
 {
-    return str_replace("\n", '', var_export($var, true));
-}
+    if ($flat) {
+        $out = preg_replace("/".PHP_EOL."/", '', var_export($var, true));
+        if (preg_match('/array \((.*),\)/', $out, $m)) {
+            $out = "[{$m[1]} ]";
+        }
+        if ($varName) {
+            $out = "$varName: $out";
+        }
+    } else {
+        if ($asHtml) {
+            $out = "<div><pre>$varName: " . var_export($var, true) . "\n</pre></div>\n";
+        } else {
+            $out = "$varName: " . var_export($var, true) . "\n";
+        }
+    }
+    return $out;
+} // var_r
+
+//function var_r($var, $flat = true)
+//{
+//    if ($flat) {
+//        return str_replace("\n", '', var_export($var, true));
+//    } else {
+//        return var_export($var, true);
+//    }
+//}
