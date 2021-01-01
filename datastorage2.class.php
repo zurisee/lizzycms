@@ -1868,7 +1868,11 @@ EOT;
         $rec0 = reset($data);
         $l = is_array($rec0) ? sizeof($rec0) : 0;
         if (!$structure['labels']) {
-            $indexes = array_keys($rec0);
+            if (is_array($rec0)) {
+                $indexes = array_keys($rec0);
+            } else {
+                $indexes = [$key0];
+            }
             $labels = $indexes;
             // if data has numeric rec-keys, use first row as labels:
             if (is_int($labels[0])) {
