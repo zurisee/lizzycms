@@ -141,6 +141,17 @@ function fileExt($file0, $reverse = false)
 
 
 
+function safeStr($str)
+{
+    if (preg_match('/^\s*$/', $str)) {
+        return '';
+    }
+    $str = substr($str, 0, MAX_URL_ARG_SIZE);	// restrict size to safe value
+    return $str;
+} // safe_str
+
+
+
 function lzyExit( $str = '' )
 {
     if (strlen($buff = ob_get_clean ()) > 1) {
@@ -305,11 +316,3 @@ function var_r($var, $varName = '', $flat = false, $asHtml = true)
     return $out;
 } // var_r
 
-//function var_r($var, $flat = true)
-//{
-//    if ($flat) {
-//        return str_replace("\n", '', var_export($var, true));
-//    } else {
-//        return var_export($var, true);
-//    }
-//}
