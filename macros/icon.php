@@ -54,9 +54,17 @@ $this->addMacro($macroName, function () {
     if ($tooltip) {
         $tooltip = " title='$tooltip'";
         if ($inx === 1) {
-            $this->page->addModules('QTIP');
-            $jq = "$('.lzy-icon[title]').qtip({ content:{ attr: 'title' }})\n";
-            $this->page->addJq($jq);
+            $jq = <<<EOT
+$('.lzy-icon[title]').tooltipster({
+    animation: 'fade',
+    delay: 200,
+    animation: 'grow',
+    maxWidth: 420,
+});
+
+EOT;
+            $this->page->addJq( $jq );
+            $this->page->addModules( 'TOOLTIPSTER' );
         }
     }
     $this->optionAddNoComment = true;
