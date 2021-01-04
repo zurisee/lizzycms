@@ -81,6 +81,12 @@ class DataStorage2
         chdir($this->appPath); // workaround for include bug
 
         $this->exportToFile(); // saves data if modified
+
+        if (@$_SESSION['lizzy']['debug']) {
+            $str = $this->dumpDb(true, false);
+            file_put_contents(PATH_TO_APP_ROOT . ".#logs/dBdump_$this->tableName.txt", $str);
+        }
+
         if ($this->lzyDb) {
             $this->lzyDb->close();
             unset($this->lzyDb);
