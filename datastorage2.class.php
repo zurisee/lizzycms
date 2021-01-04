@@ -116,6 +116,7 @@ class DataStorage2
         if (!$since) {
             return $data;
         }
+        $since -= 0.001;
 
         $rawLastRecModif = $this->lowlevelReadRawData('recLastUpdates');
         if ($rawLastRecModif && ($rawLastRecModif !== '[]')) {
@@ -591,6 +592,11 @@ class DataStorage2
 
     public function lastModifiedElement($key)
     {
+        if (strpos($key, '*') !== false) {
+            return $this->lastDbModified();
+        }
+        // $recId can be of form 'r,c', if so, we need to drop the part ',c' in order to refer to the record:
+        $key = preg_replace('/(,.*)/', '', $key);
         $rawLastRecModif = $this->lowlevelReadRawData('recLastUpdates');
         $lastRecModifs = $this->jsonDecode($rawLastRecModif);
         $lastRecModif = isset($lastRecModifs[ $key ])? $lastRecModifs[ $key ]: false;
