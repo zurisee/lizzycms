@@ -195,7 +195,7 @@ class PageSource
         if (file_exists($filename)) {
             $destFolder = ($recycleBin) ? $recycleBin : RECYCLE_BIN_PATH;
             if ($inOrigPath) {
-                $destFolder = dir_name($filename) . basename(RECYCLE_BIN_PATH ) . '/';
+                $destFolder = dirname($filename) . '/' . basename(RECYCLE_BIN_PATH ) . '/';
             } else {
                 $destFolder = resolvePath($destFolder);
             }
@@ -233,7 +233,7 @@ class PageSource
     public static function composeRecycleFilename($filename, $appendTimestamp = true, $recycleBin = false, $inOrigPath = false)
     {
         if ($inOrigPath) {
-            $recycleBin = dir_name($filename) . basename(RECYCLE_BIN_PATH ) . '/';
+            $recycleBin = dirname($filename) . '/' . basename(RECYCLE_BIN_PATH ) . '/';
         } else {
             if (!$recycleBin) {
                 $recycleBin = RECYCLE_BIN_PATH;
