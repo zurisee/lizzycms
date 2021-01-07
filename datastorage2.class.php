@@ -45,6 +45,7 @@ class DataStorage2
 	private $lockDB = false;
 	private $defaultTimeout = 30; // [s]
 	private $defaultPollingSleepTime = LZY_DB_POLLING_CYCLE_TIME; // [us]
+    private $structureFile = null;
 
 
     public function __construct($args)
@@ -848,7 +849,9 @@ class DataStorage2
         $data = $this->jsonDecode($json);
         $rec0 = reset($data);
         $s = implode(',', array_keys($rec0));
-        if (strpos($s, ',_')) {
+
+        // remove elements where key starts with '_':
+        if (strpos(",$s", ',_')) {
             foreach ($data as $key => $rec) {
                 if (is_string($key) && $key && ($key[0] === '_')) {
                     unset($data[ $key ]);
@@ -1233,6 +1236,15 @@ class DataStorage2
         if (preg_match('/\[(.*)\]/', trim($key), $m)) {
             $key = str_replace('][', ',', $m[1]);
             $key = str_replace(['"', "'"], '', $key);
+        }
+        if ($this->structure['key'] !== 'index') {
+            $keys = explode(',', $key);
+            $key0 = &$keys[0];
+            if ($key0 !== '*') {
+                $dataKeys = array_keys( $this->data );
+                $key0 = isset($dataKeys[$key0])? $dataKeys[$key0] : $key0;
+                $key = implode(',', $keys);
+            }
         }
         return $key;
     } // parseElementSelector
@@ -1753,6 +1765,7 @@ EOT;
             $this->dataFile = PATH_TO_APP_ROOT.$rawData["origFile"];
         }
         $this->resetCache = isset($args['resetCache']) ? $args['resetCache'] : false;
+        $this->structureFile = isset($args['structureFile']) ? $args['structureFile'] : false;
         return;
     } // parseArguments
 
@@ -1794,10 +1807,24 @@ EOT;
         }
 
         if ($analyzeStructure) {
-            // structure may be submitted within data in a special record "_structure":
-            if (isset($data["_structure"])) {
+            if ($this->structureFile) {
+                $structureFile = resolvePath($this->structureFile, true);
+            } else {
+                $structureFile = fileExt($this->dataFile, true) . '_structure.yaml';
+            }
+
+            if (file_exists( $structureFile )) {
+                $this->structure = getYamlFile( $structureFile );
+                $data = $this->completeData($data);
+
+            } elseif (isset($data["_structure"])) {
+                // structure may be submitted within data in a special record "_structure":
                 $this->structure = $data["_structure"];
                 unset($data["_structure"]);
+
+                // fill up data according to structure:
+                $data = $this->completeData($data);
+
             } else {
                 $this->structure = $this->analyseStructure($data, $rawData, $fileFormat);
             }
@@ -1809,8 +1836,11 @@ EOT;
         }
 
         if ($this->includeKeys) {
+            $keyLabel = ($this->includeKeys === true)? '_key': $this->includeKeys;
             foreach ($data as $key => $rec) {
-                $data[ $key]['_key'] = $key;
+                if (!isset( $data[ $key ][ $keyLabel ] ) || !$data[ $key ][ $keyLabel ]) {
+                    $data[$key][$keyLabel] = $key;
+                }
             }
         }
 
@@ -1920,7 +1950,6 @@ EOT;
 
 
 
-
     private function parseCsv($str, $delim = false, $enclos = false) {
 
         if (!$delim) {
@@ -2024,6 +2053,27 @@ EOT;
         }
         return $rawData;
     } // loadFile
+
+
+
+
+    private function completeData($data)
+    {
+        if (!$data) {
+            return [];
+        }
+        $data1 = [];
+        foreach ($data as $key => $elem) {
+            foreach ($this->structure['labels'] as $label) {
+                if (isset($data[$key][$label])) {
+                    $data1[$key][$label] = $data[$key][$label];
+                } else {
+                    $data1[$key][$label] = '';
+                }
+            }
+        }
+        return $data1;
+    } // completeData
 
 } // DataStorage
 
