@@ -290,19 +290,11 @@ EOT;
 
     private function applyMiscOptions()
     {
-//        if (!$this->includeKeys) {
-//            return;
-//        }
-//
-//        $data = &$this->data;
-//        foreach ($data as $key => $rec) {
-//            array_unshift($rec, $key);
-//            $data[ $key ] = $rec;
-//        }
     } // applyMiscOptions
 
 
 
+    
     private function applyHeaders()
     {
         if (!$this->headers && !$this->headersLeft) {
@@ -390,8 +382,15 @@ EOT;
                 }
                 $thead .= "\t\t</tr>\n\t</thead>\n";
             } else {
+                $rec = $data[ $r ];
+                $recId = array_pop($rec);
+                $recId = preg_replace('/<{<.*/', '', $recId);
+                $recKey = '';
+                if ($recId != $r) {
+                    $recKey = " data-reckey='$recId'";
+                }
                 $rowClass = str_replace('*', $rInx, $rowClass0);
-                $tbody .= "\t\t<tr class='$rowClass'>\n";
+                $tbody .= "\t\t<tr class='$rowClass'$recKey>\n";
                 if ($this->showRowNumbers) {
                     if ($this->headers) {
                         $n = $r;
@@ -1066,21 +1065,21 @@ EOT;
         if ($this->dataSource) {
             $ds = new DataStorage2($this->options);
             $this->ds = $ds;
-            $this->data = $ds->read();
+            $data0 = $ds->read();
             if ($this->headers === true) {
                 $structure = $this->ds->getDbRecStructure();
                 if (isset($structure['labels'][0]) && is_int($structure['labels'][0])) {
-                    $this->headerElems = array_shift($this->data);
+                    $this->headerElems = array_shift($data);
                 } else {
                     $this->headerElems = $structure['labels'];
                 }
             }
 
-            $data = [];
+            $this->data = [];
             $ir = 0;
-            foreach ($this->data as $r => $rec) {
+            foreach ($data0 as $r => $rec) {
                 $ic = 0;
-                if (!is_array($rec)) {
+                if (!is_array($rec) || (@$r[0] === '_')) {
                     continue;
                 }
                 foreach ($rec as $c => $item) {
@@ -1092,6 +1091,10 @@ EOT;
                 $ir++;
             }
             $this->data = $data;
+
+            if ($this->includeKeys) {
+                $this->headerElems[] = '_key';
+            }
         }
 
         $this->sortData();
@@ -1465,8 +1468,14 @@ EOT;
         $nRows = sizeof($this->data);
         if ($this->includeCellRefs) {
             for ($r = 0; $r < $nRows; $r++) {
+                $ic = 0;
                 for ($c = 0; $c < $nCols; $c++) {
-                    $this->data[$r][$c] .= "<{<$r,$c>}>";
+                    if ($this->includeKeys && (@$this->headerElems[$c] === '_key')) {
+                        $this->data[$r][$c] .= "<{<$r,#>}>";
+                    } else {
+                        $this->data[$r][$c] .= "<{<$r,$ic>}>";
+                        $ic++;
+                    }
                 }
             }
         }
