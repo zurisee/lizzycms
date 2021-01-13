@@ -1674,14 +1674,16 @@ function translateToFilename($str, $appendExt = true)
 
 
 
-function translateToIdentifier($str, $removeDashes = false, $removeNonAlpha = false)
+function translateToIdentifier($str, $removeDashes = false, $removeNonAlpha = false, $toLowerCase = true)
 {
  // translates special characters (such as , , ) into identifier which contains but safe characters:
-    $str = mb_strtolower($str);		// all lowercase
+    if ($toLowerCase) {
+        $str = mb_strtolower($str);        // all lowercase
+    }
     $str = strToASCII( $str );		// replace umlaute etc.
     $str = strip_tags( $str );							// strip any html tags
     if ($removeNonAlpha) {
-        $str = preg_replace('/[^a-zA-Z]/ms', '', $str);
+        $str = preg_replace('/[^a-zA-Z-_\s]/ms', '', $str);
 
     } elseif (preg_match('/^ \W* (\w .*? ) \W* $/x', $str, $m)) { // cut leading/trailing non-chars;
         $str = trim($m[1]);
@@ -1751,6 +1753,9 @@ function writeLogStr($str, $errlog = false)
 {
     global $globalParams;
 
+    if (is_array($str)) {
+        $str = json_encode($str);
+    }
     if (!$errlog) {
         if (($globalParams['activityLoggingEnabled'] !== null) && !$globalParams['activityLoggingEnabled']) {
             return;
