@@ -143,7 +143,8 @@ lzy-form-response-email-template-not-found:
     de: 'Keine Template-Datei für das Versenden der E-Mail gefunden.'
     _:  'Template file for e-mail response not found.'
 
-lzy-form-data-key: DataKey
+lzy-form-data-key: _datakey
+#lzy-form-data-key: DataKey
 
 
 #--- File Upload --------------------------
@@ -774,6 +775,22 @@ lzy-edit-form-rec:
     de: 'Bearbeiten'
     _:  'Edit'
 
+lzy-edit-form-new-rec:
+    de: 'Neuer Datensatz'
+    _:  'New Data'
+
+lzy-header-edit: '<span class="lzy-invisible">{{ Edit }}</span>'
+
+lzy-edit-rec-delete-option:
+    de: 'Diesen Datensatz löschen'
+    _:  Delete data record
+
+lzy-edit-rec-delete-btn:
+    de: 'Jetzt löschen'
+    _:  Delete now
+
+lzy-table-add-rec-btn:
+    _:  '&#10010;'
 
 #--- DataTables ----------------------
 lzy-datatables-search-button:
