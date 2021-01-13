@@ -16,7 +16,7 @@ $website = new Lizzy();
 $out = $website->render();
 
 if (strlen($str = ob_get_clean ()) > 1) {
-	file_put_contents('.#logs/output-buffer.txt', $str);
+    file_put_contents('.#logs/output-buffer.txt', strip_tags($str));
 }
 
 exit( $out );
