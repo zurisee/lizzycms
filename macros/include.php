@@ -21,6 +21,7 @@ $this->addMacro($macroName, function () {
     $wrapperClass = $this->getArg($macroName, 'wrapperClass', '(optional) class applied to each file-wrapper.', false);
     $outerWrapperTag = $this->getArg($macroName, 'outerWrapperTag', '(optional) HTML-tag in which to wrap the set of included files.', false);
     $outerWrapperClass = $this->getArg($macroName, 'outerWrapperClass', '(optional) class applied to the wrapper around all files.', '');
+    $literal = $this->getArg($macroName, 'literal', '(optional) If true, wraps output in pre tags.', false);
     $compileMarkdown = $this->getArg($macroName, 'compileMarkdown', '(optional) Flag to activate MD-compilation of .md files.', false);
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
@@ -101,18 +102,23 @@ $this->addMacro($macroName, function () {
         $str = compileMarkdownStr($str);
     }
 
+    if ($outerWrapperClass) {
+        $outerWrapperClass = " class='$outerWrapperClass'";
+    }
+
+    if ($literal) {
+        $str = "\t<pre$outerWrapperClass>\n$str\n\t</pre>\n";
+    }
+
     if ($wrapperTag) {
         $str = str_replace('<p>@@1@@</p>', "\t\t<$wrapperTag$wrapperClass>\n", $str);
         $str = str_replace('<p>@@2@@</p>', "\t\t</$wrapperTag>\n", $str);
     }
 
-    if ($outerWrapperClass) {
-        $outerWrapperClass = " class='$outerWrapperClass'";
-    }
-
     if ($outerWrapperTag) {
         $str = "\t<$outerWrapperTag$outerWrapperClass>\n$str\n\t</$outerWrapperTag>\n";
     }
+
     $this->optionAddNoComment = true;
 	return $str;
 });
