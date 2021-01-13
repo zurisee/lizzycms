@@ -357,6 +357,8 @@ class Page
             return;
         }
 
+        $str = trim($str, " \t\n")."\n";
+
         if ($replace === 'append') {
             $this->addToProperty('jqEnd', $str);
 
