@@ -229,6 +229,17 @@ function checkGroupMembership($requiredGroup)
 
 
 
+function createHash( $hashSize = 8)
+{
+    $hash = chr(random_int(65, 90));  // first always a letter
+    $hash .= strtoupper(substr(sha1(random_int(0, PHP_INT_MAX)), 0, $hashSize - 1));  // letters and digits
+    return $hash;
+} // createHash
+
+
+
+
+
 function resolvePath($path)
 {
     // Note: resolvePath() on backend always resolves for file-access (not HTTP access):
