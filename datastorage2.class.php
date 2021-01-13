@@ -726,15 +726,27 @@ class DataStorage2
 
 
 
+    public function getStructure()
+    {
+        if (@$this->structure['fields']) {
+            if ($this->includeKeys && !isset($this->structure['fields']['_key'])) {
+                $this->structure['fields']['_key'] = [ 'type' => 'string' ];
+                $this->structure['labels'][] = '_key';
+            }
+            return $this->structure;
+        } else {
+            if ($this->includeKeys && !isset($this->structure['fields']['_key'])) {
+                $this->structure['fields']['_key'] = [ 'type' => 'string' ];
+                $this->structure['labels'][] = '_key';
+            }
+            return $this->determineStructure();
+        }
+    } // getStructure
+
+    // for compatibility: synonyme for getStructure()
     public function getDbRecStructure()
     {
-        $rawData = $this->lowlevelReadRawData();
-        $structure = $this->jsonDecode($rawData['structure']);
-        if (!$structure) {
-            $data = $this->getData();
-            $structure = $this->analyseStructure($data,$rawData);
-        }
-        return $structure;
+        return $this->getStructure();
     } // getDbRecStructure
 
 
@@ -822,6 +834,15 @@ class DataStorage2
 
 
 
+    public function getNumericRecIndex( $recKey )
+    {
+        $data = $this->getData();
+        $keys = array_keys($data);
+        $inx = array_search($recKey, $keys);
+        return $inx;
+    } // getNumericRecIndex
+
+
 
  // === private methods ===============
     private function getData( $force = false )
@@ -833,6 +854,17 @@ class DataStorage2
         $json = $rawData['data'];
         $json = str_replace('⌑⌇⌑', '"', $json);
         $data = $this->jsonDecode($json);
+
+        if ($this->includeKeys) {
+            if ($data) {
+                $rec0 = reset($data);
+                if (!isset($rec0['_key'])) {
+                    foreach ($data as $key => $rec) {
+                        $data[ $key ]['_key'] = $key;
+                    }
+                }
+            }
+        }
         $this->data = $data;
         return $data;
     } // getData
@@ -848,7 +880,11 @@ class DataStorage2
         $json = str_replace('⌑⌇⌑', '"', $json);
         $data = $this->jsonDecode($json);
         $rec0 = reset($data);
-        $s = implode(',', array_keys($rec0));
+        if (is_array($rec0)) {
+            $s = implode(',', array_keys($rec0));
+        } else {
+            $s = $rec0;
+        }
 
         // remove elements where key starts with '_':
         if (strpos(",$s", ',_')) {
@@ -1570,12 +1606,11 @@ EOT;
                 $this->getData();
             }
         }
-        if ($rawData["structure"] === 'null') {
-            $raw = $this->loadFile();
-            $this->analyseStructure($this->data, $raw);
+        if (!$rawData['structure']) {
+            $this->determineStructure();
             $this->lowLevelWriteStructure();
         } else {
-            $this->structure = $this->jsonDecode($rawData["structure"]);
+            $this->structure = $this->jsonDecode($rawData['structure']);
         }
 
         return;
@@ -1649,6 +1684,15 @@ EOT;
             }
 
             $data = $this->getBareData();
+
+            if ($this->includeKeys) {
+                foreach ($data as $key => $rec) {
+                    if (isset($rec['_key'])) {
+                        unset( $data[$key]['_key']);
+                    }
+                }
+            }
+
             if ($this->format === 'yaml') {
                 $this->writeToYamlFile($filename, $data);
 
@@ -1687,11 +1731,14 @@ EOT;
     private function writeToCsvFile($filename, $array, $quote = '"', $delim = ';', $forceQuotes = true)
     {
         $out = '';
+        $outData = [];
         if (!is_array($array)) {
             return false;
         }
         // prepend header row:
-        $outData[0] = array_values($this->structure['labels']);
+        if (isset($this->structure['labels'])) {
+            $outData[0] = array_values($this->structure['labels']);
+        }
         // remove field labels:
         foreach ($array as $row) {
             $outData[] = array_values($row);
@@ -1766,6 +1813,7 @@ EOT;
         }
         $this->resetCache = isset($args['resetCache']) ? $args['resetCache'] : false;
         $this->structureFile = isset($args['structureFile']) ? $args['structureFile'] : false;
+        $this->structureDef = isset($args['structureDef']) ? $args['structureDef'] : false;
         return;
     } // parseArguments
 
@@ -1793,10 +1841,22 @@ EOT;
             // if not suppressed: use first data row as element-labels:
             if ($this->userCsvFirstRowAsLabels) {
                 $labels = array_shift( $data );
+                $this->structure['labels'] = $labels;
+                foreach ($labels as $k => $label) {
+                    $labels[$k] = $lbl = translateToIdentifier($label, false, true, false);
+                    $this->structure['fields'][$lbl] = ['type' => 'string', 'label' => $label];
+                }
+                $this->structure['key'] = 'index';
                 $out = [];
                 foreach ($data as $r => $rec) {
+                    if ($this->includeKeys) {
+                        $r = createHash();
+                    }
                     foreach ($labels as $i => $label) {
                         $out[$r][$label] = $rec[$i];
+                    }
+                    if ($this->includeKeys) {
+                        $out[$r]['_key'] = $r;
                     }
                 }
                 $data = $out;
@@ -1806,31 +1866,6 @@ EOT;
             $data = false;
         }
 
-        if ($analyzeStructure) {
-            if ($this->structureFile) {
-                $structureFile = resolvePath($this->structureFile, true);
-            } else {
-                $structureFile = fileExt($this->dataFile, true) . '_structure.yaml';
-            }
-
-            if (file_exists( $structureFile )) {
-                $this->structure = getYamlFile( $structureFile );
-                $data = $this->completeData($data);
-
-            } elseif (isset($data["_structure"])) {
-                // structure may be submitted within data in a special record "_structure":
-                $this->structure = $data["_structure"];
-                unset($data["_structure"]);
-
-                // fill up data according to structure:
-                $data = $this->completeData($data);
-
-            } else {
-                $this->structure = $this->analyseStructure($data, $rawData, $fileFormat);
-            }
-        } else {
-            $this->structure = $this->analyseStructure(false, $rawData, $fileFormat);
-        }
         if (!$data) {
             $data = array();
         }
@@ -1850,6 +1885,159 @@ EOT;
         }
         return $data;
     } // decode
+
+
+
+
+    private function determineStructure()
+    {
+        if ($this->structureDef) {
+            $this->structure = $this->structureDef;
+            unset($this->structureDef);
+            return;
+        }
+        $structure = @$this->structure;
+        if ($this->structureFile) {
+            $structureFile = resolvePath($this->structureFile, true);
+        } else {
+            $structureFile = fileExt($this->dataFile, true) . '_structure.yaml';
+        }
+
+        if (file_exists( $structureFile )) {
+            $structure = getYamlFile( $structureFile );
+
+        } elseif (isset($data['_structure'])) {
+            // structure may be submitted within data in a special record '_structure':
+            $structure = $data['_structure'];
+            unset($data['_structure']);
+        }
+
+        // make sure type for rec-level keys is set:
+        if (!isset($structure['fields']) || !$structure['fields']) {
+            // no struct info available - try to derive it from data:
+            if (!$this->data) {
+                return; // no data, try again later...
+            }
+            $structure = $this->deriveStructureFromData();
+        }
+
+        if (isset($structure['fields'])) {
+            // derive ['labels'] branch, make sure type is defined:
+            $fields = &$structure['fields'];
+            $keyLabel = ($this->includeKeys === true)? '_key': $this->includeKeys;
+            if ($this->includeKeys && !isset($fields[$keyLabel])) {
+                $fields[$keyLabel] = ['type' => 'string'];
+            }
+            if (isset($structure['labels']) && $structure['labels']) {
+                unset($structure['labels']);
+            }
+            foreach ($fields as $label => $rec) {
+                $structure['labels'][] = $label;
+
+                if (!isset($rec['type'])) {
+                    $fields[$label]['type'] = 'string';
+                }
+            }
+
+        } elseif (isset($structure['labels'])) {
+            $labels = $structure['labels'];
+            foreach ($labels as $label) {
+                if (!isset($rec['type'])) {
+                    $structure['fields'][$label]['type'] = 'string';
+                }
+            }
+        } else {
+            die("Error in determineStructure(): unable to determine structure");
+        }
+
+        // make sure type for rec-level keys is set:
+        if (!isset($structure['key'])) {
+            $structure['key'] = 'index';
+        }
+
+        $this->structure = $structure;
+    } // determineStructure
+
+
+
+
+    private function deriveStructureFromData()
+    {
+        $rawData = $this->lowlevelReadRawData();
+        $structure = [ 'key' => false, 'fields' => [], 'labels' => [] ];
+        if (!$rawData[ 'data']) {
+            return $structure;
+        }
+
+        if ($this->format === 'yaml') {
+            if (isset($rawData['origFile'])) {
+                $rawData = trim(file_get_contents($rawData['origFile']));
+            }
+            if ($rawData && ($rawData[0] === '-')) {
+                $structure['key'] = 'index';
+            } else {
+                $key0 = substr($rawData, 0, strpos($rawData, ':'));
+            }
+            if ($this->data) {
+                foreach ($this->data as $k => $rec) {
+                    if (!is_string($k) || ($k[0] !== '_')) {
+                        break;
+                    }
+                }
+                $rec0 = $rec;
+                if (is_array( $rec0 )) {
+                    $structure['labels'] = array_keys($rec0);
+                } else {
+                    $structure['labels'] = [];
+                }
+            } else {
+                $structure['labels'] = [];
+            }
+
+        } elseif ($this->format === 'json') {
+            if (isset($rawData['origFile'])) {
+                $rawData = trim(file_get_contents($rawData['origFile']));
+            }
+            if ($rawData && ($rawData[0] === '[')) {
+                $structure['key'] = 'index';
+            } else {
+                if (!preg_match('/^{"(.*?)"/', $rawData, $m)) {
+                    exit("Error in json file");
+                }
+                $key0 = $m[1];
+            }
+            $structure['labels'] = array_keys( reset($this->data) );
+
+        } elseif ($this->format === 'csv') {    // csv
+            $structure['key'] = 'index';
+            $rec0 = reset($this->data);
+            // note: this requires that CSV file has been transformed already, ie first row used as labels.
+            if (isset($rec0[0])) {
+                $structure['labels'] = $rec0;
+            } else {
+                $structure['labels'] = is_array($rec0) ? array_keys( $rec0 ): [];
+            }
+
+        } else {
+            die("Error in deriveStructureFromData(): file format '$this->format' unknown");
+        }
+
+        if (isset($structure['labels']) && !$structure['fields']) {
+            $structure['fields'] = array_combine($structure['labels'], array_fill(0, sizeof($structure['labels']), ['type' => 'string']));
+        }
+
+        if (!$structure['key']) {
+            if (preg_match('/^ \d{2,4} - \d\d - \d\d/x', $key0)) {
+                $structure['key'] = 'date';
+            } elseif (preg_match('/\D/', $key0)) {
+                $structure['key'] = 'string';
+            } else {
+                $structure['key'] = 'numeric';
+            }
+        }
+
+        return $structure;
+    } // deriveStructureFromData
 
 
 
