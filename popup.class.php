@@ -59,7 +59,7 @@ class PopupWidget
                 if ($args === 'help') {
                     $this->popups = [];
                     $this->page->addContent( $this->renderPopupHelp() );
-                    $this->page->addJQ($jq);
+                    $this->page->addJq($jq);
                     return true;
                 }
                 $args1['text'] = $args;
@@ -116,7 +116,7 @@ EOT;
                 if ($args[0] === 'help') {
                     $this->popups = [];
                     $this->page->addContent( $this->renderPopupHelp() );
-                    $this->page->addJQ($jq);
+                    $this->page->addJq($jq);
                     return true;
                 }
                 $this->text = $args[0];
@@ -283,7 +283,7 @@ EOT;
             }
         } // loop popup instances
 
-        $this->page->addJQ($jq);
+        $this->page->addJq($jq);
         $this->popups = [];
     } // applyPopup
 

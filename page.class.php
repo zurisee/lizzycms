@@ -350,7 +350,7 @@ class Page
 
 
 
-    public function addJQ($str, $replace = false)
+    public function addJq($str, $replace = false)
     {
         //??? avoid adding 'lzy-editable' multiple times:
         if ((strpos($str, '.lzy-editable') !== false) && (strpos($this->jq, '.lzy-editable') !== false)) {
@@ -368,7 +368,7 @@ class Page
         } else {
             $this->addToProperty('jq', $str, $replace);
         }
-    } // addJQ
+    } // addJq
 
 
 
@@ -1241,7 +1241,7 @@ EOT;
         }
 
         if (strpos($debugInfo, 'scrollToBottom') !== false) {
-            $this->addJQ('$(".scrollToBottom").scrollTop($(".scrollToBottom")[0].scrollHeight);');
+            $this->addJq('$(".scrollToBottom").scrollTop($(".scrollToBottom")[0].scrollHeight);');
         }
 
         $debugInfo .= "<div id='lzy-log'></div>";
