@@ -67,6 +67,7 @@ class HtmlTable
         $this->headersLeft          = $this->getOption('headersLeft', '(optional) Row headers may be supplied in the form [A|B|C...]');
         $this->headersAsVars        = $this->getOption('headersAsVars', '(optional) If true, header elements will be rendered as variables (i.e. in curly brackets).');
         $this->showRowNumbers       = $this->getOption('showRowNumbers', '(optional) Adds a left most column showing row numbers.');
+        $this->hideMetaFields       = $this->getOption('hideMetaFields', '(optional) If true, system (or "meta") fields are not rendered (default: true).', true);
         $this->renderAsDiv	        = $this->getOption('renderAsDiv', '(optional) If set, the table is rendered as &lt;div> tags rather than &lt;table>');
         $this->tableDataAttr	    = $this->getOption('tableDataAttr', '(optional) ');
         $this->renderDivRows        = $this->getOption('renderDivRows', '(optional) If set, each row is wrapped in an additional &lt;div> tag. Omitting this may be useful in conjunction with CSS grid.');
@@ -85,6 +86,13 @@ class HtmlTable
         $this->handleDatatableOption($this->page);
         $this->handleCaption();
         $this->editingActive = checkPermission($this->editableBy, $this->lzy);
+        $this->editableActive = false;
+        if ($this->editingActive) {
+            if (strpos($this->editMode, 'form') === false) {
+                $this->editingActive = false;
+                $this->editableActive = true;
+            }
+        }
 
     } // __construct
 
@@ -121,11 +129,9 @@ class HtmlTable
         }
 
         if ($this->editingActive) {
-            if (strpos($this->editMode, 'form') !== false) {
-                $out .= $this->activateEditingForm();
-            } else {
-                $out .= $this->activateEditable();
-            }
+            $out .= $this->activateEditingForm();
+        } elseif ($this->editableActive) {
+            $out .= $this->activateEditable();
         } else {
             if ($this->liveData) {            // option liveData:
                 $out = $this->activateLiveData();
@@ -327,7 +333,6 @@ EOT;
             $this->tableDataAttr .= " data-table-hash='{$this->tickHash}' data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
         }
         $data = &$this->data;
-        $this->structure = $this->ds->getStructure();
 
         $header = ($this->headers !== false);
 
@@ -349,7 +354,9 @@ EOT;
                 }
                 for ($c = 0; $c < $nCols; $c++) {
                     $cell = $this->getDataElem($recId, $c, 'th', true);
-                    $thead .= "\t\t\t$cell\n";
+                    if ($cell !== null) {
+                        $thead .= "\t\t\t$cell\n";
+                    }
                 }
                 $thead .= "\t\t</tr>\n\t</thead>\n";
 
@@ -371,7 +378,9 @@ EOT;
                 for ($c = 0; $c < $nCols; $c++) {
                     $tag = (($c === 0) && $this->headersLeft)? 'th': 'td';
                     $cell = $this->getDataElem($recId, $c, $tag);
-                    $tbody .= "\t\t\t$cell\n";
+                    if ($cell !== null) {
+                        $tbody .= "\t\t\t$cell\n";
+                    }
                 }
                 $tbody .= "\t\t</tr>\n";
                 $rInx++;
@@ -828,6 +837,10 @@ EOT;
 
     private function getDataElem($row, $col, $tag = 'td', $hdrElem = false)
     {
+        if ($this->hideMetaFields && ($this->data['hdr'][$col][0] === '_')) {
+            return null;
+        }
+
         $cell = @$this->data[$row][$col];
 
         $col1 = $col + 1;
@@ -957,28 +970,31 @@ EOT;
 
     private function loadData()
     {
+        $this->data = false;
+        if ($this->inMemoryData && is_array($this->inMemoryData)) {
+            $this->data = &$this->inMemoryData;
+            $this->dataSource = false;
+        } elseif (is_array($this->dataSource)) {    // for backward compatibility
+            $this->data = $this->dataSource;
+            $this->dataSource = false;
+
+        }
+
+        if ($this->data) {
+            if ($this->headers === true) {
+                $this->headerElems = array_shift($this->data);
+            } else {
+                $this->headerElems = explodeTrim(',|', $this->headers );
+            }
+            $this->nCols = isset($this->data)? sizeof( reset($this->data) ): 0;
+            $this->nRows = sizeof($this->data);
+            return;
+        }
+
         if ($this->dataSource) {
-            if (is_string($this->dataSource)) {
                 if (!file_exists($this->dataSource)) {
                     $this->dataSource = false;
                 }
-            } else {
-                if ($this->inMemoryData && is_array($this->inMemoryData)) {
-                    $this->data = $this->inMemoryData;
-                } elseif (is_array($this->dataSource)) {    // for backward compatibility
-                    $this->data = $this->dataSource;
-                }
-                if ($this->headers === true) {
-                    $this->headerElems = array_shift($this->data);
-                } else {
-                    $this->headerElems = reset($this->data );
-                }
-                $this->nCols = isset($this->data)? sizeof( reset($this->data) ): 0;
-                $this->nRows = sizeof($this->data);
-                return;
-            }
-        } else {
-            $this->dataSource = false;
         }
 
         $this->loadDataFromFile();
@@ -1057,8 +1073,8 @@ $('.lzy-table-edit-btn').click(function(e) {
 
 
     // get data by ajax:
-    const req = '?get-rec&ds=' + formHash + '&recKey=' + recKey;
-    $('[type=submit]', \$form).val('{{ Submit }}');
+    const req = '?get-rec&ds=' + formHash + '&lock&recKey=' + recKey;
+    $('[type=submit]', \$form).val('{{ lzy-edit-form-submit }}');
     $('#lzy-edit-rec-delete-checkbox input[type=checkbox]').prop('checked', false);
     
     const formTitle = $('#lzy-edit-form-rec').html();
@@ -1092,7 +1108,7 @@ $('#lzy-edit-rec-delete-checkbox input[type=checkbox]').click(function(e) {
         $('.lzy-edit-data-form').data('delete', true);
         mylog('delete');
     } else {
-        $('#btn_lzy-edit-data-form-1_submit').val('{{ Submit }}');
+        $('#btn_lzy-edit-data-form-1_submit').val('{{ lzy-edit-form-submit }}');
         $('.lzy-edit-data-form').data('delete', false);
         mylog('don\'t delete');
     }
@@ -1217,7 +1233,7 @@ EOT;
     public function renderForm()
     {
         if (@!$this->recStructure) {
-            $recStructure = $this->ds->getDbRecStructure();
+            $recStructure = $this->ds->getStructure();
         }
         require_once SYSTEM_PATH.'forms.class.php';
         $form = new Forms( $this->lzy );
@@ -1232,6 +1248,7 @@ EOT;
             'ticketHash' => $this->tickHash,
             'formHeader' => '<h3>{{ lzy-edit-form-rec }}</h3>',
             'cancelButtonCallback' => false,
+            'validate' => true,
         ];
         if (isset( $this->exportFile )) {
             $args[ 'export' ] = $this->exportFile;
@@ -1251,8 +1268,8 @@ EOT;
             if (@$label[0] === '_') {
                 continue;
             }
-            $rec['label'] = $rec['label'];
-            $rec['name'] = $label;
+            $rec['label'] = $label;
+            $rec['name'] = translateToIdentifier($label, false, true, false);
             $out .= $form->render($rec);
         }
 
@@ -1268,7 +1285,7 @@ EOT;
         // Form Buttons:
         $out .= $form->render( [
             'type' => 'button',
-            'label' => 'Cancel | Submit',
+            'label' => '-lzy-edit-form-cancel | -lzy-edit-form-submit',
             'value' => 'cancel|submit',
         ] );
 
@@ -1627,7 +1644,7 @@ EOT;
         $ds = new DataStorage2($this->options);
         $this->ds = $ds;
         $data0 = $ds->read();
-        $structure = $this->ds->getStructure();
+        $this->structure = $structure = $this->ds->getStructure();
 
         $fields = $structure['fields'];
         if ($this->headers === true) {
@@ -1651,7 +1668,7 @@ EOT;
                 continue;
             }
             foreach ($fields as $c => $desc) {
-                $item = isset($rec[ $c ])? $rec[ $c ]: '';
+                $item = isset($rec[ $c ])? $rec[ $c ]: (isset($rec[ $ic ])? $rec[ $ic ]: '');
                 if (is_array($item)) {
                     if (isset($item[0])) {
                         $item = $item[0];

@@ -579,7 +579,6 @@ a.lzy-button {
 		width: 100%;
 		line-height: 2em;
     	display: inline-block;
-//    	background: #f8fbcd;
     	text-align: center;
 		vertical-align: middle;
 		border: none;
@@ -592,6 +591,7 @@ a.lzy-button {
 		--lzy-form-width: 44.5em;
 		max-width: unset;
 	}
+	#lzy-edit-rec-delete-checkbox legend { display: none!important; }
 }
 
 

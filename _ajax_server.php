@@ -179,6 +179,15 @@ class AjaxServer
             lzyExit('failed#get-rec');
         }
         $recKey = $this->get_request_data('recKey');
+
+        // lock record if requested:
+        if (isset($_REQUEST['lock'])) {
+            $res = $this->db->lockRec( $recKey );
+            if (!$res) {
+                lzyExit('failed#get-rec=locked');
+            }
+        }
+
         $dataRec = $this->db->readRecord( $recKey );
         $outData = [];
         if (!$dataRec) {
@@ -197,7 +206,7 @@ class AjaxServer
                 if (isset($dataRec[$key])) {
                     $value = $dataRec[$key];
                 } else {
-                    $key1 = str_replace('_', ' ', $key);
+                    $key1 = $descr['label'];
                     $value = isset($dataRec[$key1])? $dataRec[$key1]: '';
                 }
                 if (is_array($value)) {

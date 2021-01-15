@@ -18,6 +18,8 @@ if (!defined('MKDIR_MASK')) {
     define('MKDIR_MASK', 0700);
 }
 define('DEFAULT_EDITABLE_DATA_FILE', 'editable.yaml');
+define('REC_KEY_ID', 	        '_key');
+define('TIMESTAMP_KEY_ID', 	    '_timestamp');
 
 $appRoot = getcwd().'/';
 if (strpos($appRoot, '_lizzy/') !== false) {

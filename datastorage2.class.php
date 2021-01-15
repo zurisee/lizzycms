@@ -96,6 +96,38 @@ class DataStorage2
 
 
 
+    private function parseArguments($args)
+    {
+        if (is_string($args)) {
+            $args = ['dataFile' => $args];
+        }
+        $this->dataFile = isset($args['dataFile']) ? $args['dataFile'] :
+            (isset($args['dataSource']) ? $args['dataSource'] : ''); // for compatibility
+        $this->dataFile = resolvePath($this->dataFile);
+        $this->logModifTimes = isset($args['logModifTimes']) ? $args['logModifTimes'] : false;
+        $this->sid = isset($args['sid']) ? $args['sid'] : '';
+        $this->mode = isset($args['mode']) ? $args['mode'] : 'readonly';
+        $this->format = isset($args['format']) ? $args['format'] : '';
+        $this->includeKeys = isset($args['includeKeys']) ? $args['includeKeys'] : false;
+        $this->includeTimestamp = isset($args['includeTimestamp']) ? $args['includeTimestamp'] : false;
+        $this->secure = isset($args['secure']) ? $args['secure'] : true;
+        $this->userCsvFirstRowAsLabels = isset($args['userCsvFirstRowAsLabels']) ? $args['userCsvFirstRowAsLabels'] : true;
+        $this->useRecycleBin = isset($args['useRecycleBin']) ? $args['useRecycleBin'] : false;
+        $this->format = ($this->format) ? $this->format : pathinfo($this->dataFile, PATHINFO_EXTENSION) ;
+        $this->tableName = isset($args['tableName']) ? $args['tableName'] : '';
+        if ($this->tableName && !$this->dataFile) {
+            $rawData = $this->lowlevelReadRawData();
+            $this->dataFile = PATH_TO_APP_ROOT.$rawData["origFile"];
+        }
+        $this->resetCache = isset($args['resetCache']) ? $args['resetCache'] : false;
+        $this->structureFile = isset($args['structureFile']) ? $args['structureFile'] : false;
+        $this->structureDef = isset($args['structureDef']) ? $args['structureDef'] : false;
+        return;
+    } // parseArguments
+
+
+
+
     // === DB level operations ==========================
     public function read( $forceCacheRefresh = true )
     {
@@ -729,18 +761,18 @@ class DataStorage2
     public function getStructure()
     {
         if (@$this->structure['fields']) {
-            if ($this->includeKeys && !isset($this->structure['fields']['_key'])) {
-                $this->structure['fields']['_key'] = [ 'type' => 'string' ];
-                $this->structure['labels'][] = '_key';
+            if ($this->includeKeys && !isset($this->structure['fields'][REC_KEY_ID])) {
+                $this->structure['fields'][REC_KEY_ID] = [ 'type' => 'string' ];
+                $this->structure['labels'][] = REC_KEY_ID;
             }
-            return $this->structure;
         } else {
-            if ($this->includeKeys && !isset($this->structure['fields']['_key'])) {
-                $this->structure['fields']['_key'] = [ 'type' => 'string' ];
-                $this->structure['labels'][] = '_key';
+            $this->determineStructure();
+            if ($this->includeKeys && !isset($this->structure['fields'][REC_KEY_ID])) {
+                $this->structure['fields'][REC_KEY_ID] = [ 'type' => 'string' ];
+                $this->structure['labels'][] = REC_KEY_ID;
             }
-            return $this->determineStructure();
         }
+        return $this->structure;
     } // getStructure
 
     // for compatibility: synonyme for getStructure()
@@ -749,6 +781,13 @@ class DataStorage2
         return $this->getStructure();
     } // getDbRecStructure
 
+
+
+
+    public function setStructure( $structure ) {
+        $this->structure = $structure;
+        $this->lowLevelWriteStructure();
+    } // setStructure
 
 
 
@@ -858,9 +897,9 @@ class DataStorage2
         if ($this->includeKeys) {
             if ($data) {
                 $rec0 = reset($data);
-                if (!isset($rec0['_key'])) {
+                if (!isset($rec0[REC_KEY_ID])) {
                     foreach ($data as $key => $rec) {
-                        $data[ $key ]['_key'] = $key;
+                        $data[ $key ][REC_KEY_ID] = $key;
                     }
                 }
             }
@@ -888,9 +927,20 @@ class DataStorage2
 
         // remove elements where key starts with '_':
         if (strpos(",$s", ',_')) {
-            foreach ($data as $key => $rec) {
-                if (is_string($key) && $key && ($key[0] === '_')) {
-                    unset($data[ $key ]);
+            foreach ($data as $recKey => $rec) {
+                if (is_string($recKey) && $recKey && ($recKey[0] === '_')) {
+                    unset($data[ $recKey ]);
+                }
+                foreach ($rec as $k => $v) {
+                    if ($this->includeKeys && ($k === REC_KEY_ID)) {
+                        continue;
+                    }
+                    if ($this->includeTimestamp && ($k === TIMESTAMP_KEY_ID)) {
+                        continue;
+                    }
+                    if (is_string($k) && $k && ($k[0] === '_')) {
+                        unset($data[ $recKey ][ $k ]);
+                    }
                 }
             }
         }
@@ -1685,10 +1735,10 @@ EOT;
 
             $data = $this->getBareData();
 
-            if ($this->includeKeys) {
-                foreach ($data as $key => $rec) {
-                    if (isset($rec['_key'])) {
-                        unset( $data[$key]['_key']);
+            if (!$this->includeKeys) {
+                foreach ($data as $recKey => $rec) {
+                    if (isset($rec[REC_KEY_ID])) {
+                        unset( $data[$recKey][REC_KEY_ID]);
                     }
                 }
             }
@@ -1736,8 +1786,13 @@ EOT;
             return false;
         }
         // prepend header row:
-        if (isset($this->structure['labels'])) {
-            $outData[0] = array_values($this->structure['labels']);
+        $structure = $this->getStructure();
+        if (isset($structure['labels'])) {
+            if (!$this->includeKeys) {
+                $i = array_search(REC_KEY_ID, $structure['labels']);
+                unset($structure['labels'][$i]);
+            }
+            $outData[0] = array_values($structure['labels']);
         }
         // remove field labels:
         foreach ($array as $row) {
@@ -1789,37 +1844,6 @@ EOT;
 
 
 
-    private function parseArguments($args)
-    {
-        if (is_string($args)) {
-            $args = ['dataFile' => $args];
-        }
-        $this->dataFile = isset($args['dataFile']) ? $args['dataFile'] :
-            (isset($args['dataSource']) ? $args['dataSource'] : ''); // for compatibility
-        $this->dataFile = resolvePath($this->dataFile);
-        $this->logModifTimes = isset($args['logModifTimes']) ? $args['logModifTimes'] : false;
-        $this->sid = isset($args['sid']) ? $args['sid'] : '';
-        $this->mode = isset($args['mode']) ? $args['mode'] : 'readonly';
-        $this->format = isset($args['format']) ? $args['format'] : '';
-        $this->includeKeys = isset($args['includeKeys']) ? $args['includeKeys'] : false;
-        $this->secure = isset($args['secure']) ? $args['secure'] : true;
-        $this->userCsvFirstRowAsLabels = isset($args['userCsvFirstRowAsLabels']) ? $args['userCsvFirstRowAsLabels'] : true;
-        $this->useRecycleBin = isset($args['useRecycleBin']) ? $args['useRecycleBin'] : false;
-        $this->format = ($this->format) ? $this->format : pathinfo($this->dataFile, PATHINFO_EXTENSION) ;
-        $this->tableName = isset($args['tableName']) ? $args['tableName'] : '';
-        if ($this->tableName && !$this->dataFile) {
-            $rawData = $this->lowlevelReadRawData();
-            $this->dataFile = PATH_TO_APP_ROOT.$rawData["origFile"];
-        }
-        $this->resetCache = isset($args['resetCache']) ? $args['resetCache'] : false;
-        $this->structureFile = isset($args['structureFile']) ? $args['structureFile'] : false;
-        $this->structureDef = isset($args['structureDef']) ? $args['structureDef'] : false;
-        return;
-    } // parseArguments
-
-
-
-
     private function decode($rawData, $fileFormat = false, $outputAsJson = false, $analyzeStructure = false)
     {
         if (!$rawData) {
@@ -1843,20 +1867,22 @@ EOT;
                 $labels = array_shift( $data );
                 $this->structure['labels'] = $labels;
                 foreach ($labels as $k => $label) {
-                    $labels[$k] = $lbl = translateToIdentifier($label, false, true, false);
-                    $this->structure['fields'][$lbl] = ['type' => 'string', 'label' => $label];
+                    $name = translateToIdentifier($label, false, true, false);
+                    $this->structure['fields'][$label] = ['type' => 'string', 'label' => $label, 'name' => $name];
                 }
-                $this->structure['key'] = 'index';
+                $keyAvailable = isset($labels[REC_KEY_ID]);
+                if ($this->includeKeys) {
+                    $this->structure['key'] = 'hash';
+                } else {
+                    $this->structure['key'] = 'index';
+                }
                 $out = [];
                 foreach ($data as $r => $rec) {
-                    if ($this->includeKeys) {
-                        $r = createHash();
+                    if ($keyAvailable || $this->includeKeys) {
+                        $r = @$labels[REC_KEY_ID]? $labels[REC_KEY_ID]: createHash();
                     }
                     foreach ($labels as $i => $label) {
                         $out[$r][$label] = $rec[$i];
-                    }
-                    if ($this->includeKeys) {
-                        $out[$r]['_key'] = $r;
                     }
                 }
                 $data = $out;
@@ -1871,15 +1897,16 @@ EOT;
         }
 
         if ($this->includeKeys) {
-            $keyLabel = ($this->includeKeys === true)? '_key': $this->includeKeys;
             foreach ($data as $key => $rec) {
-                if (!isset( $data[ $key ][ $keyLabel ] ) || !$data[ $key ][ $keyLabel ]) {
-                    $data[$key][$keyLabel] = $key;
+                if (!isset( $data[ $key ][ REC_KEY_ID ] ) || !$data[ $key ][ REC_KEY_ID ]) {
+                    $data[$key][REC_KEY_ID] = $key;
                 }
             }
         }
 
+        $this->lowLevelWrite( $data );
         $this->data = $data;
+        $this->determineStructure();
         if ($outputAsJson) {
             return $this->jsonEncode($data);
         }
@@ -1894,7 +1921,7 @@ EOT;
         if ($this->structureDef) {
             $this->structure = $this->structureDef;
             unset($this->structureDef);
-            return;
+            return $this->structure;
         }
         $structure = @$this->structure;
         if ($this->structureFile) {
@@ -1921,33 +1948,14 @@ EOT;
             $structure = $this->deriveStructureFromData();
         }
 
-        if (isset($structure['fields'])) {
-            // derive ['labels'] branch, make sure type is defined:
-            $fields = &$structure['fields'];
-            $keyLabel = ($this->includeKeys === true)? '_key': $this->includeKeys;
-            if ($this->includeKeys && !isset($fields[$keyLabel])) {
-                $fields[$keyLabel] = ['type' => 'string'];
-            }
-            if (isset($structure['labels']) && $structure['labels']) {
-                unset($structure['labels']);
-            }
-            foreach ($fields as $label => $rec) {
+
+        // make sure structure is complete:
+        if (!isset($structure['fields']) || !$structure['fields']) { // fields missing
+            die("Error: fields missing in structure");
+        } elseif (!isset($structure['labels']) || !$structure['labels']) { // fields missing
+            foreach ($structure['fields'] as $label => $fldDesc) {
                 $structure['labels'][] = $label;
-
-                if (!isset($rec['type'])) {
-                    $fields[$label]['type'] = 'string';
-                }
             }
-
-        } elseif (isset($structure['labels'])) {
-            $labels = $structure['labels'];
-            foreach ($labels as $label) {
-                if (!isset($rec['type'])) {
-                    $structure['fields'][$label]['type'] = 'string';
-                }
-            }
-        } else {
-            die("Error in determineStructure(): unable to determine structure");
         }
 
         // make sure type for rec-level keys is set:
@@ -1956,6 +1964,7 @@ EOT;
         }
 
         $this->structure = $structure;
+        return $structure;
     } // determineStructure
 
 
@@ -1968,69 +1977,66 @@ EOT;
         if (!$rawData[ 'data']) {
             return $structure;
         }
+        $key0 = false;
+        $rec0 = false;
+        $keyType = false;
 
-        if ($this->format === 'yaml') {
-            if (isset($rawData['origFile'])) {
-                $rawData = trim(file_get_contents($rawData['origFile']));
+        if (($this->format === 'yaml') || ($this->format === 'json')) {
+            // try to figure out keyType:
+            if (!isset($structure['key'])) {
+                if (isset($rawData['origFile'])) {
+                    $rawData = trim(file_get_contents($rawData['origFile']));
+                }
+                if ($rawData) {
+                    if ((($this->format === 'yaml') && ($rawData[0] === '-')) ||
+                        (($this->format === 'json') && ($rawData[0] === '['))) {
+                        $keyType = 'index';
+                    }
+                }
             }
-            if ($rawData && ($rawData[0] === '-')) {
-                $structure['key'] = 'index';
-            } else {
-                $key0 = substr($rawData, 0, strpos($rawData, ':'));
-            }
-            if ($this->data) {
-                foreach ($this->data as $k => $rec) {
-                    if (!is_string($k) || ($k[0] !== '_')) {
+            // get first regular record:
+            $data = $this->getData();
+            if ($data) {
+                foreach ($data as $k => $rec) { // skip meat elements...
+                    if (!is_string($k) || (@$k[0] !== '_')) {
                         break;
                     }
                 }
                 $rec0 = $rec;
-                if (is_array( $rec0 )) {
-                    $structure['labels'] = array_keys($rec0);
-                } else {
-                    $structure['labels'] = [];
-                }
-            } else {
-                $structure['labels'] = [];
+                $key0 = $k;
             }
-
-        } elseif ($this->format === 'json') {
-            if (isset($rawData['origFile'])) {
-                $rawData = trim(file_get_contents($rawData['origFile']));
-            }
-            if ($rawData && ($rawData[0] === '[')) {
-                $structure['key'] = 'index';
-            } else {
-                if (!preg_match('/^{"(.*?)"/', $rawData, $m)) {
-                    exit("Error in json file");
-                }
-                $key0 = $m[1];
-            }
-            $structure['labels'] = array_keys( reset($this->data) );
 
         } elseif ($this->format === 'csv') {    // csv
-            $structure['key'] = 'index';
-            $rec0 = reset($this->data);
-            // note: this requires that CSV file has been transformed already, ie first row used as labels.
-            if (isset($rec0[0])) {
-                $structure['labels'] = $rec0;
-            } else {
-                $structure['labels'] = is_array($rec0) ? array_keys( $rec0 ): [];
+            $keyType = 'index';
+            $data = $this->getData();
+            if ($data) {
+                $rec0 = reset($data);
+                $key0 = 0;
             }
 
         } else {
             die("Error in deriveStructureFromData(): file format '$this->format' unknown");
         }
 
-        if (isset($structure['labels']) && !$structure['fields']) {
-            $structure['fields'] = array_combine($structure['labels'], array_fill(0, sizeof($structure['labels']), ['type' => 'string']));
+        if (!$rec0) {
+            $data = $this->getData();
+            $rec0 = reset( $data );
+        }
+        foreach ($rec0 as $key => $value) {
+            $name = translateToIdentifier($key, false, true, false);
+            $structure['labels'][] = $key;
+            $structure['fields'][$key]['label'] = $key;
+            $structure['fields'][$key]['name'] = $name;
+            $structure['fields'][$key]['type'] = 'string';
         }
 
         if (!$structure['key']) {
             if (preg_match('/^ \d{2,4} - \d\d - \d\d/x', $key0)) {
                 $structure['key'] = 'date';
+            } elseif (preg_match('/^[A-Z][A-Z0-9]{4,20}/', $key0)) {
+                $structure['key'] = 'hash';
             } elseif (preg_match('/\D/', $key0)) {
-                $structure['key'] = 'string';
+                $structure['key'] = $keyType? $keyType: 'string';
             } else {
                 $structure['key'] = 'numeric';
             }
@@ -2038,84 +2044,6 @@ EOT;
 
         return $structure;
     } // deriveStructureFromData
-
-
-
-
-    private function analyseStructure($data, &$rawData, $fileFormat = false)
-    {
-        $structure = [
-            'key' => null,
-            'labels' => [],
-            'types' => [],
-        ];
-        if (!$data) {
-            $this->structure = $structure;
-            return $structure;
-        }
-        if (!$fileFormat) {
-            $fileFormat = $this->format;
-        }
-
-        if ($fileFormat === 'yaml') {
-            if (isset($rawData['origFile'])) {
-                $rawData = trim(file_get_contents($rawData['origFile']));
-            }
-            if ($rawData && ($rawData[0] === '-')) {
-                $structure['key'] = 'index';
-            } else {
-                $key0 = substr($rawData, 0, strpos($rawData, ':'));
-            }
-        } elseif ($fileFormat === 'json') {
-            if (isset($rawData['origFile'])) {
-                $rawData = trim(file_get_contents($rawData['origFile']));
-            }
-            if ($rawData && ($rawData[0] === '[')) {
-                $structure['key'] = 'index';
-            } else {
-                if (!preg_match('/^{"(.*?)"/', $rawData, $m)) {
-                    exit("Error in json file");
-                }
-                $key0 = $m[1];
-            }
-        } else {    // csv
-            $structure['key'] = 'index';
-            $rec0 = reset($data);
-            // note: this requires that CSV file has been transformed already, ie first row used as labels.
-            $structure['labels'] = is_array($rec0) ? array_keys( $rec0 ): [];
-        }
-
-        if (!$structure['key']) {
-            if (preg_match('/^ \d{2,4} - \d\d - \d\d/x', $key0)) {
-                $structure['key'] = 'date';
-            } elseif (preg_match('/\D/', $key0)) {
-                $structure['key'] = 'string';
-            } else {
-                $structure['key'] = 'numeric';
-            }
-        }
-
-        $rec0 = reset($data);
-        $l = is_array($rec0) ? sizeof($rec0) : 0;
-        if (!$structure['labels']) {
-            if (is_array($rec0)) {
-                $indexes = array_keys($rec0);
-            } else {
-                $indexes = [$key0];
-            }
-            $labels = $indexes;
-            // if data has numeric rec-keys, use first row as labels:
-            if (is_int($labels[0])) {
-                $labels = array_values($rec0);
-            }
-            $structure['labels'] = is_array($rec0) ? $labels : [];
-            $structure['indexes'] = $indexes;
-        }
-        $structure['types'] = array_fill(0, $l, 'string');
-        // note: types only makes sense if supplied in '_structure' record within data.
-        $this->structure = $structure;
-        return $structure;
-    } // analyseStructure
 
 
 

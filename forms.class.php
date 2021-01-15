@@ -8,8 +8,6 @@ define('THUMBNAIL_PATH', 	    '_/thumbnails/');
 define('DEFAULT_EXPORT_FILE', 	'~page/form-export.csv');
 define('FORM_LOG_FILE', 	    LOG_PATH.'form-log.txt');
 define('SPAM_LOG_FILE', 	    LOG_PATH.'spam-log.txt');
-define('TIMESTAMP_ID', 	        '_timestamp');
-define('REC_KEY_ID', 	        '_key');
 
 define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,'.
     'legend,customResponseEvaluation,next,file,confirmationText,formDataCaching,'.
@@ -130,228 +128,6 @@ class Forms
         }
         return $out;
     } // render
-
-
-
-
-    public function renderForm( $args )
-    {
-        $headArgs = ['type' => 'form-head'];
-        $formElems = [];
-        foreach ($args as $key => $value) {
-            if ($this->isHeadAttribute( $key )) {
-                $headArgs[$key] = $value;
-
-            } else {
-                $formElems[$key] = $value;
-            }
-        }
-        $out  = $this->_render( $headArgs );
-        $out .= $this->render( $formElems );
-        $out .= $this->_render([ 'type' => 'form-tail' ]);
-
-        return $out;
-    } // renderForm
-
-
-
-
-    private function _render($args)
-    {
-        $this->args = $args;
-        $this->inx++;
-        if (($this->inx > 0) && (@$args['type'] !== 'form-tail')) {
-            $this->currRec = &$this->currForm->formElements[ $this->inx ];
-        }
-
-        $wrapperClass = "lzy-form-field-wrapper lzy-form-field-wrapper-{$this->inx}";
-
-        $type = $this->parseArgs();
-        if ($this->skipRenderingForm && (strpos('form-head,form-tail', $type) === false)) {
-            return '';
-        }
-        $elem = '';
-        switch ($type) {
-            case 'form-head':
-                return $this->renderFormHead();
-            
-            case 'text':
-            case 'string':
-                $elem = $this->renderText();
-                break;
-            
-            case 'password':
-                $elem = $this->renderPassword();
-                break;
-            
-            case 'email':
-                $elem = $this->renderEMail();
-                break;
-            
-            case 'textarea':
-                $elem = $this->renderTextarea();
-                break;
-            
-            case 'radio':
-                $elem = $this->renderRadio();
-                break;
-            
-            case 'checkbox':
-                $elem = $this->renderCheckbox();
-                break;
-
-            case 'dropdown':
-                $elem = $this->renderDropdown();
-                break;
-
-            case 'button':
-                $elem = $this->renderButtons();
-                $wrapperClass = '';
-                break;
-
-            case 'url':
-                $elem = $this->renderUrl();
-                break;
-
-            case 'date':
-                $elem = $this->renderDate();
-                break;
-
-            case 'time':
-                $elem = $this->renderTime();
-                break;
-
-            case 'datetime':
-                $elem = $this->renderDateTime();
-                break;
-
-            case 'month':
-                $elem = $this->renderMonth();
-                break;
-
-            case 'number':
-                $elem = $this->renderNumber();
-                break;
-
-            case 'range':
-                $elem = $this->renderRange();
-                break;
-
-            case 'tel':
-                $elem = $this->renderTel();
-                break;
-
-            case 'file':
-                $elem = $this->renderFileUpload();
-                break;
-
-            case 'fieldset':
-                return $this->renderFieldsetBegin();
-
-            case 'fieldset-end':
-                return "\t\t\t\t</fieldset>\n";
-
-            case 'reveal':
-                $elem = $this->renderReveal();
-                break;
-
-            case 'hidden':
-                $elem = $this->renderHidden();
-                break;
-
-            case 'literal':
-                $elem = $this->renderLiteral();
-                break;
-
-            //case 'render-data':
-            //    $elem = $this->renderData();
-            //    break;
-
-            case 'bypassed':
-                $elem = '';
-                $this->bypassedValues[ $this->currRec->name ] = $this->currRec->value;
-                break;
-
-            case 'form-tail':
-				return $this->renderFormTail();
-
-            default:
-                $type = isset($this->type)? $this->type : '';
-                if ($type) {
-                    $elem = "<p>Error: form type unknown: '$type'</p>\n";
-                }
-        }
-
-        $type = $this->currRec->type;
-        if (($type === 'radio') || ($type === 'checkbox')) {
-            $type .= ' lzy-form-field-type-choice';
-        } elseif ($type === 'button') {
-            $type = 'buttons';
-        }
-
-        if (isset($args['layout'])) {
-            $layout = $args['layout'];
-            if ($layout[0] === 'v') {
-                $this->currRec->wrapperClass = isset($this->currRec->wrapperClass)? "{$this->currRec->wrapperClass} lzy-vertical": 'lzy-vertical';
-            } elseif ($layout[0] === 'h') {
-                $this->currRec->wrapperClass = isset($this->currRec->wrapperClass)? "{$this->currRec->wrapperClass} lzy-horizontal": 'lzy-horizontal';
-            }
-        }
-        if (isset($this->currRec->wrapperClass) && ($this->currRec->wrapperClass)) {
-	        $class = "$wrapperClass lzy-form-field-type-$type {$this->currRec->wrapperClass}";
-		} else {
-            $class = "$wrapperClass lzy-form-field-type-$type";
-		}
-
-        // error in supplied data? -> signal to user:
-        $error = '';
-        $out = '';
-        $name = $this->currRec->name;
-        if (isset($this->errorDescr[ $this->currForm->formId ][$name] )) {
-            $error = $this->errorDescr[ $this->currForm->formId ][$name];
-            $error = "\n\t\t<div class='lzy-form-error-msg'>$error</div>";
-            $class .= ' lzy-form-error';
-        }
-        $class = $this->classAttr($class);
-        if (($this->currRec->type !== 'hidden') &&
-                ($this->currRec->type !== 'bypassed') &&
-                ($this->currRec->type !== 'literal')) {
-            $comment = '';
-            if ($this->currRec->comment) {
-                $comment = "\t<span class='lzy-form-elem-comment'><span>{$this->currRec->comment}</span>\n\t\t</span>";
-            }
-		    $out = "\t\t<div $class>$error\n$elem\t\t$comment</div><!-- /field-wrapper -->\n\n";
-        } elseif ($this->currRec->type !== 'bypassed') {
-            $out = "\t\t$elem";
-        }
-
-        // add comment regarding required fields:
-        if ($this->submitButtonRendered &&
-                (stripos($this->currForm->options, 'norequiredcomment') === false)) {
-            $this->submitButtonRendered = false;
-            if ($this->currForm->formHint) {
-                $out = "\t\t<div class='lzy-form-hint'>{$this->currForm->formHint}</div>\n$out";
-
-            } elseif (isset($this->currForm->hasRequiredFields) && $this->currForm->hasRequiredFields) {
-                $out = "\t\t<div class='lzy-form-required-comment'>{{ lzy-form-required-comment }}</div>\n$out";
-            }
-        }
-
-        return $out;
-    } // render
-
-
-
-
-    private function parseArgs()
-    {
-        if ($this->inx === 0) {    // first pass -> must be type 'form-head' -> defines formId
-            return $this->parseHeadElemArgs();
-
-        } else {
-            return $this->parseElemArgs();
-        }
-    } // parseArgs
 
 
 
@@ -703,6 +479,228 @@ EOT;
         return $type;
     } // parseElemArgs
 
+
+
+
+
+    public function renderForm( $args )
+    {
+        $headArgs = ['type' => 'form-head'];
+        $formElems = [];
+        foreach ($args as $key => $value) {
+            if ($this->isHeadAttribute( $key )) {
+                $headArgs[$key] = $value;
+
+            } else {
+                $formElems[$key] = $value;
+            }
+        }
+        $out  = $this->_render( $headArgs );
+        $out .= $this->render( $formElems );
+        $out .= $this->_render([ 'type' => 'form-tail' ]);
+
+        return $out;
+    } // renderForm
+
+
+
+
+    private function _render($args)
+    {
+        $this->args = $args;
+        $this->inx++;
+        if (($this->inx > 0) && (@$args['type'] !== 'form-tail')) {
+            $this->currRec = &$this->currForm->formElements[ $this->inx ];
+        }
+
+        $wrapperClass = "lzy-form-field-wrapper lzy-form-field-wrapper-{$this->inx}";
+
+        $type = $this->parseArgs();
+        if ($this->skipRenderingForm && (strpos('form-head,form-tail', $type) === false)) {
+            return '';
+        }
+        $elem = '';
+        switch ($type) {
+            case 'form-head':
+                return $this->renderFormHead();
+            
+            case 'text':
+            case 'string':
+                $elem = $this->renderText();
+                break;
+            
+            case 'password':
+                $elem = $this->renderPassword();
+                break;
+            
+            case 'email':
+                $elem = $this->renderEMail();
+                break;
+            
+            case 'textarea':
+                $elem = $this->renderTextarea();
+                break;
+            
+            case 'radio':
+                $elem = $this->renderRadio();
+                break;
+            
+            case 'checkbox':
+                $elem = $this->renderCheckbox();
+                break;
+
+            case 'dropdown':
+                $elem = $this->renderDropdown();
+                break;
+
+            case 'button':
+                $elem = $this->renderButtons();
+                $wrapperClass = '';
+                break;
+
+            case 'url':
+                $elem = $this->renderUrl();
+                break;
+
+            case 'date':
+                $elem = $this->renderDate();
+                break;
+
+            case 'time':
+                $elem = $this->renderTime();
+                break;
+
+            case 'datetime':
+                $elem = $this->renderDateTime();
+                break;
+
+            case 'month':
+                $elem = $this->renderMonth();
+                break;
+
+            case 'number':
+                $elem = $this->renderNumber();
+                break;
+
+            case 'range':
+                $elem = $this->renderRange();
+                break;
+
+            case 'tel':
+                $elem = $this->renderTel();
+                break;
+
+            case 'file':
+                $elem = $this->renderFileUpload();
+                break;
+
+            case 'fieldset':
+                return $this->renderFieldsetBegin();
+
+            case 'fieldset-end':
+                return "\t\t\t\t</fieldset>\n";
+
+            case 'reveal':
+                $elem = $this->renderReveal();
+                break;
+
+            case 'hidden':
+                $elem = $this->renderHidden();
+                break;
+
+            case 'literal':
+                $elem = $this->renderLiteral();
+                break;
+
+            //case 'render-data':
+            //    $elem = $this->renderData();
+            //    break;
+
+            case 'bypassed':
+                $elem = '';
+                $this->bypassedValues[ $this->currRec->name ] = $this->currRec->value;
+                break;
+
+            case 'form-tail':
+				return $this->renderFormTail();
+
+            default:
+                $type = isset($this->type)? $this->type : '';
+                if ($type) {
+                    $elem = "<p>Error: form type unknown: '$type'</p>\n";
+                }
+        }
+
+        $type = $this->currRec->type;
+        if (($type === 'radio') || ($type === 'checkbox')) {
+            $type .= ' lzy-form-field-type-choice';
+        } elseif ($type === 'button') {
+            $type = 'buttons';
+        }
+
+        if (isset($args['layout'])) {
+            $layout = $args['layout'];
+            if ($layout[0] === 'v') {
+                $this->currRec->wrapperClass = isset($this->currRec->wrapperClass)? "{$this->currRec->wrapperClass} lzy-vertical": 'lzy-vertical';
+            } elseif ($layout[0] === 'h') {
+                $this->currRec->wrapperClass = isset($this->currRec->wrapperClass)? "{$this->currRec->wrapperClass} lzy-horizontal": 'lzy-horizontal';
+            }
+        }
+        if (isset($this->currRec->wrapperClass) && ($this->currRec->wrapperClass)) {
+	        $class = "$wrapperClass lzy-form-field-type-$type {$this->currRec->wrapperClass}";
+		} else {
+            $class = "$wrapperClass lzy-form-field-type-$type";
+		}
+
+        // error in supplied data? -> signal to user:
+        $error = '';
+        $out = '';
+        $name = $this->currRec->name;
+        if (isset($this->errorDescr[ $this->currForm->formId ][$name] )) {
+            $error = $this->errorDescr[ $this->currForm->formId ][$name];
+            $error = "\n\t\t<div class='lzy-form-error-msg'>$error</div>";
+            $class .= ' lzy-form-error';
+        }
+        $class = $this->classAttr($class);
+        if (($this->currRec->type !== 'hidden') &&
+                ($this->currRec->type !== 'bypassed') &&
+                ($this->currRec->type !== 'literal')) {
+            $comment = '';
+            if ($this->currRec->comment) {
+                $comment = "\t<span class='lzy-form-elem-comment'><span>{$this->currRec->comment}</span>\n\t\t</span>";
+            }
+		    $out = "\t\t<div $class>$error\n$elem\t\t$comment</div><!-- /field-wrapper -->\n\n";
+        } elseif ($this->currRec->type !== 'bypassed') {
+            $out = "\t\t$elem";
+        }
+
+        // add comment regarding required fields:
+        if ($this->submitButtonRendered &&
+                (stripos($this->currForm->options, 'norequiredcomment') === false)) {
+            $this->submitButtonRendered = false;
+            if ($this->currForm->formHint) {
+                $out = "\t\t<div class='lzy-form-hint'>{$this->currForm->formHint}</div>\n$out";
+
+            } elseif (isset($this->currForm->hasRequiredFields) && $this->currForm->hasRequiredFields) {
+                $out = "\t\t<div class='lzy-form-required-comment'>{{ lzy-form-required-comment }}</div>\n$out";
+            }
+        }
+
+        return $out;
+    } // render
+
+
+
+
+    private function parseArgs()
+    {
+        if ($this->inx === 0) {    // first pass -> must be type 'form-head' -> defines formId
+            return $this->parseHeadElemArgs();
+
+        } else {
+            return $this->parseElemArgs();
+        }
+    } // parseArgs
 
 
 
@@ -1837,34 +1835,61 @@ EOT;
         $currForm = $this->currForm;
         $userSuppliedData = $this->userSuppliedData;
 
-        $ds = new DataStorage2($currForm->file);
+        $ds = new DataStorage2([
+            'dataFile' => $currForm->file,
+            'includeKeys' => true,
+            'includeTimestamp' => true,
+        ]);
+        // check meta-fields '_timestamp' and '_key', add if necessary:
+        $this->updateDbStructure( $ds );
 
-        $doubletFound = false;
+        $recKey = $this->recKey;
+        $isNewRec = false;
+        if (!$recKey || ($recKey === 'new-rec') || ($recKey === 'unknown')) {
+            $recKey = createHash();
+            $isNewRec = true;
+            writeLogStr("New data: [{$currForm->formName}:$recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
+        } else {
+            writeLogStr("Data modified: [{$currForm->formName}:$recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
+        }
+
+        // check whether data already present in DB, if not disabled:
         if ($currForm->avoidDuplicates) {
+            $doubletFound = false;
             $data = $ds->read();
             // loop over records:
-            foreach ($data as $hash => $rec) {
+            foreach ($data as $dataRecKey => $rec) {
                 // generally ignore all data keys starting with '_':
-                if (@$hash[0] === '_') {
+                if (@$dataRecKey[0] === '_') {
                     continue;
                 }
 
                 // loop over fields in rec, look for differences:
                 $identical = true;
-                foreach ($rec as $key => $value) {
+                foreach ($rec as $dbFldKey => $value) {
                     // ignore all meta attributes:
-                    if (@$key[0] === '_') {
+                    if (@$dbFldKey[0] === '_') {
                         continue;
                     }
-                    if (is_array($userSuppliedData[$key])) {
-                        $v1 = @strtolower(str_replace(' ', '', $userSuppliedData[$key][0]));
-                    } else {
-                        $v1 = @strtolower(str_replace(' ', '', $userSuppliedData[$key]));
+                    $usrDataFldName = false;
+                    foreach ($currForm->formElements as $i => $formDescr) {
+                        if ($formDescr->label === $dbFldKey) {
+                            $usrDataFldName = $formDescr->name;
+                            break;
+                        }
                     }
-                    if (is_array($rec[$key])) {
-                        $v2 = @strtolower(str_replace(' ', '', $rec[$key][0]));
+                    if (!$usrDataFldName) {
+                        die("Error in saveUserSuppliedDataToDB(): inconsistancy in rec structure");
+                    }
+                    if (is_array($userSuppliedData[$usrDataFldName])) {
+                        $v1 = @strtolower(str_replace(' ', '', $userSuppliedData[$usrDataFldName][0]));
                     } else {
-                        $v2 = @strtolower(str_replace(' ', '', $rec[$key]));
+                        $v1 = @strtolower(str_replace(' ', '', $userSuppliedData[$usrDataFldName]));
+                    }
+                    if (is_array($rec[$dbFldKey])) {
+                        $v2 = @strtolower(str_replace(' ', '', $rec[$dbFldKey][0]));
+                    } else {
+                        $v2 = @strtolower(str_replace(' ', '', $rec[$dbFldKey]));
                     }
                     if (($v1 !== $v2) && ($v1 !== '●●●●')) {
                         $identical = false;
@@ -1882,37 +1907,32 @@ EOT;
             }
         }
 
-        $recKey = $this->recKey;
-        if ($doubletFound) {
-            writeLogStr("Ignoring identical data: [{$currForm->formName}:$recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
-            return;
-        }
-        if (!$recKey || ($recKey === 'new-rec')) {
-            $recKey = createHash();
-            writeLogStr("New data: [{$currForm->formName}:$recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
-        } else {
-            writeLogStr("Data modified: [{$currForm->formName}:$recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
-        }
-
-        // handle passwords:
+        // prepare user supplied data for DB:
         $oldRec = false;
+        $newRec = [];
         foreach ($currForm->formElements as $i => $rec) {
-            $key = $rec->name;
-            if ($rec->type === 'password') {
-                if (!$oldRec) {
-                    $oldRec = $ds->readRecord($recKey);
-                }
-                $newPw = $userSuppliedData[ $key ];
+            $usrDataFldName = $rec->name;
+            $dbFldKey = $rec->label;
+            if (($usrDataFldName[0] === '_') || !isset($userSuppliedData[$usrDataFldName])) {
+                continue;
+            }
+
+            if (!$isNewRec && ($rec->type === 'password')) {
+                $newPw = $userSuppliedData[ $usrDataFldName ];
                 if (!$newPw || ($newPw === '●●●●')) {
-                    $userSuppliedData[ $key ] = @$oldRec[ $key ];
+                    if (!$oldRec) {
+                        $oldRec = $ds->readRecord($recKey);
+                    }
+                    $userSuppliedData[ $usrDataFldName ] = @$oldRec[ $dbFldKey ];
                 }
             }
+            $newRec[$dbFldKey] = $userSuppliedData[$usrDataFldName];
         }
 
         // add new record:
-        $userSuppliedData[ TIMESTAMP_ID ] = date('Y-m-d H:i:s');
-        $userSuppliedData[ '_key' ] = $recKey;
-        $ds->writeRecord($recKey, $userSuppliedData);
+        $newRec[ TIMESTAMP_KEY_ID ] = date('Y-m-d H:i:s');
+        $newRec[ REC_KEY_ID ] = $recKey;
+        $ds->writeRecord($recKey, $newRec);
         return true;
 	} // saveUserSuppliedDataToDB
 
@@ -2030,7 +2050,11 @@ EOT;
             return;
         }
 
-        $ds = new DataStorage2($currForm->file);
+        $ds = new DataStorage2([
+            'dataFile' => $currForm->file,
+            'includeKeys' => true,
+            'includeTimestamp' => true,
+        ]);
         $srcData = $ds->read();
 
         $data = [];
@@ -2054,8 +2078,8 @@ EOT;
 
         $e = new FormElement();
         $e->type = 'text';
-        $e->labelInOutput = TIMESTAMP_ID;
-        $e->name = TIMESTAMP_ID;
+        $e->labelInOutput = TIMESTAMP_KEY_ID;
+        $e->name = TIMESTAMP_KEY_ID;
         $formElements[] = $e;
 
         $r = 1;
@@ -2072,11 +2096,14 @@ EOT;
                             if (!$fldDescr->optionNames[$i]) {
                                 continue;
                             }
-                            $value = @$row[$fldName][$i];
+                            $lbl = $fldDescr->optionNames[$i];
+                            $value = @$row[$fldName][$lbl];
                             $data[$r][$c++] = $value? '1': ' ';
                             continue;
                         }
-                        $value = @$row[$fldName][$i]? '1': ' ';
+                        $lbl = $fldDescr->optionNames[$i];
+                        $value = @$row[$fldName][$lbl];
+                        $value = $value? '1': ' ';
                     } else {
                         $value = isset($row[$fldName][0])? $row[$fldName][0]: '';
                     }
@@ -2104,16 +2131,40 @@ EOT;
         }
         $c = 0;
         $struc['key'] = 'index';
-        foreach ($formElements as $desc) {
-            if ($desc->type !== 'button') {
-                $struc['fields'][$desc->labelInOutput] = [ 'type' => 'string'];
-                $struc['labels'][$c++] = $desc->labelInOutput;
+
+        foreach ($formElements as $fldDescr) {
+            if (!$fldDescr) { continue; }
+            $fldType = @$fldDescr->type;
+            if (($fldType === 'checkbox') || ($fldType === 'radio') || ($fldType === 'dropdown')) {
+                if ($fldDescr->splitOutput) {
+                    for ($i=1; $i<(sizeof($fldDescr->optionNames) - 1); $i++) {
+                        if (!$fldDescr->optionNames[$i]) {
+                            continue;
+                        }
+                        $lbl = $fldDescr->optionNames[$i];
+                        $struc['fields'][$lbl] = [ 'type' => 'string'];
+                        $struc['labels'][$c++] = $lbl;
+                    }
+                    $lbl = $fldDescr->optionNames[$i];
+                    $struc['fields'][$lbl] = [ 'type' => 'string'];
+                    $struc['labels'][$c++] = $lbl;
+                } else {
+                    $struc['fields'][$fldDescr->labelInOutput] = [ 'type' => 'string'];
+                    $struc['labels'][$c++] = $fldDescr->labelInOutput;
+                }
+            } elseif ($fldType !== 'button') {
+                $struc['fields'][$fldDescr->labelInOutput] = [ 'type' => 'string'];
+                $struc['labels'][$c++] = $fldDescr->labelInOutput;
+
             }
         }
+
         $ds2 = new DataStorage2([
             'dataSource' => $currForm->export,
             'structureDef'  => $struc,
-            ]);
+            'includeKeys' => true,
+            'includeTimestamp' => true,
+        ]);
         $ds2->write( $data );
     } // export
 
@@ -2157,7 +2208,7 @@ EOT;
             $value = $this->trans->translateVariable( 'lzy-form-data-key', true );
             $row[] = $value;
         }
-        $value = $this->trans->translateVariable( TIMESTAMP_ID, true );
+        $value = $this->trans->translateVariable( TIMESTAMP_KEY_ID, true );
         $row[] = $value;
         return [ $row ];
     } // exportHeaderRow
@@ -2567,16 +2618,13 @@ EOT;
                 array_splice($rec, 0,0, [$index]);
                 $data[$i] = $rec;
             }
-            $options = [
-                'dataSource' => $data,
-                'headers' => true,
-            ];
-        } else {
-            $options = [
-                'dataSource' => $fileName,
-                'headers' => true,
-            ];
         }
+        $structure = $ds->getStructure();
+        array_unshift($data, $structure['labels']);
+        $options = [
+            'data' => $data,
+            'headers' => true,
+        ];
         $tbl = new HtmlTable($this->lzy, 0, $options);
         $out .= $tbl->render();
         $out .= "</div>\n";
@@ -2779,7 +2827,35 @@ EOT;
 
     protected function getFormProp( $propName ) {
 	    return $this->currForm->$propName;
-    }
+    } // getFormProp
+
+
+
+
+    private function updateDbStructure(DataStorage2 $ds)
+    {
+        $struct = $ds->getStructure();
+        if (isset($struct['fields'][TIMESTAMP_KEY_ID])) {
+            return false;
+        }
+
+        unset($struct['fields'][REC_KEY_ID]);
+        $struct['fields'][TIMESTAMP_KEY_ID] = ['type' => 'string'];
+        $struct['fields'][REC_KEY_ID] = ['type' => 'string'];
+        unset($struct['labels']);
+        foreach ($struct['fields'] as $recKey => $rec) {
+            $struct['labels'][] = $recKey;
+        }
+        $ds->setStructure($struct);
+        $data = $ds->read();
+        foreach ($data as $recKey => $rec) {
+            unset($data[$recKey][REC_KEY_ID]);
+            $data[$recKey][TIMESTAMP_KEY_ID] = 0;
+            $data[$recKey][REC_KEY_ID] = $recKey;
+        }
+        $ds->write($data);
+        return true;
+    } // updateDbStructure
 
 } // Forms
 

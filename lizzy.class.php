@@ -49,6 +49,8 @@ define('ONETIME_PASSCODE_FILE', CACHE_PATH.'_onetime-passcodes.yaml');
 define('HACKING_THRESHOLD',     10);
 define('HOUSEKEEPING_FILE',     CACHE_PATH.'_housekeeping.txt');
 define('MIN_SITEMAP_INDENTATION', 4);
+define('REC_KEY_ID', 	        '_key');
+define('TIMESTAMP_KEY_ID', 	    '_timestamp');
 
 define('MKDIR_MASK',            0700); // remember to modify _lizzy/_install/install.sh as well
 define('MKDIR_MASK2',           0700); // ??? test whether higher priv is necessary

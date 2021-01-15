@@ -775,6 +775,17 @@ lzy-edit-form-rec:
     de: 'Bearbeiten'
     _:  'Edit'
 
+
+lzy-edit-form-submit:
+    de: 'Speichern'
+    _:  'Save'
+
+
+lzy-edit-form-cancel:
+    de: 'Abbrechen'
+    _:  'Cancel'
+
+
 lzy-edit-form-new-rec:
     de: 'Neuer Datensatz'
     _:  'New Data'
