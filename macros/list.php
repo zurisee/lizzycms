@@ -58,55 +58,14 @@ class OutputList
         }
         $this->parseArgs();
 
-        $elements = [];
         if (stripos($this->source, 'registeredUsers') !== false) {
-            $elements = array_keys( $this->lzy->auth->getKnownUsers() );
+            $out = $this->lzy->auth->getListOfUsers( $this->args );
 
         } elseif (stripos($this->source, 'loggedInUsers') !== false) {
             // not implemented yet
             // -> requires maintaining state of logged in users
             return "Sorry, 'loggedInUsers' not implemented yet.";
-            $elements = array_keys( $this->lzy->auth->getKnownUsers() );
         }
-
-        if ($this->sort) {
-            if (($this->sort === true) || ($this->sort && ($this->sort[0] !== 'd'))) {
-                sort($elements, SORT_NATURAL | SORT_FLAG_CASE);
-            } else {
-                rsort($elements, SORT_NATURAL | SORT_FLAG_CASE);
-            }
-        }
-
-        $out = '';
-        foreach ($elements as $i => $element) {
-            if ($this->exclude) {
-                $pattern = $this->exclude;
-                if (preg_match("/$pattern/", $element)) {
-                    continue;
-                }
-            }
-            if ($this->capitalize) {
-                $element = ucfirst($element);
-            }
-
-            if ($this->prefix) {
-                $element = "$this->prefix$element";
-            }
-            if ($this->postfix) {
-                $element .= $this->postfix;
-            }
-            if ($this->separator) {
-                $element .= $this->separator;
-            }
-
-            if ($this->wrapperTag) {
-                $cls = $this->wrapperClass? " class='$this->wrapperClass'": '';
-                $element = "\t\t<$this->wrapperTag$cls>$element</$this->wrapperTag>\n";
-            }
-
-            $out .= $element;
-        }
-        $out = substr($out, 0, - strlen($this->separator));
 
         if ($this->outerWrapperTag) {
             $cls = $this->outerWrapperClass? " class='$this->outerWrapperClass'": '';
@@ -127,31 +86,26 @@ EOT;
     private function parseArgs()
     {
         $this->source = @$this->args['source']? $this->args['source']: '';
-        $this->prefix = @$this->args['prefix']? $this->args['prefix']: '';
-        $this->postfix = @$this->args['postfix']? $this->args['postfix']: '';
-        $this->separator = @$this->args['separator']? $this->args['separator']: '';
-        if ("$this->prefix$this->postfix$this->separator" === '') {
-            $this->separator = ',';
+        $prefix = @$this->args['prefix']? $this->args['prefix']: '';
+        $postfix = @$this->args['postfix']? $this->args['postfix']: '';
+        $separator = @$this->args['separator']? $this->args['separator']: '';
+        if ("$prefix$postfix$separator" === '') {
+            $this->args['separator'] = ',';
         }
-        $this->wrapperTag = @$this->args['wrapperTag']? $this->args['wrapperTag']: '';
-        $this->wrapperClass = @$this->args['wrapperClass']? $this->args['wrapperClass']: '';
         $this->outerWrapperTag = @$this->args['outerWrapperTag']? $this->args['outerWrapperTag']: '';
         $this->outerWrapperClass = @$this->args['outerWrapperClass']? $this->args['outerWrapperClass']: '';
 
-        $this->exclude = @$this->args['exclude']? $this->args['exclude']: '';
-        $this->sort = @$this->args['sort']? $this->args['sort']: '';
-        $this->mode = @$this->args['mode']? $this->args['mode']: '';
-        $this->capitalize = @$this->args['capitalize']? $this->args['capitalize']: false;
-        $this->options = @$this->args['options']? $this->args['options']: '';
-        if (strpos($this->options, 'capitalize') !== false) {
-            $this->capitalize = true;
+        $mode = @$this->args['mode']? $this->args['mode']: '';
+        $options = @$this->args['options']? $this->args['options']: '';
+        if (strpos($options, 'capitalize') !== false) {
+            $this->args['capitalize'] = true;
         }
 
         // short-hands:
-        if (($this->mode === 'ul') || ($this->mode === 'ol')) {
-            $this->wrapperTag = 'li';
-            $this->outerWrapperTag = $this->mode;
+        if (($mode === 'ul') || ($mode === 'ol')) {
+            $this->args['wrapperTag'] = 'li';
+            $this->args['separator'] = '';
+            $this->outerWrapperTag = $mode;
         }
     }
-
 } // class OutputList
