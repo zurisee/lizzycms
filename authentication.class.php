@@ -630,7 +630,6 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
     public function logout()
     {
         $user = getStaticVariable('user');
@@ -646,7 +645,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     public function unsetLoggedInUser($user = '')
     {
         if ($user) {
@@ -665,7 +664,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     private function handleFailedLoginAttempts($code = '')
     {
         $rep = '';
@@ -680,7 +679,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     private function handleFailedLogins()
     {
         $repeated = false;
@@ -737,7 +736,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     public function isValidPassword($password, $password2 = false)
     {
         if ($password2 && ($password !== $password2)) {
@@ -759,7 +758,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     public function isPrivileged()
     {
         return $this->checkAdmission('admins,editors');
@@ -768,7 +767,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     public function isLoggedIn()
     {
         return $this->isAdmin() || (bool) $this->userRec;
@@ -777,7 +776,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     public function isAdmin($thorough = false)
     {
         if (!$thorough && getStaticVariable('isAdmin')) {
@@ -785,6 +784,7 @@ EOT;
         }
         return $this->checkAdmission('admins');
     } // isAdmin
+
 
 
 
@@ -948,6 +948,65 @@ EOT;
         }
         return $rec;
     } // findEmailInEmailList
+
+
+
+
+    public function getListOfUsers( $args = [] )
+    {
+        $sort           = isset($args['sort'])? $args['sort']: true;
+        $exclude        = isset($args['exclude'])? $args['exclude']: false;
+        $capitalize     = isset($args['capitalize'])? $args['capitalize']: false;
+        $prefix         = isset($args['prefix'])? $args['prefix']: '';
+        $postfix        = isset($args['postfix'])? $args['postfix']: '';
+        $separator      = isset($args['separator'])? $args['separator']: ',';
+        $wrapperTag     = isset($args['wrapperTag'])? $args['wrapperTag']: '';
+        $wrapperClass   = isset($args['wrapperClass'])? $args['wrapperClass']: '';
+
+        $registeredUsers = array_keys( $this->getKnownUsers() );
+        if ($sort) {
+            if (($sort === true) || ($sort && ($sort[0] !== 'd'))) {
+                sort($registeredUsers, SORT_NATURAL | SORT_FLAG_CASE);
+            } else {
+                rsort($registeredUsers, SORT_NATURAL | SORT_FLAG_CASE);
+            }
+        }
+
+        $out = '';
+        foreach ($registeredUsers as $i => $user) {
+            if ($exclude) {
+                $pattern = $exclude;
+                if (preg_match("/$pattern/i", $user)) {
+                    continue;
+                }
+            }
+            if ($capitalize) {
+                $user = ucfirst($user);
+            }
+
+            if ($prefix) {
+                $user = "$prefix$user";
+            }
+            if ($postfix) {
+                $user .= $postfix;
+            }
+            if ($separator) {
+                $user .= $separator;
+            }
+
+            if ($wrapperTag) {
+                $cls = $wrapperClass? " class='$wrapperClass'": '';
+                $user = "\t\t<$wrapperTag$cls>$user</$wrapperTag>\n";
+            }
+
+            $out .= $user;
+        }
+        if (!$wrapperTag) {
+            $out = substr($out, 0, -strlen($separator));
+        }
+        return $out;
+    } // getListOfUsers
+
 
 
 
