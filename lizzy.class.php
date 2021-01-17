@@ -896,7 +896,7 @@ EOT;
                 $rec = $this->auth->getLoggedInUser(true);
                 $login = $userAcc->renderLoginLink($rec);
                 $loginMenu = $userAcc->renderLoginMenu($rec);
-                $userName = @$rec['username'];
+                $userName = @$rec['username']? $rec['username'] : '{{ lzy-anon }}';
                 $groups = @$rec['groups'];
             } else {
 	            // login icon when not logged in:
