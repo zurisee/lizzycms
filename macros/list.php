@@ -25,6 +25,7 @@ $this->addMacro($macroName, function () {
         $this->getArg($macroName, 'exclude', '(optional) Regex expression used to exclude specific elements from the list. E.g. "\\banon\\b"', '');
         $this->getArg($macroName, 'sort', '[ascending,descending] If defined, sorting is applied to the list of elements.', '');
         $this->getArg($macroName, 'mode', '[ul,ol] Short-hand.', '');
+        $this->getArg($macroName, 'group', 'If defined, only users that are member of given group are listed.', '');
         $this->getArg($macroName, 'disableCaching', 'If true, page caching will be disabled (this may be useful in case of elements that may change over time, e.g. loggedInUsers).', false);
         return '';
     }

@@ -962,18 +962,29 @@ EOT;
         $separator      = isset($args['separator'])? $args['separator']: ',';
         $wrapperTag     = isset($args['wrapperTag'])? $args['wrapperTag']: '';
         $wrapperClass   = isset($args['wrapperClass'])? $args['wrapperClass']: '';
+        $group          = isset($args['group'])? $args['group']: '';
 
-        $registeredUsers = array_keys( $this->getKnownUsers() );
+        if ($group) {
+            $allUsers = $this->knownUsers;
+            $users = [];
+            foreach ($allUsers as $un => $rec) {
+                if ($this->isGroupMember($rec['groups'], $group)) {
+                    $users[] = $un;
+                }
+            }
+        } else {
+            $users = array_keys( $this->knownUsers );
+        }
         if ($sort) {
             if (($sort === true) || ($sort && ($sort[0] !== 'd'))) {
-                sort($registeredUsers, SORT_NATURAL | SORT_FLAG_CASE);
+                sort($users, SORT_NATURAL | SORT_FLAG_CASE);
             } else {
-                rsort($registeredUsers, SORT_NATURAL | SORT_FLAG_CASE);
+                rsort($users, SORT_NATURAL | SORT_FLAG_CASE);
             }
         }
 
         $out = '';
-        foreach ($registeredUsers as $i => $user) {
+        foreach ($users as $i => $user) {
             if ($exclude) {
                 $pattern = $exclude;
                 if (preg_match("/$pattern/i", $user)) {
