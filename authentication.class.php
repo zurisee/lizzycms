@@ -952,18 +952,8 @@ EOT;
 
 
 
-    public function getListOfUsers( $args = [] )
+    public function getListOfUsers( $group = false )
     {
-        $sort           = isset($args['sort'])? $args['sort']: true;
-        $exclude        = isset($args['exclude'])? $args['exclude']: false;
-        $capitalize     = isset($args['capitalize'])? $args['capitalize']: false;
-        $prefix         = isset($args['prefix'])? $args['prefix']: '';
-        $postfix        = isset($args['postfix'])? $args['postfix']: '';
-        $separator      = isset($args['separator'])? $args['separator']: ',';
-        $wrapperTag     = isset($args['wrapperTag'])? $args['wrapperTag']: '';
-        $wrapperClass   = isset($args['wrapperClass'])? $args['wrapperClass']: '';
-        $group          = isset($args['group'])? $args['group']: '';
-
         if ($group) {
             $allUsers = $this->knownUsers;
             $users = [];
@@ -975,47 +965,7 @@ EOT;
         } else {
             $users = array_keys( $this->knownUsers );
         }
-        if ($sort) {
-            if (($sort === true) || ($sort && ($sort[0] !== 'd'))) {
-                sort($users, SORT_NATURAL | SORT_FLAG_CASE);
-            } else {
-                rsort($users, SORT_NATURAL | SORT_FLAG_CASE);
-            }
-        }
-
-        $out = '';
-        foreach ($users as $i => $user) {
-            if ($exclude) {
-                $pattern = $exclude;
-                if (preg_match("/$pattern/i", $user)) {
-                    continue;
-                }
-            }
-            if ($capitalize) {
-                $user = ucfirst($user);
-            }
-
-            if ($prefix) {
-                $user = "$prefix$user";
-            }
-            if ($postfix) {
-                $user .= $postfix;
-            }
-            if ($separator) {
-                $user .= $separator;
-            }
-
-            if ($wrapperTag) {
-                $cls = $wrapperClass? " class='$wrapperClass'": '';
-                $user = "\t\t<$wrapperTag$cls>$user</$wrapperTag>\n";
-            }
-
-            $out .= $user;
-        }
-        if (!$wrapperTag) {
-            $out = substr($out, 0, -strlen($separator));
-        }
-        return $out;
+        return implode(',', $users);
     } // getListOfUsers
 
 
