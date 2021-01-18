@@ -1189,9 +1189,9 @@ function getVersionCode($forceNew = false, $str = '')
 
 
 function parseNumbersetDescriptor($descr, $minValue = 1, $maxValue = 9, $headers = false)
+{
  // extract patterns such as '1,3, 5-8', or '-3, 5, 7-'
  // don't parse if pattern contains ':' because that means it's a key:value
-{
     if (!$descr) {
         return [];
     }
@@ -1319,11 +1319,11 @@ function getCliArg($argname, $stringMode = false)
 
 
 function getUrlArg($tag, $stringMode = false, $unset = false)
+{
  // in case of arg that is present but empty:
  // stringMode: returns value (i.e. '')
  // otherwise, returns true or false, note: empty string == true!
  // returns null if no url-arg was found
-{
     $out = null;
 	if (isset($_GET[$tag])) {
 	    if ($stringMode) {
@@ -1344,10 +1344,10 @@ function getUrlArg($tag, $stringMode = false, $unset = false)
 
 
 function getUrlArgStatic($tag, $stringMode = false, $varName = false)
+{
  // like get_url_arg()
  // but returns previously received value if corresp. url-arg was not recived
  // returns null if no value has ever been received
-{
 	if (!$varName) {
 		$varName = $tag;
 	}
@@ -1393,7 +1393,6 @@ function setStaticVariable($varName, $value, $append = false)
         $var .= $append . $value;
     }
 } // setStaticVariable
-
 
 
 
@@ -1520,8 +1519,8 @@ function preparePath($path)
 
 
 function is_legal_email_address($email)
- // multiple address allowed, if separated by comma.
 {
+ // multiple address allowed, if separated by comma.
     if (!is_safe($email)) {
         return false;
     }
@@ -1632,7 +1631,7 @@ function dateFormatted($date = false, $format = false)
     }
     $out = strftime($format, $date);
     return $out;
-}
+} // dateFormatted
 
 
 
@@ -1640,9 +1639,9 @@ function dateFormatted($date = false, $format = false)
 
 
 function touchFile($file, $time = false)
-{	// work-around: PHP's touch() fails if http-user is not owner of file 
+{	// work-around: PHP's touch() fails if http-user is not owner of file
 	if ($time) {
-        shell_exec("touch -t ".date("YmdHi.s", $time)." $file"); 
+        shell_exec("touch -t ".date("YmdHi.s", $time)." $file");
 	} else {
 		touch($file);
 	}
@@ -1789,10 +1788,10 @@ function logError($str)
 
 
 
-function shield_str($s)
-{
-	return str_replace('"', '\\"', $s);
-} // shield_str
+//function shield_str($s)
+//{
+//	return str_replace('"', '\\"', $s);
+//} // shield_str
 
 
 
@@ -2057,13 +2056,13 @@ function findNextPattern($str, $pat, $p1 = 0)
 
 
 function trunkPath($path, $n = 1, $leaveNotRemove = true)
+{
  // case $leaveNotRemove == false:
  //      n==2   trunk from right   '/a/b/c/d/e/x.y' ->  /a/b/c/
  //      n==-2  trunk from left    '/a/b/c/d/e/x.y' ->  c/d/e/x.y
  // case $leaveNotRemove == true:
  //      n==2   leave from right   '/a/b/c/d/e/x.y' ->  d/e/x.y
  //      n==-2  leave from left    '/a/b/c/d/e/x.y' ->  /a/b/
-{
     if ($leaveNotRemove) {
         if ($n > 0) {   // leave from right
             $file = basename($path);
@@ -2482,3 +2481,86 @@ function createHash( $hashSize = 8, $unambiguous = false )
     }
     return $hash;
 } // createHash
+
+
+
+
+function renderList( $list, $args )
+{
+    $sort           = isset($args['sort'])? $args['sort']: false;
+    $exclude        = isset($args['exclude'])? $args['exclude']: false;
+    $capitalize     = isset($args['capitalize'])? $args['capitalize']: false;
+    $prefix         = isset($args['prefix'])? $args['prefix']: '';
+    $postfix        = isset($args['postfix'])? $args['postfix']: '';
+    $separator      = isset($args['separator'])? $args['separator']: ',';
+    $wrapperTag     = isset($args['wrapperTag'])? $args['wrapperTag']: '';
+    $wrapperClass   = isset($args['wrapperClass'])? $args['wrapperClass']: '';
+    $outerWrapperTag     = isset($args['wrapperTag'])? $args['wrapperTag']: '';
+    $outerWrapperClass   = isset($args['wrapperClass'])? $args['wrapperClass']: '';
+    $mode           = isset($args['mode'])? $args['mode']: '';
+
+    // short-hands:
+    if (($mode === 'ul') || ($mode === 'ol')) {
+        $args['wrapperTag'] = 'li';
+        $args['separator'] = '';
+        $outerWrapperTag = $mode;
+    }
+
+    if (is_array($list)) {
+        $elements = $list;
+    } else {
+        $elements = explodeTrim(',', $list);
+    }
+    if ($sort) {
+        if (($sort === true) || ($sort && ($sort[0] !== 'd'))) {
+            sort($elements, SORT_NATURAL | SORT_FLAG_CASE);
+        } else {
+            rsort($elements, SORT_NATURAL | SORT_FLAG_CASE);
+        }
+    }
+
+    $out = '';
+    foreach ($elements as $i => $element) {
+        if ($exclude) {
+            $pattern = $exclude;
+            if (preg_match("/$pattern/i", $element)) {
+                continue;
+            }
+        }
+        if ($capitalize) {
+            $element = ucfirst($element);
+        }
+
+        if ($prefix) {
+            $element = "$prefix$element";
+        }
+        if ($postfix) {
+            $element .= $postfix;
+        }
+        if ($separator) {
+            $element .= $separator;
+        }
+
+        if ($wrapperTag) {
+            $cls = $wrapperClass? " class='$wrapperClass'": '';
+            $element = "\t\t<$wrapperTag$cls>$element</$wrapperTag>\n";
+        }
+
+        $out .= $element;
+    }
+    if (!$wrapperTag) {
+        $out = substr($out, 0, -strlen($separator));
+    }
+
+    if ($outerWrapperTag) {
+        $cls = $outerWrapperClass? " class='$outerWrapperClass'": '';
+        $out = <<<EOT
+    <$outerWrapperTag$cls>
+$out
+    </$outerWrapperTag>
+
+EOT;
+    }
+
+    return $out;
+} // renderList
