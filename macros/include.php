@@ -22,6 +22,7 @@ $this->addMacro($macroName, function () {
     $outerWrapperTag = $this->getArg($macroName, 'outerWrapperTag', '(optional) HTML-tag in which to wrap the set of included files.', false);
     $outerWrapperClass = $this->getArg($macroName, 'outerWrapperClass', '(optional) class applied to the wrapper around all files.', '');
     $literal = $this->getArg($macroName, 'literal', '(optional) If true, wraps output in pre tags.', false);
+    $trim = $this->getArg($macroName, 'trim', '(optional) If false, leading and trailing whitespace will not be removed from included text.', true);
     $compileMarkdown = $this->getArg($macroName, 'compileMarkdown', '(optional) Flag to activate MD-compilation of .md files.', false);
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
@@ -47,6 +48,9 @@ $this->addMacro($macroName, function () {
         }
         $file = resolvePath($file, true);
         $str = getFile($file);
+        if ($trim) {
+            $str = trim($str, "\n\r");
+        }
         if ($wrapperTag) {
             $str = "\n@@1@@\n$str\n@@2@@\n\n";
         }
@@ -104,6 +108,8 @@ $this->addMacro($macroName, function () {
 
     if ($outerWrapperClass) {
         $outerWrapperClass = " class='$outerWrapperClass'";
+    } else {
+        $outerWrapperClass = " class='lzy-include'";
     }
 
     if ($literal) {

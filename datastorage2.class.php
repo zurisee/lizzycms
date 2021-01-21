@@ -8,6 +8,13 @@
  * "Meta-Data" maintains info about DB-, record- and element-level locking.
  * It is maintained only with the Lizzy DB - deleting that will reset all locking.
  *
+     Data-Structure:
+        $structure['elements'][$elemKey] = [
+          'type'
+          'name'
+          'formLabel'
+         ]
+        $structure['elemKeys'] = []
 */
 
  // PATH_TO_APP_ROOT must to be defined by the invoking module
@@ -323,13 +330,14 @@ class DataStorage2
             return false;
         }
         $data = $this->getData(true);
-
         if ($recId !== false) {
-            if (@$this->structure['indexes'][0] === 0) { // maintain original data format
-                $data[$recId] = array_values( $recData );
-            } else {
-                $data[$recId] = $recData;
-            }
+//???
+//            if (@$this->structure['indexes'][0] === 0) { // maintain original data format
+//                $data[$recId] = array_values( $recData );
+//            } else {
+//                $data[$recId] = $recData;
+//            }
+            $data[$recId] = $recData;
         } else {
             $data[] = $recData;
         }
@@ -760,16 +768,24 @@ class DataStorage2
 
     public function getStructure()
     {
-        if (@$this->structure['fields']) {
-            if ($this->includeKeys && !isset($this->structure['fields'][REC_KEY_ID])) {
-                $this->structure['fields'][REC_KEY_ID] = [ 'type' => 'string' ];
-                $this->structure['labels'][] = REC_KEY_ID;
+        if (@$this->structure['elements']) {
+            if ($this->includeKeys && !isset($this->structure['elements'][REC_KEY_ID])) {
+                if ($this->includeTimestamp) {
+                    $this->structure['elements'][TIMESTAMP_KEY_ID] = ['type' => 'string'];
+                    $this->structure['elemKeys'][] = TIMESTAMP_KEY_ID;
+                }
+                $this->structure['elements'][REC_KEY_ID] = [ 'type' => 'string' ];
+                $this->structure['elemKeys'][] = REC_KEY_ID;
             }
         } else {
             $this->determineStructure();
-            if ($this->includeKeys && !isset($this->structure['fields'][REC_KEY_ID])) {
-                $this->structure['fields'][REC_KEY_ID] = [ 'type' => 'string' ];
-                $this->structure['labels'][] = REC_KEY_ID;
+            if ($this->includeKeys && !isset($this->structure['elements'][REC_KEY_ID])) {
+                if ($this->includeTimestamp) {
+                    $this->structure['elements'][TIMESTAMP_KEY_ID] = ['type' => 'string'];
+                    $this->structure['elemKeys'][] = TIMESTAMP_KEY_ID;
+                }
+                $this->structure['elements'][REC_KEY_ID] = [ 'type' => 'string' ];
+                $this->structure['elemKeys'][] = REC_KEY_ID;
             }
         }
         return $this->structure;
@@ -883,6 +899,7 @@ class DataStorage2
 
 
 
+
  // === private methods ===============
     private function getData( $force = false )
     {
@@ -899,6 +916,9 @@ class DataStorage2
                 $rec0 = reset($data);
                 if (!isset($rec0[REC_KEY_ID])) {
                     foreach ($data as $key => $rec) {
+                        if ($this->includeTimestamp) {
+                            $data[ $key ][TIMESTAMP_KEY_ID] = 0;
+                        }
                         $data[ $key ][REC_KEY_ID] = $key;
                     }
                 }
@@ -964,15 +984,19 @@ class DataStorage2
 
     private function createNewRecId()
     {
-        if ($this->structure["key"] === 'index') {
-            $recId = sizeof($this->getData(true));
-        } elseif ($this->structure["key"] === 'date') {
-            $recId = date('Y-m-d');
-        } elseif ($this->structure["key"] === 'datetime') {
-            $recId = date('Y-m-d H:i:s');
-        } else {
-            $recId = time();
+        switch ($this->structure['key']) {
+            case 'index':
+                return sizeof($this->getData(true));
+            case 'date':
+                return date('Y-m-d');
+            case 'datetime':
+                return date('Y-m-d H:i:s');
+            case 'unixtime':
+                return time();
+            default: // for everything else we use hash
+                return createHash();
         }
+
         return $recId;
     } // createNewRecId
 
@@ -1656,7 +1680,7 @@ EOT;
                 $this->getData();
             }
         }
-        if (!$rawData['structure']) {
+        if (!$rawData['structure'] || $this->structureDef) {
             $this->determineStructure();
             $this->lowLevelWriteStructure();
         } else {
@@ -1711,49 +1735,54 @@ EOT;
     private function exportToFile()
     {
         $rawData = $this->lowlevelReadRawData();
-        if ($this->exportRequired) {
-            if (isset($GLOBALS['appRoot'])) {
-                $filename = $GLOBALS['appRoot'] . $rawData['origFile'];
+        if (!$this->exportRequired) {
+            return;
+        }
 
-            } else {
-                $filename = PATH_TO_APP_ROOT . $rawData['origFile'];
-            }
-            if (!$filename) {
-                mylog("Error: filename missing for export file (".__FILE__.' '.__LINE__.')');
-                return;
-            }
-            if (!file_exists($filename)) {
-                mylog("Error: unable to export data to file '$filename'");
-                return;
-            }
+        if (isset($GLOBALS['appRoot'])) {
+            $filename = $GLOBALS['appRoot'] . $rawData['origFile'];
 
-            if ($this->useRecycleBin) {
-                require_once SYSTEM_PATH.'page-source.class.php';
-                $ps = new PageSource;
-                $ps->copyFileToRecycleBin($filename, false, true);
-            }
+        } else {
+            $filename = PATH_TO_APP_ROOT . $rawData['origFile'];
+        }
+        if (!$filename) {
+            mylog("Error: filename missing for export file (".__FILE__.' '.__LINE__.')');
+            return;
+        }
+        if (!file_exists($filename)) {
+            mylog("Error: unable to export data to file '$filename'");
+            return;
+        }
 
-            $data = $this->getBareData();
+        if ($this->useRecycleBin) {
+            require_once SYSTEM_PATH.'page-source.class.php';
+            $ps = new PageSource;
+            $ps->copyFileToRecycleBin($filename, false, true);
+        }
 
-            if (!$this->includeKeys) {
-                foreach ($data as $recKey => $rec) {
-                    if (isset($rec[REC_KEY_ID])) {
-                        unset( $data[$recKey][REC_KEY_ID]);
-                    }
+        $data = $this->getBareData();
+
+        if (!$this->includeKeys) {
+            foreach ($data as $recKey => $rec) {
+                if (isset($rec[REC_KEY_ID])) {
+                    unset( $data[$recKey][REC_KEY_ID]);
+                }
+                if (isset($rec[TIMESTAMP_KEY_ID])) {
+                    unset( $data[$recKey][TIMESTAMP_KEY_ID]);
                 }
             }
-
-            if ($this->format === 'yaml') {
-                $this->writeToYamlFile($filename, $data);
-
-            } elseif ($this->format === 'json') {
-                file_put_contents($filename, json_encode($data));
-
-            } elseif ($this->format === 'csv') {
-                $this->writeToCsvFile($filename, $data);
-            }
         }
-        return;
+
+        if ($this->format === 'yaml') {
+            $this->writeToYamlFile($filename, $data);
+
+        } elseif ($this->format === 'json') {
+            file_put_contents($filename, json_encode($data));
+
+        } elseif ($this->format === 'csv') {
+            $this->writeToCsvFile($filename, $data);
+        }
+        $this->exportRequired = false;
     } // exportToFile
 
 
@@ -1787,12 +1816,18 @@ EOT;
         }
         // prepend header row:
         $structure = $this->getStructure();
-        if (isset($structure['labels'])) {
+        if (isset($structure['elemKeys'])) {
             if (!$this->includeKeys) {
-                $i = array_search(REC_KEY_ID, $structure['labels']);
-                unset($structure['labels'][$i]);
+                $i = array_search(REC_KEY_ID, $structure['elemKeys']);
+                if ($i !== false) {
+                    unset($structure['elemKeys'][$i]);
+                }
+                $i = array_search(TIMESTAMP_KEY_ID, $structure['elemKeys']);
+                if ($i !== false) {
+                    unset($structure['elemKeys'][$i]);
+                }
             }
-            $outData[0] = array_values($structure['labels']);
+            $outData[0] = array_values($structure['elemKeys']);
         }
         // remove field labels:
         foreach ($array as $row) {
@@ -1803,7 +1838,7 @@ EOT;
             if (!is_array($row)) { continue; }
             foreach ($row as $i => $elem) {
                 if (is_array($elem)) {
-                    $elem = @$elem[0];
+                    $elem = @$elem[0]; // -> see note at top
                 }
                 if ($forceQuotes || strpbrk($elem, "$quote$delim")) {
                     $row[$i] = $quote . str_replace($quote, $quote.$quote, $elem) . $quote;
@@ -1864,13 +1899,13 @@ EOT;
 
             // if not suppressed: use first data row as element-labels:
             if ($this->userCsvFirstRowAsLabels) {
-                $labels = array_shift( $data );
-                $this->structure['labels'] = $labels;
-                foreach ($labels as $k => $label) {
-                    $name = translateToIdentifier($label, false, true, false);
-                    $this->structure['fields'][$label] = ['type' => 'string', 'label' => $label, 'name' => $name];
+                $elemKeys = array_shift( $data );
+                $this->structure['elemKeys'] = $elemKeys;
+                foreach ($elemKeys as $k => $elemKey) {
+                    $name = translateToIdentifier($elemKey, false, true, false);
+                    $this->structure['elements'][$elemKey] = ['type' => 'string', 'name' => $name, 'formLabel' => $elemKey];
                 }
-                $keyAvailable = isset($labels[REC_KEY_ID]);
+                $keyAvailable = isset($elemKeys[REC_KEY_ID]);
                 if ($this->includeKeys) {
                     $this->structure['key'] = 'hash';
                 } else {
@@ -1879,10 +1914,10 @@ EOT;
                 $out = [];
                 foreach ($data as $r => $rec) {
                     if ($keyAvailable || $this->includeKeys) {
-                        $r = @$labels[REC_KEY_ID]? $labels[REC_KEY_ID]: createHash();
+                        $r = @$elemKeys[REC_KEY_ID]? $elemKeys[REC_KEY_ID]: createHash();
                     }
-                    foreach ($labels as $i => $label) {
-                        $out[$r][$label] = $rec[$i];
+                    foreach ($elemKeys as $i => $elemKey) {
+                        $out[$r][$elemKey] = $rec[$i];
                     }
                 }
                 $data = $out;
@@ -1898,7 +1933,15 @@ EOT;
 
         if ($this->includeKeys) {
             foreach ($data as $key => $rec) {
-                if (!isset( $data[ $key ][ REC_KEY_ID ] ) || !$data[ $key ][ REC_KEY_ID ]) {
+                if ($this->includeTimestamp) {
+                    if (isset($data[$key][REC_KEY_ID])) {
+                        unset($data[$key][REC_KEY_ID]);
+                    }
+                    if (!isset( $data[ $key ][ TIMESTAMP_KEY_ID ] ) || !$data[ $key ][ TIMESTAMP_KEY_ID ]) {
+                        $data[$key][TIMESTAMP_KEY_ID] = 0;
+                    }
+                    $data[$key][REC_KEY_ID] = $key;
+                } elseif (!isset( $data[ $key ][ REC_KEY_ID ] ) || !$data[ $key ][ REC_KEY_ID ]) {
                     $data[$key][REC_KEY_ID] = $key;
                 }
             }
@@ -1940,7 +1983,7 @@ EOT;
         }
 
         // make sure type for rec-level keys is set:
-        if (!isset($structure['fields']) || !$structure['fields']) {
+        if (!isset($structure['elements']) || !$structure['elements']) {
             // no struct info available - try to derive it from data:
             if (!$this->data) {
                 return; // no data, try again later...
@@ -1950,11 +1993,20 @@ EOT;
 
 
         // make sure structure is complete:
-        if (!isset($structure['fields']) || !$structure['fields']) { // fields missing
+        if (!isset($structure['elements']) || !$structure['elements']) { // fields missing
             die("Error: fields missing in structure");
-        } elseif (!isset($structure['labels']) || !$structure['labels']) { // fields missing
-            foreach ($structure['fields'] as $label => $fldDesc) {
-                $structure['labels'][] = $label;
+        }
+        if (!isset($structure['elemKeys']) || !$structure['elemKeys']) { // fields missing
+            $structure['elemKeys'] = array_keys($structure['elements']);
+        }
+        
+        // add 'name' elem:
+        $rec0 = reset($structure['elements']);
+        if (!isset($rec0['name']) || !$rec0['name']) {
+            foreach ($structure['elements'] as $elemKey => $rec) {
+                $structure['elements'][$elemKey]['type'] = @$rec['type']? $rec['type']: 'string';
+                $structure['elements'][$elemKey]['name'] = translateToIdentifier($elemKey, false, true, false);
+                $structure['elements'][$elemKey]['formLabel'] = @$rec['formLabel']? $rec['formLabel']: $elemKey;
             }
         }
 
@@ -1973,7 +2025,7 @@ EOT;
     private function deriveStructureFromData()
     {
         $rawData = $this->lowlevelReadRawData();
-        $structure = [ 'key' => false, 'fields' => [], 'labels' => [] ];
+        $structure = [ 'key' => false, 'elements' => [], 'elemKeys' => [] ];
         if (!$rawData[ 'data']) {
             return $structure;
         }
@@ -2022,21 +2074,24 @@ EOT;
             $data = $this->getData();
             $rec0 = reset( $data );
         }
-        foreach ($rec0 as $key => $value) {
-            $name = translateToIdentifier($key, false, true, false);
-            $structure['labels'][] = $key;
-            $structure['fields'][$key]['label'] = $key;
-            $structure['fields'][$key]['name'] = $name;
-            $structure['fields'][$key]['type'] = 'string';
+        foreach (array_keys($rec0) as $elemKey) {
+            $structure['elemKeys'][] = $elemKey;
+            $structure['elements'][$elemKey]['type'] = 'string';
+            $structure['elements'][$elemKey]['name'] = translateToIdentifier($elemKey, false, true, false);
+            $structure['elements'][$elemKey]['formLabel'] = $elemKey;
         }
 
         if (!$structure['key']) {
-            if (preg_match('/^ \d{2,4} - \d\d - \d\d/x', $key0)) {
-                $structure['key'] = 'date';
-            } elseif (preg_match('/^[A-Z][A-Z0-9]{4,20}/', $key0)) {
+            if (preg_match('/^[A-Z][A-Z0-9]{4,20}/', $key0)) {
                 $structure['key'] = 'hash';
+            } elseif (preg_match('/^ \d{2,4} - \d\d - \d\d/x', $key0)) {
+                $structure['key'] = 'date';
+            } elseif (preg_match('/^ \d{2,4} - \d\d - \d\d \d\d : \d\d (: \d\d)? /x', $key0)) {
+                $structure['key'] = 'datetime';
             } elseif (preg_match('/\D/', $key0)) {
                 $structure['key'] = $keyType? $keyType: 'string';
+            } elseif (intval($key0) > 946681200) { // 2000-01-01
+                $structure['key'] = 'unixtime';
             } else {
                 $structure['key'] = 'numeric';
             }
@@ -2179,12 +2234,12 @@ EOT;
             return [];
         }
         $data1 = [];
-        foreach ($data as $key => $elem) {
-            foreach ($this->structure['labels'] as $label) {
-                if (isset($data[$key][$label])) {
-                    $data1[$key][$label] = $data[$key][$label];
+        foreach ($data as $recKey => $elem) {
+            foreach ($this->structure['elemKeys'] as $elemKey) {
+                if (isset($data[$recKey][$elemKey])) {
+                    $data1[$recKey][$elemKey] = $data[$recKey][$elemKey];
                 } else {
-                    $data1[$key][$label] = '';
+                    $data1[$recKey][$elemKey] = '';
                 }
             }
         }

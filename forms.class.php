@@ -36,6 +36,7 @@ mb_internal_encoding("utf-8");
 
 $GLOBALS["globalParams"]['lzyFormsCount'] = 0;
 $GLOBALS["globalParams"]['formDataCachingInitialized'] = false;
+$GLOBALS["globalParams"]['formTooltipsInitialized'] = false;
 
 class Forms
 {
@@ -50,6 +51,9 @@ class Forms
     protected $skipRenderingForm = false;
     protected $formId = false;
     public  $file = false;
+    private  $db = false;
+    private  $dbExport = false;
+    private  $exportFileImported = false;
 
 
 	public function __construct($lzy, $userDataEval = null)
@@ -61,6 +65,7 @@ class Forms
         $GLOBALS["globalParams"]['lzyFormsCount']++;
 		$this->formInx = $GLOBALS["globalParams"]['lzyFormsCount'];
         $this->currForm = new FormDescriptor; // object as will be saved in DB
+        $this->infoInitialized = &$GLOBALS["globalParams"]['formTooltipsInitialized'];
 
         $this->tck = new Ticketing([
             'defaultType' => 'lzy-form',
@@ -174,6 +179,7 @@ class Forms
         $currForm->customResponseEvaluation = (isset($args['customResponseEvaluation'])) ? $args['customResponseEvaluation'] : '';
         $currForm->next = (isset($args['next'])) ? $args['next'] : './';
         $currForm->file = (isset($args['file'])) ? $args['file'] : '';
+        $currForm->useRecycleBin = (isset($args['useRecycleBin'])) ? $args['useRecycleBin'] : false;
         $currForm->confirmationText = (isset($args['confirmationText'])) ? $args['confirmationText'] : '{{ lzy-form-data-received-ok }}';
         $currForm->formDataCaching = (isset($args['formDataCaching'])) ? $args['formDataCaching'] : true;
         $currForm->encapsulate = (isset($args['encapsulated'])) ? $args['encapsulated'] : true;
@@ -181,11 +187,13 @@ class Forms
         $currForm->formTimeout = (isset($args['formTimeout'])) ? $args['formTimeout'] : false;
         $currForm->avoidDuplicates = (isset($args['avoidDuplicates'])) ? $args['avoidDuplicates'] : true;
         $currForm->export = (isset($args['export'])) ? $args['export'] : false;
-        $currForm->exportKey = (isset($args['exportKey'])) ? $args['exportKey'] : false;
+        $currForm->exportedDataIsMaster = (isset($args['exportedDataIsMaster'])) ? $args['exportedDataIsMaster'] : false;
+        $currForm->exportMetaElements = (isset($args['exportMetaElements'])) ? $args['exportMetaElements'] : false;
         $currForm->submitButtonCallback = (isset($args['submitButtonCallback'])) ? $args['submitButtonCallback'] : 'auto';
         $currForm->cancelButtonCallback = (isset($args['cancelButtonCallback'])) ? $args['cancelButtonCallback'] : 'auto';
         $currForm->confirmationEmail = (isset($args['confirmationEmail'])) ? $args['confirmationEmail'] : false;
         $currForm->confirmationEmailTemplate = (isset($args['confirmationEmailTemplate'])) ? $args['confirmationEmailTemplate'] : false;
+        $currForm->labelColons = (isset($args['labelColons'])) ? $args['labelColons'] : true;
         if ($currForm->export === true) {
             $currForm->export = DEFAULT_EXPORT_FILE;
         }
@@ -204,7 +212,7 @@ class Forms
                 $hash = getUrlArg($currForm->prefill, true);
             }
             if ($hash) {
-                $ds = new DataStorage2($currForm->file);
+                $ds = $this->openDB();
                 $rec = $ds->readRecord($hash);
                 if ($rec) {
                     $rec['dataKey'] = $hash;
@@ -229,7 +237,7 @@ class Forms
         $currForm->validate = (isset($args['validate'])) ? $args['validate'] : false;
         $currForm->showData = (isset($args['showData'])) ? $args['showData'] : false;
         if (($currForm->showData) && !$currForm->export) {
-            $currForm->export = DEFAULT_EXPORT_FILE;
+            $currForm->export = '~page/' . $this->formId . '_export.csv';
         }
         if ($currForm->export) {
             $currForm->export = resolvePath($currForm->export, true);
@@ -305,7 +313,7 @@ class Forms
         }
         $rec->name = $name;
         $_name = " name='$name'";
-        $rec->dataSelector = @$args['dataSelector']? $args['dataSelector']: $name;
+        $rec->dataKey = @$args['dataKey']? $args['dataKey']: $name;
 
         // whether to translate a label: form-wide translateLabels or per-element translateLabel or '-' in front of label:
         $rec->translateLabel = false;
@@ -412,7 +420,7 @@ class Forms
 
         // initialize "info-icon" feature:
         $rec->info =  (isset($args['info']))? $args['info']: '';
-        if ($rec->info && !@$this->infoInitialized) {
+        if ($rec->info && !$this->infoInitialized) {
             $this->infoInitialized = true;
             $jq = <<<EOT
 $('.lzy-formelem-show-info').tooltipster({
@@ -781,7 +789,7 @@ EOT;
         $out .= "\t  <form$id$_class$_method$_action$novalidate>\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form-id' value='{$this->formInx}' />\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form-label' value='{$currForm->formName}' />\n";
-		$out .= "\t\t<input type='hidden' name='_lizzy-form' value='{$this->formHash}' class='lzy-form-hash' />\n";
+		$out .= "\t\t<input type='hidden' name='_lizzy-form' value='{$this->formHash}:form{$this->formInx}' class='lzy-form-hash' />\n";
 		$out .= "\t\t<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-cmd' value='{$currForm->next}' />\n";
 
 		if ($currForm->antiSpam) {
@@ -822,8 +830,9 @@ EOT;
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $input = "<input type='password' class='lzy-form-password' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr} aria-invalid='false' aria-describedby='password-hint'$cls />\n";
+        $id = "lzy-form-showPassword-{$this->formInx}-{$this->inx}";
         $hint = <<<EOT
-            <label class='lzy-form-pw-toggle' for="showPassword"><input type="checkbox" id="lzy-form-showPassword{$this->inx}" class="lzy-form-showPassword"><img src="~sys/rsc/show.png" class="lzy-form-show-pw-icon" alt="{{ show password }}" title="{{ show password }}" /></label>
+            <label class='lzy-form-pw-toggle' for="$id"><input type="checkbox" id="$id" class="lzy-form-showPassword"><img src="~sys/rsc/show.png" class="lzy-form-show-pw-icon" alt="{{ show password }}" title="{{ show password }}" /></label>
 
 EOT;
         $out = $this->getLabel();
@@ -884,7 +893,7 @@ EOT;
             if ($i === 0) { continue; } // skip group name
             $preselectedValue = false;
             $name = @$rec->optionNames[$i]? $rec->optionNames[$i]: $optionLabel;
-            $id = "lzy-radio_{$groupName}_$i";
+            $id = "lzy-radio_{$groupName}_{$this->formInx}-$i";
 
             if (strpos($optionLabel, '!') !== false) {
                 $optionLabel = str_replace('!', '', $optionLabel);
@@ -900,7 +909,7 @@ EOT;
                 $cls = $class ? " class='$class'" : '';
             }
 
-            $checked = ($checkedElem && @$checkedElem[$i]) || $preselectedValue ? ' checked' : '';
+            $checked = ($checkedElem && @$checkedElem[$name]) || $preselectedValue ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-radio-elem lzy-form-choice-elem'>\n";
             $out .= "\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked$cls$attr /><label for='$id'>$optionLabel</label>\n";
             $out .= "\t\t\t</div>\n";
@@ -934,7 +943,7 @@ EOT;
             if ($i === 0) { continue; } // skip group name
             $preselectedValue = false;
             $name = @$rec->optionNames[$i]? $rec->optionNames[$i]: $optionLabel;
-            $id = "lzy-chckb_{$groupName}_$i";
+            $id = "lzy-chckb_{$groupName}_{$this->formInx}-$i";
             if (strpos($optionLabel, '!') !== false) {
                 $optionLabel = str_replace('!', '', $optionLabel);
                 if ($presetValues === false) {
@@ -949,7 +958,7 @@ EOT;
                 $cls = $class ? " class='$class'" : '';
             }
 
-            $checked = (($presetValues !== false) && @$presetValues[$i]) || $preselectedValue ? ' checked' : '';
+            $checked = (($presetValues !== false) && @$presetValues[$name]) || $preselectedValue ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-checkbox-elem lzy-form-choice-elem'>\n";
             $out .= "\t\t\t\t<input id='$id' type='checkbox' name='${groupName}[]' value='$name'$checked$cls$attr /><label for='$id'>$optionLabel</label>\n";
             $out .= "\t\t\t</div>\n";
@@ -1141,7 +1150,7 @@ EOT;
 
 
         $inx = $this->inx;
-		$id = "lzy-upload-elem$inx";
+        $id = "lzy-upload-elem-{$this->formInx}-$inx";
 		$server = isset($this->args['server']) ? $this->args['server'] : UPLOAD_SERVER;
 		$multiple = $this->currRec->multiple ? 'multiple' : '';
 
@@ -1300,7 +1309,7 @@ EOT;
 
     private function renderReveal()
     {
-        $id = "lzy-form-reveal_{$this->currRec->elemInx}";
+        $id = "lzy-form-reveal_{$this->formInx}-{$this->currRec->elemInx}";
         $label = $this->getLabel(false, false);
         $target = $this->currRec->target;
         $out = '';
@@ -1436,6 +1445,12 @@ EOT;
             $this->page->addJq( $jq );
         }
 
+        // Special case: exported file is master -> import first if changed:
+        if ($this->currForm->exportedDataIsMaster) {
+            $this->syncBackExportedData();
+        }
+
+
         // refresh export if necessary:
         if ($this->currForm->export) {
             $this->export();
@@ -1468,7 +1483,7 @@ EOT;
         } elseif ($this->currRec->translateLabel) {
             $label = $this->trans->translateVariable($label, true);
         }
-        if ($hasColon) {
+        if ($this->currForm->labelColons || $hasColon) {
             $label .= ':';
         }
         if ($requiredMarker) {
@@ -1493,7 +1508,7 @@ EOT;
             return '';
         }
 
-        $elemInx = $this->currRec->elemInx;
+        $elemInx = "{$this->formInx}-{$this->currRec->elemInx}";
 
         $infoIconText = <<<EOT
 
@@ -1549,30 +1564,37 @@ EOT;
             $this->errorDescr['generic']['_announcement_'] = '{{ lzy-form-error-formhash-lost }}';
             return;
         }
-        $dataSelectors = [];
+        $dataKeys = [];
         foreach ($form->formElements as $element) {
             if ($element->type !== 'button') {
-                $dataSelectors[$element->dataSelector] = $element->labelInOutput;
+                $dataKeys[$element->dataKey] = $element->labelInOutput;
             }
         }
         $this->tck->updateTicket( $this->formHash, [
-            'form' => $formObj,
-            'formDescr' => $formDescr,
-            'dataSrc' => $this->currForm->file,
-            'dataSelectors' => $dataSelectors,
+            "form$this->formInx" => [
+                'form'          => $formObj,
+                'formDescr'     => $formDescr,
+                'dataSrc'       => $this->currForm->file,
+                'dataKeys'      => $dataKeys,
+                ]
         ] );
 	} // saveFormDescr
 
 
 
-    public function restoreFormDescr($formHash)
+
+    public function restoreFormDescr($formHash = false)
 	{
 	    if (!$formHash) {
-            return null;
+	        if (!$this->formHash) {
+                return null;
+            }
+	        $formHash = $this->formHash;
         }
         $rec = $this->tck->consumeTicket($formHash);
-        if (isset($rec['form'])) {
-            return unserialize(base64_decode($rec['form']));
+	    $fInx = "form$this->formInx";
+        if (isset($rec[$fInx])) {
+            return unserialize(base64_decode($rec[$fInx]['form']));
         } else {
             return null;
         }
@@ -1600,7 +1622,6 @@ EOT;
 
 
 
-
     public function evaluateUserSuppliedData()
     {
         $msgToClient = '';
@@ -1614,11 +1635,14 @@ EOT;
 			$this->clearCache();
 			return false;
 		}
-		if (intval($userSuppliedData['_lizzy-form-id']) !== $this->formInx) {
+		$formId = $userSuppliedData['_lizzy-form-id'];
+		if (intval($formId) !== $this->formInx) {
 		    return false;
         }
+		$this->formId = $formId;
 
         $formHash = $this->formHash = $userSuppliedData['_lizzy-form'];
+        $formHash = preg_replace('/:.*/', '', $formHash);
         $this->currForm = $this->restoreFormDescr( $formHash );
         $currForm = $this->currForm;
         if ($currForm === null) {   // ticket timed out:
@@ -1807,7 +1831,6 @@ EOT;
 
 
 
-
     private function checkHoneyPot()
     {
         if (!$this->currForm->antiSpam) {
@@ -1835,16 +1858,30 @@ EOT;
         $currForm = $this->currForm;
         $userSuppliedData = $this->userSuppliedData;
 
-        $ds = new DataStorage2([
-            'dataFile' => $currForm->file,
-            'includeKeys' => true,
-            'includeTimestamp' => true,
-        ]);
-        // check meta-fields '_timestamp' and '_key', add if necessary:
-        $this->updateDbStructure( $ds );
+        $ds = $this->openDB();
 
-        $recKey = $this->recKey;
+        // check meta-fields '_timestamp' and '_key', add if necessary:
+        $this->updateDbStructure();
+
+        $struc = $ds->getStructure();
+
         $isNewRec = false;
+        $oldRec = false;
+        $origKey = $this->recKey;
+        if (@$struc['key'][0] === '=') {
+            $useAsKey = substr($struc['key'], 1);
+            if (isset($userSuppliedData[ $useAsKey ])) {
+                $recKey = $userSuppliedData[ $useAsKey ];
+            }
+            if ($recKey !== $origKey) {
+                $oldRec = $ds->readRecord($origKey);
+                $res = $ds->deleteRecord( $origKey );
+                $isNewRec = true;
+            }
+        } else {
+            $recKey = $this->recKey;
+        }
+
         if (!$recKey || ($recKey === 'new-rec') || ($recKey === 'unknown')) {
             $recKey = createHash();
             $isNewRec = true;
@@ -1873,7 +1910,7 @@ EOT;
                     }
                     $usrDataFldName = false;
                     foreach ($currForm->formElements as $i => $formDescr) {
-                        if ($formDescr->label === $dbFldKey) {
+                        if ($formDescr->dataKey === $dbFldKey) {
                             $usrDataFldName = $formDescr->name;
                             break;
                         }
@@ -1891,7 +1928,7 @@ EOT;
                     } else {
                         $v2 = @strtolower(str_replace(' ', '', $rec[$dbFldKey]));
                     }
-                    if (($v1 !== $v2) && ($v1 !== '●●●●')) {
+                    if (($v1 !== $v2) && ($v1 !== PASSWORD_PLACEHOLDER)) {
                         $identical = false;
                         break;
                     }
@@ -1908,25 +1945,24 @@ EOT;
         }
 
         // prepare user supplied data for DB:
-        $oldRec = false;
         $newRec = [];
         foreach ($currForm->formElements as $i => $rec) {
             $usrDataFldName = $rec->name;
-            $dbFldKey = $rec->label;
+            $elementKey = $rec->dataKey;
             if (($usrDataFldName[0] === '_') || !isset($userSuppliedData[$usrDataFldName])) {
                 continue;
             }
 
             if (!$isNewRec && ($rec->type === 'password')) {
                 $newPw = $userSuppliedData[ $usrDataFldName ];
-                if (!$newPw || ($newPw === '●●●●')) {
+                if (!$newPw || ($newPw === PASSWORD_PLACEHOLDER)) {
                     if (!$oldRec) {
                         $oldRec = $ds->readRecord($recKey);
                     }
-                    $userSuppliedData[ $usrDataFldName ] = @$oldRec[ $dbFldKey ];
+                    $userSuppliedData[ $usrDataFldName ] = @$oldRec[ $elementKey ];
                 }
             }
-            $newRec[$dbFldKey] = $userSuppliedData[$usrDataFldName];
+            $newRec[$elementKey] = $userSuppliedData[$usrDataFldName];
         }
 
         // add new record:
@@ -1945,7 +1981,7 @@ EOT;
             return false;
         }
         $recKey = $this->userSuppliedData0['_rec-key'];
-        $ds = new DataStorage2($this->currForm->file);
+        $ds = $this->openDB();
         $res = $ds->deleteRecord($recKey);
         return $res;
     } // deleteDataRecord
@@ -2003,7 +2039,7 @@ EOT;
                 }
             }
 
-            if (($type === 'checkbox') || ($type === 'radio') || ($type === 'dropdown')) {
+            if (strpos('radio,checkbox,dropdown', $type) !== false) {
                 $value = $rec[$key];
                 $rec[$key] = [];
                 if (is_array($value)) {
@@ -2024,7 +2060,7 @@ EOT;
                 }
 
             } elseif ($type === 'password') {
-                if ($rec[$key] && ($rec[$key] !== '●●●●')) {
+                if ($rec[$key] && ($rec[$key] !== PASSWORD_PLACEHOLDER)) {
                     $rec[$key] = password_hash($rec[$key], PASSWORD_DEFAULT);
                 }
 
@@ -2038,24 +2074,24 @@ EOT;
 
 
 
-
 	private function export()
     {
+        if ($this->exportFileImported) {
+            return;
+        }
         $currForm = $this->currForm;
 
         // check whether export is required:
-        $t1 = @filemtime($currForm->file);
-        $t2 = @filemtime($outFile = $currForm->export);
-        if (file_exists($currForm->export) && ($t1 !== false) && ($t1 < $t2)) {
+        $tInt = @filemtime($currForm->file);
+        $tExt = @filemtime($outFile = $currForm->export);
+        if (file_exists($currForm->export) && ($tInt !== false) && ($tInt < ($tExt + 1))) {
             return;
         }
 
-        $ds = new DataStorage2([
-            'dataFile' => $currForm->file,
-            'includeKeys' => true,
-            'includeTimestamp' => true,
-        ]);
-        $srcData = $ds->read();
+        $ds = $this->openDB();
+        $srcData = $ds->read( true );
+
+        $dsExport = $this->openExportDB();
 
         $data = [];
 
@@ -2068,104 +2104,114 @@ EOT;
             }
         }
 
-        if ($this->currForm->exportKey) {
-            $e = new FormElement();
-            $e->type = 'text';
-            $e->labelInOutput = REC_KEY_ID;
-            $e->name = REC_KEY_ID;
-            $formElements[] = $e;
-        }
-
         $e = new FormElement();
         $e->type = 'text';
         $e->labelInOutput = TIMESTAMP_KEY_ID;
         $e->name = TIMESTAMP_KEY_ID;
         $formElements[] = $e;
 
-        $r = 1;
-        foreach ($srcData as $dataKey => $row) {
-            $c = 0;
-            foreach ($formElements as $fldI => $fldDescr) {
-                if (!$fldDescr) { continue; }
+        $e = new FormElement();
+        $e->type = 'text';
+        $e->labelInOutput = REC_KEY_ID;
+        $e->name = REC_KEY_ID;
+        $formElements[] = $e;
 
-                $fldName = @$fldDescr->name;
+        if (fileExt($outFile) !== 'csv') {
+            foreach ($srcData as $recKey => $rec) {
+                foreach ($rec as $elemKey => $v) {
+                    if (is_array($v)) {
+                        $srcData[$recKey][$elemKey] = isset($v[0])? $v[0]: implode(',', $v);
+                    }
+                }
+            }
+            $dsExport->write( $srcData );
+            return;
+
+        } else {
+            $r = 1;
+            foreach ($srcData as $dataKey => $row) {
+                $c = 0;
+                foreach ($formElements as $fldI => $fldDescr) {
+                    if (!$fldDescr) {
+                        continue;
+                    }
+
+                    $dataKey = @$fldDescr->dataKey;
+                    $fldName = @$fldDescr->name;
+                    $fldType = @$fldDescr->type;
+                    if (($fldType === 'checkbox') || ($fldType === 'radio') || ($fldType === 'dropdown')) {
+                        if ($fldDescr->splitOutput) {
+                            for ($i = 1; $i < (sizeof($fldDescr->optionNames) - 1); $i++) {
+                                if (!$fldDescr->optionNames[$i]) {
+                                    continue;
+                                }
+                                $lbl = $fldDescr->optionNames[$i];
+                                $value = @$row[$dataKey][$lbl];
+                                $data[$r][$c++] = $value ? '1' : ' ';
+                                continue;
+                            }
+                            $lbl = $fldDescr->optionNames[$i];
+                            $value = @$row[$dataKey][$lbl];
+                            $value = $value ? '1' : ' ';
+                        } else {
+                            $value = isset($row[$dataKey][0]) ? $row[$dataKey][0] : '';
+                        }
+
+                    } elseif ($fldType === 'tel') {
+                        $value = @$row[$dataKey];
+
+                        // if tel number starts with 0 and contains no non-digits, we must reformat it
+                        //   in order to prevent CSV-import interpreting it as integer and discard leading 0:
+                        if ($value && ($value[0] === '0') && !preg_match('/\D/', $value)) {
+                            $value = substr($value, 0, 3) . ' ' .
+                                substr($value, 3, 3) . ' ' .
+                                substr($value, 5, 2) . ' ' .
+                                substr($value, 8);
+                        }
+
+                    } elseif ($fldType === 'password') {
+                        $value = PASSWORD_PLACEHOLDER;
+                    } elseif ($fldName === REC_KEY_ID) {
+                        $value = $dataKey;
+                    } else {
+                        $value = @$row[$dataKey];
+                    }
+                    $data[$r][$c++] = $value;
+                }
+                $r++;
+            }
+            $c = 0;
+            $struc['key'] = 'index';
+
+            foreach ($formElements as $fldDescr) {
+                if (!$fldDescr) {
+                    continue;
+                }
                 $fldType = @$fldDescr->type;
                 if (($fldType === 'checkbox') || ($fldType === 'radio') || ($fldType === 'dropdown')) {
                     if ($fldDescr->splitOutput) {
-                        for ($i=1; $i<(sizeof($fldDescr->optionNames) - 1); $i++) {
+                        for ($i = 1; $i < (sizeof($fldDescr->optionNames) - 1); $i++) {
                             if (!$fldDescr->optionNames[$i]) {
                                 continue;
                             }
                             $lbl = $fldDescr->optionNames[$i];
-                            $value = @$row[$fldName][$lbl];
-                            $data[$r][$c++] = $value? '1': ' ';
-                            continue;
+                            $struc['elements'][$lbl] = ['type' => 'string'];
+                            $struc['elemKeys'][$c++] = $lbl;
                         }
                         $lbl = $fldDescr->optionNames[$i];
-                        $value = @$row[$fldName][$lbl];
-                        $value = $value? '1': ' ';
+                        $struc['elements'][$lbl] = ['type' => 'string'];
+                        $struc['elemKeys'][$c++] = $lbl;
                     } else {
-                        $value = isset($row[$fldName][0])? $row[$fldName][0]: '';
+                        $struc['elements'][$fldDescr->labelInOutput] = ['type' => 'string'];
+                        $struc['elemKeys'][$c++] = $fldDescr->labelInOutput;
                     }
-
-                } elseif ($fldType === 'tel') {
-                    $value = @$row[$fldName];
-
-                    // if tel number starts with 0 and contains no non-digits, we must reformat it
-                    //   in order to prevent CSV-import interpreting it as integer and discard leading 0:
-                    if ($value && ($value[0] === '0') && !preg_match('/\D/', $value)) {
-                        $value = substr($value, 0, 3) . ' '.
-                            substr($value, 3, 3) . ' '.
-                            substr($value, 5, 2) . ' '.
-                            substr($value, 8);
-                    }
-
-                } elseif ($fldName === REC_KEY_ID) {
-                    $value = $dataKey;
-                } else {
-                    $value = @$row[$fldName];
+                } elseif ($fldType !== 'button') {
+                    $struc['elements'][$fldDescr->labelInOutput] = ['type' => 'string'];
+                    $struc['elemKeys'][$c++] = $fldDescr->labelInOutput;
                 }
-                $data[$r][$c++] = $value;
-            }
-            $r++;
-        }
-        $c = 0;
-        $struc['key'] = 'index';
-
-        foreach ($formElements as $fldDescr) {
-            if (!$fldDescr) { continue; }
-            $fldType = @$fldDescr->type;
-            if (($fldType === 'checkbox') || ($fldType === 'radio') || ($fldType === 'dropdown')) {
-                if ($fldDescr->splitOutput) {
-                    for ($i=1; $i<(sizeof($fldDescr->optionNames) - 1); $i++) {
-                        if (!$fldDescr->optionNames[$i]) {
-                            continue;
-                        }
-                        $lbl = $fldDescr->optionNames[$i];
-                        $struc['fields'][$lbl] = [ 'type' => 'string'];
-                        $struc['labels'][$c++] = $lbl;
-                    }
-                    $lbl = $fldDescr->optionNames[$i];
-                    $struc['fields'][$lbl] = [ 'type' => 'string'];
-                    $struc['labels'][$c++] = $lbl;
-                } else {
-                    $struc['fields'][$fldDescr->labelInOutput] = [ 'type' => 'string'];
-                    $struc['labels'][$c++] = $fldDescr->labelInOutput;
-                }
-            } elseif ($fldType !== 'button') {
-                $struc['fields'][$fldDescr->labelInOutput] = [ 'type' => 'string'];
-                $struc['labels'][$c++] = $fldDescr->labelInOutput;
-
             }
         }
-
-        $ds2 = new DataStorage2([
-            'dataSource' => $currForm->export,
-            'structureDef'  => $struc,
-            'includeKeys' => true,
-            'includeTimestamp' => true,
-        ]);
-        $ds2->write( $data );
+        $dsExport->write( $data );
     } // export
 
 
@@ -2204,7 +2250,7 @@ EOT;
             }
             $row[$c++] = $value;
         }
-        if ($this->currForm->exportKey) {
+        if ($this->currForm->exportMetaElements) {
             $value = $this->trans->translateVariable( 'lzy-form-data-key', true );
             $row[] = $value;
         }
@@ -2216,13 +2262,10 @@ EOT;
 
 
 
-
-
     private function restoreErrorDescr()
     {
         return isset($_SESSION['lizzy']['formErrDescr']) ? $_SESSION['lizzy']['formErrDescr'] : [];
     } // restoreErrorDescr
-
 
 
 
@@ -2291,7 +2334,8 @@ EOT;
             {{ lzy-form-override-honeypot }}
             <div class="lzy-ch-input-wrapper">
                 <label for="lzy-popup-as-input">{{ lzy-form-override-honeypot-label }}</label>
-                <input id="lzy-popup-as-input" type="text" name="lzy-ch-name" />
+                <input id="lzy-popup-as-input-{$this->formInx}" type="text" name="lzy-ch-name" />
+<!--                <input id="lzy-popup-as-input" type="text" name="lzy-ch-name" />-->
             </div>
         </div>
 
@@ -2305,7 +2349,7 @@ EOT;
 
 function lzyChContinue( i, btn, callbackArg ) {
     lzyFormUnsaved = false;
-    var val = $( '#lzy-popup-as-input' ).val();
+    var val = $( '#lzy-popup-as-input-{$this->formInx}' ).val();
     var origFld = $( '$nameFldId' ).val();
     if (!origFld) {
         origFld = '';
@@ -2337,7 +2381,7 @@ function initAntiSpamPopup() {
         buttonClass: 'lzy-button, lzy-button lzy-button-submit',
         closeButton: false,
     });
-    $( '#lzy-popup-as-input' ).focus();
+    $( '#lzy-popup-as-input-{$this->formInx}' ).focus();
 }
 
 EOT;
@@ -2583,14 +2627,6 @@ EOT;
             return '';
         }
 
-        $fileName = @$currForm->export;
-        if (!$fileName) {
-            $fileName = resolvePath( DEFAULT_EXPORT_FILE );
-        }
-        if (!file_exists($fileName) || !is_file($fileName)) {
-            die("Error in renderDataTable(): file '$fileName' not found.");
-        }
-
         $out .= <<<EOT
 <div class="lzy-forms-preview">
 <h2>{{ lzy-form-data-preview-title }}</h2>
@@ -2598,8 +2634,8 @@ EOT;
 EOT;
 
         require_once SYSTEM_PATH.'htmltable.class.php';
-        $ds = new DataStorage2($fileName);
-        $data = $ds->read();
+        $ds = $this->openExportDB();
+        $data = $ds->read( true );
         if (!$data) {
             return '';
         }
@@ -2620,17 +2656,16 @@ EOT;
             }
         }
         $structure = $ds->getStructure();
-        array_unshift($data, $structure['labels']);
+        array_unshift($data, $structure['elemKeys']);
         $options = [
             'data' => $data,
             'headers' => true,
         ];
-        $tbl = new HtmlTable($this->lzy, 0, $options);
+        $tbl = new HtmlTable($this->lzy, $options);
         $out .= $tbl->render();
         $out .= "</div>\n";
         return $out;
     } // renderDataTable
-
 
 
 
@@ -2825,27 +2860,26 @@ EOT;
     } // getUserSuppliedValue
 
 
+
     protected function getFormProp( $propName ) {
 	    return $this->currForm->$propName;
     } // getFormProp
 
 
 
-
-    private function updateDbStructure(DataStorage2 $ds)
+    private function updateDbStructure()
     {
+        $ds = $this->openDB();
         $struct = $ds->getStructure();
-        if (isset($struct['fields'][TIMESTAMP_KEY_ID])) {
+        if (isset($struct['elements'][TIMESTAMP_KEY_ID])) {
             return false;
         }
 
-        unset($struct['fields'][REC_KEY_ID]);
-        $struct['fields'][TIMESTAMP_KEY_ID] = ['type' => 'string'];
-        $struct['fields'][REC_KEY_ID] = ['type' => 'string'];
-        unset($struct['labels']);
-        foreach ($struct['fields'] as $recKey => $rec) {
-            $struct['labels'][] = $recKey;
-        }
+        unset($struct['elements'][REC_KEY_ID]);
+        $struct['elements'][TIMESTAMP_KEY_ID] = ['type' => 'string'];
+        $struct['elements'][REC_KEY_ID] = ['type' => 'string'];
+        unset($struct['elemKeys']);
+        $struct['elemKeys'] = array_keys($struct['elements']);
         $ds->setStructure($struct);
         $data = $ds->read();
         foreach ($data as $recKey => $rec) {
@@ -2856,6 +2890,119 @@ EOT;
         $ds->write($data);
         return true;
     } // updateDbStructure
+
+
+
+
+    private function openDB( $args = [])
+    {
+        if ($this->db) {
+            return $this->db;
+        }
+        if (!$this->currForm) {
+            return null;
+        }
+        $currForm = $this->currForm;
+
+        $this->db = new DataStorage2([
+            'dataFile' => $currForm->file,
+            'useRecycleBin' => $currForm->useRecycleBin,
+            'includeKeys' => true,
+            'includeTimestamp' => true,
+        ]);
+        return $this->db;
+    } // openDB
+
+
+
+
+    private function openExportDB()
+    {
+        if ($this->dbExport) {
+            return $this->dbExport;
+        }
+        if (!$this->currForm) {
+            return null;
+        }
+        $currForm = $this->currForm;
+        $fileName = @$currForm->export;
+        if (!$fileName) {
+            $fileName = resolvePath( DEFAULT_EXPORT_FILE );
+        }
+        $this->dbExport = new DataStorage2([
+            'dataSource' => $fileName,
+            'includeKeys' => $currForm->exportMetaElements,
+            'includeTimestamp' => $currForm->exportMetaElements,
+        ]);
+        return $this->dbExport;
+    } // openExportDB
+
+
+
+
+    private function syncBackExportedData()
+    {
+        $currForm = $this->currForm;
+        if (!$currForm->export) {
+            return;
+        }
+        $exportedFile = $currForm->export;
+        if (!file_exists($exportedFile)) {
+            return;
+        }
+        $internalFormData = $currForm->file;
+        $tExp = @filemtime($exportedFile);
+        $tInt = @filemtime($internalFormData);
+        if ($tExp < ($tInt + 2)) {
+            return;
+        }
+
+        $dbE = $this->openExportDB();
+        $dataMaster = $dbE->read();
+
+        $formElements = $currForm->formElements;
+        if (!$formElements) {
+            return;
+        }
+
+        $data = [];
+        foreach ($dataMaster as $recKey => $dataRec) {
+            foreach ($formElements as $elemDef) {
+                $elemKey = $elemDef->dataKey;
+                $type = $elemDef->type;
+                if ($elemKey === REC_KEY_ID) {
+                    $value = $recKey;
+                } elseif ($elemKey === TIMESTAMP_KEY_ID) {
+                    $value = 0;
+                } elseif (($elemKey[0] === '_') || ($type === 'button')) {
+                    continue;
+                } else {
+                    $value = @$dataRec[ $elemKey ]? $dataRec[ $elemKey ]: '';
+                }
+                if (strpos('radio,checkbox,dropdown', $type) !== false) {
+                    $newValue = [];
+                    if (is_array($value)) {
+                        $newValue[0] = implode(',', $value);
+                    } else {
+                        $newValue[0] = $value;
+                    }
+                    for ($i=1; $i<sizeof($elemDef->optionNames); $i++) {
+                        $option = $elemDef->optionNames[$i];
+                        $label = $elemDef->optionLabels[$i];
+                        $newValue[$label] = (strpos(",$value,", ",$option,") !== false);
+                    }
+                    $value = $newValue;
+                } elseif (($type === 'password') && ($value === PASSWORD_PLACEHOLDER)){
+                    $value = '';
+                }
+                $data[ $recKey ][ $elemKey ] = $value;
+            }
+        }
+
+        $db = $this->openDB();
+        $db->write($data);
+        reloadAgent();
+    } // syncBackExportedData
 
 } // Forms
 
@@ -2873,7 +3020,7 @@ class FormDescriptor
     public $class = '';
     public $options = '';
     public $export = '';
-    public $exportKey = '';
+    public $exportMetaElements = '';
     public $dataKey = '';
     public $bypassedValues = [];
     public $prefill = false;
@@ -2893,7 +3040,8 @@ class FormElement
     public $label = '';        // some meaningful label used for the form element
     public $labelHtml = '';        // some meaningful label used for the form element
     public $labelInOutput = '';// some meaningful short-form of label used in e-mail and .cvs data-file
-    public $name = '';
+    public $name = '';          // name in form and transmitted 'userSuppliedData'
+    public $dataKey = '';       // element-key in data-source / file
     public $required = '';    // enforces user input
     public $placeholder = '';// text displayed in empty field, disappears when user enters input field
     public $min = '';
@@ -2904,3 +3052,10 @@ class FormElement
     public $timestamp = '';
 } // class FormElement
 
+/*
+
+    name        name
+    label       formLabel
+    dataKey     elemKey
+
+ */

@@ -16,7 +16,7 @@ class HtmlTable
     private $dataTableObj = null;
     private $strToAppend = '';
 
-    public function __construct($lzy, $inx, $options)
+    public function __construct($lzy, $options)
     {
         $this->options      = $options;
         $this->lzy 		    = $lzy;
@@ -49,7 +49,9 @@ class HtmlTable
         $this->targetSelector       = $this->getOption('targetSelector', '(optional string) If defined and "liveData" is activated, this option defines how to assign data elements to DOM-elements. (Default: \'[data-ref="*,*"]\')', '[data-ref="*,*"]');
         $this->editableBy           = $this->getOption('editableBy', '[false,true,loggedin,privileged,admins,editors] Defines who may edit data. Default: false. (only available when using option "dataSource")');
         $this->editMode             = $this->getOption('editMode', '[inline,form] Defines (Default: inline).', 'inline');
-        $this->editButtons          = $this->getOption('editButtons', 'If true, in editMode=form buttons will be rendered, in particular an "New Record" button.', null);
+        $this->editFormArgs         = $this->getOption('editFormArgs', 'Arguments that will passed on to the forms-class.', false);
+        $this->editButtons          = $this->getOption('editButtons', 'If true, in editMode-form buttons will be rendered, in particular an "New Record" button.', null);
+        $this->labelColons          = $this->getOption('labelColons', 'If false, trailing colon of labels in editing-forms are omitted.', true);
         $this->customRowButtons     = $this->getOption('customRowButtons', '(optional comma-separated-list) Prepends a column to each row containing custom buttons. Buttons can be defined as names of icons or HTML code. E.g. "send,trash"', null);
         $this->paging               = $this->getOption('paging', '[true|false] When using "Datatables": turns paging on or off (default is on)');
         $this->initialPageLength    = $this->getOption('initialPageLength', '[int] When using "Datatables": defines the initial page length (default is 10)');
@@ -81,8 +83,8 @@ class HtmlTable
         $this->suppressError        = $this->getOption('suppressError', '(optional) Suppresses the error message in case dataSource is not available.');
         $this->enableTooltips       = $this->getOption('enableTooltips', '(optional) Enables tooltips, e.g. for cells containing too much text. To use, apply a class-name containing "tooltip" to the targeted cell, e.g. "tooltip1".');
 
-        $this->checkArguments($inx);
-        
+        $this->checkArguments();
+
         $this->handleDatatableOption($this->page);
         $this->handleCaption();
         $this->editingActive = checkPermission($this->editableBy, $this->lzy);
@@ -108,6 +110,10 @@ class HtmlTable
             require_once SYSTEM_PATH.'forms.class.php';
             new Forms( $this->lzy, true );
             unset($_POST['_lizzy-form']);
+        }
+        if ($this->editingActive) {
+            require_once SYSTEM_PATH.'forms.class.php';
+            $this->form = new Forms( $this->lzy );
         }
         $this->loadData();
 
@@ -1021,208 +1027,8 @@ EOT;
         if ($this->inMemoryData) {
             die("Error: table->editableBy not possible when data supplied in-memory. Please use argument 'dataSource'.");
         }
+        $this->page->addModules('JS_POPUPS,HTMLTABLE');
         $out = $this->renderForm();
-        $this->page->addModules('JS_POPUPS');
-
-        $scalarTypes = SCALAR_TYPES;
-        $jq = <<<EOT
-
-$('.lzy-table-edit-btn').click(function(e) {
-    // open popup form:
-    const \$this = $( this );
-    const \$table = \$this.closest('[data-form-id]');
-    const formId = \$table.attr('data-form-id');
-    const \$form = $( formId );
-    const \$popup = $( formId ).closest('.lzy-edit-rec-form');
-    const recKey = \$this.closest('[data-reckey]').data('reckey');
-    const formHash = \$this.closest('[data-table-hash]').data('tableHash');
-    \$form.data('recKey', recKey);
-    $('input[name=_rec-key]',\$form).val( recKey );
-    
-    if (recKey === 'new-rec') {
-        const formTitle = $('#lzy-edit-form-new-rec').html();
-        $('.lzy-form-header').html( formTitle );
-        lzyPopup({
-            contentRef: \$popup,
-            closeButton: true,
-            closeOnBgClick: false,
-        });
-        $('#lzy-edit-rec-delete-checkbox').hide();
-        lzyTableNewRec = true;
-        return;
-        
-    } else {
-        $('.lzy-form-wrapper [name=_rec-key]').val( recKey );
-        $('#lzy-edit-rec-delete-checkbox').show();
-        lzyTableNewRec = false;
-    }
-    
-    $('.lzy-form-field-wrapper input', \$form).each(function() {
-        const type = $(this).attr('type');
-        if ('$scalarTypes'.match(','+type+',')) {
-            $(this).val('⌛');
-
-        } else if ((type === 'radio') || (type === 'checkbox')) {
-            $(this).prop('checked', false);
-        }
-    });
-    $('textarea', \$form).val('⌛');
-    $('option', \$form).each(function() {
-            $(this).prop('selected', false);
-    });
-
-
-    // get data by ajax:
-    const req = '?get-rec&ds=' + formHash + '&lock&recKey=' + recKey;
-    $('[type=submit]', \$form).val('{{ lzy-edit-form-submit }}');
-    $('#lzy-edit-rec-delete-checkbox input[type=checkbox]').prop('checked', false);
-    
-    const formTitle = $('#lzy-edit-form-rec').html();
-    $('.lzy-form-header').html( formTitle );
-    lzyPopup({
-        contentRef: \$popup,
-        closeButton: true,
-        closeOnBgClick: false,
-    });
-    execAjax(false, req, function(json){
-        updateEditForm(recKey, formId, json);
-    });
-});
-
-$('.lzy-edit-data-form input[type=reset]').click(function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    mylog('cancelCallback');
-    lzyPopupClose();
-});
-
-$('.lzy-edit-data-form input[type=submit]').click(function(e) {
-    if ( lzyTableNewRec ) {
-        $('#lzy-chckb__delete_1').prop('checked', false);
-    }
-});
-
-$('#lzy-edit-rec-delete-checkbox input[type=checkbox]').click(function(e) {
-    if ($(this).prop('checked')) {
-        $('#btn_lzy-edit-data-form-1_submit').val('{{ lzy-edit-rec-delete-btn }}');
-        $('.lzy-edit-data-form').data('delete', true);
-        mylog('delete');
-    } else {
-        $('#btn_lzy-edit-data-form-1_submit').val('{{ lzy-edit-form-submit }}');
-        $('.lzy-edit-data-form').data('delete', false);
-        mylog('don\'t delete');
-    }
-});
-EOT;
-
-        $js = <<<EOT
-var lzyTableNewRec = false;
-
-function updateEditForm( recKey, formId, json )
-{
-    mylog( recKey );
-    mylog( json );
-    try {
-        var data = JSON.parse(json);
-    } catch (e) {
-        console.log('Error condition detected');
-        console.log(json);
-        return false;
-    }
-    var i, val;
-    var sel;
-    for (i in data.data) {
-        val = data.data[ i ];
-        if (i.match(/input:/)) {
-            $( i ).prop('checked', true);
-        } else if (i.match(/option/)) {
-            $( i ).prop('selected', true);
-        } else {
-            sel ='[name=' + i + ']';
-            $( sel, formId ).val( val );
-        }
-    }
-}
-
-function sendToHost( that )
-{
-    var \$form = $( that ).closest('form');
-    const recKey = \$form.data('recKey');
-    const formHash = $( '.lzy-form-hash', \$form ).val();
-    const doDelete = $('.lzy-edit-data-form').data('delete');
-    var data = {};
-
-    $('.lzy-form-field-type-checkbox', \$form).each(function() {
-        const \$elem = $( this );
-        const name = $('legend', \$elem ).text();
-        var val = '';
-        $(':checked', \$elem ).each(function() {
-            val = val + $(this).val() + ',';
-        });
-        data[name] = val;
-    });
-    $('input,textarea', \$form).each(function() {
-        const \$inp = $( this );
-        const name = \$inp.attr('name');
-        const type = \$inp.attr('type');
-        if ((type !== 'submit') && (type !== 'reset') && (typeof name === 'string') && (name.charAt(0) !== '_')) {
-            const val = \$inp.val();
-            data[name] = val;
-        }
-    });
-    $('option:selected', \$form).each(function() {
-        const \$elem = $( this );
-        var name = \$elem.attr('name');
-        if (typeof name === 'undefined') {
-            name = \$elem.closest('select').attr('name');
-        }
-        const val = \$elem.val();
-        data[name] = val;
-    });
-    
-    delete data['Delete'];
-    for (let key in data) {
-        if (key.match(/\[\]/)) {
-            delete data[key];
-        }
-    }
-    mylog('sending to host: ');
-    mylog(data);
-    var req = '';
-    if (doDelete) {
-        req = '?del-rec&ds=' + formHash + '&recKey=' + recKey;//???
-    } else {
-        req = '?save-rec&ds=' + formHash + '&recKey=' + recKey;
-    }
-    execAjax(data, req, function(json){
-        mylog( json );
-        updateUI( json );
-    });
-} // sendToHost
-
-function updateUI( json )
-{
-    try {
-        var data = JSON.parse(json);
-    } catch (e) {
-        console.log('Error condition detected');
-        console.log(json);
-        return false;
-    }
-    var data1 = data.data;
-    var targ = '';
-    var val = '';
-    var r = data1.recInx;
-    for (var c in data1.rec) {
-        val = data1.rec[ c ];
-        targ = '[data-ref="' + r + ',' + c + '"]';
-        $( targ ).text( val );
-    }
-} // updateUI
-
-EOT;
-        $this->page->addJs($js);
-        $this->page->addJq($jq);
 
         return $out;
     } // renderEditingForm
@@ -1235,8 +1041,7 @@ EOT;
         if (@!$this->recStructure) {
             $recStructure = $this->ds->getStructure();
         }
-        require_once SYSTEM_PATH.'forms.class.php';
-        $form = new Forms( $this->lzy );
+        $form = $this->form;
 
         // Form Head:
         $args = [
@@ -1249,9 +1054,10 @@ EOT;
             'formHeader' => '<h3>{{ lzy-edit-form-rec }}</h3>',
             'cancelButtonCallback' => false,
             'validate' => true,
+            'labelColons' => $this->labelColons,
         ];
-        if (isset( $this->exportFile )) {
-            $args[ 'export' ] = $this->exportFile;
+        if ($this->editFormArgs) {
+            $args = array_merge($args, $this->editFormArgs);
         }
         $out = $form->render( $args );
 
@@ -1263,20 +1069,23 @@ EOT;
         ] );
 
         // Form Fields:
-        foreach ($recStructure['fields'] as $label => $rec) {
+        foreach ($recStructure['elements'] as $elemKey => $rec) {
             // ignore all data elems starting with '_':
-            if (@$label[0] === '_') {
+            if (@$elemKey[0] === '_') {
                 continue;
             }
-            $rec['label'] = $label;
-            $rec['name'] = translateToIdentifier($label, false, true, false);
+            $rec['dataKey'] = $elemKey;
+            $rec['label'] = isset($rec['formLabel']) ? $rec['formLabel'] : $elemKey;
+            $rec['name'] = translateToIdentifier($elemKey, false, true, false);
             $out .= $form->render($rec);
         }
 
-        // Form Delete:
+        // Delete:
         $out .= $form->render( [
             'type' => 'checkbox',
-            'wrapperId' => 'lzy-edit-rec-delete-checkbox',
+            'wrapperId' => "lzy-edit-rec-delete-checkbox-$this->tableCounter",
+            'wrapperClass' => "lzy-edit-rec-delete-checkbox",
+            'class' => "lzy-edit-rec-delete-checkbox",
             'label' => 'Delete',
             'name' => '_delete',
             'options' => '{{ lzy-edit-rec-delete-option }}',
@@ -1301,14 +1110,18 @@ $out
 
 EOT;
 
-        $this->strToAppend = <<<EOT
+        if ($this->tableCounter === 1) {
+            $this->strToAppend = <<<EOT
 
     <div style='display:none;'> <!-- text resources: -->
         <div id="lzy-edit-form-rec"><h3>{{ lzy-edit-form-rec }}</h3></div>
         <div id="lzy-edit-form-new-rec"><h3>{{ lzy-edit-form-new-rec }}</h3></div>
+        <div id="lzy-edit-form-submit">{{ lzy-edit-form-submit }}</div>
+        <div id="lzy-edit-rec-delete-btn">{{ lzy-edit-rec-delete-btn }}</div>
     </div>
 
 EOT;
+        }
 
         return $out;
     } // renderRecForm
@@ -1336,7 +1149,7 @@ EOT;
             if (strpos($name, '<') !== false) {
                 $cellContent .= $name;
             } else {
-                $cellContent .= "\n\t\t\t\t<button class='lzy-table-control-btn lzy-table-$name-btn'><span class='lzy-icon lzy-icon-$name'></span></button>";
+                $cellContent .= "\n\t\t\t\t<button class='lzy-table-control-btn lzy-table-$name-btn' title='{{ lzy-table-$name-btn }}'><span class='lzy-icon lzy-icon-$name'></span></button>";
             }
         }
 
@@ -1366,10 +1179,10 @@ EOT;
 
 
 
-    private function checkArguments($inx)
+    private function checkArguments()
     {
         if (!$this->id) {
-            $this->id = 'lzy-table' . $inx;
+            $this->id = 'lzy-table-' . $this->tableCounter;
         }
         if ($this->tableDataAttr) {
             list($name, $value) = explodeTrim('=', $this->tableDataAttr);
@@ -1639,6 +1452,7 @@ EOT;
         }
 
         if ($this->editableBy) {
+            $this->options['includeTimestamp'] = true;
             $this->options['includeKeys'] = true;
         }
         $ds = new DataStorage2($this->options);
@@ -1646,12 +1460,12 @@ EOT;
         $data0 = $ds->read();
         $this->structure = $structure = $this->ds->getStructure();
 
-        $fields = $structure['fields'];
+        $fields = $structure['elements'];
         if ($this->headers === true) {
-            if (isset($structure['labels'][0]) && is_int($structure['labels'][0])) {
+            if (isset($structure['elemKeys'][0]) && is_int($structure['elemKeys'][0])) {
                 $this->headerElems = array_shift($data);
             } else {
-                $this->headerElems = $structure['labels'];
+                $this->headerElems = $structure['elemKeys'];
             }
             if ($this->includeKeys && !isset($this->headerElems['_key'])) {
                 $this->headerElems[] = '_key';
@@ -1677,7 +1491,7 @@ EOT;
                     }
                 }
                 if (@$desc['type'] === 'password') {
-                    $item = $item? '●●●●': '';
+                    $item = $item? PASSWORD_PLACEHOLDER: '';
                 } else {
                     $item = trim($item, '"\'');
                     $item = str_replace("\n", '<br />', $item);
@@ -1689,7 +1503,7 @@ EOT;
 
         if (!$data) {
             // add empty row:
-            foreach ($structure['labels'] as $c => $label) {
+            foreach ($structure['elemKeys'] as $c => $label) {
                 $data['new-rec'][$c] = '';
             }
         }
@@ -1713,25 +1527,10 @@ EOT;
 
 $('#{$this->id}-add-rec').click(function() {
     mylog('add rec');
-    // open popup form:
-    const \$table = $('#{$this->id}');
-    const formId = \$table.attr('data-form-id');
-    const \$form = $( formId );
-    const \$popup = $( formId ).closest('.lzy-edit-rec-form');
-    const recKey = 'new-rec';
-    const formHash = \$table.data('tableHash');
-    $('input[name=_rec-key]',\$form).val('new-rec');
-    
-    const formTitle = $('#lzy-edit-form-new-rec').html();
-    $('.lzy-form-header').html( formTitle );
-    $('#lzy-edit-rec-delete-checkbox').hide();
-    lzyTableNewRec = true;
-    lzyPopup({
-        contentRef: \$popup,
-        closeButton: true,
-    });
+    const \$btnWrapper = $(this).closest('.lzy-table-add-rec-btns');
+    const \$table = \$btnWrapper.next('.lzy-table');
+    HTMLtable.openFormPopup( \$table );
     return;
-
 });
 EOT;
             $this->page->addJq($jq);

@@ -150,6 +150,15 @@ class AjaxServer
         if ($this->get_request_data('get-rec') !== null) {    // respond with info-msg
             $this->getDataRec();
         }
+        if ($this->get_request_data('get-rec') !== null) {    // respond with info-msg
+            $this->getDataRec();
+        }
+        if ($this->get_request_data('lock-rec') !== null) {    // respond with info-msg
+            $this->lockRec();
+        }
+        if ($this->get_request_data('unlock-rec') !== null) {    // respond with info-msg
+            $this->unlockRec();
+        }
         if ($this->get_request_data('save-rec') !== null) {    // respond with info-msg
             $this->saveDataRec();
         }
@@ -200,7 +209,7 @@ class AjaxServer
             }
 
         } else {
-            foreach ($this->formElements as $descr) {
+            foreach ( $this->ticketRec['formDescr'] as $descr) {
                 $key = $descr['name'];
                 $type = $descr['type'];
                 if (isset($dataRec[$key])) {
@@ -233,7 +242,7 @@ class AjaxServer
                     continue;
                 }
                 if ($type === 'password') {
-                    $value = $value? '●●●●':'';
+                    $value = $value? PASSWORD_PLACEHOLDER:'';
                 }
                 $outData[ $key ] = $value;
             }
@@ -254,6 +263,44 @@ class AjaxServer
         // delete record:
 
     } // deleteDataRec
+
+
+
+
+
+    private function lockRec()
+    {
+        if (!$this->openDB( )) {
+            lzyExit('failed#save');
+        }
+        $recKey = intval( $this->get_request_data('recKey') );
+        // lock record:
+        $res = $this->db->lockRec( $recKey );
+        if ($res) {
+            lzyExit('ok#lock-rec');
+        } else {
+            lzyExit('failed#lock-rec');
+        }
+    } // lockRec
+
+
+
+
+
+    private function unlockRec()
+    {
+        if (!$this->openDB( )) {
+            lzyExit('failed#save');
+        }
+        $recKey = intval( $this->get_request_data('recKey') );
+        // lock record:
+        $res = $this->db->unlockRec( $recKey );
+        if ($res) {
+            lzyExit('ok#unlock-rec');
+        } else {
+            lzyExit('failed#unlock-rec');
+        }
+    } // unlockRec
 
 
 
@@ -384,11 +431,19 @@ class AjaxServer
         }
         $this->dataFile = false;
         $dataRef = $this->get_request_data('ds');
+        $formRef = '';
+        if (preg_match('/(.*):(.*)/', $dataRef, $m)) {
+            $dataRef = $m[1];
+            $formRef = $m[2];
+        }
         if ($dataRef &&preg_match('/^[A-Z0-9]{4,20}$/', $dataRef)) {     // dataRef (=ticket hash) available
             $ticketing = new Ticketing();
             $ticketRec = $ticketing->consumeTicket($dataRef);
             if ($ticketRec) {      // corresponding ticket found
-                if (isset($ticketRec['dataSrc'])) {
+                if ($formRef && isset($ticketRec[$formRef])) {
+                    $ticketRec = $ticketRec[$formRef];
+                    $this->dataFile = $ticketRec['dataSrc'];
+                } elseif (isset($ticketRec['dataSrc'])) {
                     $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['dataSrc'];
                 } elseif (isset($ticketRec['form'])) {
                     $this->dataFile = $ticketRec['file'];

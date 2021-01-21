@@ -29,7 +29,6 @@ $this->addMacro($macroName, function () {
         } else {
             preparePath($file);
             touch($file);
-//            return "<div>Error: Datasource-File '$dataSource' not found for macro 'table()'.</div>\n";
         }
     }
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
@@ -41,7 +40,7 @@ $this->addMacro($macroName, function () {
     }
     $options['dataSource'] = $file;
 
-    $dataTable = new HtmlTable($this->lzy, $inx, $options);
+    $dataTable = new HtmlTable($this->lzy, $options);
 	$table = $dataTable->render();
 	
 	return $table;
@@ -52,7 +51,7 @@ $this->addMacro($macroName, function () {
 
 function renderTableHelp($trans, $macroName)
 {
-    $dataTable = new HtmlTable($trans->lzy, 0, 'help');
+    $dataTable = new HtmlTable($trans->lzy, 'help');
     $help = $dataTable->render('help');
     array_shift($help);
     usort( $help, function($a, $b) {

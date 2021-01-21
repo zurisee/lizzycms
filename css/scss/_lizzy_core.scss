@@ -576,15 +576,19 @@ a.lzy-button {
 		outline: 1px solid orange; 
 	}
 	.lzy-table-control-btn {
-		width: 100%;
-		line-height: 2em;
+		border: 1px solid #d1d1d1;
+		border-radius: 50%;
+		width: 2rem;
+		height: 1.9rem;
     	display: inline-block;
     	text-align: center;
 		vertical-align: middle;
-		border: none;
 		background: none;
 		a {
 			border-bottom: none;
+		}
+		.lzy-icon::before {
+			top: 48%;
 		}
 	}
 	.lzy-edit-rec-form .lzy-js-popup-wrapper {
