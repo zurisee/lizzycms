@@ -442,11 +442,11 @@ class AjaxServer
             if ($ticketRec) {      // corresponding ticket found
                 if ($formRef && isset($ticketRec[$formRef])) {
                     $ticketRec = $ticketRec[$formRef];
-                    $this->dataFile = $ticketRec['dataSrc'];
+                    $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['dataSrc'];
                 } elseif (isset($ticketRec['dataSrc'])) {
                     $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['dataSrc'];
                 } elseif (isset($ticketRec['form'])) {
-                    $this->dataFile = $ticketRec['file'];
+                    $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['file'];
                 }
                 $this->ticketRec = $ticketRec;
                 if (isset($ticketRec['formDescr'])) {
