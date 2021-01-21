@@ -51,6 +51,7 @@ define('HOUSEKEEPING_FILE',     CACHE_PATH.'_housekeeping.txt');
 define('MIN_SITEMAP_INDENTATION', 4);
 define('REC_KEY_ID', 	        '_key');
 define('TIMESTAMP_KEY_ID', 	    '_timestamp');
+define('PASSWORD_PLACEHOLDER', 	'●●●●');
 
 define('MKDIR_MASK',            0700); // remember to modify _lizzy/_install/install.sh as well
 define('MKDIR_MASK2',           0700); // ??? test whether higher priv is necessary
@@ -465,35 +466,35 @@ private function loadRequired()
             fatalError("Error setting up error handling... (no kidding)", 'File: '.__FILE__.' Line: '.__LINE__);
         }
 
-        if ($this->config->debug_errorLogging && !file_exists(ERROR_LOG_ARCHIVE)) {
-            $errorLogPath = dirname(ERROR_LOG_ARCHIVE).'/';
-            $errorLogFile = ERROR_LOG_ARCHIVE;
-
-            // make error log folder:
-            preparePath($errorLogPath);
-            if (!is_writable($errorLogPath)) {
-                die("Error: no write permission to create error log folder '$errorLogPath'");
-            }
-
-            // make error archtive file and check
-            touch($errorLogFile);
-            if (!file_exists($errorLogFile) || !is_writable($errorLogPath)) {
-                die("Error: unable to create error log file '$errorLogPath' - probably access rights are not ");
-            }
-
-            // make error log file, check and delete immediately
-            touch(ERROR_LOG);
-            if (!file_exists(ERROR_LOG) || !is_writable(ERROR_LOG)) {
-                die("Error: unable to create error log file '".ERROR_LOG."' - probably access rights are not ");
-            }
-            unlink(ERROR_LOG);
-
-            ini_set("log_errors", 1);
-            ini_set("error_log", $errorLogFile);
-            //error_log( "Error-logging started" );
-
-            $globalParams['errorLogFile'] = ERROR_LOG;
-        }
+    //        if ($this->config->debug_errorLogging && !file_exists(ERROR_LOG_ARCHIVE)) {
+    //            $errorLogPath = dirname(ERROR_LOG_ARCHIVE).'/';
+    //            $errorLogFile = ERROR_LOG_ARCHIVE;
+    //
+    //            // make error log folder:
+    //            preparePath($errorLogPath);
+    //            if (!is_writable($errorLogPath)) {
+    //                die("Error: no write permission to create error log folder '$errorLogPath'");
+    //            }
+    //
+    //            // make error archtive file and check
+    //            touch($errorLogFile);
+    //            if (!file_exists($errorLogFile) || !is_writable($errorLogPath)) {
+    //                die("Error: unable to create error log file '$errorLogPath' - probably access rights are not ");
+    //            }
+    //
+    //            // make error log file, check and delete immediately
+    //            touch(ERROR_LOG);
+    //            if (!file_exists(ERROR_LOG) || !is_writable(ERROR_LOG)) {
+    //                die("Error: unable to create error log file '".ERROR_LOG."' - probably access rights are not ");
+    //            }
+    //            unlink(ERROR_LOG);
+    //
+    //            ini_set("log_errors", 1);
+    //            ini_set("error_log", $errorLogFile);
+    //            //error_log( "Error-logging started" );
+    //
+    //            $globalParams['errorLogFile'] = ERROR_LOG;
+    //        }
     } // setupErrorHandling
 
 
