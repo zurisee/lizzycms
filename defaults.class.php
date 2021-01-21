@@ -148,6 +148,8 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->loadModules['TABBABLE']              = array('module' => 'third-party/tabbable/jquery.tabbable.min.js', 'weight' => 126);
         $this->loadModules['NAV']                   = array('module' => 'js/nav.js', 'weight' => 125);
 
+        $this->loadModules['HTMLTABLE']             = array('module' => 'js/htmltable.js', 'weight' => 123);
+
         $this->loadModules['EDITABLE']              = array('module' => 'extensions/editable/js/editable.js,'.
                                                             'extensions/editable/css/editable.css', 'weight' => 120);
 
