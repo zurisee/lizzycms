@@ -23,7 +23,7 @@ $this->addMacro($macroName, function () {
     $outerWrapperClass = $this->getArg($macroName, 'outerWrapperClass', '(optional) class applied to the wrapper around all files.', '');
     $literal = $this->getArg($macroName, 'literal', '(optional) If true, wraps output in pre tags.', false);
     $trim = $this->getArg($macroName, 'trim', '(optional) If false, leading and trailing whitespace will not be removed from included text.', true);
-    $compileMarkdown = $this->getArg($macroName, 'compileMarkdown', '(optional) Flag to activate MD-compilation of .md files.', false);
+    $compileMarkdown = $this->getArg($macroName, 'compileMarkdown', '(optional) Flag to activate MD-compilation of .md files.', null);
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if ($wrapperClass) {
@@ -39,6 +39,14 @@ $this->addMacro($macroName, function () {
     } elseif (preg_match('/^https?:/', $contentFrom )) {
         $url = $file;
         $contentFrom = false;
+    }
+
+    $inhibitMD = false;
+    if ($compileMarkdown === null) {
+        $compileMarkdown = false;
+        $inhibitMD = false;
+    } elseif ($compileMarkdown === false) {
+        $inhibitMD = true;
     }
 
     if ($file) {
@@ -102,7 +110,10 @@ $this->addMacro($macroName, function () {
         }
     }
 
-    if ($compileMarkdown && $allMD) {
+    if($inhibitMD) {
+        $str = str_replace(['{{','<'], ['&#123;{','&lt;'], $str);
+
+    } elseif ($compileMarkdown && $allMD) {
         $str = compileMarkdownStr($str);
     }
 
