@@ -9,6 +9,9 @@ define('SCALAR_TYPES',
     ',string,text,password,email,textarea,'.
     ',url,date,time,datetime,month,number,range,tel,');
 
+define('DEFAULT_EDIT_FORM_TEMPLATE_FILE', '~page/-table_edit_form_template.md');
+
+
 
 class HtmlTable
 {
@@ -50,6 +53,7 @@ class HtmlTable
         $this->editableBy           = $this->getOption('editableBy', '[false,true,loggedin,privileged,admins,editors] Defines who may edit data. Default: false. (only available when using option "dataSource")');
         $this->editMode             = $this->getOption('editMode', '[inline,form] Defines (Default: inline).', 'inline');
         $this->editFormArgs         = $this->getOption('editFormArgs', 'Arguments that will passed on to the forms-class.', false);
+        $this->editFormTemplate     = $this->getOption('editFormTemplate', 'A markdown file that will be used for rendering the form.', false);
         $this->editButtons          = $this->getOption('editButtons', 'If true, in editMode-form buttons will be rendered, in particular an "New Record" button.', null);
         $this->labelColons          = $this->getOption('labelColons', 'If false, trailing colon of labels in editing-forms are omitted.', true);
         $this->customRowButtons     = $this->getOption('customRowButtons', '(optional comma-separated-list) Prepends a column to each row containing custom buttons. Buttons can be defined as names of icons or HTML code. E.g. "send,trash"', null);
@@ -113,7 +117,7 @@ class HtmlTable
         }
         if ($this->editingActive) {
             require_once SYSTEM_PATH.'forms.class.php';
-            $this->form = new Forms( $this->lzy );
+            new Forms( $this->lzy, true );
         }
         $this->loadData();
 
@@ -126,6 +130,11 @@ class HtmlTable
  //        $this->applyMiscOptions();
 
         $out = '';
+        if ($this->editableBy) {
+            $tck = new Ticketing();
+            $this->tickHash = $tck->createHash( 'lzy-form' );
+            $this->tableDataAttr .= " data-table-hash='{$this->tickHash}' data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
+        }
 
         // option editable:
         if ($this->id) {
@@ -334,8 +343,6 @@ EOT;
     private function renderHtmlTable()
     {
         if ($this->editableBy) {
-            $tck = new Ticketing();
-            $this->tickHash = $tck->createHash( 'lzy-form' );
             $this->tableDataAttr .= " data-table-hash='{$this->tickHash}' data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
         }
         $data = &$this->data;
@@ -1028,6 +1035,11 @@ EOT;
             die("Error: table->editableBy not possible when data supplied in-memory. Please use argument 'dataSource'.");
         }
         $this->page->addModules('JS_POPUPS,HTMLTABLE');
+
+        if ($this->lzy->localCall && (getUrlArg('exportForm'))) {
+            $file = $file = getUrlArg('exportForm', true);
+            $this->exportForm( $file );
+        }
         $out = $this->renderForm();
 
         return $out;
@@ -1036,12 +1048,29 @@ EOT;
 
 
 
-    public function renderForm()
+    private function renderForm()
     {
+        if ($this->tableCounter === 1) {
+            $this->strToAppend = <<<EOT
+
+    <div style='display:none;'> <!-- text resources: -->
+        <div id="lzy-edit-form-rec"><h3>{{ lzy-edit-form-rec }}</h3></div>
+        <div id="lzy-edit-form-new-rec"><h3>{{ lzy-edit-form-new-rec }}</h3></div>
+        <div id="lzy-edit-form-submit">{{ lzy-edit-form-submit }}</div>
+        <div id="lzy-edit-rec-delete-btn">{{ lzy-edit-rec-delete-btn }}</div>
+    </div>
+
+EOT;
+        }
+
+        if ($this->editFormTemplate) {
+            return $this->importForm();
+        }
+
         if (@!$this->recStructure) {
             $recStructure = $this->ds->getStructure();
         }
-        $form = $this->form;
+        $form = new Forms( $this->lzy );
 
         // Form Head:
         $args = [
@@ -1110,21 +1139,166 @@ $out
 
 EOT;
 
-        if ($this->tableCounter === 1) {
-            $this->strToAppend = <<<EOT
+        return $out;
+    } // renderForm
 
-    <div style='display:none;'> <!-- text resources: -->
-        <div id="lzy-edit-form-rec"><h3>{{ lzy-edit-form-rec }}</h3></div>
-        <div id="lzy-edit-form-new-rec"><h3>{{ lzy-edit-form-new-rec }}</h3></div>
-        <div id="lzy-edit-form-submit">{{ lzy-edit-form-submit }}</div>
-        <div id="lzy-edit-rec-delete-btn">{{ lzy-edit-rec-delete-btn }}</div>
-    </div>
+
+
+
+    private function exportForm( $exportFile )
+    {
+        if (@!$this->recStructure) {
+            $recStructure = $this->ds->getStructure();
+        }
+
+        $out = '';
+
+        $formArgs = '';
+        if (is_array($this->editFormArgs)) {
+            foreach ($this->editFormArgs as $k => $v) {
+                $formArgs .= "\n	$k: '$v',";
+            }
+        }
+        $labelColons = $this->labelColons? 'true': 'false';
+
+        // form head:
+        $out .=<<<EOT
+
+{{ formelem(
+	type: "form-head", 
+	id: 'lzy-edit-data-form-#tableCounter#',
+	class: 'lzy-form lzy-edit-data-form',
+	file: '~/$this->dataSource',
+	ticketHash: #tickHash#,
+	formHeader: '<h3>{{ lzy-edit-form-rec }}</h3>',
+	cancelButtonCallback: false,
+	validate: true,
+	labelColons: $labelColons,$formArgs
+	)
+}}
+
+EOT;
+    //	warnLeavingPage: false, //???
+
+
+        // Placeholder for rec-key:
+        $out .= <<<EOT
+
+
+{{ formelem(
+	type: "hidden", 
+	label: "E-Mail",
+	name: '_rec-key',
+	value: '',
+	)
+}}
+
+EOT;
+
+
+        // Form Fields:
+        foreach ($recStructure['elements'] as $elemKey => $rec) {
+
+            // ignore all data elems starting with '_':
+            if (@$elemKey[0] === '_') {
+                continue;
+            }
+            $elems = '';
+            foreach ($rec as $k => $v) {
+                $elems .= "	$k: '$v',\n";
+            }
+            $label = isset($rec['formLabel']) ? $rec['formLabel'] : $elemKey;
+            $out .= <<<EOT
+
+
+{{ formelem(
+	label: '$label',
+$elems	dataKey: $elemKey,	
+	)
+}}
 
 EOT;
         }
 
-        return $out;
-    } // renderRecForm
+
+        // Delete:
+        $out .= <<<EOT
+
+
+{{ formelem(
+	'type': 'checkbox',
+	'wrapperId': "lzy-edit-rec-delete-checkbox-$this->tableCounter",
+	'wrapperClass': "lzy-edit-rec-delete-checkbox",
+	'class': "lzy-edit-rec-delete-checkbox",
+	'label': 'Delete',
+	'name': '_delete',
+	'options': '{{ lzy-edit-rec-delete-option }}',
+	)
+}}
+
+EOT;
+
+
+        // Form Buttons:
+        $out .= <<<EOT
+
+
+{{ formelem(
+	'type': 'button',
+	'label': '-lzy-edit-form-cancel | -lzy-edit-form-submit',
+	'value': 'cancel|submit',
+	)
+}}
+
+EOT;
+
+        // Form Tail:
+        $out .= <<<EOT
+
+
+{{ formelem( type: 'form-tail' ) }}
+
+EOT;
+
+        if (!$exportFile || ($exportFile === true)) {
+            $exportFile = DEFAULT_EDIT_FORM_TEMPLATE_FILE;
+        }
+        $exportFile = resolvePath($exportFile, true);
+        file_put_contents($exportFile, $out);
+
+        $out = str_replace(['{{','<'], ['&#123;{','&lt;'], $out);
+        $this->page->addOverlay("<pre>$out</pre><p>Written to '$exportFile'</p>");
+    } // exportForm
+
+
+
+
+    private function importForm()
+    {
+        if (is_string( $this->editFormTemplate )) {
+            $file = $this->editFormTemplate;
+        } else {
+            $file = DEFAULT_EDIT_FORM_TEMPLATE_FILE;
+        }
+        $file = resolvePath($file, true);
+        $out = getFile( $file );
+        if ($out) {
+            $out = str_replace(['#tickHash#','#tableCounter#'], [$this->ticketHash,$this->tableCounter], $out);
+            $out = compileMarkdownStr( $out );
+            $out = <<<EOT
+
+<div class='lzy-edit-rec-form lzy-edit-rec-form-{$this->tableCounter}' style='display:none'>
+$out
+</div><!-- /lzy-edit-rec-form -->
+
+
+EOT;
+            return $out;
+        } else {
+            die("Error in htmltable.class.php::renderForm() file '$file' not found.");
+        }
+    } // importForm
+
 
 
 
