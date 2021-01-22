@@ -287,64 +287,6 @@ function parseInlineBlockArguments($str, $returnElements = false)
 
 
 
-//function parseCsv($str, $delim = false, $enclos = false) {
-//
-//    if (!$delim) {
-//        $delim = (substr_count($str, ',') > substr_count($str, ';')) ? ',' : ';';
-//        $delim = (substr_count($str, $delim) > substr_count($str, "\t")) ? $delim : "\t";
-//    }
-//    if (!$enclos) {
-//        $enclos = (substr_count($str, '"') > substr_count($str, "'")) ? '"': "'";
-//    }
-//
-//    $lines = explode(PHP_EOL, $str);
-//    $array = array();
-//    foreach ($lines as $line) {
-//        if (!$line) { continue; }
-//        $array[] = str_getcsv($line, $delim, $enclos);
-//    }
-//    return $array;
-//} // parseCsv
-
-
-
-
-//function getCsvFile($filename, $returnStructure = false)
-//{
-//    $csv = getFile($filename, true);
-//    if ($csv) {
-//        $data = parseCsv($csv);
-//    } else {
-//        $data = [];
-//    }
-//
-//    $structure = false;
-//    $structDefined = false;
-//
-//    if ($returnStructure) {     // return structure of data
-//        if (isset($data[0])) {
-//            $fields = [];
-//            foreach ($data[0] as $label) {
-//                $fields[$label] = 'string';
-//            }
-//            unset($data[0]);
-//            $structure['key'] = 'string';
-//            $structure['elements'] = $fields;
-//            $data1 = [];
-//            foreach ($data as $r => $rec) {
-//                foreach (array_keys($fields) as $i => $label) {
-//                    $data1[$r][$label] = $rec[$i];
-//                }
-//            }
-//        }
-//        return [$data1, $structure, $structDefined];
-//    }
-//    return $data;
-//} // getCsvFile
-
-
-
-
 function csv_to_array($str, $delim = ',') {
     $str = trim($str);
     if (preg_match('/^(\{.*\})[\s,]*$/', $str, $m)) {   // {}
@@ -361,24 +303,6 @@ function csv_to_array($str, $delim = ',') {
     }
     return $a;
 } // csv_to_array
-
-
-
-
-//function arrayToCsv($array, $quote = '"', $delim = ',', $forceQuotes = true)
-//{
-//    $out = '';
-//    foreach ($array as $row) {
-//        foreach ($row as $i => $elem) {
-//            if ($forceQuotes || strpbrk($elem, "$quote$delim")) {
-//                $row[$i] = $quote . str_replace($quote, $quote.$quote, $elem) . $quote;
-//            }
-//            $row[$i] = str_replace(["\n", "\r"], ["\\n", ''], $row[$i]);
-//        }
-//        $out .= implode($delim, $row)."\n";
-//    }
-//    return $out;
-//} // arrayToCsv
 
 
 
@@ -1783,15 +1707,6 @@ function logError($str)
 {
     writeLogStr($str, true);
 } // logError
-
-
-
-
-//function shield_str($s)
-//{
-//	return str_replace('"', '\\"', $s);
-//} // shield_str
-
 
 
 
