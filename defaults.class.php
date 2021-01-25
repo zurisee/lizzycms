@@ -160,7 +160,8 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->loadModules['JS_POPUPS']             = array('module' => 'js/js-popup.js, css/js-popup.css', 'weight' => 86);
 
         $this->loadModules['POPUP']  = // POPUP is synonym for POPUPS
-        $this->loadModules['POPUPS']                = array('module' => 'third-party/jquery-popupoverlay/jquery.popupoverlay.js,'.
+//        $this->loadModules['POPUPS']                = array('module' => 'third-party/jquery-popupoverlay/jquery.popupoverlay.js,'.
+        $this->loadModules['POPUPS']                = array('module' => 'third-party/jquery-popupoverlay/jquery.popupoverlay.min.js,'.
                                                                         'css/popup.css', 'weight' => 85);
 
         $this->loadModules['TOOLTIPS']              = array('module' => 'third-party/jquery-popupoverlay/jquery.popupoverlay.js,'.
