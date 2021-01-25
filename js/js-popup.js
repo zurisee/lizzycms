@@ -15,6 +15,7 @@
 */
 
 var lzyPopupInx = null;
+var lzyPopupContent = [];
 var transient = false;
 
 function lzyPopup( options ) {
@@ -61,21 +62,52 @@ function lzyPopup( options ) {
     }
 
     if (closeButton) {
-        closeButton = '<div class="lzy-js-popup-close-button"></div>';
+        closeButton = '<button class="lzy-js-popup-close-button">&#x0D7;</button>';
+        // closeButton = '<div class="lzy-js-popup-close-button"></div>';
     } else {
         closeButton = '';
     }
 
     if (contentFrom) {
+        var $cFrom = null;
+        var lzyPopupFromStr = '';
         if (typeof contentFrom === 'string') {
-                if ((contentFrom.charAt(0) !== '#') && (contentFrom.charAt(0) !== '.')) {
+            if ((contentFrom.charAt(0) !== '#') && (contentFrom.charAt(0) !== '.')) {
                 contentFrom = '#' + contentFrom;
             }
-            content = content + $( contentFrom ).html();
+            lzyPopupFromStr = contentFrom;
+            $cFrom = $( contentFrom );
 
-        } else if (typeof contentFrom === 'object') { // case JQ-object
-            content = content + contentFrom.html();
+        } else if (typeof contentFrom[0] !== 'undefined') { // case JQ-object
+            lzyPopupFromStr = contentFrom.attr('id');
+            if (typeof lzyPopupFromStr === 'undefined') {
+                lzyPopupFromStr = contentFrom.attr('class');
+            }
+            $cFrom = contentFrom;
+        } else {
+            return; // error
         }
+        if (typeof lzyPopupContent[ lzyPopupFromStr ] === 'undefined') {
+            var tmp = '';
+            // if (typeof contentFrom === 'string') {
+            //     if ((contentFrom.charAt(0) !== '#') && (contentFrom.charAt(0) !== '.')) {
+            //         contentFrom = '#' + contentFrom;
+            //     }
+            //     $cFrom = $( contentFrom );
+            //
+            // } else if (typeof contentFrom[0] !== 'undefined') { // case JQ-object
+            //     $cFrom = contentFrom;
+            // } else {
+            //     return; // error
+            // }
+            tmp = $cFrom.html();
+            lzyPopupContent[ lzyPopupFromStr ] = tmp; // save original HTML
+
+            // shield IDs in original:
+            tmp = tmp.replace(/id=(['"])/g, 'id=$1lzyPopupInitialized-');
+            $cFrom.html( tmp );
+        }
+        content = content + lzyPopupContent[ lzyPopupFromStr ];
     }
 
     if (content) {      // content supplied as literal:
@@ -86,10 +118,21 @@ function lzyPopup( options ) {
             style = ' style="display: none;"';
         }
         var html = '<div class="lzy-js-popup-bg lzy-js-popup-' + inx + popupclass + '"' + style + '>\n' +
-            '    <div class="lzy-js-popup-wrapper">\n' + closeButton +
+            '    <div class="lzy-js-popup-wrapper">\n'+ closeButton +
+            '      <div class="lzy-js-popup-container">\n' +
             content + buttonHtml +
-            '    </div>\n' +
+            '    </div>\n      </div>\n' +
             '</div>\n';
+        // var html = '<div class="lzy-js-popup-bg lzy-js-popup-' + inx + popupclass + '"' + style + '>\n' +
+        //     '    <div class="lzy-js-popup-wrapper"><div class="lzy-js-popup-container">\n' + closeButton +
+        //     content + buttonHtml +
+        //     '    </div></div>\n' +
+        //     '</div>\n';
+        // var html = '<div class="lzy-js-popup-bg lzy-js-popup-' + inx + popupclass + '"' + style + '>\n' +
+        //     '    <div class="lzy-js-popup-wrapper">\n' + closeButton +
+        //     content + buttonHtml +
+        //     '    </div>\n' +
+        //     '</div>\n';
         $(anker).append(html);
 
     } else {
@@ -169,6 +212,7 @@ function lzyPopup( options ) {
             $('.lzy-js-popup-' + inx).show();
         });
     }
+    $('body').addClass('lzy-no-scroll');
 } // lzyPopup
 
 
@@ -186,4 +230,5 @@ function lzyPopupClose( that ) {
     } else {
         $popup.hide();
     }
+    $('body').removeClass('lzy-no-scroll');
 } // lzyPopupClose
