@@ -116,7 +116,7 @@ figure a {
 .invisible,
 .visually-hidden {
 	position: absolute !important;
-	right: 200vw;
+	right: 10000px;
 	width: 1px;
 	height: 1px;
 	overflow: hidden;
@@ -131,22 +131,39 @@ figure a {
 
 
 // === SkipLinks
-.lzy-skiplinks a {
-	position: absolute;
-	top: 0;
-	left: 10000vw;
+.lzy-skiplinks {
+	display: none;
+	position:absolute;
+	left:0;
+	top:0;
+	li {
+		list-style: none;
+	}
+	a {
+		border-bottom: none;
+		position:absolute;
+		top: 0;
+		left: -10000px;
+		border-bottom: none;
+		padding: 1em;
+		background: #ffa;
+		outline: none;
+		box-shadow: 0px 0px 0px 1px blue inset, 0 0 10px gray;
+		border-radius: 8px;
+		display: inline-block;
+		width: auto;
+		white-space: nowrap;
+		opacity: 0;
+	}
+	a:focus {
+		position: absolute;
+		top: 10px;
+		left: 10px;
+		z-index: 10000;
+		opacity: 1;
+	}
 }
-.lzy-skiplinks a:focus {
-	right: auto;
-	left: 5vh;
-	top: 5vh;
-	padding: 1em 2em;
-	text-align: center;
-	z-index: 999;
-	background: #fffaab;
-	box-shadow: none;
-	border: none;
-}
+
 
 
 // === visible on focus only:
