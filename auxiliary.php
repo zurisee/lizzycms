@@ -1423,17 +1423,26 @@ function path_info($file)
 
 
 
-function preparePath($path)
+function preparePath($path, $accessRights = false)
 {
     if ($path && ($path[0] === '~')) {
         $path = resolvePath($path);
     }
 	$path = dirname($path.'x');
     if (!file_exists($path)) {
+        $accessRights1 = $accessRights ? $accessRights : MKDIR_MASK;
         try {
-            mkdir($path, MKDIR_MASK2, true);
+            mkdir($path, $accessRights1, true);
         } catch (Exception $e) {
             fatalError("Error: failed to create folder '$path'", 'File: '.__FILE__.' Line: '.__LINE__);
+        }
+    }
+
+    if ($accessRights) {
+        $path1 = '';
+        foreach (explode('/', $path) as $p) {
+            $path1 .= "$p/";
+            chmod($path1, $accessRights);
         }
     }
 } // preparePath
