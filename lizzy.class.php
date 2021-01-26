@@ -643,7 +643,7 @@ EOT;
 
         // set global variables:
         $globalParams['host'] = $docRootUrl;
-        $globalParams['requestedUrl'] = $requestUri; //???
+        $globalParams['requestedUrl'] = $requestUri;
         $globalParams['pageFolder'] = null;
         $globalParams['pagePath'] = null;
         $globalParams['pathToPage'] = null; // needs to be set after determining actually requested page
@@ -681,7 +681,7 @@ EOT;
 
         // set properties:
         $this->pagePath = $pagePath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
-        $this->reqPagePath = $pagePath; //???ok
+        $this->reqPagePath = $pagePath;
         $this->pageUrl = $pageUrl;
         $this->pathToRoot = $urlToAppRoot;
 
@@ -1002,7 +1002,7 @@ EOT;
 
         $rec = [
             'uploadPath' => PAGES_PATH.$filePath,
-            'pagePath' => $GLOBALS['globalParams']['pageFolder'], //??? correct?
+            'pagePath' => $GLOBALS['globalParams']['pageFolder'],
             'pathToPage' => $GLOBALS['globalParams']['pathToPage'],
             'appRootUrl' => $GLOBALS['globalParams']['absAppRootUrl'],
             'user'      => $_SESSION["lizzy"]["user"],
