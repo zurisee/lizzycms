@@ -225,9 +225,6 @@ private function loadRequired()
 
         $this->scss = new SCssCompiler($this);
 
-        // Future: optionally enable Auto-Attribute mechanism
-        //        $this->loadAutoAttrDefinition();
-
         // check for url args that require caching to be turned off:
         if (isset($_GET)) {
             $urlArgs = ['config', 'list', 'help', 'admin', 'reset', 'login', 'unused', 'reset-unused', 'remove-unused', 'log', 'info', 'touch'];
@@ -302,9 +299,6 @@ private function loadRequired()
         $this->appendLoginForm($accessGranted);   // sleeping code for popup population
         $this->handleAdminRequests2();
         $this->handleUrlArgs2();
-
-        // Future: optionally enable Auto-Attribute mechanism
-        //        $html = $this->executeAutoAttr($html);
 
         $this->handleConfigFeatures();
 
@@ -559,24 +553,6 @@ private function loadRequired()
             return;
         }
     } // appendLoginForm
-
-
-
-
-    private function loadAutoAttrDefinition($file = false)
-    {
-        if (!$file) {
-            if (!file_exists($this->config->feature_autoAttrFile)) {
-                return;
-            }
-            $file = $this->config->feature_autoAttrFile;
-        }
-        $autoAttrDef = getYamlFile($file);
-        if ($autoAttrDef) {
-            $this->autoAttrDef = array_merge($this->autoAttrDef, $autoAttrDef);
-        }
-        return;
-    } // loadAutoAttrDefinition
 
 
 
