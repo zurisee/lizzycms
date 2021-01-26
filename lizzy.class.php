@@ -14,7 +14,8 @@ define('DEV_MODE_CONFIG_FILE',  CONFIG_PATH.'dev-mode-config.yaml');
 
 define('PAGES_PATH',            'pages/');
 define('DATA_PATH',            'data/');
-define('CACHE_PATH',            '.#cache/');
+define('CACHE_PATH',            '.cache/');
+define('MODULES_CACHE_PATH',    '.cache/files/');
 define('PAGE_CACHE_PATH',       CACHE_PATH.'pages/');
 define('LOGS_PATH',             '.#logs/');
 define('MACROS_PATH',           SYSTEM_PATH.'macros/');
@@ -53,8 +54,8 @@ define('REC_KEY_ID', 	        '_key');
 define('TIMESTAMP_KEY_ID', 	    '_timestamp');
 define('PASSWORD_PLACEHOLDER', 	'●●●●');
 
-define('MKDIR_MASK',            0700); // remember to modify _lizzy/_install/install.sh as well
-define('MKDIR_MASK2',           0700); // ??? test whether higher priv is necessary
+define('MKDIR_MASK',            0700); // permissions for file access by Lizzy
+define('MKDIR_MASK_WEBACCESS',  0755); // permissions for files cache
 
 $files = ['config/user_variables.yaml', '_lizzy/config/*', '_lizzy/macros/transvars/*'];
 
@@ -102,7 +103,6 @@ class Lizzy
     public function __construct()
     {
         session_start();
-//writeLogStr("__construct [" . var_r($_SESSION, '$_SESSION', true). ']', LOGIN_LOG_FILENAME);
         $user = @$_SESSION['lizzy']['user']? $_SESSION['lizzy']['user']: 'anon';
         $this->debugLogBuffer = "REQUEST_URI: {$_SERVER["REQUEST_URI"]}  FROM: [$user]\n";
         if ($_REQUEST) {

@@ -1,11 +1,11 @@
 <?php
 
-// PATH_TO_APP_ROOT must to be defined by the invoking module
-// *_PATH constants must only define path starting from app-root
+ // PATH_TO_APP_ROOT must to be defined by the invoking module
+ // *_PATH constants must only define path starting from app-root
 
 define('EXTENSIONS_PATH', 	    SYSTEM_PATH.'extensions/');
 define('DATA_PATH', 		    'data/');
-define('CACHE_PATH',            '.#cache/');
+define('CACHE_PATH',            '.cache/');
 define('LOG_PATH',              '.#logs/');
 define('DEFAULT_TICKETS_PATH',  '.#tickets/');
 

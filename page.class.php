@@ -59,6 +59,9 @@ class Page
     private $assembledJs = '';
     private $assembledJq = '';
 
+    private $assembledCssFiles = '';
+    private $assembledJsFiles = '';
+
     private $metaElements = ['lzy', 'trans', 'config', 'metaElements', 'popupInstance']; // items that shall not be merged
 
 
@@ -819,7 +822,14 @@ EOT;
         }
         $headInjections .= $keywords.$description;
 
-        $headInjections .= $this->getModules('css', $this->cssFiles);
+        if ($this->config->site_enableFilesCaching) {
+            $this->getModules('css');
+            $href = $this->exportCachedModule('css');
+            $headInjections .= "\t<link href='$href' rel='stylesheet' />\n";
+
+        } else {
+            $headInjections .= $this->getModules('css');
+        }
 
         if ($this->assembledCss) {
             $assembledCss = "\t\t".preg_replace("/\n/", "\n\t\t", $this->assembledCss);
@@ -838,8 +848,8 @@ EOT;
 
 
     public function prepareBodyEndInjections()
-    // interatively collects snippets for css, js, jq
     {
+        // interatively collects snippets for css, js, jq
         $modified = false;
 
         if ($this->css) {
@@ -870,7 +880,14 @@ EOT;
     {
         $bodyEndInjections = $this->bodyEndInjections;
 
-        $bodyEndInjections .= $this->getModules('js');
+        if ($this->config->site_enableFilesCaching) {
+            $this->getModules('js');
+            $href = $this->exportCachedModule('js');
+            $bodyEndInjections .= "\t<script src='$href'></script>\n";
+
+        } else {
+            $bodyEndInjections .= $this->getModules('js');
+        }
 
         $screenSizeBreakpoint = $this->config->feature_screenSizeBreakpoint;
         $pathToRoot = $this->lzy->pathToRoot;
@@ -940,28 +957,94 @@ EOT;
                     $item = $m[1];
                     $mediaType = " media=\"{$m[2]}\"";
                 }
-                $item = resolvePath($item, true, true);
-                $out .= "\t<link href='$item' rel='stylesheet'$mediaType />\n";
-            }
-            $pageCss = $GLOBALS["globalParams"]["pathToPage"] . "styles.css";
-            if ( file_exists( $pageCss )) {
-                $out .= "\t<link href='~/{$GLOBALS["globalParams"]["pathToPage"]}styles.css' rel='stylesheet'$mediaType />\n";
-            }
+                $item1 = resolvePath($item, true, true);
+                $out .= "\t<link href='$item1' rel='stylesheet'$mediaType />\n";
 
-        } else {
-            foreach ($this->jsModules as $item) {
-                $item = resolvePath($item, true, true);
-                if ($this->config->isLocalhost && (strpos($item, 'jquery-') !== false)) {
-                    $item = str_replace('.min.', '.', $item);
+                if ($this->config->site_enableFilesCaching) {
+                    $this->assembledCssFiles .= $this->getFile( $item, true );
                 }
-                $out .= "\t<script src='$item'></script>\n";
             }
 
+            // style-sheet per page:
+            //$pageCss = $GLOBALS["globalParams"]["pathToPage"] . "styles.css";
+            //if ( file_exists( $pageCss )) {
+            //    $out .= "\t<link href='~/{$GLOBALS["globalParams"]["pathToPage"]}styles.css' rel='stylesheet'$mediaType />\n";
+            //    $this->assembledCssFiles .= $this->getFile( $pageCss, true );
+            //}
+
+        } else { // js:
+            foreach ($this->jsModules as $item) {
+                $item1 = resolvePath($item, true, true);
+                if ($this->config->isLocalhost && (strpos($item1, 'jquery-') !== false)) {
+                    $item1 = str_replace('.min.', '.', $item1);
+                }
+                $out .= "\t<script src='$item1'></script>\n";
+
+                if ($this->config->site_enableFilesCaching) {
+                    $this->assembledJsFiles .= $this->getFile( $item );
+                }
+            }
         }
 
         return $out;
     } // getModules
 
+
+
+
+    private function exportCachedModule( $type )
+    {
+        $pagePath = $GLOBALS['globalParams']['pagePath'];
+        if ($type === 'css') {
+            $filename = MODULES_CACHE_PATH . "{$pagePath}styles.css";
+            $href = $GLOBALS['globalParams']['appRootUrl'] . $filename;
+
+            // make sure target folder has sufficient access permissions:
+            preparePath($filename, MKDIR_MASK_WEBACCESS);
+            file_put_contents($filename, $this->assembledCssFiles);
+
+        } else { // js
+            $lang = $GLOBALS['globalParams']['lang'];
+            $filename = MODULES_CACHE_PATH. "{$pagePath}scripts.{$lang}.js";
+            $href = $GLOBALS['globalParams']['appRootUrl'] . $filename;
+
+            // make sure target folder has sufficient access permissions:
+            preparePath($filename, MKDIR_MASK_WEBACCESS);
+
+            // translate variables embedded in js files:
+            $assembledJsFiles = $this->assembledJsFiles;
+            while (preg_match('/(?<!\\\) ( {{(.*?)}} ) /x', $assembledJsFiles, $m)) {
+                $val = $this->lzy->trans->translateVariable( trim($m[2]), true );
+                $assembledJsFiles = str_replace($m[1], $val, $assembledJsFiles);
+            }
+            file_put_contents($filename, $assembledJsFiles);
+        }
+        return $href;
+    } // exportCachedModule
+
+
+
+
+    private function getFile( $filename, $isCss = false )
+    {
+        $filename = resolvePath($filename);
+        if ( !file_exists( $filename )) {
+            die("Error in page.class::getFile: file '$filename' not found.");
+        }
+        $content = file_get_contents( $filename );
+
+        // in CSS files we need to adapt 'url()' rules to reflect new file location:
+        if ($isCss) {
+            $path = dirname($filename) . '/';
+            $cachePath = MODULES_CACHE_PATH . $GLOBALS['globalParams']['pagePath'];
+            $upPath = preg_replace('|.*?/|', '../', $cachePath);
+            $corrPath = $upPath . $path;
+            $content = preg_replace('/url\( (["\']) /x', "url($1$corrPath", $content);
+        }
+
+        $out = "/* === File $filename =============== */\n$content\n\n\n\n";
+        return $out;
+    } // getFile
 
 
 
@@ -1025,7 +1108,11 @@ EOT;
         usort($primaryModules, function($a, $b) { return ($a[1] < $b[1]); });
         $primaryModules = array_column($primaryModules, 0);
         $modules = array_merge($primaryModules,$modules);
-        $cssModules = [];
+        $cssModules = [
+            '~sys/css/__lizzy-core.css',
+            '~sys/css/__lizzy-aux.css',
+            '~/css/__styles.css'
+        ];
         $jsModules = [];
         foreach ($modules as $mod) {
             if (preg_match('/\.css(\@\w+)?$/i', $mod)) {    // split between css and js files
