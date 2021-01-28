@@ -225,9 +225,6 @@ private function loadRequired()
 
         $this->scss = new SCssCompiler($this);
 
-        // Future: optionally enable Auto-Attribute mechanism
-        //        $this->loadAutoAttrDefinition();
-
         // check for url args that require caching to be turned off:
         if (isset($_GET)) {
             $urlArgs = ['config', 'list', 'help', 'admin', 'reset', 'login', 'unused', 'reset-unused', 'remove-unused', 'log', 'info', 'touch'];
@@ -302,9 +299,6 @@ private function loadRequired()
         $this->appendLoginForm($accessGranted);   // sleeping code for popup population
         $this->handleAdminRequests2();
         $this->handleUrlArgs2();
-
-        // Future: optionally enable Auto-Attribute mechanism
-        //        $html = $this->executeAutoAttr($html);
 
         $this->handleConfigFeatures();
 
@@ -552,24 +546,6 @@ private function loadRequired()
 
 
 
-    private function loadAutoAttrDefinition($file = false)
-    {
-        if (!$file) {
-            if (!file_exists($this->config->feature_autoAttrFile)) {
-                return;
-            }
-            $file = $this->config->feature_autoAttrFile;
-        }
-        $autoAttrDef = getYamlFile($file);
-        if ($autoAttrDef) {
-            $this->autoAttrDef = array_merge($this->autoAttrDef, $autoAttrDef);
-        }
-        return;
-    } // loadAutoAttrDefinition
-
-
-
-
     private function analyzeHttpRequest()
     {
         global $globalParams;
@@ -656,7 +632,7 @@ EOT;
 
         // set global variables:
         $globalParams['host'] = $docRootUrl;
-        $globalParams['requestedUrl'] = $requestUri; //???
+        $globalParams['requestedUrl'] = $requestUri;
         $globalParams['pageFolder'] = null;
         $globalParams['pagePath'] = null;
         $globalParams['pathToPage'] = null; // needs to be set after determining actually requested page
@@ -694,7 +670,7 @@ EOT;
 
         // set properties:
         $this->pagePath = $pagePath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
-        $this->reqPagePath = $pagePath; //???ok
+        $this->reqPagePath = $pagePath;
         $this->pageUrl = $pageUrl;
         $this->pathToRoot = $urlToAppRoot;
 
@@ -1015,7 +991,7 @@ EOT;
 
         $rec = [
             'uploadPath' => PAGES_PATH.$filePath,
-            'pagePath' => $GLOBALS['globalParams']['pageFolder'], //??? correct?
+            'pagePath' => $GLOBALS['globalParams']['pageFolder'],
             'pathToPage' => $GLOBALS['globalParams']['pathToPage'],
             'appRootUrl' => $GLOBALS['globalParams']['absAppRootUrl'],
             'user'      => $_SESSION["lizzy"]["user"],
