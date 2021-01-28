@@ -44,7 +44,6 @@ class Page
     private $bodyEndInjections = '';
     private $message = '';
     private $popup = false;
-    private $popupInx = false;
     private $pageSubstitution = false;
     private $override = false;   // if set, will replace the page content
     private $overlay = [];    // if set, will add an overlay while the original page gets fully rendered

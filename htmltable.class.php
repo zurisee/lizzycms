@@ -1034,7 +1034,7 @@ EOT;
         if ($this->inMemoryData) {
             die("Error: table->editableBy not possible when data supplied in-memory. Please use argument 'dataSource'.");
         }
-        $this->page->addModules('JS_POPUPS,HTMLTABLE');
+        $this->page->addModules('POPUPS,HTMLTABLE');
 
         if ($this->lzy->localCall && (getUrlArg('exportForm'))) {
             $file = $file = getUrlArg('exportForm', true);

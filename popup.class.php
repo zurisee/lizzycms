@@ -1,16 +1,20 @@
 <?php
 
+
+$GLOBALS['globalParams']['popupInx'] = 0;
+
+
 class PopupWidget
 {
     public $popups = null;
-    private $confirmButton = false;
-    private $cancelButton = false;
+//    private $confirmButton = false;
+//    private $cancelButton = false;
 
-    public function __construct($page)
+    public function __construct($page = null)
     {
         $this->page = $page;
         $this->popups = &$this->page->popups;
-        $this->popupCnt = 0;
+        $this->popupInx = &$GLOBALS['globalParams']['popupInx'];
     } // __construct
 
 
@@ -18,7 +22,7 @@ class PopupWidget
     //-----------------------------------------------------------------------
     public function addPopup($args)
     {
-        $this->popups[$this->popupCnt++] = $args;
+        $this->popups[$this->popupInx++] = $args;
         return "\t<!-- lzy-popup invoked -->\n";
     } // addPopup
 
@@ -37,300 +41,70 @@ class PopupWidget
             return false;
         }
 
-        $popupInx = $this->page->get('popupInx');
-        if (!$popupInx) {
-            $popupInx = 0;
-            $this->page->set('popupInx', 0);
-            $this->page->addModules('POPUPS');
-        }
-
         if (!isset($this->popups[0])) {
             $this->popups[0] = $this->popups;
         }
-        $jq = '';
 
         foreach ($this->popups as $args) {
-            $popupInx++;
-            $this->page->set('popupInx', $popupInx);
-            $this->args = $args;
-            $this->argStr = '';
-
-            if (is_string($args)) {
-                if ($args === 'help') {
-                    $this->popups = [];
-                    $this->page->addContent( $this->renderPopupHelp() );
-                    $this->page->addJq($jq);
-                    return true;
-                }
-                $args1['text'] = $args;
-                $this->args = $args = $args1;
-            }
-
-            $defaultConfirmBtn = $defaultCancelBtn = '';
-            $this->getArg('text');
-            $this->getArg('type', 'info'); // [info, confirm, dialog]
-            $type = '';
-            switch ($this->type) {
-                case 'confirm' :
-                    $defaultConfirmBtn = '{{ Confirm }}';
-                    $defaultCancelBtn = '{{ Cancel }}';
-                    break;
-                case 'dialog' :
-                    $defaultConfirmBtn = '{{ Save }}';
-                    $defaultCancelBtn = '{{ Cancel }}';
-                    break;
-                case 'tooltip' :
-                    $this->argStr .= <<<EOT
-
-    type: tooltip,
-    offsetleft: 0,
-    offsettop: '-15',
-    vertical: 'top',
-    horizontal: 'center',
-EOT;
-                    break;
-            }
-            $this->getArg('contentFrom');
-            $this->getArg('class', "lzy-popup$popupInx");
-            $class = $this->class;
-            $this->getArg('autoOpen');
-            $this->getArg('triggerSource');
-            $this->getArg('triggerEvent', 'click');
-            $this->getArg('confirmButton', $defaultConfirmBtn);
-            $this->getArg('cancelButton', $defaultCancelBtn);
-            $this->getArg('onOpen');
-            $this->getArg('onConfirm');
-            $this->getArg('onConfirmFrom');
-            $this->getArg('onCancel');
-            $this->getArg('onCancelFrom');
-            $this->getArg('closeButton', true, 'closebutton');
-            $this->getArg('closeOnBgClick', true, 'blur');
-            $this->getArg('horizontal', 0);
-            $this->getArg('vertical', 0);
-            $this->getArg('transition', '', 'transition');
-            $this->getArg('speed', '0.3');
-            $this->getArg('opacity', '0.5', 'opacity', false);
-            $this->getArg('bgColor', '#000', 'color');
-
-            if (isset($args[0])) {
-                if ($args[0] === 'help') {
-                    $this->popups = [];
-                    $this->page->addContent( $this->renderPopupHelp() );
-                    $this->page->addJq($jq);
-                    return true;
-                }
-                $this->text = $args[0];
-            }
-
-            $popupId = $this->contentFrom ? $this->contentFrom : "lzy-popup$popupInx";
-            $c1 = $popupId[0];
-            if (($c1 === '#') || ($c1 === '.')) {
-                $_popupId = $popupId;
-                $popupId = substr($popupId,1);
-            } else {
-                $_popupId = '#'.$popupId;
-            }
-
-            // case text but no contentFrom:
-            if (!$this->contentFrom) {
-                $this->contentFrom = "$_popupId";
-                $text = str_replace("'", "\\'", $this->text);
-                $text = str_replace("\n", "\\n", $text);
-                $jq .= "$('body').append('<div class=\"dispno\"><div id=\"$popupId\">$text</div></div>');\n";
-            }
-
-            // transition:
-            if ($this->speed) {
-                $this->argStr .= "transition: 'all {$this->speed}s',\n";
-            }
-
-            // onOpen$onOpen = '';
-            $onOpen = '';
-            if ($this->onOpen) {
-                $onOpen = $this->onOpen;
-                $onOpen = str_replace('&#34;', '"', $onOpen);
-                $onOpen = "\n\t$onOpen";
-            }
-
-
-            // invocation:
-            if ($this->triggerSource) {
-                if ($this->triggerEvent === "right-click") {
-                    $jq .= "$('{$this->triggerSource}').contextmenu(function(e) { e.preventDefault(); $('$_popupId').popup('show'); return false; }).css('user-select', 'none');\n";
-
-                } elseif ($this->triggerEvent === "hover") {
-                    $jq .= <<<EOT
-$('{$this->triggerSource}').on({
-    mouseenter: function(event) {
-        $('$_popupId').popup({
-            tooltipanchor: event.target,
-            autoopen: true,
-            type: 'tooltip'
-        });
-    },
-    mouseleave: function() {
-        $('$_popupId').popup('hide');
-    }
-});
-
-EOT;
-
-                } elseif ($this->triggerSource !== 'none') {
-                    $jq .= <<<EOT
-$('{$this->triggerSource}')
-    .bind('{$this->triggerEvent}', function(e) { 
-        e.preventDefault(); 
-        $('$_popupId').popup('show'); 
-    })
-    .attr('aria-expanded', false);
-
-EOT;
-                }
-                $this->getArg('triggerEvent', 'click');
-                $this->argStr .= "onopen: function() { $('{$this->triggerSource}').attr('aria-expanded', true); $onOpen},\n";
-                $this->argStr .= "onclose: function() { $('{$this->triggerSource}').attr('aria-expanded', false); },\n";
-                if ($this->autoOpen) {
-                    $this->argStr .= "autoopen: true,\n";
-                }
-            } else {
-                $this->argStr .= "autoopen: true,\n";
-            }
-
-
-            // confirmButton:
-            $confirmButton = '';
-            $onConfirm = str_replace(['&#34;', '&#39;'], ['"', "'"], $this->onConfirm);
-            $onConfirm = str_replace(["\'", '\"'], ['&#39;','&#34;'], $onConfirm);
-
-            if ($this->confirmButton) {
-                $confirmButton = "<button class='lzy-popup-confirm lzy-popup-button'>{$this->confirmButton}</button> ";
-                if ($this->onConfirmFrom) {
-                    $filename = resolvePath($this->onConfirmFrom, true);
-                    if (file_exists($filename)) {
-                        $onConfirm = file_get_contents($filename);
-                    } else {
-                        fatalError("File not found: '$filename'");
-                    }
-                }
-                $onConfirm = <<<EOT
-$('$_popupId .lzy-popup-confirm').click(function(e) {
-    var \$popup = $(e.target).closest('.popup_content');
-    {$onConfirm}
-    \$popup.popup('hide');
-});
-
-EOT;
-            }
-
-            // cancelButton:
-            $cancelButton = '';
-            $onCancel = str_replace(['&#34;', '&#39;'], ['"', "'"], $this->onCancel);
-            $onCancel = str_replace(["\'", '\"'], ['&#39;','&#34;'], $onCancel);
-            if ($this->cancelButton) {
-                $cancelButton = "<button class='lzy-popup-cancel lzy-popup-button'>{$this->cancelButton}</button> ";
-                if ($this->onCancelFrom) {
-                    $filename = resolvePath($this->onCancelFrom, true);
-                    if (file_exists($filename)) {
-                        $onCancel = file_get_contents($filename);
-                    } else {
-                        fatalError("File not found: '$filename'");
-                    }
-                }
-                $onCancel = <<<EOT
-$('$_popupId .lzy-popup-cancel').click(function(e) {
-    var \$popup = $(e.target).closest('.popup_content');
-    {$onCancel}
-    \$popup.popup('hide');
-});
-EOT;
-            }
-
-            $buttons =  "\t.append(\"<div class='lzy-popup-buttons'>$cancelButton$confirmButton</div>\")";
-
-            // class:
-            if ($this->closeButton) {
-                $class .= ' lzy-close-button';
-            }
-            if ($this->type !== 'info') {
-                $class .=  ' lzy-popup-'.$this->type;
-            }
-            $class = "lzy-popup $class";
-            $addClass = "\t.addClass('$class')\n";
-
-            // offset vertical / horizontal:
-            if ($this->horizontal && $this->vertical) {
-                $offset = "\t.css('transform', 'translate({$this->horizontal}, {$this->vertical})')\n";
-            } elseif ($this->horizontal) {
-                $offset = "\t.css('transform', 'translateX({$this->horizontal}')\n";
-            } elseif ($this->vertical) {
-                $offset = "\t.css('transform', 'translateY({$this->vertical}')\n";
-            } else {
-                $offset = '';
-            }
-            if ($this->argStr) {
-                $this->argStr = "\t\t".str_replace("\n", "\n\t\t", $this->argStr);
-            }
-            if ($this->triggerEvent !== "hover") {
-                $jq .= <<<EOT
-
-$('$_popupId')
-$addClass$buttons
-    .popup({
-{$this->argStr}})$offset;
-$onConfirm
-$onCancel
-EOT;
-            }
+            $this->render( $args );
         } // loop popup instances
 
-        $this->page->addJq($jq);
         $this->popups = [];
     } // applyPopup
 
 
 
 
-
-
-    private function getArg($argName, $default = false, $internalArgName = null, $addQuotes = true)
+    public function render( $args )
     {
-        if (!isset($this->args[$argName]) && !$default) {
-            $this->$argName = false;
-            return;
-        }
-        if ($internalArgName === false) {
-            $internalArgName = $argName;
-        }
-        $value = isset($this->args[$argName]) ? $this->args[$argName] : '';
+        // load POPUPS:
+        $this->page->addModules('POPUPS');
 
-        if (!$value && $default) {
-            $value = $default;
-        }
-        $value1 = '';
-        if (($value !== 'false') &&  ($value !== 'true')) {
-            $value1 = "'$value'";
-        } elseif (($value === 'false') || ($value === false)) {
-            $value = false;
-            $value1 = 'false';
-        } elseif (($value === 'true') || ($value === true)) {
-            $value = true;
-            $value1 = 'true';
-        }
-        $this->$argName = $value;
-        if ($internalArgName !== null) {
-            if (!$addQuotes) {
-                $value1 = trim($value1, "'");
+        $jsArgs = $this->parseArgs( $args );
+        $jq = <<<EOT
+
+lzyPopup({
+$jsArgs});
+
+EOT;
+
+        $this->page->addJq($jq);
+    } // render
+
+
+
+    private function parseArgs( $args )
+    {
+        $this->args = $args;
+        $jsArgs = '';
+        foreach ($args as $key => $value) {
+            if (is_string(($key))) {
+                $jsArgs .= "\t$key: '$value',\n";
             }
-            $this->argStr .= "$internalArgName: $value1,\n";
         }
-    } // getArg
+
+        return $jsArgs;
+    } // parseArgs
+
+
+
+
+    private function getJsArg( $argName, $default = false)
+    {
+        // render "argname: 'value',"
+        $value = isset($this->args[$argName]) ? $this->args[$argName] : $default;
+        $out = '';
+        if ($value) {
+            $out = "\t$argName: '$value',\n";
+        }
+        return $out;
+    } // getJsArg
 
 
 
 
 
-
-    private function renderPopupHelp()
+    public function renderPopupHelp()
     {
         $str = <<<EOT
 <h2>Options for macro <em>popup()</em></h2>

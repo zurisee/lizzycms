@@ -512,7 +512,7 @@ private function loadRequired()
                 $ok = $this->auth->checkGroupMembership( $reqGroups );
             }
             if (!$ok) {
-                $this->renderLoginForm();
+                $this->renderLoginForm( false );
                 return false;
             }
             setStaticVariable('isRestrictedPage', $this->auth->getLoggedInUser());
@@ -533,18 +533,7 @@ private function loadRequired()
         }
 
         if (($user = getUrlArg('login', true)) !== null) {
-            $this->page->addPopup(['contentFrom' => '#lzy-login-form', 'triggerSource' => '.lzy-login-link', 'autoOpen' => true]);
-            $this->renderLoginForm();
-            if ($user) {    // preset username if known
-                $jq = "$('.lzy-login-username').val('$user');\nsetTimeout(function() { $('.lzy-login-email').val('$user').focus(); },500);";
-                $this->page->addJq($jq, 'append');
-            }
-            $jq = "initLzyPanel('.lzy-panels-widget', 1);";
-            $this->page->addJq( $jq );
-
-        } elseif ($this->config->feature_preloadLoginForm) {    // preload login form if configured
-            $this->page->addPopup(['contentFrom' => '#lzy-login-form', 'triggerSource' => '.lzy-login-link']);
-            $this->renderLoginForm();
+            $this->renderLoginForm( true, $user );
 
         } elseif (!$accessGranted) {
             $loginForm = $this->renderLoginForm( false );
@@ -1979,21 +1968,49 @@ EOT;
 
 
 
-    private function renderLoginForm($asPopup = true)
+    private function renderLoginForm($asPopup = true, $presetUser = false)
     {
         $accForm = new UserAccountForm($this);
         $html = $accForm->renderLoginForm($this->auth->message, false, true);
-        $html = <<<EOT
+        $jq = '';
+        $this->page->addModules('EVENT_UE,PANELS');
+        if ($presetUser) {    // preset username if known
+            $jq .= "$('.lzy-login-username').val('$presetUser');\nsetTimeout(function() { $('.lzy-login-email').val('$presetUser').focus(); },500);";
+        }
+        $jq .= "initLzyPanel('.lzy-panels-widget', 1);";
+        $this->page->addJq( $jq );
+
+        if ($asPopup) {
+            $this->page->addModules('POPUPS');
+            $this->page->addJq("lzyPopup({ 
+                contentRef: '#lzy-login-form',
+                closeOnBgClick: false, 
+                closeButton: true, 
+                wrapperClass: 'lzy-login',
+                draggable: true,
+                header: '{{ lzy-login-header }}',
+            });");
+
+            $html = <<<EOT
+
+    <div id='lzy-login-form' style="display: none;">
+        <div class='lzy-login-form-wrapper'>
+$html
+        </div><!-- /.lzy-login-form -->
+    </div><!-- /#lzy-login-form -->
+
+EOT;
+            $this->page->addBodyEndInjections( $html );
+            return '';
+
+        } else {
+            $html = <<<EOT
     <div class='lzy-required-login-wrapper'>
+        <h2>{{ lzy-login-with-choice }}</h2>
 $html
     </div>
 EOT;
 
-        $this->page->addModules('PANELS');
-        if ($asPopup) {
-            $this->page->addBodyEndInjections("\t<div class='lzy-invisible'>\n\t  <div id='lzy-login-form'>\n$html\n\t  </div><!-- /#lzy-login-form -->\n\t</div><!-- /login form wrapper -->\n");
-            return '';
-        } else {
             return $html;
         }
     } // renderLoginForm

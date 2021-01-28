@@ -76,6 +76,13 @@ body {
     padding: 20px;
     max-width: 28em;
 }
+.lzy-login .lzy-popup-container {
+    padding: 0 10px;
+}
+.lzy-login h1 {
+    font-size: 14pt;
+    margin: 0;
+}
 .lzy-invite-user-form {
     max-width: 40em;
 }
@@ -105,11 +112,6 @@ body {
 .lzy-signup-form  label {
     display: block;
 }
-/*.lzy-login-form  label,*/
-/*.lzy-signup-form  label,*/
-/*.lzy-form-show-password a {*/
-/*    margin: 2em 0 0 0;*/
-/*}*/
 
 .lzy-signup-form button,
 .lzy-login-form button,
