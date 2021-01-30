@@ -130,7 +130,7 @@ class Authentication
                 $this->message = '{{ Login failed }}';
                 setStaticVariable('lastLoginMsg', '{{ Login failed }}');
                 $this->unsetLoggedInUser();
-                $jq = "$('#lzy-login-form').popup('show')";
+                $jq = "$('#lzy-login-form').lzyPopup('show')";
                 $this->lzy->page->addJq($jq, 'append');
             }
         }

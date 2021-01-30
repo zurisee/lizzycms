@@ -19,6 +19,9 @@ body {
 	justify-content: center;
 	opacity: 1;
 }
+.lzy-popup-bg > div {
+	position: relative;
+}
 .lzy-popup-wrapper {
 	position: relative;
 	max-width: 60%;
@@ -47,6 +50,7 @@ body {
 	border-top-right-radius: 0;
 }
 .lzy-popup-header {
+	position: relative;
 	padding: 5px;
 	background: #666;
 	color: #eee;
@@ -115,6 +119,8 @@ body {
 	text-align: center;
 }
 .lzy-popup-buttons {
-	margin: 1em 0;
+	margin: 1.5rem 0 0 0;
+	display: flex;
+	justify-content: flex-end;
 }
 

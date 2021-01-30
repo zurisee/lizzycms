@@ -43,7 +43,6 @@ class Page
     private $bodyLateInjections = '';
     private $bodyEndInjections = '';
     private $message = '';
-    private $popup = false;
     private $pageSubstitution = false;
     private $override = false;   // if set, will replace the page content
     private $overlay = [];    // if set, will add an overlay while the original page gets fully rendered
@@ -61,7 +60,7 @@ class Page
     private $assembledCssFiles = '';
     private $assembledJsFiles = '';
 
-    private $metaElements = ['lzy', 'trans', 'config', 'metaElements', 'popupInstance']; // items that shall not be merged
+    private $metaElements = ['lzy', 'trans', 'config', 'metaElements']; // items that shall not be merged
 
 
     public function __construct($lzy = false)
@@ -75,7 +74,6 @@ class Page
             $this->trans = null;
             $this->config = false;
         }
-        $this->popupInstance = new PopupWidget($this);
     }
 
 
@@ -402,7 +400,25 @@ class Page
 
     public function addPopup($args)
     {
-        $this->popupInstance->addPopup($args);
+        if (is_string($args)) {
+            $args = [ 'text' => $args ];
+        }
+        $jsArgs = '';
+        foreach ($args as $key => $value) {
+            if (is_string(($key))) {
+                $value = str_replace("'", "\\'", $value);
+                $jsArgs .= "\t$key: '$value',\n";
+            }
+        }
+
+        $jq = <<<EOT
+
+lzyPopup({
+$jsArgs});
+
+EOT;
+        $this->addJq($jq);
+        $this->addModules('POPUPS');
     } // addPopup
 
 
@@ -964,13 +980,6 @@ EOT;
                 }
             }
 
-            // style-sheet per page:
-            //$pageCss = $GLOBALS["globalParams"]["pathToPage"] . "styles.css";
-            //if ( file_exists( $pageCss )) {
-            //    $out .= "\t<link href='~/{$GLOBALS["globalParams"]["pathToPage"]}styles.css' rel='stylesheet'$mediaType />\n";
-            //    $this->assembledCssFiles .= $this->getFile( $pageCss, true );
-            //}
-
         } else { // js:
             foreach ($this->jsModules as $item) {
                 $item1 = resolvePath($item, true, true);
@@ -1168,8 +1177,6 @@ EOT;
                     $modified = true;
                 }
             }
-
-            $modified |= $this->popupInstance->applyPopup();
 
             // check, whether we need to auto-invoke modules based on classes:
             //            if ($this->config->feature_autoLoadClassBasedModules) {

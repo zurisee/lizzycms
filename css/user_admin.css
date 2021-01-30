@@ -184,6 +184,8 @@ input.lzy-form-checkbox {
 
 #lzy.lzy-large-screen #lzy-login-form {
     font-size: 11pt;
+}
+#lzy.lzy-large-screen #lzy-login-form > div {
     width: 42em;
 }
 

@@ -16,6 +16,10 @@ $this->addMacro($macroName, function () {
 
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
+    if ($text === 'help') {
+        return '';
+    }
+
     if (!$id) {
         $id = "lzy-button-$inx";
     } else {

@@ -7,8 +7,7 @@ $this->addMacro($macroName, function () {
     $args = $this->getArgsArray($macroName);
 
     if (@$args[0] === 'help') {
-        $pop = new PopupWidget();
-        return $pop->renderPopupHelp();
+        return $this->page->addPopup( 'help' );
     }
 
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
