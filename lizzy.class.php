@@ -149,7 +149,6 @@ private function loadRequired()
 {
     require_once SYSTEM_PATH.'vendor/autoload.php';
     require_once SYSTEM_PATH.'page.class.php';
-    require_once SYSTEM_PATH.'popup.class.php';
     require_once SYSTEM_PATH.'transvar.class.php';
     require_once SYSTEM_PATH.'lizzy-markdown.class.php';
     require_once SYSTEM_PATH.'scss.class.php';
