@@ -42,7 +42,8 @@ function LzyPopup( options, index ) {
         if ((this.header === '') || (this.header === true)) {
             this.header = '&nbsp;';
         }
-        this.draggable  = (typeof options.draggable !== 'undefined')? options.draggable : false;
+        this.draggable  = (typeof options.draggable !== 'undefined')? options.draggable : (this.header !== false);
+        // this.draggable  = (typeof options.draggable !== 'undefined')? options.draggable : false;
         if (this.draggable && (this.header === false)) {
             this.header = '&nbsp;';
         }
@@ -124,6 +125,7 @@ function LzyPopup( options, index ) {
         var $popupElem = null;
         var data = ' data-popup-inx="' + this.inx + '"';
         var id = '';
+        var cls = '';
 
         if ($('.lzy-popup-' + this.inx).length) {
             return ;
@@ -136,7 +138,8 @@ function LzyPopup( options, index ) {
 
         var header = '';
         if (this.header !== false) {
-            header = '\t\t<div class="lzy-popup-header"><div>' + this.header + '</div>'+ this.closeButton + '</div>\n';
+            cls = this.draggable? ' lzy-draggable': '';
+            header = '\t\t<div class="lzy-popup-header' + cls + '"><div>' + this.header + '</div>'+ this.closeButton + '</div>\n';
             this.popupClass += ' lzy-popup-with-header';
         } else {
             header = this.closeButton;
