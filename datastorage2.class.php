@@ -77,6 +77,11 @@ class DataStorage2
 
         $this->initDbTable();
         $this->appPath = getcwd();
+
+        if (isset($_GET['exportStructure'])) {
+            $this->exportStructure();
+        }
+
     } // __construct
 
 
@@ -804,6 +809,50 @@ class DataStorage2
         $this->structure = $structure;
         $this->lowLevelWriteStructure();
     } // setStructure
+
+
+
+    public function getSourceFilename() {
+        return $this->dataFile;
+    } // getSourceFilename
+
+
+
+
+    private function exportStructure()
+    {
+        // skip ticket DB or invoked from backend process or not on localhost:
+        if (!isset($GLOBALS['globalParams']['isLocalhost']) ||
+            !$GLOBALS['globalParams']['isLocalhost'] ||
+            !function_exists('convertToYaml') ||
+            (strpos($this->dataFile, '.#tickets') !== false)) {
+            return;
+        }
+
+        $exportFile = $_GET['exportStructure'];
+
+        $recStructure = $this->getStructure();
+
+        $outArray = [
+            'key' => $recStructure[ 'key' ],
+            'elements' => $recStructure[ 'elements' ],
+        ];
+
+        $srcfile = $this->dataFile;
+        $out = "# DB Structure of $srcfile\n\n";
+        $out .= convertToYaml( $outArray, 2 );
+
+        if (!$exportFile && ($exportFile !== 'false')) {
+            $exportFile = '~/' . dir_name($srcfile) .'#' .base_name($srcfile, false) . '_structure.yaml';
+        }
+        if ($exportFile) {
+            $exportFile = resolvePath($exportFile, true);
+            file_put_contents($exportFile, $out);
+        }
+
+        die("DB Structure written to '$exportFile'.");
+
+    } // exportStructure
 
 
 
