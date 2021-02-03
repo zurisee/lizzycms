@@ -319,7 +319,7 @@ class Forms
         $rec->translateLabel = false;
         if ($this->currForm->translateLabels || (@$args['translateLabel'])) {
             $rec->translateLabel = true;
-        } elseif ($label[0] === '-') {
+        } elseif ($label && ($label[0] === '-')) {
             $label = substr($label, 1);
             $rec->translateLabel = true;
         }
@@ -464,6 +464,8 @@ EOT;
         $rec->description = (isset($args['description'])) ? $args['description'] : '';
         $rec->errorMsg = (isset($args['errorMsg'])) ? $args['errorMsg'] : '';
         $rec->autoGrow = (isset($args['autoGrow'])) ? $args['autoGrow'] : true;
+        $rec->fieldWrapperAttr = (isset($args['fieldWrapperAttr'])) ? ' '.$args['fieldWrapperAttr'] : '';
+        $cutomImpAttr = (isset($args['inpAttr'])) ? ' '.$args['inpAttr'] : '';
 
         foreach (['min', 'max', 'pattern', 'placeholder'] as $attr) {
             if (isset($args[$attr])) {
@@ -476,7 +478,7 @@ EOT;
                 $inpAttr .= " $attr='{$args[$attr]}'";
             }
         }
-        $rec->inpAttr = $_name.$inpAttr.$required;
+        $rec->inpAttr = $_name.$inpAttr.$required.$cutomImpAttr;
 
         foreach($args as $key => $arg) {
             if (!isset($rec->$key)) {
@@ -677,7 +679,7 @@ EOT;
             if ($this->currRec->comment) {
                 $comment = "\t<span class='lzy-form-elem-comment'><span>{$this->currRec->comment}</span>\n\t\t</span>";
             }
-		    $out = "\t\t<div $class>$error\n$elem\t\t$comment</div><!-- /field-wrapper -->\n\n";
+		    $out = "\t\t<div $class{$this->currRec->fieldWrapperAttr}>$error\n$elem\t\t$comment</div><!-- /field-wrapper -->\n\n";
         } elseif ($this->currRec->type !== 'bypassed') {
             $out = "\t\t$elem";
         }
@@ -1478,7 +1480,7 @@ EOT;
 
         $hasColon = (strpos($label, ':') !== false);
         $label = trim(str_replace([':', '*'], '', $label));
-        if ($label[0] === '-') {
+        if ($label && ($label[0] === '-')) {
             $label = $this->trans->translateVariable(substr($label,1), true);
         } elseif ($this->currRec->translateLabel) {
             $label = $this->trans->translateVariable($label, true);
@@ -1553,7 +1555,7 @@ EOT;
         $formDescr = [];
         $i = 0;
         foreach ($form->formElements as $elem) {
-            if ($elem->name[0] === '_') {
+            if ($elem->name && ($elem->name[0] === '_')) {
                 continue;
             }
             $formDescr[$i]['label'] = $elem->labelInOutput;
