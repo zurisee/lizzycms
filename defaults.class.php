@@ -146,8 +146,10 @@ private $userConfigurableSettingsAndDefaults      = [
 
         $this->loadModules['FONTAWESOME_CSS']       = array('module' => 'https://use.fontawesome.com/releases/v5.3.1/css/all.css', 'weight' => 135);
 
+        $this->loadModules['MD5']                   = array('module' => 'third-party/javascript-md5/md5.min.js', 'weight' => 132);
         $this->loadModules['AUXILIARY']             = array('module' => 'js/auxiliary.js', 'weight' => 130);
 
+        $this->loadModules['REVEAL']                = array('module' => 'js/reveal.js', 'weight' => 128);
         $this->loadModules['TABBABLE']              = array('module' => 'third-party/tabbable/jquery.tabbable.min.js', 'weight' => 126);
         $this->loadModules['NAV']                   = array('module' => 'js/nav.js', 'weight' => 125);
 
@@ -184,7 +186,6 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->loadModules['PAGED_POLYFILL']        = array('module' => 'third-party/paged.polyfill/paged.polyfill.js', 'weight' => 46);
         $this->loadModules['ZOOM_TARGET']           = array('module' => 'third-party/zoomooz/jquery.zoomooz.min.js', 'weight' => 45);
         $this->loadModules['PAGE_SWITCHER']         = array('module' => 'js/page_switcher.js', 'weight' => 30);
-        $this->loadModules['REVEAL']                = array('module' => 'js/reveal.js', 'weight' => 21);
         $this->loadModules['TETHER']                = array('module' => 'third-party/tether.js/tether.min.js', 'weight' => 20);
         $this->loadModules['IFRAME_RESIZER']        = array('module' => 'third-party/iframe-resizer/iframeResizer.contentWindow.min.js', 'weight' => 19);
         $this->loadModules['USER_ADMIN']            = array('module' => 'js/user_admin.js, css/user_admin.css', 'weight' => 5);
