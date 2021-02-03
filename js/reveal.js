@@ -38,7 +38,8 @@ $('.lzy-reveal-controller-elem').each(function() {
 
 
 
-$('body').on('change', '.lzy-reveal-controller-elem', function() {
+$('body').on('click change', '.lzy-reveal-controller-elem', function(e) {
+	e.stopPropagation();
 	const $this = $( this );
 	var type = false;
 	var $target = null;
@@ -51,15 +52,6 @@ $('body').on('change', '.lzy-reveal-controller-elem', function() {
 		type = this.type;
 		$target = $( $this.attr('data-reveal-target') );
 	}
-
-	// // set margin-top according to elem height:
-	// if ($target.length) {
-	// 	const boundingBox = $target[0].getBoundingClientRect();
-	// 	const marginTop = (10 - Math.round(boundingBox.height)) + 'px';
-	// 	$target.css('margin-top', marginTop);
-	// 	// $target.css('margin-top', (boundingBox.height * -1 - 10) + 'px');
-	// }
-
 
 	if ( type === 'dropdown') {							// case select:
 		$('[data-reveal-target]', $this).each(function () {
