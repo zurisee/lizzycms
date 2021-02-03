@@ -431,6 +431,15 @@ div.lzy-editable-hdr {
 	margin-bottom: 1em;
 }
 
+// credit to Lea Verou: http://localhost/Lizzy-Dev/Tables/test/view_record/
+.lzy-scroll-hints {
+	background: linear-gradient(white 15px, hsla(0,0%,100%,0)) 0 0 / 100% 50px,
+	radial-gradient(at top, rgba(0,0,0,.4), transparent 70%) 0 0 / 100% 15px,
+	linear-gradient(to top, white 15px, hsla(0,0%,100%,0)) bottom / 100% 50px,
+	radial-gradient(at bottom, rgba(0,0,0,.4), transparent 70%) bottom / 100% 15px;
+	background-repeat: no-repeat;
+	background-attachment: local, scroll, local, scroll;
+}
 
 
 /* === Links =========================================== */

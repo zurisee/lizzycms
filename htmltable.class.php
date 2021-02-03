@@ -1,6 +1,7 @@
 <?php
 
 $GLOBALS["globalParams"]['tableCounter'][ $GLOBALS["globalParams"]["pagePath"] ] = 0;
+
 define('FORM_TYPES',
     ',string,text,password,email,textarea,radio,checkbox,'.
     'dropdown,button,url,date,time,datetime,month,number,range,tel,file,'.
@@ -10,6 +11,7 @@ define('SCALAR_TYPES',
     ',url,date,time,datetime,month,number,range,tel,');
 
 define('DEFAULT_EDIT_FORM_TEMPLATE_FILE', '~page/-table_edit_form_template.md');
+define('LZY_TABLE_SHOW_REC_ICON', "<span class='lzy-icon lzy-icon-show'></span>");
 
 
 
@@ -32,6 +34,7 @@ class HtmlTable
             $this->helpText = [];
             $options = [];
         }
+        $this->editFormRendered = false;
 
         $this->dataSource	        = $this->getOption('dataSource', '(optional if nCols is set) Name of file containing data. Format may be .cvs or .yaml and is expected be local to page folder.');
         $this->inMemoryData	        = $this->getOption('data', 'Alternative to "dataSource": provide data directly as array. E.g. data: $array,');
@@ -54,9 +57,12 @@ class HtmlTable
         $this->editMode             = $this->getOption('editMode', '[inline,form] Defines (Default: inline).', 'inline');
         $this->editFormArgs         = $this->getOption('editFormArgs', 'Arguments that will passed on to the forms-class.', false);
         $this->editFormTemplate     = $this->getOption('editFormTemplate', 'A markdown file that will be used for rendering the form.', false);
-        $this->editButtons          = $this->getOption('editButtons', 'If true, in editMode-form buttons will be rendered, in particular an "New Record" button.', null);
+        $this->activityButtons      = $this->getOption('activityButtons', 'Activates a row of activity buttons related to the form. If in editMode, a "New Record" button will be added.', null);
+//        $this->activityButtons          = $this->getOption('activityButtons', 'Activates a row of activity buttons related to the form, in particular a "View Record" button. If in editMode, a "New Record" button will be added.', null);
+//        $this->activityButtons          = $this->getOption('activityButtons', 'If true, in editMode-form buttons will be rendered, in particular an "New Record" button.', null);
         $this->labelColons          = $this->getOption('labelColons', 'If false, trailing colon of labels in editing-forms are omitted.', true);
         $this->customRowButtons     = $this->getOption('customRowButtons', '(optional comma-separated-list) Prepends a column to each row containing custom buttons. Buttons can be defined as names of icons or HTML code. E.g. "send,trash"', null);
+        $this->recViewButtonsActive = $this->getOption('showRecViewButton', '', null);
         $this->paging               = $this->getOption('paging', '[true|false] When using "Datatables": turns paging on or off (default is on)');
         $this->initialPageLength    = $this->getOption('initialPageLength', '[int] When using "Datatables": defines the initial page length (default is 10)');
         $this->excludeColumns       = $this->getOption('excludeColumns', '(optional) Allows to exclude specific columns, e.g. "excludeColumns:2,4-5"');
@@ -99,7 +105,6 @@ class HtmlTable
                 $this->editableActive = true;
             }
         }
-
     } // __construct
 
 
@@ -115,10 +120,16 @@ class HtmlTable
             new Forms( $this->lzy, true );
             unset($_POST['_lizzy-form']);
         }
-        if ($this->editingActive) {
+
+        // for "active tables": load modules and set class:
+        if ($this->editingActive || $this->activityButtons || $this->recViewButtonsActive) {
+            $this->page->addModules('POPUPS,HTMLTABLE,~sys/css/htmltables.css');
+            $this->includeCellRefs = true;
             require_once SYSTEM_PATH.'forms.class.php';
             new Forms( $this->lzy, true );
+            $this->tableClass .= ' lzy-active-table';
         }
+
         $this->loadData();
 
         $this->applyHeaders();
@@ -130,10 +141,18 @@ class HtmlTable
  //        $this->applyMiscOptions();
 
         $out = '';
-        if ($this->editableBy) {
+
+        // for "active tables": create ticket and set data-field:
+        if ($this->editingActive || $this->activityButtons || $this->recViewButtonsActive) {
+            $this->page->addModules('MD5');
             $tck = new Ticketing();
             $this->tickHash = $tck->createHash( 'lzy-form' );
             $this->tableDataAttr .= " data-table-hash='{$this->tickHash}' data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
+
+            // utility feature to export form template based on data structure:
+            if ($this->lzy->localCall && (getUrlArg('exportForm'))) {
+                $this->exportForm();
+            }
         }
 
         // option editable:
@@ -152,6 +171,13 @@ class HtmlTable
                 $out = $this->activateLiveData();
             }
             $this->editableBy = false;
+        }
+
+        if ($this->recViewButtonsActive) {
+            $out .= $this->renderForm();
+        }
+        if ($this->editingActive || $this->activityButtons || $this->recViewButtonsActive) {
+            $this->renderTextResources();
         }
 
         $this->convertLinks();
@@ -351,6 +377,7 @@ EOT;
 
         $tableClass = @$this->options['tableClass'] ? $this->options['tableClass']. ' ' : "lzy-table lzy-table-{$this->tableCounter} ";
         $tableClass .= $this->tableClass;
+        $tableClass = trim($tableClass);
         $thead = '';
         $tbody = '';
         $nCols = sizeof(reset( $data ));
@@ -409,7 +436,7 @@ EOT;
 
         $out = <<<EOT
 
-  <table id='{$this->id}' class='$tableClass'$dataSource{$this->tableDataAttr}>
+  <table id='{$this->id}' class='$tableClass'$dataSource{$this->tableDataAttr} data-inx="$this->tableCounter">
 {$this->caption}
 $thead	<tbody>
 $tbody	</tbody>
@@ -417,8 +444,8 @@ $tbody	</tbody>
 
 EOT;
 
-        if ($this->editButtons) {
-            $out = $this->renderEditFormButtons($this->editButtons) . $out;
+        if ($this->activityButtons) {
+            $out = $this->renderTableActionButtons() . $out;
         }
         return $out;
     } // renderHtmlTable
@@ -850,7 +877,7 @@ EOT;
 
     private function getDataElem($row, $col, $tag = 'td', $hdrElem = false)
     {
-        if ($this->hideMetaFields && ($this->data['hdr'][$col][0] === '_')) {
+        if ($this->hideMetaFields && $this->data['hdr'][$col] && ($this->data['hdr'][$col][0] === '_')) {
             return null;
         }
 
@@ -889,6 +916,12 @@ EOT;
         }
         $tdClass = trim(str_replace('  ', ' ', "$tdClass lzy-col-$col1"));
         $tdClass = " class='$tdClass'";
+
+        // handle option 'hide:true' from structure file:
+        if (strpos($cell, '%%!off$$') !== false) {
+            $cell = str_replace('%%!off$$', '', $cell);
+            $tdClass .= " style='display:none;'";
+        }
 
         // translate header elements:
         if (($hdrElem) && ($this->headersAsVars) ) {
@@ -1036,10 +1069,6 @@ EOT;
         }
         $this->page->addModules('POPUPS,HTMLTABLE');
 
-        if ($this->lzy->localCall && (getUrlArg('exportForm'))) {
-            $file = $file = getUrlArg('exportForm', true);
-            $this->exportForm( $file );
-        }
         $out = $this->renderForm();
 
         return $out;
@@ -1050,18 +1079,10 @@ EOT;
 
     private function renderForm()
     {
-        if ($this->tableCounter === 1) {
-            $this->strToAppend = <<<EOT
-
-    <div style='display:none;'> <!-- text resources: -->
-        <div id="lzy-edit-form-rec"><h3>{{ lzy-edit-form-rec }}</h3></div>
-        <div id="lzy-edit-form-new-rec"><h3>{{ lzy-edit-form-new-rec }}</h3></div>
-        <div id="lzy-edit-form-submit">{{ lzy-edit-form-submit }}</div>
-        <div id="lzy-edit-rec-delete-btn">{{ lzy-edit-rec-delete-btn }}</div>
-    </div>
-
-EOT;
+        if ($this->editFormRendered) {
+            return;
         }
+        $this->editFormRendered = true;
 
         if ($this->editFormTemplate) {
             return $this->importForm();
@@ -1080,7 +1101,6 @@ EOT;
             'file' => '~/'.$this->dataSource,
             'warnLeavingPage' => false, //???
             'ticketHash' => $this->tickHash,
-            'formHeader' => '<h3>{{ lzy-edit-form-rec }}</h3>',
             'cancelButtonCallback' => false,
             'validate' => true,
             'labelColons' => $this->labelColons,
@@ -1098,6 +1118,7 @@ EOT;
         ] );
 
         // Form Fields:
+        $inx = 1;
         foreach ($recStructure['elements'] as $elemKey => $rec) {
             // ignore all data elems starting with '_':
             if (@$elemKey[0] === '_') {
@@ -1106,7 +1127,9 @@ EOT;
             $rec['dataKey'] = $elemKey;
             $rec['label'] = isset($rec['formLabel']) ? $rec['formLabel'] : $elemKey;
             $rec['name'] = translateToIdentifier($elemKey, false, true, false);
+            $rec['fieldWrapperAttr'] = "data-elem-inx='$inx'";
             $out .= $form->render($rec);
+            $inx++;
         }
 
         // Delete:
@@ -1130,10 +1153,10 @@ EOT;
         // Form Tail:
         $out .= $form->render( ['type' => 'form-tail'] );
         $out = rtrim($out);
-
+//???
         $out = <<<EOT
 
-  <div class='lzy-edit-rec-form lzy-edit-rec-form-{$this->tableCounter}' style='display:none'>
+  <div id='lzy-edit-rec-form-{$this->tableCounter}' class='lzy-edit-rec-form lzy-edit-rec-form-{$this->tableCounter}' style='display:none'>
 $out
   </div><!-- /lzy-edit-rec-form -->
 
@@ -1145,13 +1168,15 @@ EOT;
 
 
 
-    private function exportForm( $exportFile )
+    private function exportForm()
     {
+        $exportFile = getUrlArg('exportForm', true);
+
         if (@!$this->recStructure) {
             $recStructure = $this->ds->getStructure();
         }
 
-        $out = '';
+        $out = "// Form-Template for $this->dataSource\n\n";
 
         $formArgs = '';
         if (is_array($this->editFormArgs)) {
@@ -1168,9 +1193,8 @@ EOT;
 	type: "form-head", 
 	id: 'lzy-edit-data-form-#tableCounter#',
 	class: 'lzy-form lzy-edit-data-form',
-	file: '~/$this->dataSource',
+	file: '\~/$this->dataSource',
 	ticketHash: #tickHash#,
-	formHeader: '<h3>{{ lzy-edit-form-rec }}</h3>',
 	cancelButtonCallback: false,
 	validate: true,
 	labelColons: $labelColons,$formArgs
@@ -1187,7 +1211,6 @@ EOT;
 
 {{ formelem(
 	type: "hidden", 
-	label: "E-Mail",
 	name: '_rec-key',
 	value: '',
 	)
@@ -1260,14 +1283,17 @@ EOT;
 
 EOT;
 
-        if (!$exportFile || ($exportFile === true)) {
-            $exportFile = DEFAULT_EDIT_FORM_TEMPLATE_FILE;
+        $writtenTo = '';
+        if ($exportFile) {
+            $exportFile = resolvePath($exportFile, true);
+            file_put_contents($exportFile, $out);
+            $this->page->addPopup("Form-Template written to '$exportFile'.");
+            $writtenTo = "<p><br><em>Written to '$exportFile'</em></p>";
         }
-        $exportFile = resolvePath($exportFile, true);
-        file_put_contents($exportFile, $out);
 
         $out = str_replace(['{{','<'], ['&#123;{','&lt;'], $out);
-        $this->page->addOverlay("<pre>$out</pre><p>Written to '$exportFile'</p>");
+        $this->page->addOverlay("<pre id='lzy-form-export'>$out</pre>$writtenTo");
+        $this->page->addJq("$('#lzy-form-export').selText();");
     } // exportForm
 
 
@@ -1283,7 +1309,8 @@ EOT;
         $file = resolvePath($file, true);
         $out = getFile( $file );
         if ($out) {
-            $out = str_replace(['#tickHash#','#tableCounter#'], [$this->ticketHash,$this->tableCounter], $out);
+            $out = removeCStyleComments( $out );
+            $out = str_replace(['#tickHash#','#tableCounter#'], [$this->tickHash, $this->tableCounter], $out);
             $out = compileMarkdownStr( $out );
             $out = <<<EOT
 
@@ -1304,32 +1331,45 @@ EOT;
 
     private function injectRowButtons()
     {
-        // if editingActive, automatically add an 'edit' button:
-        if ($this->editingActive) {
-            if ($this->customRowButtons === null) {
-                $this->customRowButtons = 'edit';
-            } elseif ($this->customRowButtons && strpos($this->customRowButtons, 'edit') === false) {
-                $this->customRowButtons = 'edit,' . $this->customRowButtons;
-            }
+        if (!is_string( $this->customRowButtons )) {
+            $this->customRowButtons = '';
+        }
+        $this->customRowButtons = str_replace(' ', '', $this->customRowButtons);
+        $customRowButtons = ",$this->customRowButtons,";
+        if ($this->editingActive && (strpos($customRowButtons, 'edit') === false)) {
+            $this->customRowButtons = 'edit,'.$this->customRowButtons;
+        }
+        if ($this->recViewButtonsActive && (strpos(",$customRowButtons,", ',view,') === false)) {
+            $this->customRowButtons = $customRowButtons = ',view,'.$this->customRowButtons;
         }
 
         if (!$this->customRowButtons) {
             return;
         }
 
+        if (strpos(",$customRowButtons,", ',view,') !== false) {
+            $this->tableClass .= ' lzy-rec-preview';
+        }
+
         $cellContent = '';
         $customButtons = explodeTrim(',', $this->customRowButtons);
         foreach ($customButtons as $name) {
+            if (!$name) { continue; }
+            if ($name === 'view') {
+                $icon = LZY_TABLE_SHOW_REC_ICON;
+            } else {
+                $icon = "<span class='lzy-icon lzy-icon-$name'></span>";
+            }
             if (strpos($name, '<') !== false) {
                 $cellContent .= $name;
             } else {
-                $cellContent .= "\n\t\t\t\t<button class='lzy-table-control-btn lzy-table-$name-btn' title='{{ lzy-table-$name-btn }}'><span class='lzy-icon lzy-icon-$name'></span></button>";
+                $cellContent .= "\n\t\t\t\t<button class='lzy-table-control-btn lzy-table-$name-btn' title='{{ lzy-table-$name-btn }}'>$icon</span></button>";
             }
         }
 
         $cellInstructions = [
             'column' => 1,
-            'header' => 'Edit',
+            'header' => '&nbsp;',
             'content' => $cellContent,
         ];
         $this->addCol($cellInstructions);
@@ -1632,7 +1672,7 @@ EOT;
         $ds = new DataStorage2($this->options);
         $this->ds = $ds;
         $data0 = $ds->read();
-        $this->structure = $structure = $this->ds->getStructure();
+        $this->structure = $structure = $ds->getStructure();
 
         $fields = $structure['elements'];
         if ($this->headers === true) {
@@ -1645,7 +1685,18 @@ EOT;
                 $this->headerElems[] = '_key';
             }
         }
-
+        $i = 0;
+        foreach ($fields as $desc) {
+            // handle option 'omit:true' from structure file:
+            if (@$desc['omit']) {
+                unset($this->headerElems[$i]);
+            }
+            // handle option 'hide:true' from structure file:
+            if (@$desc['hide']) {
+                $this->headerElems[$i] .= '%%!off$$';
+            }
+            $i++;
+        }
         $data = [];
         $this->data = [];
         $ir = 0;
@@ -1656,6 +1707,11 @@ EOT;
                 continue;
             }
             foreach ($fields as $c => $desc) {
+
+                // handle option 'omit:true' from structure file:
+                if (@$desc['omit']) {
+                    continue;
+                }
                 $item = isset($rec[ $c ])? $rec[ $c ]: (isset($rec[ $ic ])? $rec[ $ic ]: '');
                 if (is_array($item)) {
                     if (isset($item[0])) {
@@ -1670,7 +1726,13 @@ EOT;
                     $item = trim($item, '"\'');
                     $item = str_replace("\n", '<br />', $item);
                 }
-                $data[$r][$ic++] = trim($item, '"\'');
+                $item = trim($item, '"\'');
+
+                // handle option 'hide:true' from structure file:
+                if (@$desc['hide']) {
+                    $item .= '%%!off$$';
+                }
+                $data[$r][$ic++] = $item;
             }
             $ir++;
         }
@@ -1688,27 +1750,55 @@ EOT;
     
     
     
-    private function renderEditFormButtons( $editButtons = false)
+    private function renderTableActionButtons()
     {
-        $out = <<<EOT
-    
-  <div class="lzy-table-add-rec-btns">
-    <button id='{$this->id}-add-rec' class='lzy-button lzy-table-add-rec-btn' title="{{ lzy-edit-form-new-rec }}">{{ lzy-table-add-rec-btn }}</button>
-  </div>
+        $buttons = $jq = '';
 
+        if ($this->editingActive && (($this->activityButtons === true) || (strpos(',edit,', $this->activityButtons) !== false))) {
+            $buttons .= <<<EOT
+    <button id='{$this->id}-add-rec' class='lzy-button lzy-table-add-rec-btn' title="{{ lzy-edit-form-new-rec }}">{{ lzy-table-add-rec-btn }}</button>
 EOT;
-            $jq = <<<EOT
+            $jq .= <<<EOT
 
 $('#{$this->id}-add-rec').click(function() {
     mylog('add rec');
-    const \$btnWrapper = $(this).closest('.lzy-table-add-rec-btns');
+    const \$btnWrapper = $(this).closest('.lzy-table-action-btns');
     const \$table = \$btnWrapper.next('.lzy-table');
-    HTMLtable.openFormPopup( \$table );
+    htmlTable.openFormPopup( \$table );
     return;
 });
 EOT;
+        }
+
+        $out = <<<EOT
+    
+  <div class="lzy-table-action-btns">
+$buttons  </div>
+
+EOT;
             $this->page->addJq($jq);
             return $out;
-    } // renderEditFormButtons
+    } // renderTableActionButtons
+
+
+
+
+    private function renderTextResources()
+    {
+        if ($this->tableCounter === 1) {
+            $this->strToAppend = <<<EOT
+
+    <div style='display:none;'> <!-- text resources: -->
+        <div id="lzy-edit-form-rec">{{ lzy-edit-form-rec }}</div>
+        <div id="lzy-edit-form-new-rec">{{ lzy-edit-form-new-rec }}</div>
+        <div id="lzy-edit-form-submit">{{ lzy-edit-form-submit }}</div>
+        <div id="lzy-edit-form-close">{{ lzy-edit-form-close }}</div>
+        <div id="lzy-edit-rec-delete-btn">{{ lzy-edit-rec-delete-btn }}</div>
+        <div id="lzy-recview-header">{{ lzy-recview-header }}</div>
+    </div>
+
+EOT;
+        }
+    } // renderTextResources
 
 } // HtmlTable

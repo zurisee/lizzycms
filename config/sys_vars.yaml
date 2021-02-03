@@ -1,6 +1,9 @@
 # Transvar Definition File
 # -- generic definitions
 
+
+
+
 #--- Login Link ----------------------------------
 space: "&nbsp;&nbsp;"
 
@@ -11,6 +14,9 @@ clear: '<div style="clear:both;"></div>'
 section: "\n</section>\n<section>\n"
 
 lzy-login-icon: '<span class="lzy-icon lzy-icon-user"></span>'
+
+
+
 
 
 #--- Forms -----------------------------------------------
@@ -147,6 +153,9 @@ lzy-form-data-key: _datakey
 #lzy-form-data-key: DataKey
 
 
+
+
+
 #--- File Upload --------------------------
 lzy-fileadmin-button-tooltip:
     de: 'Dateinverwaltung anzeigen'
@@ -181,6 +190,8 @@ lzy-please-correct:
 
 
 
+
+
 #--- Links -------------------------------
 opens mail app: 
     de: 'Öffnet in Mail-Anwendung'
@@ -204,6 +215,8 @@ lzy-to-next-page-title:
 lzy-to-prev-page-title:
     de: zur vorherigen Seite
     _: to previous page
+
+
 
 
 
@@ -259,10 +272,16 @@ lzy-prev-page-link-title:
     #lzy-next-page-link-label
     #lzy-prev-page-link-label
 
+
+
+
 #--- Page hit counter
 lzy-page-hits:
     de: 'Seitenaufrufe: '
     _:  'Page hits: '
+
+
+
 
 
 #--- Language Selection ------------------
@@ -322,6 +341,9 @@ lzy-config-save:
     _: Save changes
 
 
+
+
+
 #--- Printing ---------------------------
 lzy-print-now:
         de: Drucken
@@ -329,7 +351,10 @@ lzy-print-now:
 
 page-break: "<div class='lzy-print-page-break'></div>"
 
-    
+   
+
+
+
 # --- Login ------------------------------
 lzy-no-users-defined-warning:
     de: 'Warnung:<br>Es sind noch keine Benutzer definiert<br>&rarr; config/users.yaml'
@@ -599,6 +624,8 @@ lzy-add-users-send:
     _:  'Create account'
 
 
+
+
 #--- Insecure Connection ----------------------------
 Warning insecure connection:
     de: "Achtung: die Verbindung zum Webhost ist nicht gesichert (https). Sie können sich deshalb nicht anmelden."
@@ -607,6 +634,8 @@ Warning insecure connection:
 Please switch to:
     de: Bitte wechseln Sie auf
     en: Please switch to
+
+
 
 
 
@@ -623,6 +652,8 @@ lzy-data-add-record:
 lzy-data-delete-record:
     de: Diesen Datensatz entfernen
     _:  Delete this data record
+
+
 
 
 
@@ -669,6 +700,9 @@ lzy-editor-ok:
     _:  'Ok'
 
 
+
+
+
 #--- Misc ------------------------------------------
 Page:
     de: Seite
@@ -708,6 +742,9 @@ lzy-close:
     _:  Close
 
 
+
+
+
 #--- Editing -------------------------------------
 lzy-turn-edit-mode-on:
     de: "<span class='lzy-icon lzy-icon-edit' title='Seite bearbeiten'></span>"
@@ -742,6 +779,9 @@ lzy-editable-cancel-text:
     _:  'Cancel input'
 
 
+
+
+
 #--- magic links ---------------------
 lzy-link-expired:
     de: 'Link ungültig'
@@ -759,6 +799,10 @@ lzy-email-change-successful:
     de: 'Ihre neue E-Mail Adresse wurde gespeichert'
     _:  'Your new e-mail address has been stored successfully'
 
+
+
+
+
 #--- User Admin ------------------------
 # Change PW:
 lzy-change-password-title:
@@ -768,6 +812,9 @@ lzy-change-password-title:
 lzy-invalid-email-address:
     de: 'Ungültige E-Mail Adresse'
     _: 'Invalid e-mail address'
+
+
+
 
 
 #--- Edit Tables --------------------
@@ -802,6 +849,15 @@ lzy-edit-rec-delete-btn:
 
 lzy-table-add-rec-btn:
     _:  '&#10010;'
+
+lzy-edit-form-close:
+    de: 'Schliessen'
+    _:  'Close'
+lzy-recview-header:
+    de: 'Ansicht'
+    _:  'View'
+
+
 
 #--- DataTables ----------------------
 lzy-datatables-search-button:

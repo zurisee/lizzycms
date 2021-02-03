@@ -1,0 +1,52 @@
+/* === Tables ====================== */
+
+
+#lzy .lzy-recview-popup .lzy-form-field-placeholder.lzy-form-field-placeholder.lzy-form-field-placeholder {
+	width: 16em;
+	width: calc(100% - var(--lzy-label-width, 6em) - 10px);
+	padding: 0.2em 0.4em;
+	display: inline-block;
+	line-height: 2em;
+	border: 1px solid #ddd;
+	overflow: auto;
+}
+#lzy .lzy-recview-popup fieldset.lzy-form-label legend.lzy-legend.lzy-legend.lzy-legend.lzy-legend {
+	margin-top: 0.6em;
+}
+#lzy .lzy-recview-popup fieldset.lzy-form-label .lzy-form-field-placeholder.lzy-form-field-placeholder {
+	margin-left: 6px;
+	width: calc(100% - var(--lzy-label-width, 6em) - 26px);
+	overflow: auto;
+}
+.lzy-recview-popup .lzy-form-field-type-textarea .lzy-form-field-placeholder {
+	width: 100% !important;
+}
+.lzy-recview-popup fieldset.lzy-form-label legend {
+	float: left;
+	width: var(--lzy-label-width, 6em);
+}
+.lzy-recview-popup > div {
+	max-width: 34em;
+}
+.lzy-recview-popup .lzy-form-field-placeholder {
+	white-space: pre-wrap;
+}
+.lzy-recview-popup .lzy-popup-container .lzy-form-show-pw-icon,
+.lzy-recview-popup .lzy-popup-container .lzy-form-field-type-buttons,
+.lzy-recview-popup .lzy-popup-container .lzy-edit-rec-delete-checkbox {
+	display: none;
+}
+/*.lzy-popup-container .lzy-form-show-pw-icon,*/
+/*.lzy-popup-container .lzy-form-field-type-buttons,*/
+/*.lzy-popup-container .lzy-edit-rec-delete-checkbox {*/
+/*	display: none;*/
+/*}*/
+
+.lzy-popup-container .lzy-form {
+	max-width: unset;
+	min-width: 32em;
+}
+
+.lzy-table-control-btn .lzy-icon {
+	display: block;
+}
