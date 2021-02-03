@@ -143,7 +143,8 @@ lzy-form-response-email-template-not-found:
     de: 'Keine Template-Datei für das Versenden der E-Mail gefunden.'
     _:  'Template file for e-mail response not found.'
 
-lzy-form-data-key: DataKey
+lzy-form-data-key: _datakey
+#lzy-form-data-key: DataKey
 
 
 #--- File Upload --------------------------
@@ -732,6 +733,14 @@ lzy-config-button:
         This field is currently locked because somebody else is editing it.\n\n
         Please try again in a few minutes. (Remember to reload the page when trying again.)
 
+lzy-editable-ok-text:
+    de: 'Ok, Eingaben speichern'
+    _:  'Ok, save modifications'
+
+lzy-editable-cancel-text:
+    de: 'Eingaben abbrechen'
+    _:  'Cancel input'
+
 
 #--- magic links ---------------------
 lzy-link-expired:
@@ -760,4 +769,46 @@ lzy-invalid-email-address:
     de: 'Ungültige E-Mail Adresse'
     _: 'Invalid e-mail address'
 
+
+#--- Edit Tables --------------------
+lzy-edit-form-rec:
+    de: 'Bearbeiten'
+    _:  'Edit'
+
+
+lzy-edit-form-submit:
+    de: 'Speichern'
+    _:  'Save'
+
+
+lzy-edit-form-cancel:
+    de: 'Abbrechen'
+    _:  'Cancel'
+
+
+lzy-edit-form-new-rec:
+    de: 'Neuer Datensatz'
+    _:  'New Data'
+
+lzy-header-edit: '<span class="lzy-invisible">{{ Edit }}</span>'
+
+lzy-edit-rec-delete-option:
+    de: 'Diesen Datensatz löschen'
+    _:  Delete data record
+
+lzy-edit-rec-delete-btn:
+    de: 'Jetzt löschen'
+    _:  Delete now
+
+lzy-table-add-rec-btn:
+    _:  '&#10010;'
+
+#--- DataTables ----------------------
+lzy-datatables-search-button:
+    de: Suchen
+    _:  Find
+
+lzy-datatables-records:
+    de: Datensätze
+    _:  Records
 

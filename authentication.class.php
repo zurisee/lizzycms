@@ -130,7 +130,7 @@ class Authentication
                 $this->message = '{{ Login failed }}';
                 setStaticVariable('lastLoginMsg', '{{ Login failed }}');
                 $this->unsetLoggedInUser();
-                $jq = "$('#lzy-login-form').popup('show')";
+                $jq = "$('#lzy-login-form').lzyPopup('show')";
                 $this->lzy->page->addJq($jq, 'append');
             }
         }
@@ -357,13 +357,17 @@ EOT;
         session_regenerate_id();
         $this->loggedInUser = $user;
         $_SESSION['lizzy']['user'] = $user;
+        $_SESSION['lizzy']['userRec'] = $rec;
         $isAdmin = $this->checkAdmission('admins');
+        $isPrivileged = $isAdmin || $this->checkAdmission('editors');
+
         $_SESSION['lizzy']['isAdmin'] = $isAdmin;
+        $_SESSION['lizzy']['isPrivileged'] = $isPrivileged;
         $_SESSION['lizzy']['loginTimes'] = serialize($this->loginTimes);
         $_SESSION['lizzy']['loginEmail'] = $loginEmail;
 
         $GLOBALS['globalParams']['isLoggedin'] = boolval( $user );
-        $GLOBALS['globalParams']['isPrivileged'] = $this->checkAdmission('admins,editors');
+        $GLOBALS['globalParams']['isPrivileged'] = $isPrivileged;
         $GLOBALS['globalParams']['isAdmin'] = $isAdmin;
 
         if (isset($rec['displayName'])) {
@@ -626,7 +630,6 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
     public function logout()
     {
         $user = getStaticVariable('user');
@@ -642,7 +645,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     public function unsetLoggedInUser($user = '')
     {
         if ($user) {
@@ -661,7 +664,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     private function handleFailedLoginAttempts($code = '')
     {
         $rep = '';
@@ -676,7 +679,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     private function handleFailedLogins()
     {
         $repeated = false;
@@ -733,7 +736,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     public function isValidPassword($password, $password2 = false)
     {
         if ($password2 && ($password !== $password2)) {
@@ -755,7 +758,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     public function isPrivileged()
     {
         return $this->checkAdmission('admins,editors');
@@ -764,7 +767,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     public function isLoggedIn()
     {
         return $this->isAdmin() || (bool) $this->userRec;
@@ -773,7 +776,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     public function isAdmin($thorough = false)
     {
         if (!$thorough && getStaticVariable('isAdmin')) {
@@ -781,6 +784,7 @@ EOT;
         }
         return $this->checkAdmission('admins');
     } // isAdmin
+
 
 
 
@@ -944,6 +948,26 @@ EOT;
         }
         return $rec;
     } // findEmailInEmailList
+
+
+
+
+    public function getListOfUsers( $group = false )
+    {
+        if ($group) {
+            $allUsers = $this->knownUsers;
+            $users = [];
+            foreach ($allUsers as $un => $rec) {
+                if ($this->isGroupMember($rec['groups'], $group)) {
+                    $users[] = $un;
+                }
+            }
+        } else {
+            $users = array_keys( $this->knownUsers );
+        }
+        return implode(',', $users);
+    } // getListOfUsers
+
 
 
 

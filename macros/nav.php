@@ -155,6 +155,6 @@ function renderInPageNav($page, $inx, $targetElems, $depth, $listElemTag, $inPag
 
 EOT;
 
-    $page->addJQ($jq);
+    $page->addJq($jq);
 } // renderInPageNav
 

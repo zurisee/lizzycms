@@ -1,11 +1,11 @@
 <?php
 
-// PATH_TO_APP_ROOT must to be defined by the invoking module
-// *_PATH constants must only define path starting from app-root
+ // PATH_TO_APP_ROOT must to be defined by the invoking module
+ // *_PATH constants must only define path starting from app-root
 
 define('EXTENSIONS_PATH', 	    SYSTEM_PATH.'extensions/');
 define('DATA_PATH', 		    'data/');
-define('CACHE_PATH',            '.#cache/');
+define('CACHE_PATH',            '.cache/');
 define('LOG_PATH',              '.#logs/');
 define('DEFAULT_TICKETS_PATH',  '.#tickets/');
 
@@ -18,6 +18,9 @@ if (!defined('MKDIR_MASK')) {
     define('MKDIR_MASK', 0700);
 }
 define('DEFAULT_EDITABLE_DATA_FILE', 'editable.yaml');
+define('REC_KEY_ID', 	        '_key');
+define('TIMESTAMP_KEY_ID', 	    '_timestamp');
+define('PASSWORD_PLACEHOLDER', 	'●●●●');
 
 $appRoot = getcwd().'/';
 if (strpos($appRoot, '_lizzy/') !== false) {
@@ -27,7 +30,44 @@ if (strpos($appRoot, '_lizzy/') !== false) {
     $appRoot = trunkPath(getcwd().'/', 1);
 }
 
-//------------------------------------------------------------------------------
+
+function translateToIdentifier($str, $removeDashes = false, $removeNonAlpha = false)
+{
+    // translates special characters (such as , , ) into identifier which contains but safe characters:
+    $str = mb_strtolower($str);		// all lowercase
+    $str = strToASCII( $str );		// replace umlaute etc.
+    $str = strip_tags( $str );							// strip any html tags
+    if ($removeNonAlpha) {
+        $str = preg_replace('/[^a-zA-Z]/ms', '', $str);
+
+    } elseif (preg_match('/^ \W* (\w .*? ) \W* $/x', $str, $m)) { // cut leading/trailing non-chars;
+        $str = trim($m[1]);
+    }
+    $str = preg_replace('/\s+/', '_', $str);			// replace blanks with _
+    $str = preg_replace("/[^[:alnum:]_-]/m", '', $str);	// remove any non-letters, except _ and -
+    if ($removeDashes) {
+        $str = str_replace("-", '_', $str);				// remove -, if requested
+    }
+    return $str;
+} // translateToIdentifier
+
+
+
+function strToASCII($str)
+{
+    // transliterate special characters (such as ä, ö, ü) into pure ASCII
+    $specChars = array('ä','ö','ü','Ä','Ö','Ü','é','â','á','à',
+        'ç','ñ','Ñ','Ç','É','Â','Á','À','ẞ','ß','ø','å');
+    $specCodes2 = array('ae','oe','ue','Ae',
+        'Oe','Ue','e','a','a','a','c',
+        'n','N','C','E','A','A','A',
+        'SS','ss','o','a');
+    return str_replace($specChars, $specCodes2, $str);
+} // strToASCII
+
+
+
+
 function explodeTrim($sep, $str)
 {
     if (!$str) {
@@ -47,7 +87,7 @@ function explodeTrim($sep, $str)
 
 
 
-//---------------------------------------------------------------------------
+
 function array2DKey(&$key)
 {
     $key = str_replace(' ','', $key);
@@ -62,9 +102,6 @@ function array2DKey(&$key)
 
 
 
-
-
-//-----------------------------------------------------------------------------
 function trunkPath($path, $n = 1)
 {
     $path = ($path[strlen($path)-1] === '/') ? rtrim($path, '/') : dirname($path);
@@ -74,7 +111,6 @@ function trunkPath($path, $n = 1)
 
 
 
-//------------------------------------------------------------
 function preparePath($path)
 {
     $path = dirname($path.'x');
@@ -105,7 +141,20 @@ function fileExt($file0, $reverse = false)
     }
 } // fileExt
 
-//------------------------------------------------------------
+
+
+
+function safeStr($str)
+{
+    if (preg_match('/^\s*$/', $str)) {
+        return '';
+    }
+    $str = substr($str, 0, MAX_URL_ARG_SIZE);	// restrict size to safe value
+    return $str;
+} // safe_str
+
+
+
 function lzyExit( $str = '' )
 {
     if (strlen($buff = ob_get_clean ()) > 1) {
@@ -117,7 +166,7 @@ function lzyExit( $str = '' )
 
 
 
-//------------------------------------------------------------
+
 function fatalError($msg)
 {
     $msg = date('Y-m-d H:i:s')." [_ajax_server.php]\n$msg\n";
@@ -127,7 +176,73 @@ function fatalError($msg)
 
 
 
-//------------------------------------------------------------
+
+function checkPermission($str) {
+    $neg = false;
+    $res = false;
+    if (preg_match('/^((non|not|\!)\-?)/i', $str, $m)) {
+        $neg = true;
+        $str = substr($str, strlen($m[1]));
+    }
+
+    if ( ($str === true) || ($str === 'true') ) {
+        $res = true;
+
+    } elseif ( ($str === false) || ($str === 'false') ) {
+        $res = false;
+
+    } elseif (preg_match('/privileged/i', $str)) {
+        $res = $_SESSION['lizzy']['isPrivileged'];
+
+    } elseif (preg_match('/loggedin/i', $str)) {
+        $res = ($_SESSION['lizzy']['user'] || $_SESSION['lizzy']['isAdmin']);
+
+    } elseif (($str !== 'true') && !is_bool($str)) {
+        $res = checkGroupMembership($str);
+    }
+
+    if ($neg) {
+        $res = !$res;
+    }
+    return $res;
+} // checkPermission
+
+
+
+
+function checkGroupMembership($requiredGroup)
+{
+    if (!isset($_SESSION['lizzy']['userRec']['groups'])) {
+        return false;
+    }
+
+    $usersGroup = $_SESSION['lizzy']['userRec']['groups'];
+    $requiredGroups = explode(',', $requiredGroup);
+    $usersGroups = strtolower(str_replace(' ', '', ",$usersGroup,"));
+    foreach ($requiredGroups as $rG) {
+        $rG = strtolower(trim($rG));
+        if ((strpos($usersGroups, ",$rG,") !== false) ||
+            (strpos($usersGroups, ",admins,") !== false)) {
+            return true;
+        }
+    }
+    return false;
+} // checkGroupMembership
+
+
+
+
+function createHash( $hashSize = 8)
+{
+    $hash = chr(random_int(65, 90));  // first always a letter
+    $hash .= strtoupper(substr(sha1(random_int(0, PHP_INT_MAX)), 0, $hashSize - 1));  // letters and digits
+    return $hash;
+} // createHash
+
+
+
+
+
 function resolvePath($path)
 {
     // Note: resolvePath() on backend always resolves for file-access (not HTTP access):
@@ -160,14 +275,14 @@ function resolvePath($path)
 
 
 
-//---------------------------------------------------------------------------
 function mylog($str, $user = false)
 {
     writeLog($str, $user);
 } // mylog
 
 
-//---------------------------------------------------------------------------
+
+
 function writeLog($str, $user = false, $destFile = SERVICE_LOG)
 {
     if (!$user) {
@@ -182,7 +297,7 @@ function writeLog($str, $user = false, $destFile = SERVICE_LOG)
 
 
 
-//---------------------------------------------------------------------------
+
 function timestamp($short = false)
 {
     if (!$short) {
@@ -194,8 +309,24 @@ function timestamp($short = false)
 
 
 
-//---------------------------------------------------------------------------
-function var_r($var)
+
+function var_r($var, $varName = '', $flat = false, $asHtml = true)
 {
-    return str_replace("\n", '', var_export($var, true));
-}
+    if ($flat) {
+        $out = preg_replace("/".PHP_EOL."/", '', var_export($var, true));
+        if (preg_match('/array \((.*),\)/', $out, $m)) {
+            $out = "[{$m[1]} ]";
+        }
+        if ($varName) {
+            $out = "$varName: $out";
+        }
+    } else {
+        if ($asHtml) {
+            $out = "<div><pre>$varName: " . var_export($var, true) . "\n</pre></div>\n";
+        } else {
+            $out = "$varName: " . var_export($var, true) . "\n";
+        }
+    }
+    return $out;
+} // var_r
+

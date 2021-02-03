@@ -88,7 +88,8 @@ private $userConfigurableSettingsAndDefaults      = [
     'site_devDataPath'                  => ['', 'Activates a mechanism that, in dev-mode, switches ~data/ to given destination. Thus, you can savely develop and test in dev-mode without overwriting hot data. Hint: set site_dataPath to "../db/".', 2 ],
     'site_devDataPathPattern'           => ['/-', 'Regex-pattern to match against appRoot path to identify, whether we are running on a dev site, e.g. "/(dev|-)". Default: "/-"', 3 ],
     'site_enableCaching'                => [false, 'If true, Lizzy\'s caching mechanism is activated.', 1 ],
-    'site_enableMdCaching'                => [false, 'If true, Lizzy\'s MD caching mechanism is activated. (not fully implemented yet)', 3 ],
+    'site_enableFilesCaching'           => [false, 'If true, Lizzy\'s module caching mechanism is activated. I.e. CSS and JS files are collected and delivered to browser in just two requests.', 1 ],
+    'site_enableMdCaching'              => [false, 'If true, Lizzy\'s MD caching mechanism is activated. (not fully implemented yet)', 3 ],
     'site_extractSelector'              => ['body main', '[selector] Lets an external js-app request an extract of the web-page', 3 ],
     'site_enableRelLinks'               => [true, 'If true, injects "rel links" into header, e.g. "&lt;link rel=\'next\' title=\'Next\' href=\'...\'>"', 3 ],
     'site_allowInsecureConnectionsTo'   => ['192.*', '[domain(s)] Permit login over insecure connections to webhost on stated domain/ip-address.', 1 ],
@@ -140,6 +141,8 @@ private $userConfigurableSettingsAndDefaults      = [
 
         $this->loadModules['NORMALIZE_CSS']         = array('module' => 'css/normalize.min.css', 'weight' => 150);
         $this->loadModules['TOUCH_DETECTOR']        = array('module' => 'js/touch_detector.js', 'weight' => 149);
+        $this->loadModules['EVENT_UE']              = array('module' => 'third-party/jquery.event.ue/jquery.event.ue.min.js', 'weight' => 145);
+
 
         $this->loadModules['FONTAWESOME_CSS']       = array('module' => 'https://use.fontawesome.com/releases/v5.3.1/css/all.css', 'weight' => 135);
 
@@ -148,6 +151,8 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->loadModules['TABBABLE']              = array('module' => 'third-party/tabbable/jquery.tabbable.min.js', 'weight' => 126);
         $this->loadModules['NAV']                   = array('module' => 'js/nav.js', 'weight' => 125);
 
+        $this->loadModules['HTMLTABLE']             = array('module' => 'js/htmltable.js', 'weight' => 123);
+
         $this->loadModules['EDITABLE']              = array('module' => 'extensions/editable/js/editable.js,'.
                                                             'extensions/editable/css/editable.css', 'weight' => 120);
 
@@ -155,11 +160,8 @@ private $userConfigurableSettingsAndDefaults      = [
 
         $this->loadModules['QUICKVIEW']     	    = array('module' => 'js/quickview.js, css/quickview.css', 'weight' => 92);
 
-        $this->loadModules['JS_POPUPS']             = array('module' => 'js/js-popup.js, css/js-popup.css', 'weight' => 86);
-
-        $this->loadModules['POPUP']  = // POPUP is synonym for POPUPS
-        $this->loadModules['POPUPS']                = array('module' => 'third-party/jquery-popupoverlay/jquery.popupoverlay.js,'.
-                                                                        'css/popup.css', 'weight' => 85);
+        $this->loadModules['POPUPS']                = array('module' => 'third-party/jquery.event.ue/jquery.event.ue.min.js,' .
+                                                            'js/popup.js, css/popup.css', 'weight' => 86);
 
         $this->loadModules['TOOLTIPS']              = array('module' => 'third-party/jquery-popupoverlay/jquery.popupoverlay.js,'.
                                                                         'js/tooltips.js, css/tooltips.css', 'weight' => 84);

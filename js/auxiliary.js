@@ -1,4 +1,7 @@
-//--------------------------------------------------------------
+/*
+ *  Lizzy's auxiliary functions
+*/
+
 // handle screen-size and resize
 (function ( $ ) {
     if ($(window).width() < screenSizeBreakpoint) {
@@ -15,9 +18,6 @@
             $('body').removeClass('lzy-small-screen').addClass('lzy-large-screen');
         }
     });
-    $('a.lzy-formelem-show-info').click( function ( e ) {
-        e.preventDefault();
-    });
 }( jQuery ));
 
 
@@ -29,18 +29,24 @@ function isValidEmail(email) {
 
 
 
-//--------------------------------------------------------------
-function execAjax(data, cmd, doneFun, url) {
+
+function execAjax(payload, cmd, doneFun, url) {
 
     if (typeof url === 'undefined') {
         url = appRoot + '_lizzy/_ajax_server.php';
     }
     url = appendToUrl(url, cmd);
+    var json = '';
+    if (payload) {
+        json = JSON.stringify(payload);
+    }
+    mylog('Sending AJAX [' + cmd + ']: ' + json);
     ajaxHndl = $.ajax({
+        method: 'POST',
         url: url,
-        type: 'POST',
-        data: data,
-    }).done(function ( json ) {
+        data: { data: json }
+    })
+        .done(function ( json ) {
         if (typeof doneFun === 'function') {
             doneFun( json );
         }
@@ -48,7 +54,8 @@ function execAjax(data, cmd, doneFun, url) {
 } // execAjax
 
 
-//--------------------------------------------------------------
+
+
 function scrollToBottom( sel ) {
     setTimeout(function() {
         if (typeof sel === 'undefined') {
@@ -64,7 +71,7 @@ function scrollToBottom( sel ) {
 
 
 
-//--------------------------------------------------------------
+
 function scrollIntoView( selector, container )
 {
     if (typeof container !== 'undefined') {
@@ -81,7 +88,7 @@ function scrollIntoView( selector, container )
 
 
 
-//--------------------------------------------------------------
+
 Date.prototype.addHours = function(h) {
     this.setTime(this.getTime() + (h*60*60*1000));
     return this;
@@ -119,7 +126,7 @@ function showMessage( txt )
 
 
 
-//--------------------------------------------------------------
+
 function appendToUrl(url, arg) {
     if (!arg) {
         return url;
@@ -135,7 +142,7 @@ function appendToUrl(url, arg) {
 
 
 
-//--------------------------------------------------------------
+
 function mylog(txt)
 {
 	console.log(txt);
@@ -157,7 +164,7 @@ function mylog(txt)
 
 
 
-//--------------------------------------------------------------
+
 function serverLog(text, file)
 {
     file = (typeof file !== 'undefined')? file: '';
@@ -169,7 +176,7 @@ function serverLog(text, file)
 
 
 
-//--------------------------------------------------------------
+
 function isServerErrMsg(json)
 {
     if (json.match(/^</)) {
@@ -185,7 +192,7 @@ function isServerErrMsg(json)
 
 
 
-//--------------------------------------------------------------
+
 function lzyReload( arg, url )
 {
     var call = window.location.pathname.replace(/\?.*/, '');
@@ -201,7 +208,7 @@ function lzyReload( arg, url )
 
 
 
-//--------------------------------------------------------------
+
 function timeStamp( long )
 {
 	var now = new Date();
@@ -245,7 +252,7 @@ function timeToStr( UNIX_timestamp ){
 
 
 
-//--------------------------------------------------------------
+
 function htmlEntities(str)
 {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -254,11 +261,12 @@ function htmlEntities(str)
 
 
 
-//--------------------------------------------------------------
+
 // plug-in to get specified element selected
+//  Usage: $('selector').selText();
 jQuery.fn.selText = function() {
     this.find('input').each(function() {
-        if($(this).prev().length == 0 || !$(this).prev().hasClass('p_copy')) {
+        if($(this).prev().length === 0 || !$(this).prev().hasClass('p_copy')) {
             $('<p class="p_copy" style="position: absolute; z-index: -1;"></p>').insertBefore($(this));
         }
         $(this).prev().html($(this).val());

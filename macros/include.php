@@ -21,7 +21,9 @@ $this->addMacro($macroName, function () {
     $wrapperClass = $this->getArg($macroName, 'wrapperClass', '(optional) class applied to each file-wrapper.', false);
     $outerWrapperTag = $this->getArg($macroName, 'outerWrapperTag', '(optional) HTML-tag in which to wrap the set of included files.', false);
     $outerWrapperClass = $this->getArg($macroName, 'outerWrapperClass', '(optional) class applied to the wrapper around all files.', '');
-    $compileMarkdown = $this->getArg($macroName, 'compileMarkdown', '(optional) Flag to activate MD-compilation of .md files.', false);
+    $literal = $this->getArg($macroName, 'literal', '(optional) If true, wraps output in pre tags.', false);
+    $trim = $this->getArg($macroName, 'trim', '(optional) If false, leading and trailing whitespace will not be removed from included text.', true);
+    $compileMarkdown = $this->getArg($macroName, 'compileMarkdown', '(optional) Flag to activate MD-compilation of .md files.', null);
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if ($wrapperClass) {
@@ -39,6 +41,14 @@ $this->addMacro($macroName, function () {
         $contentFrom = false;
     }
 
+    $inhibitMD = false;
+    if ($compileMarkdown === null) {
+        $compileMarkdown = false;
+        $inhibitMD = false;
+    } elseif ($compileMarkdown === false) {
+        $inhibitMD = true;
+    }
+
     if ($file) {
         if (strtolower(fileExt($file)) !== 'md') {
             $allMD = false;
@@ -46,6 +56,9 @@ $this->addMacro($macroName, function () {
         }
         $file = resolvePath($file, true);
         $str = getFile($file);
+        if ($trim) {
+            $str = trim($str, "\n\r");
+        }
         if ($wrapperTag) {
             $str = "\n@@1@@\n$str\n@@2@@\n\n";
         }
@@ -97,8 +110,21 @@ $this->addMacro($macroName, function () {
         }
     }
 
-    if ($compileMarkdown && $allMD) {
+    if($inhibitMD) {
+        $str = str_replace(['{{','<'], ['&#123;{','&lt;'], $str);
+
+    } elseif ($compileMarkdown && $allMD) {
         $str = compileMarkdownStr($str);
+    }
+
+    if ($outerWrapperClass) {
+        $outerWrapperClass = " class='$outerWrapperClass'";
+    } else {
+        $outerWrapperClass = " class='lzy-include'";
+    }
+
+    if ($literal) {
+        $str = "\t<pre$outerWrapperClass>\n$str\n\t</pre>\n";
     }
 
     if ($wrapperTag) {
@@ -106,13 +132,10 @@ $this->addMacro($macroName, function () {
         $str = str_replace('<p>@@2@@</p>', "\t\t</$wrapperTag>\n", $str);
     }
 
-    if ($outerWrapperClass) {
-        $outerWrapperClass = " class='$outerWrapperClass'";
-    }
-
     if ($outerWrapperTag) {
         $str = "\t<$outerWrapperTag$outerWrapperClass>\n$str\n\t</$outerWrapperTag>\n";
     }
+
     $this->optionAddNoComment = true;
 	return $str;
 });

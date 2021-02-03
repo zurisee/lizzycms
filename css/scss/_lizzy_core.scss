@@ -116,7 +116,7 @@ figure a {
 .invisible,
 .visually-hidden {
 	position: absolute !important;
-	right: 200vw;
+	right: 10000px;
 	width: 1px;
 	height: 1px;
 	overflow: hidden;
@@ -131,22 +131,39 @@ figure a {
 
 
 // === SkipLinks
-.lzy-skiplinks a {
-	position: absolute;
-	top: 0;
-	left: 10000vw;
+.lzy-skiplinks {
+	display: none;
+	position:absolute;
+	left:0;
+	top:0;
+	li {
+		list-style: none;
+	}
+	a {
+		border-bottom: none;
+		position:absolute;
+		top: 0;
+		left: -10000px;
+		border-bottom: none;
+		padding: 1em;
+		background: #ffa;
+		outline: none;
+		box-shadow: 0px 0px 0px 1px blue inset, 0 0 10px gray;
+		border-radius: 8px;
+		display: inline-block;
+		width: auto;
+		white-space: nowrap;
+		opacity: 0;
+	}
+	a:focus {
+		position: absolute;
+		top: 10px;
+		left: 10px;
+		z-index: 10000;
+		opacity: 1;
+	}
 }
-.lzy-skiplinks a:focus {
-	right: auto;
-	left: 5vh;
-	top: 5vh;
-	padding: 1em 2em;
-	text-align: center;
-	z-index: 999;
-	background: #fffaab;
-	box-shadow: none;
-	border: none;
-}
+
 
 
 // === visible on focus only:
@@ -548,6 +565,54 @@ a.lzy-button {
   font-style: italic;
   padding-right: 4px;
   font-size: 90%;
+}
+
+
+
+
+/* === Tables =================================== */
+.lzy-table-default {
+	border-collapse:collapse;
+	tr {
+		vertical-align: top;
+	}
+	td, th {
+		padding: 0.3em 0.6em;
+		border: 1px solid #ddd;
+		font-size: 90%;
+	}
+	.lzy-cell-no-overflow {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.lzy-table-add-rec-btns {
+		margin-bottom: 0.5em;
+	}
+	&.lzy-table-editable .lzy-table { 
+		outline: 1px solid orange; 
+	}
+	.lzy-table-control-btn {
+		border: 1px solid #d1d1d1;
+		border-radius: 50%;
+		width: 2rem;
+		height: 1.9rem;
+    	display: inline-block;
+    	text-align: center;
+		vertical-align: middle;
+		background: none;
+		a {
+			border-bottom: none;
+		}
+		.lzy-icon::before {
+			top: 48%;
+		}
+	}
+	.lzy-edit-rec-form .lzy-popup-wrapper {
+		--lzy-form-width: 44.5em;
+		max-width: unset;
+	}
+	#lzy-edit-rec-delete-checkbox legend { display: none!important; }
 }
 
 

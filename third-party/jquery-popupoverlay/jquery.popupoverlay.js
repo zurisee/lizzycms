@@ -18,7 +18,6 @@
     var transitionsupport = null;
     var opentimer;
     var iOS = /(iPad|iPhone|iPod)/.test(navigator.userAgent);
-    var android = /(android)/i.test(navigator.userAgent);
     var focusableElementsString = "a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), iframe, object, embed, *[tabindex], *[contenteditable]";
 
     var methods = {
@@ -117,7 +116,7 @@
                 $(options.pagecontainer).css('cursor', 'pointer');
             }
 
-            if (options.type == 'overlay' && !options.absolute) {
+            if (options.type == 'overlay' && !options.absolute && options.background) {
                 $wrapper.css('overflow','auto');
                 $wrapper[0].style.WebkitOverflowScrolling = 'touch'; // for smooth scrolling in overflow:auto divs in iOS
             }
@@ -248,7 +247,6 @@
             var options = $el.data('popupoptions');
             var $wrapper = $('#' + el.id + '_wrapper');
             var $background = $('#' + el.id + '_background');
-            var mustLock = false;
 
             // `beforeopen` callback event
             callback(el, ordinal, options.beforeopen);
@@ -308,18 +306,6 @@
                 $el.show();
             }
 
-            if (!options.background) {
-                $wrapper.css({ 'pointer-events': 'none' });
-
-                // Android doesn't want to scroll the popup wrapper (i.e. to react to a swipe event) if it has a combination of
-                // `options.background` set to false, `pointer-events:none` and `position:fixed` on a popup wrapper, plus
-                // `overflow:visible` on body. If a scrollbar appears on the popup wrapper (i.e.popup is not fully in viewport),
-                // we locking the scrolling of background content regardless of custom options.
-                if (android && !options.absolute && !options.scrolllock && !isInViewport(el)) {
-                    mustLock = true;
-                }
-            }
-
             opentimer = setTimeout(function() {
                 $wrapper.css({
                     visibility: 'visible',
@@ -331,7 +317,7 @@
             }, 20); // 20ms required for opening animation to occur in FF
 
             // Disable background layer scrolling when popup is opened
-            if (options.scrolllock || mustLock) {
+            if (options.scrolllock) {
                 $body.css('overflow', 'hidden');
                 if ($body.height() > $window.height()) {
                     $body.css('margin-right', bodymarginright + scrollbarwidth);
@@ -637,6 +623,17 @@
                         top: window.scrollY
                     });
                 }
+
+                if (!options.background) {
+                    $wrapper.css({ 'pointer-events': 'none' });
+
+                    // If popup doesnt fit the viewport, and if background doesn't exist, add scrollbar to popup div instead of wrapper
+                    if (!options.absolute && !isInViewport(el)) {
+                        $el.css('overflow', 'auto');
+                        $el[0].style.WebkitOverflowScrolling = 'touch'; // for smooth scrolling in overflow:auto divs in iOS
+                        $el.css('max-height', 'calc(100% - ' + $el.css('margin-top') + ' - ' +  $el.css('margin-bottom') + ')');
+                    }
+                }
             }
         },
 
@@ -708,6 +705,12 @@
         }
     });
 
+    var mousedownTarget;
+
+    $(document).on('mousedown', function (event) {
+        mousedownTarget = event.target;
+    });
+
     // Hide popup on click
     $(document).on('click', function (event) {
         if(visiblePopupsArray.length) {
@@ -726,6 +729,7 @@
                 && $(el).data('popupoptions').blur
                 && !$(event.target).closest($(el).data('popupoptions').blurignore).length
                 && !$(event.target).closest('#' + elementId).length
+                && !$(mousedownTarget).closest('#' + elementId).length
                 && event.which !== 2
                 && $(event.target).is(':visible')) {
 

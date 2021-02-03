@@ -287,64 +287,6 @@ function parseInlineBlockArguments($str, $returnElements = false)
 
 
 
-function parseCsv($str, $delim = false, $enclos = false) {
-
-    if (!$delim) {
-        $delim = (substr_count($str, ',') > substr_count($str, ';')) ? ',' : ';';
-        $delim = (substr_count($str, $delim) > substr_count($str, "\t")) ? $delim : "\t";
-    }
-    if (!$enclos) {
-        $enclos = (substr_count($str, '"') > substr_count($str, "'")) ? '"': "'";
-    }
-
-    $lines = explode(PHP_EOL, $str);
-    $array = array();
-    foreach ($lines as $line) {
-        if (!$line) { continue; }
-        $array[] = str_getcsv($line, $delim, $enclos);
-    }
-    return $array;
-} // parseCsv
-
-
-
-
-function getCsvFile($filename, $returnStructure = false)
-{
-    $csv = getFile($filename, true);
-    if ($csv) {
-        $data = parseCsv($csv);
-    } else {
-        $data = [];
-    }
-
-    $structure = false;
-    $structDefined = false;
-
-    if ($returnStructure) {     // return structure of data
-        if (isset($data[0])) {
-            $fields = [];
-            foreach ($data[0] as $label) {
-                $fields[$label] = 'string';
-            }
-            unset($data[0]);
-            $structure['key'] = 'string';
-            $structure['fields'] = $fields;
-            $data1 = [];
-            foreach ($data as $r => $rec) {
-                foreach (array_keys($fields) as $i => $label) {
-                    $data1[$r][$label] = $rec[$i];
-                }
-            }
-        }
-        return [$data1, $structure, $structDefined];
-    }
-    return $data;
-} // getCsvFile
-
-
-
-
 function csv_to_array($str, $delim = ',') {
     $str = trim($str);
     if (preg_match('/^(\{.*\})[\s,]*$/', $str, $m)) {   // {}
@@ -361,25 +303,6 @@ function csv_to_array($str, $delim = ',') {
     }
     return $a;
 } // csv_to_array
-
-
-
-
-
-function arrayToCsv($array, $quote = '"', $delim = ',', $forceQuotes = true)
-{
-    $out = '';
-    foreach ($array as $row) {
-        foreach ($row as $i => $elem) {
-            if ($forceQuotes || strpbrk($elem, "$quote$delim")) {
-                $row[$i] = $quote . str_replace($quote, $quote.$quote, $elem) . $quote;
-            }
-            $row[$i] = str_replace(["\n", "\r"], ["\\n", ''], $row[$i]);
-        }
-        $out .= implode($delim, $row)."\n";
-    }
-    return $out;
-} // arrayToCsv
 
 
 
@@ -467,7 +390,7 @@ function getYamlFile($filename, $returnStructure = false)
             $inxs = array_keys($data);  // get first data rec
 	        if (isset($inxs[0])) {
                 foreach (array_keys($data[ $inxs[0] ]) as $name) {   // extract field names
-                    $structure['fields'][$name] = 'string';
+                    $structure['elements'][$name] = 'string';
                 }
             }
 	        if (!isset($structure['key'])) {
@@ -1189,9 +1112,9 @@ function getVersionCode($forceNew = false, $str = '')
 
 
 function parseNumbersetDescriptor($descr, $minValue = 1, $maxValue = 9, $headers = false)
+{
  // extract patterns such as '1,3, 5-8', or '-3, 5, 7-'
  // don't parse if pattern contains ':' because that means it's a key:value
-{
     if (!$descr) {
         return [];
     }
@@ -1319,11 +1242,11 @@ function getCliArg($argname, $stringMode = false)
 
 
 function getUrlArg($tag, $stringMode = false, $unset = false)
+{
  // in case of arg that is present but empty:
  // stringMode: returns value (i.e. '')
  // otherwise, returns true or false, note: empty string == true!
  // returns null if no url-arg was found
-{
     $out = null;
 	if (isset($_GET[$tag])) {
 	    if ($stringMode) {
@@ -1344,10 +1267,10 @@ function getUrlArg($tag, $stringMode = false, $unset = false)
 
 
 function getUrlArgStatic($tag, $stringMode = false, $varName = false)
+{
  // like get_url_arg()
  // but returns previously received value if corresp. url-arg was not recived
  // returns null if no value has ever been received
-{
 	if (!$varName) {
 		$varName = $tag;
 	}
@@ -1393,7 +1316,6 @@ function setStaticVariable($varName, $value, $append = false)
         $var .= $append . $value;
     }
 } // setStaticVariable
-
 
 
 
@@ -1501,17 +1423,26 @@ function path_info($file)
 
 
 
-function preparePath($path)
+function preparePath($path, $accessRights = false)
 {
     if ($path && ($path[0] === '~')) {
         $path = resolvePath($path);
     }
 	$path = dirname($path.'x');
     if (!file_exists($path)) {
+        $accessRights1 = $accessRights ? $accessRights : MKDIR_MASK;
         try {
-            mkdir($path, MKDIR_MASK2, true);
+            mkdir($path, $accessRights1, true);
         } catch (Exception $e) {
             fatalError("Error: failed to create folder '$path'", 'File: '.__FILE__.' Line: '.__LINE__);
+        }
+    }
+
+    if ($accessRights) {
+        $path1 = '';
+        foreach (explode('/', $path) as $p) {
+            $path1 .= "$p/";
+            chmod($path1, $accessRights);
         }
     }
 } // preparePath
@@ -1519,18 +1450,18 @@ function preparePath($path)
 
 
 
-function is_legal_email_address($str)
- // multiple address allowed, if separated by comma.
+function is_legal_email_address($email)
 {
-    if (!is_safe($str)) {
+ // multiple address allowed, if separated by comma.
+    if (!is_safe($email)) {
         return false;
     }
-    foreach (explode(',', $str) as $s) {
-        if (!preg_match('/^\w(([_\.\-\']?\w+)*)@(\w+)(([\.\-]?\w+)*)\.([a-z]{2,})$/i', trim($s))) {
-            return false;
-        }
+    $res = true;
+    foreach (explode(',', $email) as $s) {
+        $s = filter_var($s, FILTER_VALIDATE_EMAIL);
+        $res = $res && $s;
     }
-    return true;
+    return $res;
 } // is_legal_email_address
 
 
@@ -1538,7 +1469,8 @@ function is_legal_email_address($str)
 
 function isValidUrl( $url )
 {
-    return preg_match("/(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))/", $url);
+    return preg_match("/(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]".
+        "+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))/", $url);
 } // isValidUrl
 
 
@@ -1546,14 +1478,11 @@ function isValidUrl( $url )
 
 function is_safe($str, $multiline = false)
 {
- //??? not implemented correctly yet!
 	if ($multiline) {
 		$str = str_replace(PHP_EOL, '', $str);
 		$str = str_replace("\r", '', $str);
-		return !preg_match("/[^\pL\pS\pP\pN\pZ]/um", $str);
-	} else {
-		return !preg_match("/[^\pL\pS\pP\pN\pZ]/um", $str);
 	}
+    return !preg_match("/[^\pL\pS\pP\pN\pZ]/um", $str);
 } // is_safe
 
 
@@ -1634,7 +1563,7 @@ function dateFormatted($date = false, $format = false)
     }
     $out = strftime($format, $date);
     return $out;
-}
+} // dateFormatted
 
 
 
@@ -1642,9 +1571,9 @@ function dateFormatted($date = false, $format = false)
 
 
 function touchFile($file, $time = false)
-{	// work-around: PHP's touch() fails if http-user is not owner of file 
+{	// work-around: PHP's touch() fails if http-user is not owner of file
 	if ($time) {
-        shell_exec("touch -t ".date("YmdHi.s", $time)." $file"); 
+        shell_exec("touch -t ".date("YmdHi.s", $time)." $file");
 	} else {
 		touch($file);
 	}
@@ -1676,14 +1605,16 @@ function translateToFilename($str, $appendExt = true)
 
 
 
-function translateToIdentifier($str, $removeDashes = false, $removeNonAlpha = false)
+function translateToIdentifier($str, $removeDashes = false, $removeNonAlpha = false, $toLowerCase = true)
 {
  // translates special characters (such as , , ) into identifier which contains but safe characters:
-    $str = mb_strtolower($str);		// all lowercase
+    if ($toLowerCase) {
+        $str = mb_strtolower($str);        // all lowercase
+    }
     $str = strToASCII( $str );		// replace umlaute etc.
     $str = strip_tags( $str );							// strip any html tags
     if ($removeNonAlpha) {
-        $str = preg_replace('/[^a-zA-Z]/ms', '', $str);
+        $str = preg_replace('/[^a-zA-Z-_\s]/ms', '', $str);
 
     } elseif (preg_match('/^ \W* (\w .*? ) \W* $/x', $str, $m)) { // cut leading/trailing non-chars;
         $str = trim($m[1]);
@@ -1753,6 +1684,9 @@ function writeLogStr($str, $errlog = false)
 {
     global $globalParams;
 
+    if (is_array($str)) {
+        $str = json_encode($str);
+    }
     if (!$errlog) {
         if (($globalParams['activityLoggingEnabled'] !== null) && !$globalParams['activityLoggingEnabled']) {
             return;
@@ -1782,15 +1716,6 @@ function logError($str)
 {
     writeLogStr($str, true);
 } // logError
-
-
-
-
-function shield_str($s)
-{
-	return str_replace('"', '\\"', $s);
-} // shield_str
-
 
 
 
@@ -1844,7 +1769,7 @@ function var_r($var, $varName = '', $flat = false)
         $out = "<div><pre>$varName: ".var_export($var, true)."\n</pre></div>\n";
     }
 	return $out;
-}
+} // var_r
 
 
 
@@ -2054,13 +1979,13 @@ function findNextPattern($str, $pat, $p1 = 0)
 
 
 function trunkPath($path, $n = 1, $leaveNotRemove = true)
+{
  // case $leaveNotRemove == false:
  //      n==2   trunk from right   '/a/b/c/d/e/x.y' ->  /a/b/c/
  //      n==-2  trunk from left    '/a/b/c/d/e/x.y' ->  c/d/e/x.y
  // case $leaveNotRemove == true:
  //      n==2   leave from right   '/a/b/c/d/e/x.y' ->  d/e/x.y
  //      n==-2  leave from left    '/a/b/c/d/e/x.y' ->  /a/b/
-{
     if ($leaveNotRemove) {
         if ($n > 0) {   // leave from right
             $file = basename($path);
@@ -2162,6 +2087,39 @@ function isLocalCall()
 
 
 
+function checkPermission($str, $lzy = false) {
+    $neg = false;
+    $res = false;
+    if (preg_match('/^((non|not|\!)\-?)/i', $str, $m)) {
+        $neg = true;
+        $str = substr($str, strlen($m[1]));
+    }
+
+    if ( ($str === true) || ($str === 'true') ) {
+        $res = true;
+    } elseif ( ($str === false) || ($str === 'false') ) {
+        $res = false;
+    } elseif (preg_match('/privileged/i', $str)) {
+        $res = $GLOBALS['globalParams']['isPrivileged'];
+    } elseif (preg_match('/loggedin/i', $str)) {
+        $res = $GLOBALS['globalParams']['isLoggedin'] || $GLOBALS['globalParams']['isAdmin'];
+    } elseif (($str !== 'true') && !is_bool($str)) {
+        if ($lzy) {
+            // if not 'true', it's interpreted as a group
+            $res = $lzy->auth->checkGroupMembership($str);
+        } else {
+            $res = false;
+        }
+    }
+    if ($neg) {
+        $res = !$res;
+    }
+    return $res;
+} // checkPermission
+
+
+
+
 
 function getGitTag($shortForm = true)
 {
@@ -2256,16 +2214,15 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
             $from = $m[2];
             $name = $m[1];
         }
-        //webmaster@xn--feldgetliweg-hlb.ch
         if (preg_match("/[^\w\d'-.@]/", $from)) {
             writeLog("lzy-mail-invalid-from-address: $from");
             return 'lzy-mail-invalid-from-address';
         }
         $from = strtolower($from);
-//        if (!is_legal_email_address($from)) {
-//            writeLog("lzy-mail-invalid-from-address: $from");
-//            return 'lzy-mail-invalid-from-address';
-//        }
+        if (!is_legal_email_address($from)) {
+            writeLog("lzy-mail-invalid-from-address: $from");
+            return 'lzy-mail-invalid-from-address';
+        }
 
         if ($name) {
             if ($base64_encode) {
@@ -2345,12 +2302,9 @@ function handleFatalPhpError() {
 
 function parseDimString($str)
 {
-    // E.g. 200x150, or 200x  or x150 or 200 etc., or 25%
+    // E.g. 200x150, or 200x  or x150 or 200 etc.
     $h = $w = null;
-    if (preg_match('/(\d*)%/', $str, $m)) {
-        $s = intval($m[1]) / 100;
-        return [$s, null];
-    } elseif (preg_match('/(\d*)x(\d*)/', $str, $m)) {
+    if (preg_match('/(\d*)x(\d*)/', $str, $m)) {
         $w = intval($m[1]);
         $h = intval($m[2]);
     } elseif (preg_match('/(\d+)/', $str, $m)) {
@@ -2450,3 +2404,86 @@ function createHash( $hashSize = 8, $unambiguous = false )
     }
     return $hash;
 } // createHash
+
+
+
+
+function renderList( $list, $args )
+{
+    $sort           = isset($args['sort'])? $args['sort']: false;
+    $exclude        = isset($args['exclude'])? $args['exclude']: false;
+    $capitalize     = isset($args['capitalize'])? $args['capitalize']: false;
+    $prefix         = isset($args['prefix'])? $args['prefix']: '';
+    $postfix        = isset($args['postfix'])? $args['postfix']: '';
+    $separator      = isset($args['separator'])? $args['separator']: ',';
+    $wrapperTag     = isset($args['wrapperTag'])? $args['wrapperTag']: '';
+    $wrapperClass   = isset($args['wrapperClass'])? $args['wrapperClass']: '';
+    $outerWrapperTag     = isset($args['wrapperTag'])? $args['wrapperTag']: '';
+    $outerWrapperClass   = isset($args['wrapperClass'])? $args['wrapperClass']: '';
+    $mode           = isset($args['mode'])? $args['mode']: '';
+
+    // short-hands:
+    if (($mode === 'ul') || ($mode === 'ol')) {
+        $args['wrapperTag'] = 'li';
+        $args['separator'] = '';
+        $outerWrapperTag = $mode;
+    }
+
+    if (is_array($list)) {
+        $elements = $list;
+    } else {
+        $elements = explodeTrim(',', $list);
+    }
+    if ($sort) {
+        if (($sort === true) || ($sort && ($sort[0] !== 'd'))) {
+            sort($elements, SORT_NATURAL | SORT_FLAG_CASE);
+        } else {
+            rsort($elements, SORT_NATURAL | SORT_FLAG_CASE);
+        }
+    }
+
+    $out = '';
+    foreach ($elements as $i => $element) {
+        if ($exclude) {
+            $pattern = $exclude;
+            if (preg_match("/$pattern/i", $element)) {
+                continue;
+            }
+        }
+        if ($capitalize) {
+            $element = ucfirst($element);
+        }
+
+        if ($prefix) {
+            $element = "$prefix$element";
+        }
+        if ($postfix) {
+            $element .= $postfix;
+        }
+        if ($separator) {
+            $element .= $separator;
+        }
+
+        if ($wrapperTag) {
+            $cls = $wrapperClass? " class='$wrapperClass'": '';
+            $element = "\t\t<$wrapperTag$cls>$element</$wrapperTag>\n";
+        }
+
+        $out .= $element;
+    }
+    if (!$wrapperTag) {
+        $out = substr($out, 0, -strlen($separator));
+    }
+
+    if ($outerWrapperTag) {
+        $cls = $outerWrapperClass? " class='$outerWrapperClass'": '';
+        $out = <<<EOT
+    <$outerWrapperTag$cls>
+$out
+    </$outerWrapperTag>
+
+EOT;
+    }
+
+    return $out;
+} // renderList

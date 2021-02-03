@@ -1,28 +1,43 @@
 <?php
 
 $GLOBALS["globalParams"]['tableCounter'][ $GLOBALS["globalParams"]["pagePath"] ] = 0;
+define('FORM_TYPES',
+    ',string,text,password,email,textarea,radio,checkbox,'.
+    'dropdown,button,url,date,time,datetime,month,number,range,tel,file,'.
+    'fieldset,fieldset-end,reveal,hidden,literal,bypassed,');
+define('SCALAR_TYPES',
+    ',string,text,password,email,textarea,'.
+    ',url,date,time,datetime,month,number,range,tel,');
+
+define('DEFAULT_EDIT_FORM_TEMPLATE_FILE', '~page/-table_edit_form_template.md');
+
 
 
 class HtmlTable
 {
     private $errMsg = '';
+    private $dataTableObj = null;
+    private $strToAppend = '';
 
-    public function __construct($lzy, $inx, $options)
+    public function __construct($lzy, $options)
     {
         $this->options      = $options;
         $this->lzy 		    = $lzy;
         $this->page 		= $lzy->page;
         $this->tableCounter = &$GLOBALS["globalParams"]['tableCounter'][ $GLOBALS["globalParams"]["pagePath"] ];
         $this->tableCounter++;
-        $this->helpText = false;
+        $this->helpText     = false;
+        $this->tickHash     = false;
         if ($options === 'help') {
             $this->helpText = [];
             $options = [];
         }
 
         $this->dataSource	        = $this->getOption('dataSource', '(optional if nCols is set) Name of file containing data. Format may be .cvs or .yaml and is expected be local to page folder.');
+        $this->inMemoryData	        = $this->getOption('data', 'Alternative to "dataSource": provide data directly as array. E.g. data: $array,');
         $this->id 			        = $this->getOption('id', '(optional) Id applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
-        $this->tableClass 	        = $this->getOption('tableClass', '(optional) Class applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
+        $this->wrapperClass 	    = $this->getOption('wrapperClass', '(optional) Class applied to the table tag (resp. wrapping div tag if renderAsDiv is set). Use "lzy-table-default" to apply default styling.');
+        $this->tableClass 	        = $this->getOption('tableClass', '(optional) Class applied to the table tag (resp. wrapping div tag if renderAsDiv is set). Use "lzy-table-default" to apply default styling.');
         $this->tableClass 	        = $this->getOption('class', 'Synonyme for tableClass', $this->tableClass);
         $this->cellClass 	        = $this->getOption('cellClass', '(optional) Class applied to each table cell');
         $this->cellWrapper 	        = $this->getOption('cellWrapper', '(optional) If true, each cell is wrapped in a DIV element; if it\'s a string, the cell is wrapped in a tag of given name.');
@@ -32,6 +47,16 @@ class HtmlTable
         $this->nCols 		        = $this->getOption('nCols', '(optional) Number of columns: if set the table is forced to this number of columns');
         $this->includeKeys          = $this->getOption('includeKeys', '[true|false] If true and not a .csv source: key elements will be included in data.');
         $this->interactive          = $this->getOption('interactive', '[true|false] If true, module "Datatables" is activated, providing for interactive features such as sorting, searching etc.');
+        $this->liveData             = $this->getOption('liveData', '[true|false] If true, Lizzy\'s "liveData" mechanism is activated. If the dataSource is modified on the server, changes are immediately mirrored in the webpage.');
+        $this->dataSelector         = $this->getOption('dataSelector', '(optional string) If defined and "liveData" is activated, this option defines how to access data elements from the DB. (Default: \'*,*\')', '*,*');
+        $this->targetSelector       = $this->getOption('targetSelector', '(optional string) If defined and "liveData" is activated, this option defines how to assign data elements to DOM-elements. (Default: \'[data-ref="*,*"]\')', '[data-ref="*,*"]');
+        $this->editableBy           = $this->getOption('editableBy', '[false,true,loggedin,privileged,admins,editors] Defines who may edit data. Default: false. (only available when using option "dataSource")');
+        $this->editMode             = $this->getOption('editMode', '[inline,form] Defines (Default: inline).', 'inline');
+        $this->editFormArgs         = $this->getOption('editFormArgs', 'Arguments that will passed on to the forms-class.', false);
+        $this->editFormTemplate     = $this->getOption('editFormTemplate', 'A markdown file that will be used for rendering the form.', false);
+        $this->editButtons          = $this->getOption('editButtons', 'If true, in editMode-form buttons will be rendered, in particular an "New Record" button.', null);
+        $this->labelColons          = $this->getOption('labelColons', 'If false, trailing colon of labels in editing-forms are omitted.', true);
+        $this->customRowButtons     = $this->getOption('customRowButtons', '(optional comma-separated-list) Prepends a column to each row containing custom buttons. Buttons can be defined as names of icons or HTML code. E.g. "send,trash"', null);
         $this->paging               = $this->getOption('paging', '[true|false] When using "Datatables": turns paging on or off (default is on)');
         $this->initialPageLength    = $this->getOption('initialPageLength', '[int] When using "Datatables": defines the initial page length (default is 10)');
         $this->excludeColumns       = $this->getOption('excludeColumns', '(optional) Allows to exclude specific columns, e.g. "excludeColumns:2,4-5"');
@@ -48,12 +73,13 @@ class HtmlTable
         $this->headersLeft          = $this->getOption('headersLeft', '(optional) Row headers may be supplied in the form [A|B|C...]');
         $this->headersAsVars        = $this->getOption('headersAsVars', '(optional) If true, header elements will be rendered as variables (i.e. in curly brackets).');
         $this->showRowNumbers       = $this->getOption('showRowNumbers', '(optional) Adds a left most column showing row numbers.');
+        $this->hideMetaFields       = $this->getOption('hideMetaFields', '(optional) If true, system (or "meta") fields are not rendered (default: true).', true);
         $this->renderAsDiv	        = $this->getOption('renderAsDiv', '(optional) If set, the table is rendered as &lt;div> tags rather than &lt;table>');
         $this->tableDataAttr	    = $this->getOption('tableDataAttr', '(optional) ');
         $this->renderDivRows        = $this->getOption('renderDivRows', '(optional) If set, each row is wrapped in an additional &lt;div> tag. Omitting this may be useful in conjunction with CSS grid.');
         $this->includeCellRefs	    = $this->getOption('includeCellRefs', '(optional) If set, data-source and cell-coordinates are added as \'data-xy\' attributes');
-//        $this->cellMask 	        = $this->getOption('cellMask', '(optional) Lets you define regions that a masked and thus will not get the cellClass. Selection code: rY -> row, cX -> column, eX,Y -> cell element.');
-//        $this->cellMaskedClass      = $this->getOption('cellMaskedClass', '(optional) Class that will be applied to masked cells');
+        //        $this->cellMask 	        = $this->getOption('cellMask', '(optional) Lets you define regions that a masked and thus will not get the cellClass. Selection code: rY -> row, cX -> column, eX,Y -> cell element.');
+        //        $this->cellMaskedClass      = $this->getOption('cellMaskedClass', '(optional) Class that will be applied to masked cells');
         $this->cellMask 	        = false;
         $this->cellMaskedClass      = false;
         $this->process	            = $this->getOption('process', '(optional) Provide name of a frontmatter variable to activate this feature. In the frontmatter area define an array containing instructions for manipulating table data. See <a href="https://getlizzy.net/macros/extensions/table/" target="_blank">Doc</a> for further details.');
@@ -61,10 +87,19 @@ class HtmlTable
         $this->suppressError        = $this->getOption('suppressError', '(optional) Suppresses the error message in case dataSource is not available.');
         $this->enableTooltips       = $this->getOption('enableTooltips', '(optional) Enables tooltips, e.g. for cells containing too much text. To use, apply a class-name containing "tooltip" to the targeted cell, e.g. "tooltip1".');
 
-        $this->checkArguments($inx);
-        
+        $this->checkArguments();
+
         $this->handleDatatableOption($this->page);
         $this->handleCaption();
+        $this->editingActive = checkPermission($this->editableBy, $this->lzy);
+        $this->editableActive = false;
+        if ($this->editingActive) {
+            if (strpos($this->editMode, 'form') === false) {
+                $this->editingActive = false;
+                $this->editableActive = true;
+            }
+        }
+
     } // __construct
 
 
@@ -75,26 +110,184 @@ class HtmlTable
         if ($help) {
             return $this->helpText;
         }
+        if (isset($_POST['_lizzy-form'])) {
+            require_once SYSTEM_PATH.'forms.class.php';
+            new Forms( $this->lzy, true );
+            unset($_POST['_lizzy-form']);
+        }
+        if ($this->editingActive) {
+            require_once SYSTEM_PATH.'forms.class.php';
+            new Forms( $this->lzy, true );
+        }
         $this->loadData();
 
         $this->applyHeaders();
 
+        $this->injectRowButtons();
         $this->loadProcessingInstructions();
         $this->applyProcessingToData();
 
+ //        $this->applyMiscOptions();
+
+        $out = '';
+        if ($this->editableBy) {
+            $tck = new Ticketing();
+            $this->tickHash = $tck->createHash( 'lzy-form' );
+            $this->tableDataAttr .= " data-table-hash='{$this->tickHash}' data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
+        }
+
+        // option editable:
+        if ($this->id) {
+            $this->targetSelector = "#$this->id $this->targetSelector";
+        } else {
+            $this->targetSelector = ".lzy-table-{$this->tableCounter} $this->targetSelector";
+        }
+
+        if ($this->editingActive) {
+            $out .= $this->activateEditingForm();
+        } elseif ($this->editableActive) {
+            $out .= $this->activateEditable();
+        } else {
+            if ($this->liveData) {            // option liveData:
+                $out = $this->activateLiveData();
+            }
+            $this->editableBy = false;
+        }
+
         $this->convertLinks();
         $this->convertTimestamps();
+        $out .= $this->renderHtmlTable() . $this->strToAppend;
+        $out = <<<EOT
+  <div class='lzy-table-wrapper $this->wrapperClass'>
+$out
+  </div>
+EOT;
 
-        if ($this->renderAsDiv) {
-            return $this->renderDiv();
-        } else {
-            return $this->renderHtmlTable();
-        }
+        return $out;
     } // render
 
 
 
 
+    private function activateEditable()
+    {
+        $file = SYSTEM_PATH.'extensions/livedata/code/live-data.class.php';
+        if (!file_exists($file)) {
+            die("Error: HTMLtables with activated EditableBy option requires Lizzy Extensions to be installed.");
+        }
+        require_once $file;
+
+        $page = $this->page;
+        require_once SYSTEM_PATH.'extensions/editable/code/editable.class.php';
+
+        $this->lzy->trans->readTransvarsFromFile( SYSTEM_PATH.'extensions/editable/config/vars.yaml', false, true);
+
+        $GLOBALS['lizzy']['editableLiveDataInitialized'] = false;
+        $page->addModules('EDITABLE');
+
+        // show buttons:
+        if (isset( $this->options['showButtons'] )) {
+            $this->options['showButton'] = $this->options['showButtons'];
+        }
+        if (isset( $this->options['showButton'] )) {
+            if (($this->options['showButton'] === 'auto')) {
+                $this->tableClass .= " lzy-editable-show-buttons";
+
+            } elseif ($this->options['showButton'] !== false) {
+                $this->tableClass .= " lzy-editable-show-buttons";
+            }
+        } else {
+            $this->tableClass .= " lzy-editable-auto-show-button";
+        }
+
+        $initEditable = true;
+        if (isset( $this->options['init'] )) {
+            $initEditable = $this->options['init'];
+            $this->cellClass .= " lzy-editable-inactive";
+        } else {
+            $this->cellClass .= " lzy-editable";
+        }
+        $edbl = new Editable( $this->lzy, [
+            'dataSource' => '~/'. $this->dataSource,
+            'dataSelector' => '*,*',
+            'targetSelector' => $this->targetSelector,
+            'output' => false,
+            'init' => $initEditable,
+            'editableBy' => $this->editableBy,
+            'liveData' => $this->liveData,
+        ] );
+
+        $this->wrapperClass .= ' lzy-table-editable';
+        $this->page->addJq("$('.lzy-table-editable').closest('.dataTables_wrapper').addClass('lzy-datatable-editable')\n");
+
+        $out = $edbl->render();
+        return $out;
+    } // activateEditable
+
+
+
+
+    private function activateLiveData()
+    {
+        $file = SYSTEM_PATH.'extensions/livedata/code/live-data.class.php';
+        if (!file_exists($file)) {
+            die("Error: HTMLtables with activated liveData option requires Lizzy Extensions to be installed.");
+        }
+        require_once $file;
+        $this->page->addModules('~ext/livedata/js/live_data.js');
+
+        // skipInitialUpdate: initLiveData( false );
+        $jq = <<<EOT
+
+if ($('[data-lzy-datasrc-ref]').length) {
+    LiveData.init( false );
+}
+
+EOT;
+        $this->page->addJq($jq);
+
+        $js = '';
+        if ($this->dataTableObj) {
+            foreach ($this->dataTableObj as $dataTableObj) {
+                $js .= "\t$dataTableObj.draw();\n";
+            }
+            $js = <<<EOT
+
+function redrawTables() {
+$js}
+
+EOT;
+            $this->page->addJs($js);
+        }
+
+
+        $args = [
+            'dataSource' => '~/'.$this->dataSource,
+            'dataSelector' => $this->dataSelector,
+            'targetSelector' => $this->targetSelector,
+            'manual' => 'silent',
+            //'pollingTime' => 10, // for testing
+        ];
+
+        // if dataTables are active, make sure they are redrawn when new data arrives:
+        if ($this->interactive) {
+            $args['postUpdateCallback'] = 'redrawTables';
+        }
+
+        $ld = new LiveData($this->lzy, $args);
+        return $ld->render() . "\n";
+    } // activateLiveData
+
+
+
+
+    //    private function applyMiscOptions()
+    //    {
+    //    } // applyMiscOptions
+
+
+
+    
     private function applyHeaders()
     {
         if (!$this->headers && !$this->headersLeft) {
@@ -104,12 +297,11 @@ class HtmlTable
         $data = &$this->data;
 
         if ($this->headers === true) {
-            array_unshift($data, $this->headerElems);
+            $data = array_merge(['hdr' => $this->headerElems], $data);
 
-        } else
-        if (($this->headers) && ($this->headers !== true)) {
+        } elseif (($this->headers) && ($this->headers !== true)) {
             $headers = $this->extractList($this->headers, true);
-            $headers = array_pad ( $headers , sizeof($data[0]) , '' );
+            $headers = array_pad ( $headers , sizeof(reset( $data )) , '' );
 
             array_unshift($data, $headers);
             $this->nRows = sizeof($data);
@@ -118,7 +310,8 @@ class HtmlTable
         if ($this->headersLeft) {
             $headers = $this->extractList($this->headersLeft, true);
             if ($this->headers) {
-                array_splice($data[0], 0, 0, ['']);
+                $key0 = array_keys($data)[0];
+                array_splice($data[ $key0 ], 0, 0, ['']);
             }
             if ($this->headers === true) {
                 $r = 1;
@@ -149,30 +342,44 @@ class HtmlTable
 
     private function renderHtmlTable()
     {
+        if ($this->editableBy) {
+            $this->tableDataAttr .= " data-table-hash='{$this->tickHash}' data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
+        }
         $data = &$this->data;
+
         $header = ($this->headers !== false);
-        $tableClass = trim('lzy-table '.$this->tableClass);
+
+        $tableClass = @$this->options['tableClass'] ? $this->options['tableClass']. ' ' : "lzy-table lzy-table-{$this->tableCounter} ";
+        $tableClass .= $this->tableClass;
         $thead = '';
         $tbody = '';
-        $nRows = sizeof($data);
-        $nCols = sizeof($data[0]);
+        $nCols = sizeof(reset( $data ));
         $rowClass0 = $this->rowClass;
 
-        for ($r = 0; $r < $nRows; $r++) {
-            $rowClass = str_replace('*', ($r + 1), $rowClass0);
-
+        $rInx = 1;
+        $r = 0;
+        foreach ($data as $recId => $rec) {
             if ($header && ($r === 0)) {
+                $rowClass = 'lzy-hdr-row';
                 $thead = "\t<thead>\n\t\t<tr class='$rowClass'>\n";
                 if ($this->showRowNumbers) {
                     $thead .= "\t\t\t<th class='lzy-table-row-nr'></th>\n";
                 }
                 for ($c = 0; $c < $nCols; $c++) {
-                    $cell = $this->getDataElem($r, $c, 'th', true);
-                    $thead .= "\t\t\t$cell\n";
+                    $cell = $this->getDataElem($recId, $c, 'th', true);
+                    if ($cell !== null) {
+                        $thead .= "\t\t\t$cell\n";
+                    }
                 }
                 $thead .= "\t\t</tr>\n\t</thead>\n";
-            } else {
-                $tbody .= "\t\t<tr class='$rowClass'>\n";
+
+            } else {    // render row:
+                if ($recId === '') {
+                    $recId = 'new-rec';
+                }
+                $recKey = " data-reckey='$recId'";
+                $rowClass = str_replace('*', $rInx, $rowClass0);
+                $tbody .= "\t\t<tr class='$rowClass'$recKey>\n";
                 if ($this->showRowNumbers) {
                     if ($this->headers) {
                         $n = $r;
@@ -183,11 +390,15 @@ class HtmlTable
                 }
                 for ($c = 0; $c < $nCols; $c++) {
                     $tag = (($c === 0) && $this->headersLeft)? 'th': 'td';
-                    $cell = $this->getDataElem($r, $c, $tag);
-                    $tbody .= "\t\t\t$cell\n";
+                    $cell = $this->getDataElem($recId, $c, $tag);
+                    if ($cell !== null) {
+                        $tbody .= "\t\t\t$cell\n";
+                    }
                 }
                 $tbody .= "\t\t</tr>\n";
+                $rInx++;
             }
+            $r++;
         }
 
         if ($this->includeCellRefs && $this->dataSource) {
@@ -198,70 +409,19 @@ class HtmlTable
 
         $out = <<<EOT
 
-<table id='{$this->id}' class='$tableClass'$dataSource{$this->tableDataAttr}>
+  <table id='{$this->id}' class='$tableClass'$dataSource{$this->tableDataAttr}>
 {$this->caption}
 $thead	<tbody>
 $tbody	</tbody>
-</table>
+  </table>
 
 EOT;
+
+        if ($this->editButtons) {
+            $out = $this->renderEditFormButtons($this->editButtons) . $out;
+        }
         return $out;
     } // renderHtmlTable
-
-
-
-    private function renderDiv()
-    {
-        $data = &$this->data;
-        $header = ($this->headers !== false);
-        $body = '';
-        $nRows = sizeof($data);
-        $nCols = sizeof($data[0]);
-        $tableClass = 'lzy-div-table';
-        if (!$this->renderDivRows) {
-            $tableClass .= ' lzy-grid-table';
-        }
-        $tableClass = trim($tableClass);
-
-        for ($r = 0; $r < $nRows; $r++) {
-            if ($this->renderDivRows) {
-                $body .= "\t\t<div class='lzy-div-table-row'>\n";
-            }
-            if ($header && ($r === 0)) {
-                for ($c = 0; $c < $nCols; $c++) {
-                    $cell = $this->getDataElem($r, $c, 'div', true);
-                    $body .= "\t\t\t$cell\n";
-                }
-
-            } else {
-                for ($c = 0; $c < $nCols; $c++) {
-                    $cell = $this->getDataElem($r, $c, 'div');
-                    $body .= "\t\t\t$cell\n";
-                }
-            }
-            if ($this->renderDivRows) {
-                $body .= "\t\t</div>\n";
-            }
-        }
-
-        if ($this->includeCellRefs && $this->dataSource) {
-            $dataSource = " data-lzy-source='{$this->dataSource}'";
-        } else {
-            $dataSource = '';
-        }
-
-        $out = <<<EOT
-
-<div id='{$this->id}' class='{$this->tableClass}'$dataSource{$this->tableDataAttr}>
-{$this->caption}
-    <div class="$tableClass">
-$body
-    </div>
-</div>
-
-EOT;
-        return $out;
-    } // renderDiv
 
 
 
@@ -310,7 +470,7 @@ EOT;
         if (!$newCol) {
             $newCol = sizeof($data)+1;
         } else {
-            $newCol = min(sizeof($data[0])+1, max(1, $newCol));
+            $newCol = min(sizeof(reset( $data ))+1, max(1, $newCol));
         }
         $_newCol = $newCol - 1;     // starting at 0
         $content = $this->getArg('content');
@@ -326,7 +486,7 @@ EOT;
 
         foreach ($data as $i => $row) {
             $content1 = $content;
-            if (($i === 0) && $header) {
+            if (($i === 'hdr') && $header) {
                 $content1 = $header;
             }
             array_splice($data[$i], $_newCol, 0, $content1);
@@ -337,7 +497,8 @@ EOT;
             $this->applyCellInstructionsToColumn($_newCol, $phpExpr, !$header, $class);
         }
         if ($header1) {
-            $data[0][$_newCol] = $header1;
+            $key0 = array_keys( $data )[0];
+            $data[ $key0 ][$_newCol] = $header1;
         }
     } // addCol
 
@@ -364,7 +525,7 @@ EOT;
 
         $row = [];
 
-        for ($_c = 0; $_c < sizeof($data[0]); $_c++) {
+        for ($_c = 0; $_c < sizeof(reset( $data )); $_c++) {
             $newCellVal = '';
             if ($this->phpExpr[$_c]) {
                 $phpExpr1 = $this->precompilePhpExpr($this->phpExpr[$_c], $_c);
@@ -425,7 +586,7 @@ EOT;
         if (!$col) {
             die("Error: modifyCol() requires 'column' argument to be set.");
         }
-        $col = min(sizeof($data[0]), max(1, $col));
+        $col = min(sizeof(reset( $data )), max(1, $col));
         $_col = $col - 1;     // starting at 0
         $content = $this->getArg('content');
         $header = $this->getArg('header');
@@ -443,7 +604,8 @@ EOT;
             $this->applyClassToColumn($_col, $class, $inclHead);
         }
         if ($header) {
-            $data[0][$_col] = $header;
+            $key0 = array_keys( $data )[0];
+            $data[ $key0 ][$_col] = $header;
         }
     } // modifyCol
 
@@ -464,7 +626,7 @@ EOT;
         $phpExpr = $this->getArg('phpExpr');
         $inclHead = !(isset($this->headers) && $this->headers);
 
-        $nCols = sizeof($data[0]);
+        $nCols = sizeof(reset( $data ));
         $_col = (isset($this->headersLeft) && $this->headersLeft) ? 1 : 0;
         for (; $_col < $nCols; $_col++) {
             if ($content) {
@@ -477,7 +639,8 @@ EOT;
                 $this->applyClassToColumn($_col, $class, $inclHead);
             }
             if ($header && isset($header[$_col])) {
-                $data[0][$_col] = trim($header[$_col]);
+                $key0 = array_keys( $data )[0];
+                $data[ $key0 ][$_col] = trim($header[$_col]);
             }
         }
     } // modifyCells
@@ -488,7 +651,7 @@ EOT;
     {
         $c = $column;
         $data = &$this->data;
-        $nCols = sizeof($data[0]);
+        $nCols = sizeof(reset( $data ));
         $class = $class ? " @@$class@@" : '';
 
         foreach ($data as $r => $row) {
@@ -537,7 +700,7 @@ EOT;
 
         // iterate over rows and apply cell-instructions:
         foreach ($data as $r => $row) {
-            if (!$inclHead && ($r === 0)) {
+            if (!$inclHead && ($r === 'hdr')) {
                 continue;
             }
             try {
@@ -560,7 +723,7 @@ EOT;
             return '';
         }
         $data = &$this->data;
-        $headers = $data[0];
+        $headers = reset( $data );
 
         $phpExpr = str_replace(['ʺ', 'ʹ'], ['"', "'"], $phpExpr);
         if (preg_match_all('/( (?<!\\\) \[\[ [^\]]* \]\] )/x', $phpExpr, $m)) {
@@ -588,7 +751,7 @@ EOT;
                     $c = $i;
 
                 } elseif (intval($cellRef)) { // numerical index
-                    $c = min(intval($cellRef) - 1, sizeof($this->data[0]) - 1);
+                    $c = min(intval($cellRef) - 1, sizeof(reset($this->data)) - 1);
 
                 } else {
                     $cellVal = $cellRef;    // literal content
@@ -661,7 +824,7 @@ EOT;
         }
         if ($name === 'phpExpr') {
             $this->phpExpr = [];
-            for ($c = 1; $c <= sizeof($this->data[0]); $c++) {
+            for ($c = 1; $c <= sizeof(reset($this->data)); $c++) {
                 if (isset($this->instructions["phpExpr[$c]"])) {
                     $this->phpExpr[$c-1] = $this->instructions["phpExpr[$c]"];
                 } else {
@@ -687,11 +850,15 @@ EOT;
 
     private function getDataElem($row, $col, $tag = 'td', $hdrElem = false)
     {
+        if ($this->hideMetaFields && ($this->data['hdr'][$col][0] === '_')) {
+            return null;
+        }
+
         $cell = @$this->data[$row][$col];
 
         $col1 = $col + 1;
         if ($hdrElem) {
-            $tdClass = $this->cellClass ? $this->cellClass.'-hdr' : 'lzy-div-table-hdr';
+            $tdClass = $this->cellClass ? $this->cellClass . '-hdr' : 'lzy-div-table-hdr';
         } else {
             $tdClass = $this->cellClass;
         }
@@ -701,13 +868,13 @@ EOT;
             $tdClass = trim($m[2]);
             $cell = trim(str_replace($m[1], '', $cell));
         }
-        if (preg_match('/(\<\<([^\>]*)\>\>)/', $cell, $m)) {    // extract ref
+        if (preg_match('/(<{<([^>]*)>}>)/', $cell, $m)) {    // extract ref
             $ref = trim($m[2]);
             $cell = trim(str_replace($m[1], '', $cell));
-            $ref = " data-lzy-cell='$ref'";
+            $ref = " data-ref='$ref'";
         }
         if ($this->cellIds) {
-             $tdId = " id='{$this->cellClass}_{$col}_{$row}'";
+            $tdId = " id='{$this->cellClass}_{$col}_{$row}'";
         }
         if ($this->cellMask && $this->cellMask[$row][$col]) {
             $tdClass = $this->cellMaskedClass;
@@ -722,10 +889,12 @@ EOT;
         }
         $tdClass = trim(str_replace('  ', ' ', "$tdClass lzy-col-$col1"));
         $tdClass = " class='$tdClass'";
-        $cell = str_replace("\n", '<br />', $cell);
-        if ($this->headersAsVars && $hdrElem) {
+
+        // translate header elements:
+        if (($hdrElem) && ($this->headersAsVars) ) {
             $cell = "{{ $cell }}";
         }
+
         if ($this->cellWrapper) {
             if (is_string( $this->cellWrapper)) {
                 $cell = "<$this->cellWrapper>$cell</$this->cellWrapper>";
@@ -734,7 +903,6 @@ EOT;
             }
         }
         return "<$tag$tdId$tdClass$ref$title>$cell</$tag>";
-//        return "<$tag$tdId$tdClass$ref$title><div>$cell</div></$tag>";
     } // getDataElem
 
 
@@ -765,41 +933,49 @@ EOT;
 
     private function handleDatatableOption($page)
     {
-        if ($this->interactive) {
-            $page->addModules('DATATABLES');
-            $this->tableClass = trim($this->tableClass.' lzy-datatable');
-            $order = '';
-            if ($this->sort) {
-                $sortCols = csv_to_array($this->sort);
-                $headers = $this->data[0];
-                foreach ($sortCols as $sortCol) {
-                    $sortCol = alphaIndexToInt($sortCol, $headers) - 1;
-                    $order .= "[ $sortCol, 'asc' ],";
-                }
-                $order = rtrim($order, ',');
-                $order = " 'order': [$order],";
+        if (!$this->interactive) {
+            return;
+        }
+        $page->addModules('DATATABLES');
+        $this->tableClass = trim($this->tableClass.' lzy-datatable');
+        $order = '';
+        if ($this->sort) {
+            $sortCols = csv_to_array($this->sort);
+            $headers = reset($this->data);
+            foreach ($sortCols as $sortCol) {
+                $sortCol = alphaIndexToInt($sortCol, $headers) - 1;
+                $order .= "[ $sortCol, 'asc' ],";
             }
-            $paging = '';
-            if (!$this->paging) {
-                $paging = ' paging: false,';
-            }
-            $pageLength = '';
-            if ($this->initialPageLength) {
-                $pageLength = " pageLength: {$this->initialPageLength},";
-            }
-            $jq = <<<EOT
+            $order = rtrim($order, ',');
+            $order = " 'order': [$order],";
+        }
+        $paging = '';
+        if (!$this->paging) {
+            $paging = ' paging: false,';
+        }
+        $pageLength = '';
+        if ($this->initialPageLength) {
+            $pageLength = " pageLength: {$this->initialPageLength},";
+        }
 
-lzyTable{$this->tableCounter} = $('#lzy-table{$this->tableCounter}').DataTable({
-    'language':{'search':'{{QuickSearch}}:', 'info': '_TOTAL_ {{Records}}'},
-    $order$paging$pageLength
+        $dataTableObj = $this->dataTableObj[$this->tableCounter] = "lzyTable[{$this->tableCounter}]";
+
+        // launch init code:
+        $jq = <<<EOT
+
+$dataTableObj = $('#{$this->id}').DataTable({
+'language':{'search':'{{ lzy-datatables-search-button }}:', 'info': '_TOTAL_ {{ lzy-datatables-records }}'},
+$order$paging$pageLength
 });
 
 EOT;
-            $page->addJq($jq);
-            if (!$this->headers) {
-                $this->headers = true;
-            }
+        $page->addJq($jq);
+        $page->addJs("\nvar lzyTable = [];");
+
+        if (!$this->headers) {
+            $this->headers = true;
         }
+        $this->tableClass .= ' display';
     } // handleDatatableOption
 
 
@@ -807,58 +983,34 @@ EOT;
 
     private function loadData()
     {
+        $this->data = false;
+        if ($this->inMemoryData && is_array($this->inMemoryData)) {
+            $this->data = &$this->inMemoryData;
+            $this->dataSource = false;
+        } elseif (is_array($this->dataSource)) {    // for backward compatibility
+            $this->data = $this->dataSource;
+            $this->dataSource = false;
+
+        }
+
+        if ($this->data) {
+            if ($this->headers === true) {
+                $this->headerElems = array_shift($this->data);
+            } else {
+                $this->headerElems = explodeTrim(',|', $this->headers );
+            }
+            $this->nCols = isset($this->data)? sizeof( reset($this->data) ): 0;
+            $this->nRows = sizeof($this->data);
+            return;
+        }
+
         if ($this->dataSource) {
-            if (is_string($this->dataSource)) {
                 if (!file_exists($this->dataSource)) {
                     $this->dataSource = false;
                 }
-            } elseif (is_array($this->dataSource)) {
-                $this->data = $this->dataSource;
-                if ($this->headers === true) {
-                    $this->headerElems = array_shift($this->data);
-                } else {
-                    $this->headerElems = $this->data[0];
-                }
-                $this->nCols = isset($this->data[0])? sizeof($this->data[0]): 0;
-                $this->nRows = sizeof($this->data);
-                return;
-            }
-        } else {
-            $this->dataSource = false;
         }
 
-        $this->data = [[]];
-        if ($this->dataSource) {
-            $ds = new DataStorage2($this->options);
-            $this->ds = $ds;
-            $this->data = $ds->read();
-            if ($this->headers === true) {
-                if ($ds->getSourceFormat() === 'csv') {
-                    $this->headerElems = array_shift($this->data);
-                } else {
-                    $structure = $this->ds->getDbRecStructure();
-                    if (isset($structure['labels'][0]) && is_int($structure['labels'][0])) {
-                        $this->headerElems = array_shift($this->data);
-                    } else {
-                        $this->headerElems = $structure['labels'];
-                    }
-                }
-            }
-
-            $data = [];
-            $ir = 0;
-            foreach ($this->data as $r => $rec) {
-                $ic = 0;
-                foreach ($rec as $c => $item) {
-                    if (is_array($item)) {
-                        $item = '<span class="lzy-array-elem">' . implode('</span><span class="lzy-array-elem">', $item) . '</span>';
-                    }
-                    $data[$ir][$ic++] = trim($item, '"\'');
-                }
-                $ir++;
-            }
-            $this->data = $data;
-        }
+        $this->loadDataFromFile();
 
         $this->sortData();
 
@@ -867,11 +1019,321 @@ EOT;
 
         $this->excludeColumns();
 
-        $this->nCols = sizeof($this->data[0]);
+        $this->nCols = sizeof(reset($this->data));
         $this->nRows = sizeof($this->data);
 
         return;
     } // loadData
+
+
+
+    private function activateEditingForm()
+    {
+        $this->wrapperClass .= ' lzy-table-editable';
+
+        if ($this->inMemoryData) {
+            die("Error: table->editableBy not possible when data supplied in-memory. Please use argument 'dataSource'.");
+        }
+        $this->page->addModules('POPUPS,HTMLTABLE');
+
+        if ($this->lzy->localCall && (getUrlArg('exportForm'))) {
+            $file = $file = getUrlArg('exportForm', true);
+            $this->exportForm( $file );
+        }
+        $out = $this->renderForm();
+
+        return $out;
+    } // renderEditingForm
+
+
+
+
+    private function renderForm()
+    {
+        if ($this->tableCounter === 1) {
+            $this->strToAppend = <<<EOT
+
+    <div style='display:none;'> <!-- text resources: -->
+        <div id="lzy-edit-form-rec"><h3>{{ lzy-edit-form-rec }}</h3></div>
+        <div id="lzy-edit-form-new-rec"><h3>{{ lzy-edit-form-new-rec }}</h3></div>
+        <div id="lzy-edit-form-submit">{{ lzy-edit-form-submit }}</div>
+        <div id="lzy-edit-rec-delete-btn">{{ lzy-edit-rec-delete-btn }}</div>
+    </div>
+
+EOT;
+        }
+
+        if ($this->editFormTemplate) {
+            return $this->importForm();
+        }
+
+        if (@!$this->recStructure) {
+            $recStructure = $this->ds->getStructure();
+        }
+        $form = new Forms( $this->lzy );
+
+        // Form Head:
+        $args = [
+            'type' => 'form-head',
+            'id' => 'lzy-edit-data-form-' . $this->tableCounter,
+            'class' => 'lzy-form lzy-edit-data-form',
+            'file' => '~/'.$this->dataSource,
+            'warnLeavingPage' => false, //???
+            'ticketHash' => $this->tickHash,
+            'formHeader' => '<h3>{{ lzy-edit-form-rec }}</h3>',
+            'cancelButtonCallback' => false,
+            'validate' => true,
+            'labelColons' => $this->labelColons,
+        ];
+        if ($this->editFormArgs) {
+            $args = array_merge($args, $this->editFormArgs);
+        }
+        $out = $form->render( $args );
+
+        // Placeholder for rec-key:
+        $out .= $form->render( [
+            'type' => 'hidden',
+            'name' => '_rec-key',
+            'value' => '',
+        ] );
+
+        // Form Fields:
+        foreach ($recStructure['elements'] as $elemKey => $rec) {
+            // ignore all data elems starting with '_':
+            if (@$elemKey[0] === '_') {
+                continue;
+            }
+            $rec['dataKey'] = $elemKey;
+            $rec['label'] = isset($rec['formLabel']) ? $rec['formLabel'] : $elemKey;
+            $rec['name'] = translateToIdentifier($elemKey, false, true, false);
+            $out .= $form->render($rec);
+        }
+
+        // Delete:
+        $out .= $form->render( [
+            'type' => 'checkbox',
+            'wrapperId' => "lzy-edit-rec-delete-checkbox-$this->tableCounter",
+            'wrapperClass' => "lzy-edit-rec-delete-checkbox",
+            'class' => "lzy-edit-rec-delete-checkbox",
+            'label' => 'Delete',
+            'name' => '_delete',
+            'options' => '{{ lzy-edit-rec-delete-option }}',
+        ] );
+
+        // Form Buttons:
+        $out .= $form->render( [
+            'type' => 'button',
+            'label' => '-lzy-edit-form-cancel | -lzy-edit-form-submit',
+            'value' => 'cancel|submit',
+        ] );
+
+        // Form Tail:
+        $out .= $form->render( ['type' => 'form-tail'] );
+        $out = rtrim($out);
+
+        $out = <<<EOT
+
+  <div class='lzy-edit-rec-form lzy-edit-rec-form-{$this->tableCounter}' style='display:none'>
+$out
+  </div><!-- /lzy-edit-rec-form -->
+
+EOT;
+
+        return $out;
+    } // renderForm
+
+
+
+
+    private function exportForm( $exportFile )
+    {
+        if (@!$this->recStructure) {
+            $recStructure = $this->ds->getStructure();
+        }
+
+        $out = '';
+
+        $formArgs = '';
+        if (is_array($this->editFormArgs)) {
+            foreach ($this->editFormArgs as $k => $v) {
+                $formArgs .= "\n	$k: '$v',";
+            }
+        }
+        $labelColons = $this->labelColons? 'true': 'false';
+
+        // form head:
+        $out .=<<<EOT
+
+{{ formelem(
+	type: "form-head", 
+	id: 'lzy-edit-data-form-#tableCounter#',
+	class: 'lzy-form lzy-edit-data-form',
+	file: '~/$this->dataSource',
+	ticketHash: #tickHash#,
+	formHeader: '<h3>{{ lzy-edit-form-rec }}</h3>',
+	cancelButtonCallback: false,
+	validate: true,
+	labelColons: $labelColons,$formArgs
+	)
+}}
+
+EOT;
+    //	warnLeavingPage: false, //???
+
+
+        // Placeholder for rec-key:
+        $out .= <<<EOT
+
+
+{{ formelem(
+	type: "hidden", 
+	label: "E-Mail",
+	name: '_rec-key',
+	value: '',
+	)
+}}
+
+EOT;
+
+
+        // Form Fields:
+        foreach ($recStructure['elements'] as $elemKey => $rec) {
+
+            // ignore all data elems starting with '_':
+            if (@$elemKey[0] === '_') {
+                continue;
+            }
+            $elems = '';
+            foreach ($rec as $k => $v) {
+                $elems .= "	$k: '$v',\n";
+            }
+            $label = isset($rec['formLabel']) ? $rec['formLabel'] : $elemKey;
+            $out .= <<<EOT
+
+
+{{ formelem(
+	label: '$label',
+$elems	dataKey: $elemKey,	
+	)
+}}
+
+EOT;
+        }
+
+
+        // Delete:
+        $out .= <<<EOT
+
+
+{{ formelem(
+	'type': 'checkbox',
+	'wrapperId': "lzy-edit-rec-delete-checkbox-$this->tableCounter",
+	'wrapperClass': "lzy-edit-rec-delete-checkbox",
+	'class': "lzy-edit-rec-delete-checkbox",
+	'label': 'Delete',
+	'name': '_delete',
+	'options': '{{ lzy-edit-rec-delete-option }}',
+	)
+}}
+
+EOT;
+
+
+        // Form Buttons:
+        $out .= <<<EOT
+
+
+{{ formelem(
+	'type': 'button',
+	'label': '-lzy-edit-form-cancel | -lzy-edit-form-submit',
+	'value': 'cancel|submit',
+	)
+}}
+
+EOT;
+
+        // Form Tail:
+        $out .= <<<EOT
+
+
+{{ formelem( type: 'form-tail' ) }}
+
+EOT;
+
+        if (!$exportFile || ($exportFile === true)) {
+            $exportFile = DEFAULT_EDIT_FORM_TEMPLATE_FILE;
+        }
+        $exportFile = resolvePath($exportFile, true);
+        file_put_contents($exportFile, $out);
+
+        $out = str_replace(['{{','<'], ['&#123;{','&lt;'], $out);
+        $this->page->addOverlay("<pre>$out</pre><p>Written to '$exportFile'</p>");
+    } // exportForm
+
+
+
+
+    private function importForm()
+    {
+        if (is_string( $this->editFormTemplate )) {
+            $file = $this->editFormTemplate;
+        } else {
+            $file = DEFAULT_EDIT_FORM_TEMPLATE_FILE;
+        }
+        $file = resolvePath($file, true);
+        $out = getFile( $file );
+        if ($out) {
+            $out = str_replace(['#tickHash#','#tableCounter#'], [$this->ticketHash,$this->tableCounter], $out);
+            $out = compileMarkdownStr( $out );
+            $out = <<<EOT
+
+<div class='lzy-edit-rec-form lzy-edit-rec-form-{$this->tableCounter}' style='display:none'>
+$out
+</div><!-- /lzy-edit-rec-form -->
+
+
+EOT;
+            return $out;
+        } else {
+            die("Error in htmltable.class.php::renderForm() file '$file' not found.");
+        }
+    } // importForm
+
+
+
+
+    private function injectRowButtons()
+    {
+        // if editingActive, automatically add an 'edit' button:
+        if ($this->editingActive) {
+            if ($this->customRowButtons === null) {
+                $this->customRowButtons = 'edit';
+            } elseif ($this->customRowButtons && strpos($this->customRowButtons, 'edit') === false) {
+                $this->customRowButtons = 'edit,' . $this->customRowButtons;
+            }
+        }
+
+        if (!$this->customRowButtons) {
+            return;
+        }
+
+        $cellContent = '';
+        $customButtons = explodeTrim(',', $this->customRowButtons);
+        foreach ($customButtons as $name) {
+            if (strpos($name, '<') !== false) {
+                $cellContent .= $name;
+            } else {
+                $cellContent .= "\n\t\t\t\t<button class='lzy-table-control-btn lzy-table-$name-btn' title='{{ lzy-table-$name-btn }}'><span class='lzy-icon lzy-icon-$name'></span></button>";
+            }
+        }
+
+        $cellInstructions = [
+            'column' => 1,
+            'header' => 'Edit',
+            'content' => $cellContent,
+        ];
+        $this->addCol($cellInstructions);
+    } // injectRowButtons
 
 
 
@@ -891,10 +1353,10 @@ EOT;
 
 
 
-    private function checkArguments($inx)
+    private function checkArguments()
     {
         if (!$this->id) {
-            $this->id = 'lzy-table' . $inx;
+            $this->id = 'lzy-table-' . $this->tableCounter;
         }
         if ($this->tableDataAttr) {
             list($name, $value) = explodeTrim('=', $this->tableDataAttr);
@@ -903,6 +1365,10 @@ EOT;
             }
             $value = str_replace(['"', "'"], '', $value);
             $this->tableDataAttr = " $name='$value'";
+        }
+
+        if ($this->editableBy) {
+            $this->includeCellRefs = true;
         }
     } // checkArguments
 
@@ -949,20 +1415,22 @@ EOT;
     private function adjustTableSize()
     {
         $data = &$this->data;
-        if (!isset($data[0])) {
-            $data[0] = [];
+        if (!isset($data)) {
+            $data['new-rec'] = [];
         }
 
-        $nCols = $this->nCols ? $this->nCols : sizeof($data[0]);
+        $nCols = sizeof( reset($data));
         $nRows = $this->nRows ? $this->nRows : sizeof($data);
 
-        if ($nCols > sizeof($data[0])) { // increase size
-            for ($r=0; $r < sizeof($data); $r++) {
-                $data[$r] = array_pad([], $nCols, '');
-            }
-        } elseif ($nCols < sizeof($data[0])) { // reduce size
-            for ($r=0; $r < sizeof($data); $r++) {
-                $data[$r] = array_slice($data[$r], 0, $nCols);
+        if ($this->nCols) {
+            if ($this->nCols > $nCols) { // increase size
+                for ($r = 0; $r < sizeof($data); $r++) {
+                    $data[$r] = array_pad([], $nCols, '');
+                }
+            } elseif ($this->nCols < $nCols) { // reduce size
+                for ($r = 0; $r < sizeof($data); $r++) {
+                    $data[$r] = array_slice($data[$r], 0, $nCols);
+                }
             }
         }
 
@@ -1002,12 +1470,28 @@ EOT;
 
     private function insertCellAddressAttributes()
     {
+        if ($this->liveData) {
+            $this->includeCellRefs = true;
+        }
+        $nCols = sizeof( reset($this->data) );
+        $nRows = sizeof($this->data);
         if ($this->includeCellRefs) {
-            $i = $this->tableCounter;
-            for ($r = 0; $r < $this->nRows; $r++) {
-                for ($c = 0; $c < $this->nCols; $c++) {
-                    $this->data[$r][$c] .= "<<$c,$r>>";
+            $r = 0;
+            foreach ($this->data as $rKey => $rec) {
+                $ic = 0;
+                for ($c = 0; $c < $nCols; $c++) {
+                    if ($this->includeKeys && (@$this->headerElems[$c] === '_key')) {
+                        $this->data[$rKey][$c] .= "<{<$r,#>}>";
+                    } else {
+                        if (!isset($this->data[$rKey][$c])) {
+                            $this->data[$rKey][$c] = "<{<$r,$ic>}>";
+                        } else {
+                            $this->data[$rKey][$c] .= "<{<$r,$ic>}>";
+                        }
+                        $ic++;
+                    }
                 }
+                $r++;
             }
         }
     } // insertCellAddressAttributes
@@ -1032,7 +1516,7 @@ EOT;
                     $len = 1;
                 }
                 $c -= $totalExcluded;
-                $nCols = sizeof($data[0]);
+                $nCols = sizeof( reset($data) );
                 $c = max(0, min($c, $nCols));
                 $len = max(0, min($len, $nCols - $c));
                 $totalExcluded += $len;
@@ -1113,7 +1597,8 @@ EOT;
 
         } elseif (is_string($autoConvertTimestamps)) {
             $cInx = false;
-            foreach ($data[0] as $c => $col) {
+            $rec0 = reset($data);
+            foreach ($rec0 as $c => $col) {
                 if ($col === $autoConvertTimestamps) {
                     $cInx = $c;
                     break;
@@ -1133,55 +1618,97 @@ EOT;
 
 
 
-    private function convertTo2D($includeKeys = null)
+
+    private function loadDataFromFile()
     {
+        if (!$this->dataSource) {
+            return;
+        }
+
+        if ($this->editableBy) {
+            $this->options['includeTimestamp'] = true;
+            $this->options['includeKeys'] = true;
+        }
+        $ds = new DataStorage2($this->options);
+        $this->ds = $ds;
+        $data0 = $ds->read();
+        $this->structure = $structure = $this->ds->getStructure();
+
+        $fields = $structure['elements'];
+        if ($this->headers === true) {
+            if (isset($structure['elemKeys'][0]) && is_int($structure['elemKeys'][0])) {
+                $this->headerElems = array_shift($data);
+            } else {
+                $this->headerElems = $structure['elemKeys'];
+            }
+            if ($this->includeKeys && !isset($this->headerElems['_key'])) {
+                $this->headerElems[] = '_key';
+            }
+        }
+
         $data = [];
-        if ($includeKeys === null) {
-            $includeKeys = $this->includeKeys;
-        }
-
-        foreach ($this->data as $key => $rec) {
-            if (is_array($rec)) {
-                if (!$data && is_string((array_keys($rec))[0])) {
-                    $c = 0;
-                    $data[0][$c++] = 'Index';
-                    foreach ($rec as $k => $v) {
-                        $data[0][$c++] = $k;
+        $this->data = [];
+        $ir = 0;
+        foreach ($data0 as $r => $rec) {
+            $ic = 0;
+            // generally ignore all data keys starting with '_':
+            if (!is_array($rec) || (@$r[0] === '_')) {
+                continue;
+            }
+            foreach ($fields as $c => $desc) {
+                $item = isset($rec[ $c ])? $rec[ $c ]: (isset($rec[ $ic ])? $rec[ $ic ]: '');
+                if (is_array($item)) {
+                    if (isset($item[0])) {
+                        $item = $item[0];
+                    } else {
+                        $item = '<span class="lzy-array-elem">' . implode('</span><span class="lzy-array-elem">', $item) . '</span>';
                     }
                 }
-            }
-
-            if ($includeKeys) {
-                if (is_array($rec)) {
-                    if (is_int($key) && ($key > 1546297200)) {
-                        $key = date('Y-m-d H:i', $key);
-                        if (substr($key, 12) === '00:00') {
-                            $key = substr($key, 0, 12);
-                        }
-                    }
-                    $rec = array_values($rec);
-                    array_unshift($rec, $key);
+                if (@$desc['type'] === 'password') {
+                    $item = $item? PASSWORD_PLACEHOLDER: '';
                 } else {
-                    $rec = [$key, $rec];
+                    $item = trim($item, '"\'');
+                    $item = str_replace("\n", '<br />', $item);
                 }
+                $data[$r][$ic++] = trim($item, '"\'');
             }
-            $data[] = $rec;
+            $ir++;
         }
+
+        if (!$data) {
+            // add empty row:
+            foreach ($structure['elemKeys'] as $c => $label) {
+                $data['new-rec'][$c] = '';
+            }
+        }
+
         $this->data = $data;
-    } // convertTo2D
+    } // loadDataFromFile
 
-
-
-    private function isNumericIndex($rec)
+    
+    
+    
+    private function renderEditFormButtons( $editButtons = false)
     {
-        $i = 0;
-        foreach ($rec as $inx => $item) {
-            if ($inx !== $i) {
-                return false;
-            }
-            $i++;
-        }
-        return true;
-    } // isNumericIndex
+        $out = <<<EOT
+    
+  <div class="lzy-table-add-rec-btns">
+    <button id='{$this->id}-add-rec' class='lzy-button lzy-table-add-rec-btn' title="{{ lzy-edit-form-new-rec }}">{{ lzy-table-add-rec-btn }}</button>
+  </div>
+
+EOT;
+            $jq = <<<EOT
+
+$('#{$this->id}-add-rec').click(function() {
+    mylog('add rec');
+    const \$btnWrapper = $(this).closest('.lzy-table-add-rec-btns');
+    const \$table = \$btnWrapper.next('.lzy-table');
+    HTMLtable.openFormPopup( \$table );
+    return;
+});
+EOT;
+            $this->page->addJq($jq);
+            return $out;
+    } // renderEditFormButtons
 
 } // HtmlTable

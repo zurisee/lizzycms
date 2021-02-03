@@ -34,7 +34,7 @@ class UserAccountForm
             }
             $this->trans->readTransvarsFromFile('~sys/config/admin.yaml', false, true);
             $this->checkInsecureConnection();
-            $this->lzyPage->addModules('USER_ADMIN, JS_POPUPS');
+            $this->lzyPage->addModules('USER_ADMIN, POPUPS');
         } else {
             $this->lzy = null;
             $this->config = null;
@@ -375,7 +375,6 @@ EOT;
         $form2 = $this->createPWAccessForm($notification);
 
         $html = <<<EOT
-        <h1>{{ lzy-login-with-choice }}</h1>
 $message
         <div class="lzy-panels-widget lzy-tilted one-open-only lzy-account-form lzy-login-multi-mode">
             <div><!-- lzy-panel-page -->
@@ -1081,10 +1080,24 @@ EOT;
     {
         $logInVar = '';
         if ($this->loggedInUser) {
-            $logInVar = $this->renderLoginAccountMenu( $userRec );
-            $this->lzyPage->addPopup(['contentFrom' => '.lzy-login-menu', 'triggerSource' => '.lzy-login-link > a']);
+            list($header,$logInVar) = $this->renderLoginAccountMenu( $userRec );
+            $jq = <<<EOT
+$('.lzy-login-link > a').click(function() {
+    lzyPopup({
+        contentFrom: '.lzy-login-menu',
+        closeOnBgClick: false, 
+        closeButton: true, 
+        wrapperClass: 'lzy-login',
+        draggable: true,
+        header: '$header',
+    });
+});
+EOT;
+            $this->lzyPage->addJq( $jq );
+            $this->lzyPage->addModules( 'EVENT_UE' );
+            $this->lzyPage->addBodyEndInjections( $logInVar );
         }
-        return $logInVar;
+        return '';
     } // renderLoginMenu
 
 
@@ -1128,10 +1141,10 @@ EOT;
             $username = $_SESSION["lizzy"]["loginEmail"];
         }
 
+        $header = "{{ lzy-user-account }} <strong>$username</strong> [$groups]";
         $logInVar = <<<EOT
 <div class="lzy-login-link-menu">
     <div class="lzy-login-menu" style="display:none;">
-        <div>{{ lzy-user-account }} <strong>$username</strong> [$groups]</div>
         <ol>
             <li><a href='$pageUrl?logout'>{{ Logout }}</a></li>$option
         </ol>
@@ -1139,7 +1152,7 @@ EOT;
 </div>
 
 EOT;
-        return $logInVar;
+        return [$header, $logInVar];
     } // renderLoginAccountMenu
 
 

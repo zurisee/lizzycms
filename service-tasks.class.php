@@ -211,12 +211,12 @@ class ServiceTasks
     //....................................................
     private function checkInstallation1()
     {
-        $writableFolders = ['data/', '.#cache/', '.#logs/'];
+        $writableFolders = ['data/', CACHE_PATH, LOGS_PATH];
         $readOnlyFolders = ['_lizzy/','code/','config/','css/','pages/'];
         $out = '';
         foreach ($writableFolders as $folder) {
             if (!file_exists($folder)) {
-                mkdir($folder, MKDIR_MASK2);
+                mkdir($folder, MKDIR_MASK);
             }
             if (!is_writable( $folder )) {
                 $out .= "<p>folder not writable: '$folder'</p>\n";

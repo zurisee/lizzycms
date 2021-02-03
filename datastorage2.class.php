@@ -8,6 +8,13 @@
  * "Meta-Data" maintains info about DB-, record- and element-level locking.
  * It is maintained only with the Lizzy DB - deleting that will reset all locking.
  *
+     Data-Structure:
+        $structure['elements'][$elemKey] = [
+          'type'
+          'name'
+          'formLabel'
+         ]
+        $structure['elemKeys'] = []
 */
 
  // PATH_TO_APP_ROOT must to be defined by the invoking module
@@ -45,9 +52,9 @@ class DataStorage2
 	private $lockDB = false;
 	private $defaultTimeout = 30; // [s]
 	private $defaultPollingSleepTime = LZY_DB_POLLING_CYCLE_TIME; // [us]
+    private $structureFile = null;
 
 
-    //--------------------------------------------------------------
     public function __construct($args)
     {
         if ( session_status() !== PHP_SESSION_ACTIVE ) {
@@ -74,7 +81,6 @@ class DataStorage2
 
 
 
-    //---------------------------------------------------------------------------
     public function __destruct()
     {
         if (!isset($this->appPath)) {
@@ -83,11 +89,49 @@ class DataStorage2
         chdir($this->appPath); // workaround for include bug
 
         $this->exportToFile(); // saves data if modified
+
+        if (@$_SESSION['lizzy']['debug']) {
+            $str = $this->dumpDb(true, false);
+            file_put_contents(PATH_TO_APP_ROOT . ".#logs/dBdump_$this->tableName.txt", $str);
+        }
+
         if ($this->lzyDb) {
             $this->lzyDb->close();
             unset($this->lzyDb);
         }
     } // __destruct
+
+
+
+    private function parseArguments($args)
+    {
+        if (is_string($args)) {
+            $args = ['dataFile' => $args];
+        }
+        $this->dataFile = isset($args['dataFile']) ? $args['dataFile'] :
+            (isset($args['dataSource']) ? $args['dataSource'] : ''); // for compatibility
+        $this->dataFile = resolvePath($this->dataFile);
+        $this->logModifTimes = isset($args['logModifTimes']) ? $args['logModifTimes'] : false;
+        $this->sid = isset($args['sid']) ? $args['sid'] : '';
+        $this->mode = isset($args['mode']) ? $args['mode'] : 'readonly';
+        $this->format = isset($args['format']) ? $args['format'] : '';
+        $this->includeKeys = isset($args['includeKeys']) ? $args['includeKeys'] : false;
+        $this->includeTimestamp = isset($args['includeTimestamp']) ? $args['includeTimestamp'] : false;
+        $this->secure = isset($args['secure']) ? $args['secure'] : true;
+        $this->userCsvFirstRowAsLabels = isset($args['userCsvFirstRowAsLabels']) ? $args['userCsvFirstRowAsLabels'] : true;
+        $this->useRecycleBin = isset($args['useRecycleBin']) ? $args['useRecycleBin'] : false;
+        $this->format = ($this->format) ? $this->format : pathinfo($this->dataFile, PATHINFO_EXTENSION) ;
+        $this->tableName = isset($args['tableName']) ? $args['tableName'] : '';
+        if ($this->tableName && !$this->dataFile) {
+            $rawData = $this->lowlevelReadRawData();
+            $this->dataFile = PATH_TO_APP_ROOT.$rawData["origFile"];
+        }
+        $this->resetCache = isset($args['resetCache']) ? $args['resetCache'] : false;
+        $this->structureFile = isset($args['structureFile']) ? $args['structureFile'] : false;
+        $this->structureDef = isset($args['structureDef']) ? $args['structureDef'] : false;
+        return;
+    } // parseArguments
+
 
 
 
@@ -103,8 +147,38 @@ class DataStorage2
 
 
 
-    // anybody usint write() should do DB-locking explizitly:
-    public function write($data, $replace = true, $locking = false, $blocking = true)
+    public function readModified( $since )
+    {
+        $data = $this->getData(true);
+        if (!$data) {
+            $data = [];
+        }
+        if (!$since) {
+            return $data;
+        }
+        $since -= 0.001;
+
+        $rawLastRecModif = $this->lowlevelReadRawData('recLastUpdates');
+        if ($rawLastRecModif && ($rawLastRecModif !== '[]')) {
+            $lastRecModifs = $this->jsonDecode($rawLastRecModif);
+            $outData = [];
+            foreach ($data as $key => $rec) {
+                if (isset($lastRecModifs[$key])) {
+                    if ($lastRecModifs[$key] > $since) {
+                        $outData[$key] = $rec;
+                    }
+                }
+            }
+        } else {
+            $outData = $data;
+        }
+        return $outData;
+    } // readModified
+
+
+
+    // Remember: anybody using write() should do DB-locking explizitly
+    public function write($data, $replace = true, $locking = false, $blocking = true, $logModifTimes = false)
     {
         if ($locking && !$this->lockDB( $blocking )) {
             return false;
@@ -120,6 +194,11 @@ class DataStorage2
 
         if ($locking) {
             $this->unlockDB();
+        }
+        if ($this->logModifTimes || $logModifTimes) {
+            foreach ($data as $recId => $rec) {
+                $this->updateRecLastUpdate($recId);
+            }
         }
 
         $this->getData(true);
@@ -225,7 +304,7 @@ class DataStorage2
     } // readRecord
 
 
-    public function writeRecord($recId, $recData = null, $locking = true, $blocking = true)
+    public function writeRecord($recId, $recData = null, $locking = true, $blocking = true, $logModifTimes = false)
     {
         // $supportedArgs defines the expected args, their default values, where null means required arg.
         $supportedArgs = ['recId' => null, 'recData' => null, 'locking' => false, 'blocking' => false];
@@ -236,7 +315,6 @@ class DataStorage2
             list($recId, $recData, $locking, $blocking) = $recId;
         }
 
-//??? what was this for?
         if (($recId === false) || !$recData) {
             return false;
         } elseif (is_array($recId)) {
@@ -252,19 +330,26 @@ class DataStorage2
             return false;
         }
         $data = $this->getData(true);
-
         if ($recId !== false) {
+//???
+//            if (@$this->structure['indexes'][0] === 0) { // maintain original data format
+//                $data[$recId] = array_values( $recData );
+//            } else {
+//                $data[$recId] = $recData;
+//            }
             $data[$recId] = $recData;
         } else {
             $data[] = $recData;
         }
 
         $this->lowLevelWrite($data);
+
+        if ($this->logModifTimes || $logModifTimes) {
+            $this->updateRecLastUpdate( $recId );
+        }
+
         if ($locking) {
             $this->unlockRec($recId);
-        }
-        if ($this->logModifTimes || $locking) {
-            $this->updateRecLastUpdate( $recId );
         }
         $this->getData(true);
         return true;
@@ -272,7 +357,7 @@ class DataStorage2
 
 
 
-    public function appendRecord($recId, $recData, $locking = true, $blocking = true)
+    public function appendRecord($recId, $recData, $locking = true, $blocking = true, $logModifTimes = false)
     {
         if (!$this->_awaitRecLockEnd($recId, $blocking, false)) {
             return false;
@@ -298,7 +383,13 @@ class DataStorage2
                 }
             }
         }
+
         $res = $this->writeRecord($inx, $recData, false, false);
+
+        if ($this->logModifTimes || $logModifTimes) {
+            $this->updateRecLastUpdate( $recId );
+        }
+
         if ($locking) {
             $this->unlockRec($recId);
         }
@@ -308,9 +399,9 @@ class DataStorage2
 
 
 
-    public function writeRecordElement($recId, $elemName = null, $value = null, $locking = true, $blocking = true, $append = false)
+    // like writeRecord but with separate args recId, elemName and value:
+    public function writeRecordElement($recId, $elemName = null, $value = null, $locking = true, $blocking = true, $append = false, $logModifTimes = false)
     {
-        // like writeRecord but with separate args recId, elemName and value
         $supportedArgs = ['recId' => null, 'elemName' => null, 'value' => null, 'locking' => false, 'blocking' => true, 'append' => false];
         if (($recId = $this->fixRecId($recId, false, $supportedArgs)) === false) {
             return false;
@@ -343,6 +434,10 @@ class DataStorage2
         $this->lowLevelWrite($data);
 
         if ($this->logModifTimes || $locking) {
+            $this->updateRecLastUpdate( $recId );
+        }
+
+        if ($this->logModifTimes || $logModifTimes) {
             $this->updateRecLastUpdate( $recId );
         }
 
@@ -538,6 +633,11 @@ class DataStorage2
 
     public function lastModifiedElement($key)
     {
+        if (strpos($key, '*') !== false) {
+            return $this->lastDbModified();
+        }
+        // $recId can be of form 'r,c', if so, we need to drop the part ',c' in order to refer to the record:
+        $key = preg_replace('/(,.*)/', '', $key);
         $rawLastRecModif = $this->lowlevelReadRawData('recLastUpdates');
         $lastRecModifs = $this->jsonDecode($rawLastRecModif);
         $lastRecModif = isset($lastRecModifs[ $key ])? $lastRecModifs[ $key ]: false;
@@ -550,7 +650,7 @@ class DataStorage2
 
 
 
-    public function writeElement($key, $value, $locking = true, $blocking = true)
+    public function writeElement($key, $value, $locking = true, $blocking = true, $logModifTimes = false)
     {
         if ($locking && !$this->lockDB( false, $blocking )) {
             return false;
@@ -565,10 +665,6 @@ class DataStorage2
         // syntax variant 'd3,d31,d312'
         if (strpos($key, ',') !== false) {
             $keys = explode(',', $key);
-            $key0 = $keys[0];
-            if ($this->format === 'csv') {
-                $keys = array_reverse($keys);
-            }
             $rec = &$data;
             foreach ($keys as $k) {
                 $k = trim($k, '\'"');
@@ -577,7 +673,13 @@ class DataStorage2
                     $k = $n;
                 }
                 if (!isset($rec[$k])) {
-                    $rec[$k] = null;    // instantiate element if not existing
+                    // if not as is, try to get element label:
+                    $k1 = $this->resolveElementKey( $k );
+                    if (!isset($rec[$k1])) {
+                        $rec[$k] = null;    // instantiate element if not existing
+                    } else {
+                        $k = $k1;
+                    }
                 }
                 $rec = &$rec[$k];
             }
@@ -586,12 +688,12 @@ class DataStorage2
         } else {
             $data[$key] = $value;
         }
+        $res = $this->lowLevelWrite($data);
 
-        if ($this->logModifTimes) {
+        if ($this->logModifTimes || $logModifTimes) {
             $this->updateRecLastUpdate( $key );
         }
 
-        $res = $this->lowLevelWrite($data);
         if ($locking) {
             $this->unlockDB();
         }
@@ -638,7 +740,6 @@ class DataStorage2
 
 
 
-    //---------------------------------------------------------------------------
     public function findRecByContent($key, $value, $returnKey = false)
     {
         // find rec for which key AND value match
@@ -665,32 +766,62 @@ class DataStorage2
 
 
 
-    //---------------------------------------------------------------------------
+    public function getStructure()
+    {
+        if (@$this->structure['elements']) {
+            if ($this->includeKeys && !isset($this->structure['elements'][REC_KEY_ID])) {
+                if ($this->includeTimestamp) {
+                    $this->structure['elements'][TIMESTAMP_KEY_ID] = ['type' => 'string'];
+                    $this->structure['elemKeys'][] = TIMESTAMP_KEY_ID;
+                }
+                $this->structure['elements'][REC_KEY_ID] = [ 'type' => 'string' ];
+                $this->structure['elemKeys'][] = REC_KEY_ID;
+            }
+        } else {
+            $this->determineStructure();
+            if ($this->includeKeys && !isset($this->structure['elements'][REC_KEY_ID])) {
+                if ($this->includeTimestamp) {
+                    $this->structure['elements'][TIMESTAMP_KEY_ID] = ['type' => 'string'];
+                    $this->structure['elemKeys'][] = TIMESTAMP_KEY_ID;
+                }
+                $this->structure['elements'][REC_KEY_ID] = [ 'type' => 'string' ];
+                $this->structure['elemKeys'][] = REC_KEY_ID;
+            }
+        }
+        return $this->structure;
+    } // getStructure
+
+    // for compatibility: synonyme for getStructure()
     public function getDbRecStructure()
     {
-        $rawData = $this->lowlevelReadRawData();
-        $structure = $this->jsonDecode($rawData['structure']);
-        if (!$structure) {
-            $data = $this->getData();
-            $structure = $this->analyseStructure($data,$rawData);
-        }
-        return $structure;
+        return $this->getStructure();
     } // getDbRecStructure
 
 
 
 
-    //---------------------------------------------------------------------------
+    public function setStructure( $structure ) {
+        $this->structure = $structure;
+        $this->lowLevelWriteStructure();
+    } // setStructure
+
+
+
     public function lastDbModified()
     {
         $rawData = $this->lowlevelReadRawData();
-        return $rawData['lastUpdate'];
+        $filemtime = (float) filemtime( $this->dataFile );
+        $lastModified = $rawData['lastUpdate'];
+        if ($filemtime > $lastModified) {
+            $lastModified = $filemtime;
+            $this->importFromFile();
+        }
+        return $lastModified;
     } // lastModified
 
 
 
 
-    //---------------------------------------------------------------------------
     public function checkNewData($lastUpdate, $returnJson = false)
     {
         // checks whether new data has been saved since the given time:
@@ -711,7 +842,6 @@ class DataStorage2
 
 
  // === depricated ======================
-    //---------------------------------------------------------------------------
     public function doLockDB()  // alias for compatibility
     {
         die("Method lockDB() has been depricated - use lockDB() instead");
@@ -732,24 +862,22 @@ class DataStorage2
     public function getDbRef()
     {
         die("Method getDbRef() has been depricated");
-    //        if (!$this->lzyDb) {
-    //            $this->openDbReadWrite();
-    //        }
-    //        return $this->lzyDb;
     } // getDbRef
 
     
 
 
  // === aux methods ======================
-    public function dumpDb( $raw = false)
+    public function dumpDb( $raw = false, $flat = true )
     {
         if ($raw) {
             $d = $this->lowlevelReadRawData();
         } else {
             $d = $this->getData( true );
         }
-        return var_r($d, 'DB "' . basename($this->dataFile).'"');
+        $s = var_r($d, 'DB "' . basename($this->dataFile).'"', $flat, false);
+        $s = str_replace('⌑⌇⌑', '"', $s);
+        return $s;
     } // dumpDb
 
 
@@ -758,6 +886,16 @@ class DataStorage2
     public function getSourceFormat() {
         return $this->format;
     } // getSourceFormat
+
+
+
+    public function getNumericRecIndex( $recKey )
+    {
+        $data = $this->getData();
+        $keys = array_keys($data);
+        $inx = array_search($recKey, $keys);
+        return $inx;
+    } // getNumericRecIndex
 
 
 
@@ -772,23 +910,93 @@ class DataStorage2
         $json = $rawData['data'];
         $json = str_replace('⌑⌇⌑', '"', $json);
         $data = $this->jsonDecode($json);
+
+        if ($this->includeKeys) {
+            if ($data) {
+                $rec0 = reset($data);
+                if (!isset($rec0[REC_KEY_ID])) {
+                    foreach ($data as $key => $rec) {
+                        if ($this->includeTimestamp) {
+                            $data[ $key ][TIMESTAMP_KEY_ID] = 0;
+                        }
+                        $data[ $key ][REC_KEY_ID] = $key;
+                    }
+                }
+            }
+        }
         $this->data = $data;
         return $data;
     } // getData
 
 
 
+
+    // bare-data: excluding keys starting with '_'
+    private function getBareData()
+    {
+        $rawData = $this->lowlevelReadRawData();
+        $json = $rawData['data'];
+        $json = str_replace('⌑⌇⌑', '"', $json);
+        $data = $this->jsonDecode($json);
+        $rec0 = reset($data);
+        if (is_array($rec0)) {
+            $s = implode(',', array_keys($rec0));
+        } else {
+            $s = $rec0;
+        }
+
+        // remove elements where key starts with '_':
+        if (strpos(",$s", ',_')) {
+            foreach ($data as $recKey => $rec) {
+                if (is_string($recKey) && $recKey && ($recKey[0] === '_')) {
+                    unset($data[ $recKey ]);
+                }
+                foreach ($rec as $k => $v) {
+                    if ($this->includeKeys && ($k === REC_KEY_ID)) {
+                        continue;
+                    }
+                    if ($this->includeTimestamp && ($k === TIMESTAMP_KEY_ID)) {
+                        continue;
+                    }
+                    if (is_string($k) && $k && ($k[0] === '_')) {
+                        unset($data[ $recKey ][ $k ]);
+                    }
+                }
+            }
+        }
+        return $data;
+    } // getBareData
+
+
+
+
+    private function resolveElementKey( $id )
+    {
+        $rec0 = reset( $this->data );
+        if (isset($rec0[ $id ])) {
+            return $id;
+        }
+        return @array_keys($rec0)[ $id ];
+    } // resolveElementKey
+
+
+
+
     private function createNewRecId()
     {
-        if ($this->structure["key"] === 'index') {
-            $recId = sizeof($this->getData(true));
-        } elseif ($this->structure["key"] === 'date') {
-            $recId = date('Y-m-d');
-        } elseif ($this->structure["key"] === 'datetime') {
-            $recId = date('Y-m-d H:i:s');
-        } else {
-            $recId = time();
+        switch ($this->structure['key']) {
+            case 'index':
+                return sizeof($this->getData(true));
+            case 'date':
+                return date('Y-m-d');
+            case 'datetime':
+                return date('Y-m-d H:i:s');
+            case 'unixtime':
+                return time();
+            default: // for everything else we use hash
+                return createHash();
         }
+
         return $recId;
     } // createNewRecId
 
@@ -997,6 +1205,7 @@ class DataStorage2
 
 
 
+
     private function _lockRec( $recId, $lockForAll = false )
     {
 
@@ -1046,7 +1255,6 @@ class DataStorage2
         }
         return true;
     } // _unlockAllRecs
-
 
 
 
@@ -1139,6 +1347,15 @@ class DataStorage2
             $key = str_replace('][', ',', $m[1]);
             $key = str_replace(['"', "'"], '', $key);
         }
+        if ($this->structure['key'] !== 'index') {
+            $keys = explode(',', $key);
+            $key0 = &$keys[0];
+            if ($key0 !== '*') {
+                $dataKeys = array_keys( $this->data );
+                $key0 = isset($dataKeys[$key0])? $dataKeys[$key0] : $key0;
+                $key = implode(',', $keys);
+            }
+        }
         return $key;
     } // parseElementSelector
 
@@ -1157,7 +1374,7 @@ class DataStorage2
 
 
 
-    // === Low Level Operations ===========================================================
+ // === Low Level Operations ===========================================================
     private function lowlevelReadRecLocks()
     {
         $query = "SELECT \"recLocks\" FROM \"{$this->tableName}\"";
@@ -1270,6 +1487,7 @@ EOT;
 
 
 
+
     private function updateRawDbMetaData($rawData)
     {
         $this->openDbReadWrite();
@@ -1295,8 +1513,35 @@ EOT;
 
 
 
+    private function updateDbModifTime( $modifTime = false )
+    {
+        $this->openDbReadWrite();
+
+        if (!$modifTime) {
+            $modifTime = str_replace(',', '.', microtime(true)); // fix float->str conversion problem
+        }
+        $sql = <<<EOT
+UPDATE "{$this->tableName}" SET 
+    "lastUpdate" = $modifTime;
+
+EOT;
+        try {
+            $res = $this->lzyDb->query($sql);
+        }
+        catch (exception $e) {
+            fatalError($e->getMessage());
+        }
+        $this->rawData = $this->lowlevelReadRawData();
+    } // updateDbModifTime
+
+
+
+
     private function updateRecLastUpdate( $recId )
     {
+        // $recId can be of form 'r,c', if so, we need to drop the part ',c' in order to refer to the record:
+        $recId = preg_replace('/(,.*)/', '', $recId);
+
         $query = "SELECT \"recLastUpdates\" FROM \"{$this->tableName}\"";
         $rawData = $this->lzyDb->querySingle($query, true);
         $recLastUpdates = $this->jsonDecode($rawData['recLastUpdates']);
@@ -1331,7 +1576,6 @@ EOT;
 
 
 
-    //---------------------------------------------------------------------------
     private function initLizzyDB()
     {
         if (!file_exists(LIZZY_DB)) {
@@ -1370,7 +1614,6 @@ EOT;
 
 
 
-    //---------------------------------------------------------------------------
     private function initDbTable()
     {
         // 'dataFile' refers to a yaml or csv file that contains the original data source
@@ -1437,12 +1680,11 @@ EOT;
                 $this->getData();
             }
         }
-        if ($rawData["structure"] === 'null') {
-            $raw = $this->loadFile();
-            $this->analyseStructure($this->data, $raw);
+        if (!$rawData['structure'] || $this->structureDef) {
+            $this->determineStructure();
             $this->lowLevelWriteStructure();
         } else {
-            $this->structure = $this->jsonDecode($rawData["structure"]);
+            $this->structure = $this->jsonDecode($rawData['structure']);
         }
 
         return;
@@ -1451,13 +1693,26 @@ EOT;
 
 
 
-    //--------------------------------------------------------------
     private function importFromFile($initial = false)
     {
         $this->openDbReadWrite();
         $rawData = $this->loadFile();
-        $json = $this->decode($rawData, false, true, $initial);
-        $json = $this->jsonEncode($json, true);
+
+        if ($this->logModifTimes) {
+            $oldDat = $this->getData();
+            $newData = $this->decode($rawData, false, false, $initial);
+            foreach ($newData as $key => $rec) {
+                if ($rec !== $oldDat[$key]) {
+                    $this->updateRecLastUpdate( $key );
+                }
+            }
+            $json = $this->jsonEncode($newData, false);
+
+        } else {
+            $json = $this->decode($rawData, false, true, $initial);
+            $json = $this->jsonEncode($json, true);
+        }
+
         $json = SQLite3::escapeString($json);
         $sql = <<<EOT
 UPDATE "{$this->tableName}" SET 
@@ -1470,56 +1725,69 @@ EOT;
         catch (exception $e) {
             fatalError($e->getMessage());
         }
+        $this->updateDbModifTime();
         $this->rawData = $this->lowlevelReadRawData();
     } // importFromFile
 
 
 
 
-    //--------------------------------------------------------------
     private function exportToFile()
     {
         $rawData = $this->lowlevelReadRawData();
-        if ($this->exportRequired) {
-            if (isset($GLOBALS['appRoot'])) {
-                $filename = $GLOBALS['appRoot'] . $rawData['origFile'];
+        if (!$this->exportRequired) {
+            return;
+        }
 
-            } else {
-                $filename = PATH_TO_APP_ROOT . $rawData['origFile'];
-            }
-            if (!$filename) {
-                mylog("Error: filename missing for export file (".__FILE__.' '.__LINE__.')');
-                return;
-            }
-            if (!file_exists($filename)) {
-                mylog("Error: unable to export data to file '$filename'");
-                return;
-            }
+        if (isset($GLOBALS['appRoot'])) {
+            $filename = $GLOBALS['appRoot'] . $rawData['origFile'];
 
-            if ($this->useRecycleBin) {
-                require_once SYSTEM_PATH.'page-source.class.php';
-                $ps = new PageSource;
-                $ps->copyFileToRecycleBin($filename, false, true);
-            }
+        } else {
+            $filename = PATH_TO_APP_ROOT . $rawData['origFile'];
+        }
+        if (!$filename) {
+            mylog("Error: filename missing for export file (".__FILE__.' '.__LINE__.')');
+            return;
+        }
+        if (!file_exists($filename)) {
+            mylog("Error: unable to export data to file '$filename'");
+            return;
+        }
 
-            $data = $this->getData(true);
-            if ($this->format === 'yaml') {
-                $this->writeToYamlFile($filename, $data);
+        if ($this->useRecycleBin) {
+            require_once SYSTEM_PATH.'page-source.class.php';
+            $ps = new PageSource;
+            $ps->copyFileToRecycleBin($filename, false, true);
+        }
 
-            } elseif ($this->format === 'json') {
-                file_put_contents($filename, json_encode($data));
+        $data = $this->getBareData();
 
-            } elseif ($this->format === 'csv') {
-                $this->writeToCsvFile($filename, $data);
+        if (!$this->includeKeys) {
+            foreach ($data as $recKey => $rec) {
+                if (isset($rec[REC_KEY_ID])) {
+                    unset( $data[$recKey][REC_KEY_ID]);
+                }
+                if (isset($rec[TIMESTAMP_KEY_ID])) {
+                    unset( $data[$recKey][TIMESTAMP_KEY_ID]);
+                }
             }
         }
-        return;
+
+        if ($this->format === 'yaml') {
+            $this->writeToYamlFile($filename, $data);
+
+        } elseif ($this->format === 'json') {
+            file_put_contents($filename, json_encode($data));
+
+        } elseif ($this->format === 'csv') {
+            $this->writeToCsvFile($filename, $data);
+        }
+        $this->exportRequired = false;
     } // exportToFile
 
 
 
 
-    //--------------------------------------------------------------
     private function writeToYamlFile($filename, $data)
     {
         $yaml = Yaml::dump($data, 3);
@@ -1539,18 +1807,38 @@ EOT;
 
 
 
-    //--------------------------------------------------------------
     private function writeToCsvFile($filename, $array, $quote = '"', $delim = ';', $forceQuotes = true)
     {
         $out = '';
+        $outData = [];
         if (!is_array($array)) {
             return false;
         }
+        // prepend header row:
+        $structure = $this->getStructure();
+        if (isset($structure['elemKeys'])) {
+            if (!$this->includeKeys) {
+                $i = array_search(REC_KEY_ID, $structure['elemKeys']);
+                if ($i !== false) {
+                    unset($structure['elemKeys'][$i]);
+                }
+                $i = array_search(TIMESTAMP_KEY_ID, $structure['elemKeys']);
+                if ($i !== false) {
+                    unset($structure['elemKeys'][$i]);
+                }
+            }
+            $outData[0] = array_values($structure['elemKeys']);
+        }
+        // remove field labels:
         foreach ($array as $row) {
+            $outData[] = array_values($row);
+        }
+        // transform into CSV format:
+        foreach ($outData as $row) {
             if (!is_array($row)) { continue; }
             foreach ($row as $i => $elem) {
                 if (is_array($elem)) {
-                    $elem = @$elem[0];
+                    $elem = @$elem[0]; // -> see note at top
                 }
                 if ($forceQuotes || strpbrk($elem, "$quote$delim")) {
                     $row[$i] = $quote . str_replace($quote, $quote.$quote, $elem) . $quote;
@@ -1591,36 +1879,6 @@ EOT;
 
 
 
-    //---------------------------------------------------------------------------
-    private function parseArguments($args)
-    {
-        if (is_string($args)) {
-            $args = ['dataFile' => $args];
-        }
-        $this->dataFile = isset($args['dataFile']) ? $args['dataFile'] :
-            (isset($args['dataSource']) ? $args['dataSource'] : ''); // for compatibility
-        $this->dataFile = resolvePath($this->dataFile);
-        $this->logModifTimes = isset($args['logModifTimes']) ? $args['logModifTimes'] : false;
-        $this->sid = isset($args['sid']) ? $args['sid'] : '';
-        $this->mode = isset($args['mode']) ? $args['mode'] : 'readonly';
-        $this->format = isset($args['format']) ? $args['format'] : '';
-        $this->secure = isset($args['secure']) ? $args['secure'] : true;
-        $this->userCsvFirstRowAsLabels = isset($args['userCsvFirstRowAsLabels']) ? $args['userCsvFirstRowAsLabels'] : true;
-        $this->useRecycleBin = isset($args['useRecycleBin']) ? $args['useRecycleBin'] : false;
-        $this->format = ($this->format) ? $this->format : pathinfo($this->dataFile, PATHINFO_EXTENSION) ;
-        $this->tableName = isset($args['tableName']) ? $args['tableName'] : '';
-        if ($this->tableName && !$this->dataFile) {
-            $rawData = $this->lowlevelReadRawData();
-            $this->dataFile = PATH_TO_APP_ROOT.$rawData["origFile"];
-        }
-        $this->resetCache = isset($args['resetCache']) ? $args['resetCache'] : false;
-        return;
-    } // parseArguments
-
-
-
-
-    //---------------------------------------------------------------------------
     private function decode($rawData, $fileFormat = false, $outputAsJson = false, $analyzeStructure = false)
     {
         if (!$rawData) {
@@ -1641,11 +1899,25 @@ EOT;
 
             // if not suppressed: use first data row as element-labels:
             if ($this->userCsvFirstRowAsLabels) {
-                $labels = array_shift( $data );
+                $elemKeys = array_shift( $data );
+                $this->structure['elemKeys'] = $elemKeys;
+                foreach ($elemKeys as $k => $elemKey) {
+                    $name = translateToIdentifier($elemKey, false, true, false);
+                    $this->structure['elements'][$elemKey] = ['type' => 'string', 'name' => $name, 'formLabel' => $elemKey];
+                }
+                $keyAvailable = isset($elemKeys[REC_KEY_ID]);
+                if ($this->includeKeys) {
+                    $this->structure['key'] = 'hash';
+                } else {
+                    $this->structure['key'] = 'index';
+                }
                 $out = [];
                 foreach ($data as $r => $rec) {
-                    foreach ($labels as $i => $label) {
-                        $out[$r][$label] = $rec[$i];
+                    if ($keyAvailable || $this->includeKeys) {
+                        $r = @$elemKeys[REC_KEY_ID]? $elemKeys[REC_KEY_ID]: createHash();
+                    }
+                    foreach ($elemKeys as $i => $elemKey) {
+                        $out[$r][$elemKey] = $rec[$i];
                     }
                 }
                 $data = $out;
@@ -1655,21 +1927,29 @@ EOT;
             $data = false;
         }
 
-        if ($analyzeStructure) {
-            // structure may be submitted within data in a special record "_structure":
-            if (isset($data["_structure"])) {
-                $this->structure = $data["_structure"];
-                unset($data["_structure"]);
-            } else {
-                $this->structure = $this->analyseStructure($data, $rawData, $fileFormat);
-            }
-        } else {
-            $this->structure = $this->analyseStructure(false, $rawData, $fileFormat);
-        }
         if (!$data) {
             $data = array();
         }
+
+        if ($this->includeKeys) {
+            foreach ($data as $key => $rec) {
+                if ($this->includeTimestamp) {
+                    if (isset($data[$key][REC_KEY_ID])) {
+                        unset($data[$key][REC_KEY_ID]);
+                    }
+                    if (!isset( $data[ $key ][ TIMESTAMP_KEY_ID ] ) || !$data[ $key ][ TIMESTAMP_KEY_ID ]) {
+                        $data[$key][TIMESTAMP_KEY_ID] = 0;
+                    }
+                    $data[$key][REC_KEY_ID] = $key;
+                } elseif (!isset( $data[ $key ][ REC_KEY_ID ] ) || !$data[ $key ][ REC_KEY_ID ]) {
+                    $data[$key][REC_KEY_ID] = $key;
+                }
+            }
+        }
+
+        $this->lowLevelWrite( $data );
         $this->data = $data;
+        $this->determineStructure();
         if ($outputAsJson) {
             return $this->jsonEncode($data);
         }
@@ -1678,72 +1958,151 @@ EOT;
 
 
 
-    private function analyseStructure($data, &$rawData, $fileFormat = false)
+
+    private function determineStructure()
     {
-        $structure = [
-            'key' => null,
-            'labels' => [],
-            'types' => [],
-        ];
-        if (!$data) {
-            $this->structure = $structure;
-            return $structure;
+        if ($this->structureDef) {
+            $this->structure = $this->structureDef;
+            unset($this->structureDef);
+            return $this->structure;
         }
-        if (!$fileFormat) {
-            $fileFormat = $this->format;
+        $structure = @$this->structure;
+        if ($this->structureFile) {
+            $structureFile = resolvePath($this->structureFile, true);
+        } else {
+            $structureFile = fileExt($this->dataFile, true) . '_structure.yaml';
         }
 
-        if ($fileFormat === 'yaml') {
-            if (isset($rawData['origFile'])) {
-                $rawData = trim(file_get_contents($rawData['origFile']));
+        if (file_exists( $structureFile )) {
+            $structure = getYamlFile( $structureFile );
+
+        } elseif (isset($data['_structure'])) {
+            // structure may be submitted within data in a special record '_structure':
+            $structure = $data['_structure'];
+            unset($data['_structure']);
+        }
+
+        // make sure type for rec-level keys is set:
+        if (!isset($structure['elements']) || !$structure['elements']) {
+            // no struct info available - try to derive it from data:
+            if (!$this->data) {
+                return; // no data, try again later...
             }
-            if ($rawData && ($rawData[0] === '-')) {
-                $structure['key'] = 'index';
-            } else {
-                $key0 = substr($rawData, 0, strpos($rawData, ':'));
+            $structure = $this->deriveStructureFromData();
+        }
+
+
+        // make sure structure is complete:
+        if (!isset($structure['elements']) || !$structure['elements']) { // fields missing
+            die("Error: fields missing in structure");
+        }
+        if (!isset($structure['elemKeys']) || !$structure['elemKeys']) { // fields missing
+            $structure['elemKeys'] = array_keys($structure['elements']);
+        }
+        
+        // add 'name' elem:
+        $rec0 = reset($structure['elements']);
+        if (!isset($rec0['name']) || !$rec0['name']) {
+            foreach ($structure['elements'] as $elemKey => $rec) {
+                $structure['elements'][$elemKey]['type'] = @$rec['type']? $rec['type']: 'string';
+                $structure['elements'][$elemKey]['name'] = translateToIdentifier($elemKey, false, true, false);
+                $structure['elements'][$elemKey]['formLabel'] = @$rec['formLabel']? $rec['formLabel']: $elemKey;
             }
-        } elseif ($fileFormat === 'json') {
-            if (isset($rawData['origFile'])) {
-                $rawData = trim(file_get_contents($rawData['origFile']));
-            }
-            if ($rawData && ($rawData[0] === '[')) {
-                $structure['key'] = 'index';
-            } else {
-                if (!preg_match('/^{"(.*?)"/', $rawData, $m)) {
-                    exit("Error in json file");
-                }
-                $key0 = $m[1];
-            }
-        } else {    // csv
+        }
+
+        // make sure type for rec-level keys is set:
+        if (!isset($structure['key'])) {
             $structure['key'] = 'index';
-            $rec0 = reset($data);
-            $structure['labels'] = is_array($rec0) ? $rec0: [];
+        }
+
+        $this->structure = $structure;
+        return $structure;
+    } // determineStructure
+
+
+
+
+    private function deriveStructureFromData()
+    {
+        $rawData = $this->lowlevelReadRawData();
+        $structure = [ 'key' => false, 'elements' => [], 'elemKeys' => [] ];
+        if (!$rawData[ 'data']) {
+            return $structure;
+        }
+        $key0 = false;
+        $rec0 = false;
+        $keyType = false;
+
+        if (($this->format === 'yaml') || ($this->format === 'json')) {
+            // try to figure out keyType:
+            if (!isset($structure['key'])) {
+                if (isset($rawData['origFile'])) {
+                    $rawData = trim(file_get_contents($rawData['origFile']));
+                }
+                if ($rawData) {
+                    if ((($this->format === 'yaml') && ($rawData[0] === '-')) ||
+                        (($this->format === 'json') && ($rawData[0] === '['))) {
+                        $keyType = 'index';
+                    }
+                }
+            }
+            // get first regular record:
+            $data = $this->getData();
+            if ($data) {
+                foreach ($data as $k => $rec) { // skip meat elements...
+                    if (!is_string($k) || (@$k[0] !== '_')) {
+                        break;
+                    }
+                }
+                $rec0 = $rec;
+                $key0 = $k;
+            }
+
+        } elseif ($this->format === 'csv') {    // csv
+            $keyType = 'index';
+            $data = $this->getData();
+            if ($data) {
+                $rec0 = reset($data);
+                $key0 = 0;
+            }
+
+        } else {
+            die("Error in deriveStructureFromData(): file format '$this->format' unknown");
+        }
+
+        if (!$rec0) {
+            $data = $this->getData();
+            $rec0 = reset( $data );
+        }
+        foreach (array_keys($rec0) as $elemKey) {
+            $structure['elemKeys'][] = $elemKey;
+            $structure['elements'][$elemKey]['type'] = 'string';
+            $structure['elements'][$elemKey]['name'] = translateToIdentifier($elemKey, false, true, false);
+            $structure['elements'][$elemKey]['formLabel'] = $elemKey;
         }
 
         if (!$structure['key']) {
-            if (preg_match('/^ \d{2,4} - \d\d - \d\d/x', $key0)) {
+            if (preg_match('/^[A-Z][A-Z0-9]{4,20}/', $key0)) {
+                $structure['key'] = 'hash';
+            } elseif (preg_match('/^ \d{2,4} - \d\d - \d\d/x', $key0)) {
                 $structure['key'] = 'date';
+            } elseif (preg_match('/^ \d{2,4} - \d\d - \d\d \d\d : \d\d (: \d\d)? /x', $key0)) {
+                $structure['key'] = 'datetime';
             } elseif (preg_match('/\D/', $key0)) {
-                $structure['key'] = 'string';
+                $structure['key'] = $keyType? $keyType: 'string';
+            } elseif (intval($key0) > 946681200) { // 2000-01-01
+                $structure['key'] = 'unixtime';
             } else {
                 $structure['key'] = 'numeric';
             }
         }
 
-        $rec0 = reset($data);
-        $l = is_array($rec0) ? sizeof($rec0) : 0;
-        if (!$structure['labels']) {
-            $structure['labels'] = is_array($rec0) ? array_keys($rec0) : [];
-        }
-        $structure['types'] = array_fill(0, $l, 'string');
-        // types only makes sense if supplied in '_structure' record within data.
-        $this->structure = $structure;
         return $structure;
-    } // analyseStructure
+    } // deriveStructureFromData
 
 
 
-    //--------------------------------------------------------------
+
     private function convertYaml($str)
     {
         $data = null;
@@ -1762,8 +2121,6 @@ EOT;
 
 
 
-
-    //--------------------------------------------------------------
     private function parseCsv($str, $delim = false, $enclos = false) {
 
         if (!$delim) {
@@ -1867,6 +2224,27 @@ EOT;
         }
         return $rawData;
     } // loadFile
+
+
+
+
+    private function completeData($data)
+    {
+        if (!$data) {
+            return [];
+        }
+        $data1 = [];
+        foreach ($data as $recKey => $elem) {
+            foreach ($this->structure['elemKeys'] as $elemKey) {
+                if (isset($data[$recKey][$elemKey])) {
+                    $data1[$recKey][$elemKey] = $data[$recKey][$elemKey];
+                } else {
+                    $data1[$recKey][$elemKey] = '';
+                }
+            }
+        }
+        return $data1;
+    } // completeData
 
 } // DataStorage
 

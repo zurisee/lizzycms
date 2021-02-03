@@ -195,7 +195,7 @@ class ImageResizer
         }
         $dstPath = dirname($dst);
         if (!file_exists($dstPath)) {
-            mkdir($dstPath, MKDIR_MASK2, true);
+            mkdir($dstPath, MKDIR_MASK, true);
         }
         if ($type === 'jpeg') { $type = 'jpg'; }
         switch($type){

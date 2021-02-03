@@ -20,7 +20,7 @@ $str =  <<<EOT
 			});
 
 EOT;
-$page->addJQ($str);
+$page->addJq($str);
 
 $page->addCssFiles('~sys/css/post-it.css');
 $page->addJqFiles(['PANZOOM']);

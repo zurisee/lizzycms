@@ -14,7 +14,8 @@ define('DEV_MODE_CONFIG_FILE',  CONFIG_PATH.'dev-mode-config.yaml');
 
 define('PAGES_PATH',            'pages/');
 define('DATA_PATH',            'data/');
-define('CACHE_PATH',            '.#cache/');
+define('CACHE_PATH',            '.cache/');
+define('MODULES_CACHE_PATH',    '.cache/files/');
 define('PAGE_CACHE_PATH',       CACHE_PATH.'pages/');
 define('LOGS_PATH',             '.#logs/');
 define('MACROS_PATH',           SYSTEM_PATH.'macros/');
@@ -49,9 +50,12 @@ define('ONETIME_PASSCODE_FILE', CACHE_PATH.'_onetime-passcodes.yaml');
 define('HACKING_THRESHOLD',     10);
 define('HOUSEKEEPING_FILE',     CACHE_PATH.'_housekeeping.txt');
 define('MIN_SITEMAP_INDENTATION', 4);
+define('REC_KEY_ID', 	        '_key');
+define('TIMESTAMP_KEY_ID', 	    '_timestamp');
+define('PASSWORD_PLACEHOLDER', 	'●●●●');
 
-define('MKDIR_MASK',            0700); // remember to modify _lizzy/_install/install.sh as well
-define('MKDIR_MASK2',           0700); // ??? test whether higher priv is necessary
+define('MKDIR_MASK',            0700); // permissions for file access by Lizzy
+define('MKDIR_MASK_WEBACCESS',  0755); // permissions for files cache
 
 $files = ['config/user_variables.yaml', '_lizzy/config/*', '_lizzy/macros/transvars/*'];
 
@@ -99,7 +103,6 @@ class Lizzy
     public function __construct()
     {
         session_start();
-//writeLogStr("__construct [" . var_r($_SESSION, '$_SESSION', true). ']', LOGIN_LOG_FILENAME);
         $user = @$_SESSION['lizzy']['user']? $_SESSION['lizzy']['user']: 'anon';
         $this->debugLogBuffer = "REQUEST_URI: {$_SERVER["REQUEST_URI"]}  FROM: [$user]\n";
         if ($_REQUEST) {
@@ -146,7 +149,6 @@ private function loadRequired()
 {
     require_once SYSTEM_PATH.'vendor/autoload.php';
     require_once SYSTEM_PATH.'page.class.php';
-    require_once SYSTEM_PATH.'popup.class.php';
     require_once SYSTEM_PATH.'transvar.class.php';
     require_once SYSTEM_PATH.'lizzy-markdown.class.php';
     require_once SYSTEM_PATH.'scss.class.php';
@@ -222,9 +224,6 @@ private function loadRequired()
 
         $this->scss = new SCssCompiler($this);
 
-        // Future: optionally enable Auto-Attribute mechanism
-        //        $this->loadAutoAttrDefinition();
-
         // check for url args that require caching to be turned off:
         if (isset($_GET)) {
             $urlArgs = ['config', 'list', 'help', 'admin', 'reset', 'login', 'unused', 'reset-unused', 'remove-unused', 'log', 'info', 'touch'];
@@ -299,9 +298,6 @@ private function loadRequired()
         $this->appendLoginForm($accessGranted);   // sleeping code for popup population
         $this->handleAdminRequests2();
         $this->handleUrlArgs2();
-
-        // Future: optionally enable Auto-Attribute mechanism
-        //        $html = $this->executeAutoAttr($html);
 
         $this->handleConfigFeatures();
 
@@ -463,35 +459,35 @@ private function loadRequired()
             fatalError("Error setting up error handling... (no kidding)", 'File: '.__FILE__.' Line: '.__LINE__);
         }
 
-        if ($this->config->debug_errorLogging && !file_exists(ERROR_LOG_ARCHIVE)) {
-            $errorLogPath = dirname(ERROR_LOG_ARCHIVE).'/';
-            $errorLogFile = ERROR_LOG_ARCHIVE;
-
-            // make error log folder:
-            preparePath($errorLogPath);
-            if (!is_writable($errorLogPath)) {
-                die("Error: no write permission to create error log folder '$errorLogPath'");
-            }
-
-            // make error archtive file and check
-            touch($errorLogFile);
-            if (!file_exists($errorLogFile) || !is_writable($errorLogPath)) {
-                die("Error: unable to create error log file '$errorLogPath' - probably access rights are not ");
-            }
-
-            // make error log file, check and delete immediately
-            touch(ERROR_LOG);
-            if (!file_exists(ERROR_LOG) || !is_writable(ERROR_LOG)) {
-                die("Error: unable to create error log file '".ERROR_LOG."' - probably access rights are not ");
-            }
-            unlink(ERROR_LOG);
-
-            ini_set("log_errors", 1);
-            ini_set("error_log", $errorLogFile);
-            //error_log( "Error-logging started" );
-
-            $globalParams['errorLogFile'] = ERROR_LOG;
-        }
+    //        if ($this->config->debug_errorLogging && !file_exists(ERROR_LOG_ARCHIVE)) {
+    //            $errorLogPath = dirname(ERROR_LOG_ARCHIVE).'/';
+    //            $errorLogFile = ERROR_LOG_ARCHIVE;
+    //
+    //            // make error log folder:
+    //            preparePath($errorLogPath);
+    //            if (!is_writable($errorLogPath)) {
+    //                die("Error: no write permission to create error log folder '$errorLogPath'");
+    //            }
+    //
+    //            // make error archtive file and check
+    //            touch($errorLogFile);
+    //            if (!file_exists($errorLogFile) || !is_writable($errorLogPath)) {
+    //                die("Error: unable to create error log file '$errorLogPath' - probably access rights are not ");
+    //            }
+    //
+    //            // make error log file, check and delete immediately
+    //            touch(ERROR_LOG);
+    //            if (!file_exists(ERROR_LOG) || !is_writable(ERROR_LOG)) {
+    //                die("Error: unable to create error log file '".ERROR_LOG."' - probably access rights are not ");
+    //            }
+    //            unlink(ERROR_LOG);
+    //
+    //            ini_set("log_errors", 1);
+    //            ini_set("error_log", $errorLogFile);
+    //            //error_log( "Error-logging started" );
+    //
+    //            $globalParams['errorLogFile'] = ERROR_LOG;
+    //        }
     } // setupErrorHandling
 
 
@@ -509,7 +505,7 @@ private function loadRequired()
                 $ok = $this->auth->checkGroupMembership( $reqGroups );
             }
             if (!$ok) {
-                $this->renderLoginForm();
+                $this->renderLoginForm( false );
                 return false;
             }
             setStaticVariable('isRestrictedPage', $this->auth->getLoggedInUser());
@@ -530,18 +526,7 @@ private function loadRequired()
         }
 
         if (($user = getUrlArg('login', true)) !== null) {
-            $this->page->addPopup(['contentFrom' => '#lzy-login-form', 'triggerSource' => '.lzy-login-link', 'autoOpen' => true]);
-            $this->renderLoginForm();
-            if ($user) {    // preset username if known
-                $jq = "$('.lzy-login-username').val('$user');\nsetTimeout(function() { $('.lzy-login-email').val('$user').focus(); },500);";
-                $this->page->addJq($jq, 'append');
-            }
-            $jq = "initLzyPanel('.lzy-panels-widget', 1);";
-            $this->page->addJq( $jq );
-
-        } elseif ($this->config->feature_preloadLoginForm) {    // preload login form if configured
-            $this->page->addPopup(['contentFrom' => '#lzy-login-form', 'triggerSource' => '.lzy-login-link']);
-            $this->renderLoginForm();
+            $this->renderLoginForm( true, $user );
 
         } elseif (!$accessGranted) {
             $loginForm = $this->renderLoginForm( false );
@@ -556,24 +541,6 @@ private function loadRequired()
             return;
         }
     } // appendLoginForm
-
-
-
-
-    private function loadAutoAttrDefinition($file = false)
-    {
-        if (!$file) {
-            if (!file_exists($this->config->feature_autoAttrFile)) {
-                return;
-            }
-            $file = $this->config->feature_autoAttrFile;
-        }
-        $autoAttrDef = getYamlFile($file);
-        if ($autoAttrDef) {
-            $this->autoAttrDef = array_merge($this->autoAttrDef, $autoAttrDef);
-        }
-        return;
-    } // loadAutoAttrDefinition
 
 
 
@@ -664,7 +631,7 @@ EOT;
 
         // set global variables:
         $globalParams['host'] = $docRootUrl;
-        $globalParams['requestedUrl'] = $requestUri; //???
+        $globalParams['requestedUrl'] = $requestUri;
         $globalParams['pageFolder'] = null;
         $globalParams['pagePath'] = null;
         $globalParams['pathToPage'] = null; // needs to be set after determining actually requested page
@@ -702,7 +669,7 @@ EOT;
 
         // set properties:
         $this->pagePath = $pagePath;     // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
-        $this->reqPagePath = $pagePath; //???ok
+        $this->reqPagePath = $pagePath;
         $this->pageUrl = $pageUrl;
         $this->pathToRoot = $urlToAppRoot;
 
@@ -894,7 +861,7 @@ EOT;
                 $rec = $this->auth->getLoggedInUser(true);
                 $login = $userAcc->renderLoginLink($rec);
                 $loginMenu = $userAcc->renderLoginMenu($rec);
-                $userName = @$rec['username'];
+                $userName = @$rec['username']? $rec['username'] : '{{ lzy-anon }}';
                 $groups = @$rec['groups'];
             } else {
 	            // login icon when not logged in:
@@ -1023,7 +990,7 @@ EOT;
 
         $rec = [
             'uploadPath' => PAGES_PATH.$filePath,
-            'pagePath' => $GLOBALS['globalParams']['pageFolder'], //??? correct?
+            'pagePath' => $GLOBALS['globalParams']['pageFolder'],
             'pathToPage' => $GLOBALS['globalParams']['pathToPage'],
             'appRootUrl' => $GLOBALS['globalParams']['absAppRootUrl'],
             'user'      => $_SESSION["lizzy"]["user"],
@@ -1976,21 +1943,49 @@ EOT;
 
 
 
-    private function renderLoginForm($asPopup = true)
+    private function renderLoginForm($asPopup = true, $presetUser = false)
     {
         $accForm = new UserAccountForm($this);
         $html = $accForm->renderLoginForm($this->auth->message, false, true);
-        $html = <<<EOT
+        $jq = '';
+        $this->page->addModules('EVENT_UE,PANELS');
+        if ($presetUser) {    // preset username if known
+            $jq .= "$('.lzy-login-username').val('$presetUser');\nsetTimeout(function() { $('.lzy-login-email').val('$presetUser').focus(); },500);";
+        }
+        $jq .= "initLzyPanel('.lzy-panels-widget', 1);";
+        $this->page->addJq( $jq );
+
+        if ($asPopup) {
+            $this->page->addModules('POPUPS');
+            $this->page->addJq("lzyPopup({ 
+                contentRef: '#lzy-login-form',
+                closeOnBgClick: false, 
+                closeButton: true, 
+                wrapperClass: 'lzy-login',
+                draggable: true,
+                header: '{{ lzy-login-header }}',
+            });");
+
+            $html = <<<EOT
+
+    <div id='lzy-login-form' style="display: none;">
+        <div class='lzy-login-form-wrapper'>
+$html
+        </div><!-- /.lzy-login-form -->
+    </div><!-- /#lzy-login-form -->
+
+EOT;
+            $this->page->addBodyEndInjections( $html );
+            return '';
+
+        } else {
+            $html = <<<EOT
     <div class='lzy-required-login-wrapper'>
+        <h2>{{ lzy-login-with-choice }}</h2>
 $html
     </div>
 EOT;
 
-        $this->page->addModules('PANELS');
-        if ($asPopup) {
-            $this->page->addBodyEndInjections("\t<div class='lzy-invisible'>\n\t  <div id='lzy-login-form'>\n$html\n\t  </div><!-- /#lzy-login-form -->\n\t</div><!-- /login form wrapper -->\n");
-            return '';
-        } else {
             return $html;
         }
     } // renderLoginForm
