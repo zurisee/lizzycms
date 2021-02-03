@@ -7,7 +7,7 @@ var popupInstance = [];
 
 function LzyPopup( options, index ) {
     this.inx = (typeof index !== 'undefined')? index : popupInx++;
-    this.lzyPopupContent = [];
+    this.lzyPopupContent = null;
     this.triggerInitialized = false;
     var parent = this;
 
@@ -30,6 +30,7 @@ function LzyPopup( options, index ) {
             options = null;
             options = { text: str };
         }
+        this.options = options;
         this.text  = (typeof options.text !== 'undefined')? options.text : ''; // text synonym for content
         this.content  = (typeof options.content !== 'undefined')? options.content : this.text;
 
@@ -43,7 +44,6 @@ function LzyPopup( options, index ) {
             this.header = '&nbsp;';
         }
         this.draggable  = (typeof options.draggable !== 'undefined')? options.draggable : (this.header !== false);
-        // this.draggable  = (typeof options.draggable !== 'undefined')? options.draggable : false;
         if (this.draggable && (this.header === false)) {
             this.header = '&nbsp;';
         }
@@ -54,7 +54,7 @@ function LzyPopup( options, index ) {
             this.header = 'Options for popup()';
         }
 
-        this.trigger = (typeof options.trigger !== 'undefined') ? options.trigger : true;
+        this.trigger = (typeof options.trigger !== 'undefined') ? options.trigger : true; // default=autoopen
         this.trigger = (typeof options.triggerSource !== 'undefined') ? options.triggerSource : this.trigger;
         this.triggerEvent = (typeof options.triggerEvent !== 'undefined') ? options.triggerEvent : 'click';
         this.anker = (typeof options.anker !== 'undefined') ? options.anker : 'body';
@@ -85,9 +85,23 @@ function LzyPopup( options, index ) {
 
 
     this.prepareButtons = function () {
-        this.buttonHtml = '';
         var k, i, id, bCl, button, callback;
         var buttonHtml = '';
+        if (this.closeButton) {
+            this.closeButton = '<button class="lzy-popup-close-button">&#x0D7;</button>';
+        } else {
+            this.closeButton = '';
+        }
+
+        if (typeof options.onConfirm !== 'undefined') {
+            buttonHtml = '<button class="lzy-button lzy-popup-btn-cancel" onclick="lzyPopupClose();">{{ lzy-cancel }}</button> ';
+            buttonHtml += '<button class="lzy-button lzy-popup-btn-confirm">{{ lzy-confirm }}</button> ';
+            this.buttonHtml = '<div class="lzy-popup-buttons">' + buttonHtml + '</div>';
+            return;
+        }
+
+
+        this.buttonHtml = '';
         if (typeof this.buttons === 'undefined') {
             return;
         }
@@ -109,24 +123,18 @@ function LzyPopup( options, index ) {
             this.buttonHtml = '<div class="lzy-popup-buttons">' + buttonHtml + '</div>';
         }
 
-        if (this.closeButton) {
-            this.closeButton = '<button class="lzy-popup-close-button">&#x0D7;</button>';
-        } else {
-            this.closeButton = '';
-        }
     }; // prepareButtons
 
 
 
     this.prepareContent = function () {
         var $cFrom = null;
-        var lzyPopupFromStr = '';
         var contentFrom = this.contentFrom;
         var $popupElem = null;
         var data = ' data-popup-inx="' + this.inx + '"';
         var id = '';
         var cls = '';
-
+//???
         if ($('.lzy-popup-' + this.inx).length) {
             return ;
         }
@@ -138,8 +146,9 @@ function LzyPopup( options, index ) {
 
         var header = '';
         if (this.header !== false) {
+            header = (this.header === true) ? ' ': this.header;
             cls = this.draggable? ' lzy-draggable': '';
-            header = '\t\t<div class="lzy-popup-header' + cls + '"><div>' + this.header + '</div>'+ this.closeButton + '</div>\n';
+            header = '\t\t<div class="lzy-popup-header' + cls + '"><div>' + header + '</div>'+ this.closeButton + '</div>\n';
             this.popupClass += ' lzy-popup-with-header';
         } else {
             header = this.closeButton;
@@ -152,28 +161,28 @@ function LzyPopup( options, index ) {
                 }
                 $cFrom = $( contentFrom );
 
-            } else if ( contentFrom[0].length ) { // case JQ-object
-                lzyPopupFromStr = contentFrom.attr('id');
+            } else if ( (typeof contentFrom[0] !== false)  && contentFrom.length) { // case jQ-object
                 $cFrom = contentFrom;
             } else {
+                alert('Error in popup.js:prepareContent() -> unable to handle contentFrom');
                 return; // error
             }
 
             // get content and cache in a variable:
-            if (typeof this.lzyPopupContent[ this.inx ] === 'undefined') { // not yet cached
+            if (!this.lzyPopupContent) { // not yet cached
                 var tmp = '';
                 tmp = $cFrom.html();
-                this.lzyPopupContent[ this.inx ] = tmp; // save original HTML
+                this.lzyPopupContent = tmp; // save original HTML
 
                 // shield IDs in original:
                 tmp = tmp.replace(/id=(['"])/g, 'id=$1lzyPopupInitialized-');
                 $cFrom.html( tmp );
             }
-            this.content = this.content + this.lzyPopupContent[ this.inx ];
+            this.content = this.content + this.lzyPopupContent;
         } // contentFrom
 
-        var cls = 'lzy-popup-wrapper';
         // content supplied as literal or by contentFrom:
+        var cls = 'lzy-popup-wrapper';
         if (this.content) {
             // add popup HTML to DOM (at end of body element):
             var style = '';
@@ -183,9 +192,7 @@ function LzyPopup( options, index ) {
                 style += 'position: absolute;';
             }
 
-            if (!this.trigger) {
-                this.popupClass += ' lzy-popup-transient';
-            }
+            this.popupClass += ' lzy-popup-transient';
             if (this.trigger !== true) {
                 style += 'display: none;';
             }
@@ -203,6 +210,8 @@ function LzyPopup( options, index ) {
                 '    </div></div>\n      </div>\n' +
                 '</div>\n';
             $(this.anker).append( html );
+            this.$pop = $( '#' + parent.id);
+
 
         } else if (this.contentRef) {       // content as reference to DOM element:
             if (typeof this.contentRef === 'object') {
@@ -243,6 +252,7 @@ function LzyPopup( options, index ) {
                 $popupContent.wrap('<div class="lzy-popup-container">');
                 $popupContent.append(this.buttonHtml);
             }
+            this.$pop = $('.lzy-popup-wrapper', $popupElem);
 
         } else {    // if no content specified
             console.log('Error in lzyPopup: argument "text" or "contentFrom" required.');
@@ -298,25 +308,12 @@ function LzyPopup( options, index ) {
 
 
 
-    this.open = function () {
-        if (typeof that === 'undefined') {
-            $('.lzy-popup-' + this.inx).show();
-        } else {
-            var $popElem = $(that).closest('.lzy-popup-bg');
-            $popElem.show();
-        }
-        $('body').addClass('lzy-no-scroll');
-    };
-
-
-
     this.initDraggable = function () {
         if (typeof $.ueSetGlobalCb === 'undefined') {
             alert('Error: popup option "draggable" initiated, but module EVENT_UE not loaded');
         }
         this.lastX = 0;
         this.lastY = 0;
-        this.$pop = $( '#' + parent.id + ' > div' );
         $( '.lzy-popup-header > div', parent.$pop )
             .bind( 'udragstart', function(e) {
                 e.stopPropagation();
@@ -374,15 +371,56 @@ function LzyPopup( options, index ) {
 
 
 
+    this.open = function () {
+        const $popBg = this.$pop.parent();
+        if (this.header) {
+            $('.lzy-popup-header > div', $popBg).text(this.header);
+        }
+        this.$pop.parent().show();
+        $('body').addClass('lzy-no-scroll');
+    }; // open
+
+
+
     this.init( options );
 } // LzyPopup
 
 
 
 
-function lzyPopup( options ) {
-    popupInstance[popupInx] = new LzyPopup( options, popupInx );
-    popupInx++;
+function lzyPopup( options, popupHash ) {
+    const hash = md5( JSON.stringify( options ) );
+    popupHash = (typeof popupHash !== 'undefined')? popupHash: hash;
+    if (typeof popupInstance[hash] === 'undefined') {
+        popupInstance[hash] = new LzyPopup( options, popupHash );
+        popupInstance[popupInx] = popupInstance[hash];
+        popupInx++;
+    } else {
+        popupInstance[hash].init( options );
+    }
+} // lzyPopup
+
+
+
+
+function lzyConfirm( prompt ) {
+    var options = {};
+    return new Promise(function(resolve, reject) {
+        options.text = prompt;
+        options.onConfirm = true;
+        options.onCancel = true;
+        $('body').on('click','.lzy-popup-btn-confirm', function () {
+            lzyPopupClose();
+            $('body').off('click','.lzy-popup-btn-confirm').off('click','.lzy-popup-btn-cancel');
+            resolve( true );
+        });
+        $('body').on('click','.lzy-popup-btn-cancel', function () {
+            lzyPopupClose();
+            $('body').off('click','.lzy-popup-btn-confirm').off('click','.lzy-popup-btn-cancel');
+            reject( '' );
+        });
+        lzyPopup( options );
+    });
 } // lzyPopup
 
 
@@ -403,11 +441,13 @@ function lzyPopupClose( that ) {
             $popup = $('.lzy-popup-bg');
         }
     }
-    if ($popup.hasClass('lzy-popup-transient')) {
-        $popup.remove();
-    } else {
-        $popup.hide();
-    }
+    $popup.each(function () {
+        if ($(this).hasClass('lzy-popup-transient')) {
+            $(this).remove();
+        } else {
+            $(this).hide();
+        }
+    });
 } // lzyPopupClose
 
 
@@ -419,7 +459,9 @@ $('body')
     })
     .on('click', '.lzy-popup-bg.lzy-close-on-bg-click', function (e) {
         const $el = $(e.target);
-        if ( $el.hasClass('lzy-popup-container') || $el.closest('.lzy-popup-wrapper').length ) {
+        if ( $el.hasClass('lzy-popup-container') ||
+            $el.closest('.lzy-popup-container').length ||
+            $el.closest('.lzy-popup-wrapper').length ) {
             return;
         }
         lzyPopupClose();
@@ -492,3 +534,4 @@ $('body')
     }; // $.fn.lzyPopupTrigger
 
 })( jQuery );
+
