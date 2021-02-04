@@ -336,12 +336,6 @@ class DataStorage2
         }
         $data = $this->getData(true);
         if ($recId !== false) {
-//???
-//            if (@$this->structure['indexes'][0] === 0) { // maintain original data format
-//                $data[$recId] = array_values( $recData );
-//            } else {
-//                $data[$recId] = $recData;
-//            }
             $data[$recId] = $recData;
         } else {
             $data[] = $recData;
@@ -1729,7 +1723,7 @@ EOT;
                 $this->getData();
             }
         }
-        if (!$rawData['structure'] || $this->structureDef) {
+        if (!$rawData['structure'] || @$this->structureDef) {
             $this->determineStructure();
             $this->lowLevelWriteStructure();
         } else {
