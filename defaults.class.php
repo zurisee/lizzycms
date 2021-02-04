@@ -163,6 +163,7 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->loadModules['QUICKVIEW']     	    = array('module' => 'js/quickview.js, css/quickview.css', 'weight' => 92);
 
         $this->loadModules['POPUPS']                = array('module' => 'third-party/jquery.event.ue/jquery.event.ue.min.js,' .
+                                                            'third-party/javascript-md5/md5.min.js, '.
                                                             'js/popup.js, css/popup.css', 'weight' => 86);
 
         $this->loadModules['TOOLTIPS']              = array('module' => 'third-party/jquery-popupoverlay/jquery.popupoverlay.js,'.
