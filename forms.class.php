@@ -1089,7 +1089,7 @@ EOT;
 
 
 
-    //-------------------------------------------------------------
+
     private function renderRange()
     {
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
@@ -1468,7 +1468,6 @@ EOT;
 
 
 
-
     private function getLabel($id = false, $wrapOutput = true)
     {
 		$id = ($id) ? $id : "{$this->currRec->fldPrefix}{$this->currRec->elemId}";
@@ -1585,7 +1584,7 @@ EOT;
 
 
 
-    public function restoreFormDescr($formHash = false)
+    public function restoreFormDescr($formHash = false, $formInx = false)
 	{
 	    if (!$formHash) {
 	        if (!$this->formHash) {
@@ -1594,7 +1593,8 @@ EOT;
 	        $formHash = $this->formHash;
         }
         $rec = $this->tck->consumeTicket($formHash);
-	    $fInx = "form$this->formInx";
+        $formInx = $formInx? $formInx : $this->formInx;
+	    $fInx = "form$formInx";
         if (isset($rec[$fInx])) {
             return unserialize(base64_decode($rec[$fInx]['form']));
         } else {
@@ -1637,17 +1637,15 @@ EOT;
 			$this->clearCache();
 			return false;
 		}
-		$formId = $userSuppliedData['_lizzy-form-id'];
-		if (intval($formId) !== $this->formInx) {
-		    return false;
-        }
-		$this->formId = $formId;
+        $this->formId = $formId = $userSuppliedData['_lizzy-form-id'];
 
         $formHash = $this->formHash = $userSuppliedData['_lizzy-form'];
         $formHash = preg_replace('/:.*/', '', $formHash);
-        $this->currForm = $this->restoreFormDescr( $formHash );
+        $this->currForm = $this->restoreFormDescr( $formHash, $formId );
         $currForm = $this->currForm;
-        if ($currForm === null) {   // ticket timed out:
+
+        // ticket timed out or formId not matching:
+        if (($currForm === null) || ($formId !== $this->formId)) {
             $this->clearCache();
             return false;
         }
@@ -1657,8 +1655,6 @@ EOT;
             $this->clearCache();
             return false;
         }
-
-        $this->formId = $formId = $currForm->formId;
 
         $cmd = @$userSuppliedData['_lizzy-form-cmd'];
         if ($cmd === '_ignore_') {     // _ignore_
@@ -1772,9 +1768,6 @@ EOT;
             return false;
         }
 
-        if ($this->currForm->export) {
-            $this->export();
-        }
         $this->clearCache();
 
         if ($msgToOwner && $this->currForm->mailTo) {
@@ -1877,7 +1870,7 @@ EOT;
             }
             if ($recKey !== $origKey) {
                 $oldRec = $ds->readRecord($origKey);
-                $res = $ds->deleteRecord( $origKey );
+                $ds->deleteRecord( $origKey );
                 $isNewRec = true;
             }
         } else {
@@ -2082,16 +2075,13 @@ EOT;
             return;
         }
         $currForm = $this->currForm;
-
-        // check whether export is required:
-        $tInt = @filemtime($currForm->file);
-        $tExt = @filemtime($outFile = $currForm->export);
-        if (file_exists($currForm->export) && ($tInt !== false) && ($tInt < ($tExt + 1))) {
-            return;
-        }
+        $outFile = $currForm->export;
 
         $ds = $this->openDB();
         $srcData = $ds->read( true );
+        if (!$srcData) {
+            return;
+        }
 
         $dsExport = $this->openExportDB();
 
@@ -2106,17 +2096,21 @@ EOT;
             }
         }
 
-        $e = new FormElement();
-        $e->type = 'text';
-        $e->labelInOutput = TIMESTAMP_KEY_ID;
-        $e->name = TIMESTAMP_KEY_ID;
-        $formElements[] = $e;
+        if ($currForm->exportMetaElements) {
+            $e = new FormElement();
+            $e->type = 'text';
+            $e->labelInOutput = TIMESTAMP_KEY_ID;
+            $e->name = TIMESTAMP_KEY_ID;
+            $e->dataKey = TIMESTAMP_KEY_ID;
+            $formElements[] = $e;
 
-        $e = new FormElement();
-        $e->type = 'text';
-        $e->labelInOutput = REC_KEY_ID;
-        $e->name = REC_KEY_ID;
-        $formElements[] = $e;
+            $e = new FormElement();
+            $e->type = 'text';
+            $e->labelInOutput = REC_KEY_ID;
+            $e->name = REC_KEY_ID;
+            $e->dataKey = REC_KEY_ID;
+            $formElements[] = $e;
+        }
 
         if (fileExt($outFile) !== 'csv') {
             foreach ($srcData as $recKey => $rec) {
@@ -2131,7 +2125,7 @@ EOT;
 
         } else {
             $r = 1;
-            foreach ($srcData as $dataKey => $row) {
+            foreach ($srcData as $recKey => $row) {
                 $c = 0;
                 foreach ($formElements as $fldI => $fldDescr) {
                     if (!$fldDescr) {
@@ -2174,7 +2168,7 @@ EOT;
                     } elseif ($fldType === 'password') {
                         $value = PASSWORD_PLACEHOLDER;
                     } elseif ($fldName === REC_KEY_ID) {
-                        $value = $dataKey;
+                        $value = $recKey;
                     } else {
                         $value = @$row[$dataKey];
                     }
@@ -2927,12 +2921,41 @@ EOT;
             return null;
         }
         $currForm = $this->currForm;
+        $structure['key'] = 'index';
+        $structure['elements'] = [];
+        $elemKeys = [];
+        foreach ($currForm->formElements as $fldI => $fldDescr) {
+            if ($fldDescr->name[0] === '_') {
+                continue;
+            }
+            if ($fldDescr->splitOutput) {
+                foreach ($fldDescr->optionLabels as $k => $v) {
+                    if ($k === 0) {
+                        continue;
+                    }
+                    $elemKeys[] = $v;
+                }
+            } else {
+                $elemKeys[] = $fldDescr->label;
+            }
+        }
+        $elemKeys[] = TIMESTAMP_KEY_ID;
+        $elemKeys[] = REC_KEY_ID;
+
+        foreach ($elemKeys as $label) {
+            $structure['elements'][$label] = [
+                'type' => 'string',
+            ];
+        }
+        $structure['elemKeys'] = $elemKeys;
+
         $fileName = @$currForm->export;
         if (!$fileName) {
             $fileName = resolvePath( DEFAULT_EXPORT_FILE );
         }
         $this->dbExport = new DataStorage2([
             'dataSource' => $fileName,
+            'structureDef' => $structure,
             'includeKeys' => $currForm->exportMetaElements,
             'includeTimestamp' => $currForm->exportMetaElements,
         ]);
@@ -3009,6 +3032,9 @@ EOT;
 } // Forms
 
 
+
+
+
 class FormDescriptor
 {
     public $formId = '';
@@ -3036,6 +3062,8 @@ class FormDescriptor
 }
 
 
+
+
 class FormElement
 {
     public $type = '';        // init, radio, checkbox, date, month, number, range, text, email, password, textarea, button
@@ -3053,11 +3081,3 @@ class FormElement
     public $inpAttr = '';
     public $timestamp = '';
 } // class FormElement
-
-/*
-
-    name        name
-    label       formLabel
-    dataKey     elemKey
-
- */
