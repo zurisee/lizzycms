@@ -79,7 +79,7 @@ function LzyPopup( options, index ) {
         }
         this.buttonClass = (typeof options.buttonClass !== 'undefined') ? options.buttonClass : 'lzy-button';
         this.buttonClasses =  this.buttonClass.split(',');
-        this.wrapperClass  = (typeof options.wrapperClass !== 'undefined')? options.wrapperClass : ''; // text synonym for content
+        this.wrapperClass  = (typeof options.wrapperClass !== 'undefined')? options.wrapperClass : '';
     }; // parseArgs
 
 
@@ -94,7 +94,7 @@ function LzyPopup( options, index ) {
         }
 
         if (typeof options.onConfirm !== 'undefined') {
-            buttonHtml = '<button class="lzy-button lzy-popup-btn-cancel" onclick="lzyPopupClose();">{{ lzy-cancel }}</button> ';
+            buttonHtml = '<button class="lzy-button lzy-popup-btn-cancel">{{ lzy-cancel }}</button> ';
             buttonHtml += '<button class="lzy-button lzy-popup-btn-confirm">{{ lzy-confirm }}</button> ';
             this.buttonHtml = '<div class="lzy-popup-buttons">' + buttonHtml + '</div>';
             return;
@@ -134,7 +134,7 @@ function LzyPopup( options, index ) {
         var data = ' data-popup-inx="' + this.inx + '"';
         var id = '';
         var cls = '';
-//???
+
         if ($('.lzy-popup-' + this.inx).length) {
             return ;
         }
@@ -409,6 +409,7 @@ function lzyConfirm( prompt ) {
         options.text = prompt;
         options.onConfirm = true;
         options.onCancel = true;
+        options.closeOnBgClick = false;
         $('body').on('click','.lzy-popup-btn-confirm', function () {
             lzyPopupClose();
             $('body').off('click','.lzy-popup-btn-confirm').off('click','.lzy-popup-btn-cancel');
