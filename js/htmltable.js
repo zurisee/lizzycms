@@ -130,7 +130,6 @@ function HTMLtable( tableObj ) {
 
 		// modify all IDs to avoid id-clashes:
 		var formHtml = this.formHtml;
-		// formHtml = this.fixIds( formHtml );
 		const cls = 'lzy-popup-bg lzy-popup-' + this.formInx + ' lzy-close-on-bg-click lzy-popup-with-header lzy-recview-popup';
 
 		// inject popup code at end of body:
@@ -180,7 +179,6 @@ function HTMLtable( tableObj ) {
 		if (typeof $triggerSrc[0] === 'undefined') {
 			$triggerSrc = $( $triggerSrc );
 		}
-		// const hash = md5( JSON.stringify( Math.random() ));
 		lzyPopup({
 			id: 'lzy-recview-popup-' + this.formInx,
 			contentRef: this.$recviewPopup,
@@ -301,7 +299,7 @@ function HTMLtable( tableObj ) {
 
 	this.setupEventHandlers = function () {
 		const parent = this;
-		$('.lzy-table-editable')
+		$('body')
 			// cancel button in form:
 			.on('click', '.lzy-edit-data-form input[type=reset]', function(e) {
 				e.preventDefault();
@@ -318,7 +316,7 @@ function HTMLtable( tableObj ) {
 			})
 
 			// delete checkbox in form:
-			.on('change', '.lzy-edit-rec-delete-checkbox', function(e) {
+			.on('change', 'input.lzy-edit-rec-delete-checkbox', function(e) {
 				e.preventDefault();
 				e.stopPropagation();
 				const $form = $(this).closest('.lzy-edit-data-form');

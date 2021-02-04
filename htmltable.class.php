@@ -1062,7 +1062,7 @@ EOT;
 
     private function activateEditingForm()
     {
-        $this->wrapperClass .= ' lzy-table-editable';
+        $this->tableClass .= ' lzy-table-editable';
 
         if ($this->inMemoryData) {
             die("Error: table->editableBy not possible when data supplied in-memory. Please use argument 'dataSource'.");
@@ -1153,7 +1153,6 @@ EOT;
         // Form Tail:
         $out .= $form->render( ['type' => 'form-tail'] );
         $out = rtrim($out);
-//???
         $out = <<<EOT
 
   <div id='lzy-edit-rec-form-{$this->tableCounter}' class='lzy-edit-rec-form lzy-edit-rec-form-{$this->tableCounter}' style='display:none'>
@@ -1764,7 +1763,8 @@ $('#{$this->id}-add-rec').click(function() {
     mylog('add rec');
     const \$btnWrapper = $(this).closest('.lzy-table-action-btns');
     const \$table = \$btnWrapper.next('.lzy-table');
-    htmlTable.openFormPopup( \$table );
+    const tableInx = \$table.data('inx');
+    lzyActiveTables[tableInx].openFormPopup( \$table );
     return;
 });
 EOT;
