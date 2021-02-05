@@ -141,7 +141,7 @@ function LzyPopup( options, index ) {
 
         // activate closeOnBgClick if requested:
         if (this.closeOnBgClick) {
-            this.popupClass = this.popupClass + ' lzy-close-on-bg-click';
+            this.popupClass += ' lzy-close-on-bg-click';
         }
 
         var header = '';
