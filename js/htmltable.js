@@ -130,6 +130,9 @@ function HTMLtable( tableObj ) {
 
 		// modify all IDs to avoid id-clashes:
 		var formHtml = this.formHtml;
+
+		// remove all ids from form (which serves no longer as a form, but rather as container):
+		formHtml = formHtml.replace(/(id=['"].*?['"])/g, '');
 		const cls = 'lzy-popup-bg lzy-popup-' + this.formInx + ' lzy-close-on-bg-click lzy-popup-with-header lzy-recview-popup';
 
 		// inject popup code at end of body:
