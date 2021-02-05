@@ -361,7 +361,7 @@ class DataStorage2
         if (!$this->_awaitRecLockEnd($recId, $blocking, false)) {
             return false;
         }
-        if ($locking && !$this->isDbLocked( false )) {
+        if ($locking && $this->isDbLocked( false )) {
             return false;
         }
 
@@ -1011,6 +1011,8 @@ class DataStorage2
     private function createNewRecId( $default = false )
     {
         switch ($this->structure['key']) {
+            case 'hash':
+                return createHash();;
             case 'index':
                 return sizeof($this->getData(true));
             case 'number':

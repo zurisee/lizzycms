@@ -1879,7 +1879,6 @@ EOT;
         }
 
         if (!$recKey || ($recKey === 'new-rec') || ($recKey === 'unknown')) {
-            $recKey = createHash();
             $isNewRec = true;
             writeLogStr("New data: [{$currForm->formName}:$recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
         } else {
