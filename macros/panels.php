@@ -5,6 +5,8 @@
 
 $page->addJQFiles('PANELS');
 
+$page->addJs("var panels = [];");
+
 $macroName = basename(__FILE__, '.php');
 
 $this->addMacro($macroName, function () {
@@ -83,7 +85,14 @@ $this->addMacro($macroName, function () {
         $this->page->addJs("var closeButton = '<button class=\"lzy-panel-close-btn\" aria-label=\"{{ lzy-close-panel }}\">×</button>';\n");
     }
     if (!$omitScript) {
-        $jq = "initLzyPanel( '$widgetSelector', $preOpen );\n";
+        $jq = <<<EOT
+
+panels[ panelWidgetInstance ] = new LzyPanels();
+panels[ panelWidgetInstance ].init( '$widgetSelector', $preOpen );
+panelWidgetInstance++;
+
+EOT;
+
         $this->page->addJq( $jq );
     }
 
