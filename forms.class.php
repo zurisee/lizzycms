@@ -77,8 +77,9 @@ class Forms
         if ($userDataEval !== false) {
             if (isset($_POST['_lizzy-form'])) {    // we received data:
                 $this->evaluateUserSuppliedData();
+                unset( $_POST['_lizzy-form'] );
             }
-            // $userDataEval===true means client just wants to eval data, not instate an object:
+            // $userDataEval===true means client just wants to eval data, not instantiate an object:
             if ($userDataEval === true) {
                 $GLOBALS["globalParams"]['lzyFormsCount']--;
             }
@@ -1746,7 +1747,7 @@ EOT;
             $this->sendConfirmationMail( $userSuppliedData );
         }
 
-        if ($noError ) {
+        if ($noError && ($this->currForm->confirmationText !== false)) {
             if (!$msgToClient) {
                 $msgToClient = $this->currForm->confirmationText;
             }
@@ -1963,7 +1964,12 @@ EOT;
         // add new record:
         $newRec[ TIMESTAMP_KEY_ID ] = date('Y-m-d H:i:s');
         $newRec[ REC_KEY_ID ] = $recKey;
-        $ds->writeRecord($recKey, $newRec);
+        if ($isNewRec) {
+            $ds->addRecord($recKey, $newRec);
+
+        } else {
+            $ds->writeRecord($recKey, $newRec);
+        }
         return true;
 	} // saveUserSuppliedDataToDB
 
