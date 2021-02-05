@@ -158,13 +158,14 @@ function HTMLtable( tableObj ) {
 
 
 	this.initEditFormPopup = function () {
-		const cls = 'lzy-popup-bg lzy-popup-' + this.formInx + ' lzy-close-on-bg-click lzy-popup-with-header';
+		const cls = 'lzy-popup-bg lzy-popup-' + this.formInx + ' lzy-popup-with-header';
+		// const cls = 'lzy-popup-bg lzy-popup-' + this.formInx + ' lzy-close-on-bg-click lzy-popup-with-header';
 		const formHtml = this.formHtml;
 		const popupHtml = '<div id="' + this.recEditPopupId + '" class="' + cls + '" style="display: none;">\n' +
 			'<div class="lzy-popup-wrapper lzy-popup-wrapper-ref" data-popup-inx="' + this.recEditHash + '">\n' +
 			'<div class="lzy-popup-header lzy-draggable">' +
 			'<div></div>' +
-			'<button class="lzy-popup-close-button">×</button>' +
+//			'<button class="lzy-popup-close-button">×</button>' +
 			'</div>' +
 			'<div class="lzy-popup-container lzy-scroll-hints">\n' +
 			'<div id="inner-rec-edit-form">\n' +
@@ -248,7 +249,8 @@ function HTMLtable( tableObj ) {
 
 		lzyPopup({
 			contentRef: $popup,
-			closeButton: true,
+			// closeButton: true,
+			closeButton: false,
 			closeOnBgClick: false,
 			header: formTitle,
 		});
@@ -307,7 +309,12 @@ function HTMLtable( tableObj ) {
 			.on('click', '.lzy-edit-data-form input[type=reset]', function(e) {
 				e.preventDefault();
 				e.stopPropagation();
-				parent.unlockRecord();
+				e.stopImmediatePropagation();
+
+				// only in case of existing rec we need to unlock the record:
+				if (!$(this).closest('.lzy-new-data').length) {
+					parent.unlockRecord();
+				}
 				lzyPopupClose();
 			})
 
