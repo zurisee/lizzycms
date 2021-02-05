@@ -356,34 +356,17 @@ class DataStorage2
 
 
 
-    public function appendRecord($recId, $recData, $locking = true, $blocking = true, $logModifTimes = false)
+    public function addRecord($recId, $recData, $locking = true, $blocking = true, $logModifTimes = false)
     {
         if (!$this->_awaitRecLockEnd($recId, $blocking, false)) {
             return false;
         }
-        if ($locking && !$this->lockRec($recId)) {
+        if ($locking && !$this->isDbLocked( false )) {
             return false;
         }
-        $data = $this->getData();
-        if (($recId !== false) && ($recId !== null)) {  // case recId defined
-            if (isset($data[ $recId ])) {
-                if ($locking) {
-                    $this->unlockRec($recId);
-                }
-                return false;   // record already in DB
-            }
-            $inx = $recId;
 
-        } else {    // case recId undefined -> find next numeric index:
-            $inx = 0;
-            foreach ($data as $key => $rec) {
-                if (is_int($key)) {
-                    $inx = max($inx, $key);
-                }
-            }
-        }
-
-        $res = $this->writeRecord($inx, $recData, false, false);
+        $recId = $this->createNewRecId( $recId );
+        $res = $this->writeRecord($recId, $recData, false, false);
 
         if ($this->logModifTimes || $logModifTimes) {
             $this->updateRecLastUpdate( $recId );
@@ -1025,22 +1008,29 @@ class DataStorage2
 
 
 
-    private function createNewRecId()
+    private function createNewRecId( $default = false )
     {
         switch ($this->structure['key']) {
             case 'index':
                 return sizeof($this->getData(true));
+            case 'number':
+                $inx = 0;
+                foreach ($this->getData() as $key => $rec) {
+                    if (is_int($key)) {
+                        $inx = max($inx, $key);
+                    }
+                }
+                return ($inx + 1);
+
             case 'date':
                 return date('Y-m-d');
             case 'datetime':
                 return date('Y-m-d H:i:s');
             case 'unixtime':
                 return time();
-            default: // for everything else we use hash
-                return createHash();
+            default: // for everything else we use hash, unless default given:
+                return $default ? $default : createHash();
         }
-
-        return $recId;
     } // createNewRecId
 
 
