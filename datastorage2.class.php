@@ -365,7 +365,10 @@ class DataStorage2
             return false;
         }
 
-        $recId = $this->createNewRecId( $recId );
+        $recId = $this->createNewRecId();
+        if (isset($recData[REC_KEY_ID])) {
+            $recData[REC_KEY_ID] = $recId;
+        }
         $res = $this->writeRecord($recId, $recData, false, false);
 
         if ($this->logModifTimes || $logModifTimes) {
@@ -1346,6 +1349,9 @@ class DataStorage2
             }
         } elseif (is_string($recId) &&  (strpbrk($recId, ',]')) !== false) {
             $recId = preg_replace('/,.*/', '', $recId);
+
+        } elseif (preg_match('/^[A-Z][A-Z0-9]{4,}$/', $recId)) {
+            return $recId;
 
         } elseif (isset($this->data[ intval($recId) ])) {
             $recId = intval($recId);
