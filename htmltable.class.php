@@ -1761,8 +1761,8 @@ EOT;
 
 $('#{$this->id}-add-rec').click(function() {
     mylog('add rec');
-    const \$btnWrapper = $(this).closest('.lzy-table-action-btns');
-    const \$table = \$btnWrapper.next('.lzy-table');
+    const \$tableWrapper = $(this).closest('.lzy-table-wrapper');
+    const \$table = $('.lzy-table', \$tableWrapper);
     const tableInx = \$table.data('inx');
     lzyActiveTables[tableInx].openFormPopup( \$table );
     return;
