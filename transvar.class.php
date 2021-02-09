@@ -91,9 +91,9 @@ class Transvar
 
         $modified = false;
         list($p1, $p2) = strPosMatching($str);
-        $n = 0;
+        $this->varCount = 0;
 		while (($p1 !== false)) {
-            if ($n++ >= MAX_TRANSVAR_ITERATION_DEPTH) {
+            if ($this->varCount++ >= MAX_TRANSVAR_ITERATION_DEPTH) {
                 fatalError("Max. iteration depth exeeded.<br>Most likely cause: a recursive invokation of a macro or variable.");
             }
             $modified = true;
@@ -124,7 +124,14 @@ class Transvar
                         $modified |= $this->doTranslate($var, $iterationDepth + 1);
                     }
 
-                    $var = str_replace("\n", '', $var);    // remove newlines
+                    if (preg_match('/^(\S+)\(/', $var, $m1) && preg_match('/(showSource[:,\s]*)/ms',$var, $m2)) {
+                        $macName = $m1[1];
+                        $var= str_replace($m2[1], '', $var);
+                        $this->macroSources[$macName][$this->varCount] = $var;
+                    }
+                    if (strpos($var, "\n")) {
+                        $var = str_replace("\n", '', $var);    // remove newlines
+                    }
 
                     // ----------------------------------------------------------------------- translate now:
                     if (preg_match('/^([\w\-]+)\((.*)\)/', $var, $m)) {    // macro
@@ -153,7 +160,7 @@ class Transvar
                     }
                 }
             }
-            $n--;
+            $this->varCount--;
             list($p1, $p2) = strPosMatching($str, '{{', '}}', $p1+1);
 		}
 		return $modified;
@@ -200,6 +207,22 @@ class Transvar
             $this->disablePageCaching = false;
 
             $val = $this->executeMacro($macro);
+
+            if (isset($this->macroSources[$macro][$this->varCount])) {
+                $source = '';
+                $lines = explode("↵",  $this->macroSources[$macro][$this->varCount]);
+                foreach ($lines as $l) {
+                    if (!$l) { continue; }
+                    if (preg_match('/^(\s+)(.*)/', $l, $m)) {
+                        $l = str_repeat('    ', strlen($m[1])) . $m[2];
+                    }
+                    $source .= "\t$l\n";
+                }
+                $val = ":::: .lzy-src-wrapper\n::: .lzy-src-code\n## Code\n\t\{{ ".
+                    trim($source).
+                    "\n\t}}\n::: .lzy-src-output\n## Output\n$val\n:::\n::::\n";
+                $this->compileMd = true;
+            }
 
             if ($this->disablePageCaching) {
                 $GLOBALS['globalParams']['cachingActive'] = false;
