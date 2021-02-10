@@ -208,7 +208,10 @@ function HTMLtable( tableObj ) {
 		});
 
 		var header = $('#lzy-recview-header').text();
-		$('.lzy-popup-header > div').text( header );
+		if (!header) {
+			header = '&nbsp;';
+		}
+		$('.lzy-popup-header > div').html( header );
 
 	}; // openViewRecPopup
 

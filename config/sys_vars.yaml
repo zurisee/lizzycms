@@ -818,6 +818,11 @@ lzy-invalid-email-address:
 
 
 #--- Edit Tables --------------------
+lzy-table-view-btn:
+    de: 'Datensatz anzeigen'
+    _:  'Show record'
+
+
 lzy-edit-form-rec:
     de: 'Bearbeiten'
     _:  'Edit'

@@ -57,12 +57,10 @@ class HtmlTable
         $this->editMode             = $this->getOption('editMode', '[inline,form] Defines (Default: inline).', 'inline');
         $this->editFormArgs         = $this->getOption('editFormArgs', 'Arguments that will passed on to the forms-class.', false);
         $this->editFormTemplate     = $this->getOption('editFormTemplate', 'A markdown file that will be used for rendering the form.', false);
-        $this->activityButtons      = $this->getOption('activityButtons', 'Activates a row of activity buttons related to the form. If in editMode, a "New Record" button will be added.', null);
-//        $this->activityButtons          = $this->getOption('activityButtons', 'Activates a row of activity buttons related to the form, in particular a "View Record" button. If in editMode, a "New Record" button will be added.', null);
-//        $this->activityButtons          = $this->getOption('activityButtons', 'If true, in editMode-form buttons will be rendered, in particular an "New Record" button.', null);
+        $this->activityButtons      = $this->getOption('activityButtons', 'Activates a row of activity buttons related to the form. If in editMode, a "New Record" button will be added.', false);
         $this->labelColons          = $this->getOption('labelColons', 'If false, trailing colon of labels in editing-forms are omitted.', true);
         $this->customRowButtons     = $this->getOption('customRowButtons', '(optional comma-separated-list) Prepends a column to each row containing custom buttons. Buttons can be defined as names of icons or HTML code. E.g. "send,trash"', null);
-        $this->recViewButtonsActive = $this->getOption('showRecViewButton', '', null);
+        $this->recViewButtonsActive = $this->getOption('showRecViewButton', '[true|false] If true, a button to open a popup is added to each row. The popup presents the data record in form view.', false);
         $this->paging               = $this->getOption('paging', '[true|false] When using "Datatables": turns paging on or off (default is on)');
         $this->initialPageLength    = $this->getOption('initialPageLength', '[int] When using "Datatables": defines the initial page length (default is 10)');
         $this->excludeColumns       = $this->getOption('excludeColumns', '(optional) Allows to exclude specific columns, e.g. "excludeColumns:2,4-5"');
@@ -143,7 +141,7 @@ class HtmlTable
         $out = '';
 
         // for "active tables": create ticket and set data-field:
-        if ($this->editingActive || $this->activityButtons || $this->recViewButtonsActive) {
+        if ($this->editingActive || $this->editableActive || $this->activityButtons || $this->recViewButtonsActive) {
             $this->page->addModules('MD5');
             $tck = new Ticketing();
             $this->tickHash = $tck->createHash( 'lzy-form' );
@@ -176,7 +174,8 @@ class HtmlTable
         if ($this->recViewButtonsActive) {
             $out .= $this->renderForm();
         }
-        if ($this->editingActive || $this->activityButtons || $this->recViewButtonsActive) {
+        if ($this->editingActive || $this->editableActive ||
+            $this->activityButtons || $this->recViewButtonsActive || @$this->showRecViewButton) {
             $this->renderTextResources();
         }
 
@@ -266,7 +265,7 @@ EOT;
         $jq = <<<EOT
 
 if ($('[data-lzy-datasrc-ref]').length) {
-    LiveData.init( false );
+    liveDataInit( false );
 }
 
 EOT;
@@ -1785,7 +1784,7 @@ EOT;
 
     private function renderTextResources()
     {
-        if ($this->tableCounter === 1) {
+        if (!@$this->textResourcesRendered) {
             $this->strToAppend = <<<EOT
 
     <div style='display:none;'> <!-- text resources: -->
@@ -1798,6 +1797,7 @@ EOT;
     </div>
 
 EOT;
+            $this->textResourcesRendered = true;
         }
     } // renderTextResources
 
