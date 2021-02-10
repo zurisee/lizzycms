@@ -1,0 +1,41 @@
+/* === Misc Styles (loaded asynchronously) =========== */
+
+// === Macro source code
+.lzy-src-code {
+  padding: 1em;
+  border: 1px solid #dbddcd;
+  background: #fdffee;
+  &.lzy-popup-wrapper {
+    padding: 1em;
+    border: none;
+    background: none;
+    h2 {
+      display: none;
+    }
+  }
+}
+.lzy-src-wrapper {
+  > div {
+    margin-bottom: 1em;
+    > h2 {
+      font-size: 14pt;
+      margin: 0 0 0.6em 0;
+    }
+  }
+}
+.lzy-src-code-popup {
+  position: relative;
+  border: 1px solid #dbddcd;
+  padding: 4px;
+  .lzy-src-output h2 {
+    display: none;
+  }
+}
+.lzy-show-source-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 0.3rem;
+  font-family: arial, sans-serif;
+  font-size: 10pt;
+}

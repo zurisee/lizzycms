@@ -28,6 +28,7 @@ class Transvar
 	private $invocationCounter = array();
 	private $sysVariables = ['head_injections', 'content', 'body_end_injections'];
 	private $filesLoaded = array();
+	private $varCount = 0;
     public $page;
     public $notranslate = false;
 
@@ -91,9 +92,10 @@ class Transvar
 
         $modified = false;
         list($p1, $p2) = strPosMatching($str);
-        $this->varCount = 0;
+        $this->nestingDepth = 0;
 		while (($p1 !== false)) {
-            if ($this->varCount++ >= MAX_TRANSVAR_ITERATION_DEPTH) {
+            $this->varCount++;
+            if ($this->nestingDepth++ >= MAX_TRANSVAR_ITERATION_DEPTH) {
                 fatalError("Max. iteration depth exeeded.<br>Most likely cause: a recursive invokation of a macro or variable.");
             }
             $modified = true;
@@ -124,10 +126,12 @@ class Transvar
                         $modified |= $this->doTranslate($var, $iterationDepth + 1);
                     }
 
-                    if (preg_match('/^(\S+)\(/', $var, $m1) && preg_match('/(showSource[:,\s]*)/ms',$var, $m2)) {
+                    // special option 'showSource':
+                    if (preg_match('/^(\S+)\(/', $var, $m1) && preg_match('/showSource:\s*(\w*),?\s*/ms',$var, $m2)) {
                         $macName = $m1[1];
-                        $var= str_replace($m2[1], '', $var);
-                        $this->macroSources[$macName][$this->varCount] = $var;
+                        $var= str_replace($m2[0], '', $var);
+                        $this->macroSources[$macName][$this->varCount]['text'] = $var;
+                        $this->macroSources[$macName][$this->varCount]['mode'] = $m2[1];
                     }
                     if (strpos($var, "\n")) {
                         $var = str_replace("\n", '', $var);    // remove newlines
@@ -160,7 +164,7 @@ class Transvar
                     }
                 }
             }
-            $this->varCount--;
+            $this->nestingDepth--;
             list($p1, $p2) = strPosMatching($str, '{{', '}}', $p1+1);
 		}
 		return $modified;
@@ -208,21 +212,7 @@ class Transvar
 
             $val = $this->executeMacro($macro);
 
-            if (isset($this->macroSources[$macro][$this->varCount])) {
-                $source = '';
-                $lines = explode("↵",  $this->macroSources[$macro][$this->varCount]);
-                foreach ($lines as $l) {
-                    if (!$l) { continue; }
-                    if (preg_match('/^(\s+)(.*)/', $l, $m)) {
-                        $l = str_repeat('    ', strlen($m[1])) . $m[2];
-                    }
-                    $source .= "\t$l\n";
-                }
-                $val = ":::: .lzy-src-wrapper\n::: .lzy-src-code\n## Code\n\t\{{ ".
-                    trim($source).
-                    "\n\t}}\n::: .lzy-src-output\n## Output\n$val\n:::\n::::\n";
-                $this->compileMd = true;
-            }
+            $source = $this->injectMacroSource($macro);
 
             if ($this->disablePageCaching) {
                 $GLOBALS['globalParams']['cachingActive'] = false;
@@ -239,6 +229,9 @@ class Transvar
             }
             if ($this->compileMd) {
                 $val = compileMarkdownStr($val);
+            }
+            if ($source) {
+                $val = str_replace('<div>@#@</div>', $val, $source);
             }
 
         } elseif ($this->optional) {              // was marked as optional '{{^', so just skip it
@@ -1065,9 +1058,53 @@ EOT;
     }
 
 
+
+
     public function unshieldVariablesForCache($str)
     {
         return str_replace(["{|{|","|}|}"], ['{{', '}}'], $str);
     }
 
+
+
+
+    private function injectMacroSource($macro)
+    {
+        if (!isset($this->macroSources[$macro][$this->varCount])) {
+            return '';
+        }
+
+        // special option for macros: inject macro source, either as block or as popup:
+        $source = '';
+        $lines = explode("↵", $this->macroSources[$macro][$this->varCount]['text']);
+        foreach ($lines as $l) {
+            if (!$l) {
+                continue;
+            }
+            if (preg_match('/^(\s+)(.*)/', $l, $m)) {
+                $l = str_repeat('    ', strlen($m[1])) . $m[2];
+            }
+            $source .= "\t$l\n";
+        }
+        $source = ":::: .lzy-src-wrapper.lzy-src-wrapper{$this->varCount}\n::: .lzy-src-code\n## Code\n\t\{{ " .
+            trim($source) .
+            "\n\t}}\n::: .lzy-src-output\n## Output\n<div>@#@</div>\n:::\n::::\n";
+        $source = compileMarkdownStr($source);
+        $source = preg_replace('/\n\s+</ms', "\n<", "\n$source");
+
+        // case popup:
+        if ($this->macroSources[$macro][$this->varCount]['mode'] === 'popup') {
+            $popup = $this->page->addPopup([
+                'contentFrom' => ".lzy-src-wrapper{$this->varCount} .lzy-src-code",
+                'triggerButton' => '&lt;/&gt;',
+                'draggable' => true,
+                'header' => 'Macro Source',
+                'id' => 'lzy-src-code-popup-'.$this->varCount,
+            ]);
+            $source = "<div class='lzy-src-code-popup'>$popup\n$source</div>";
+        }
+        return $source;
+    } // injectMacroSource
+
 } // Transvar
+
