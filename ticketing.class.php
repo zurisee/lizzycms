@@ -12,7 +12,7 @@ define ('UNAMBIGUOUS_CHARACTERS', '3479ACDEFHJKLMNPQRTUVWXY'); // -> excludes '0
  * Purpose:
  *      like a locker: put some data into a storage and get a ticket in return
  *      use the ticket to retrieve the original data
- *      the ticket is a hash code that cannot be predicted
+ *      the ticket is a hash code that cannot be predicted -> usefull for embedding in web pages
  *
  * Options:
  * - hashSize
