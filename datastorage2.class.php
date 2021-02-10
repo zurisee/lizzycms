@@ -52,7 +52,10 @@ class DataStorage2
 	private $lockDB = false;
 	private $defaultTimeout = 30; // [s]
 	private $defaultPollingSleepTime = LZY_DB_POLLING_CYCLE_TIME; // [us]
+    private $structure = null;
     private $structureFile = null;
+    private $includeKeys;
+    private $includeTimestamp;
 
 
     public function __construct($args)
@@ -161,18 +164,25 @@ class DataStorage2
         if (!$since) {
             return $data;
         }
-        $since -= 0.001;
+        $since -= 0.01;
+        $recKeys = array_keys($this->data);
 
         $rawLastRecModif = $this->lowlevelReadRawData('recLastUpdates');
         if ($rawLastRecModif && ($rawLastRecModif !== '[]')) {
             $lastRecModifs = $this->jsonDecode($rawLastRecModif);
             $outData = [];
             foreach ($data as $key => $rec) {
-                if (isset($lastRecModifs[$key])) {
-                    if ($lastRecModifs[$key] > $since) {
+                if (isset($lastRecModifs[ $key ])) {
+                    if ($lastRecModifs[ $key ] > $since) {
                         $outData[$key] = $rec;
                     }
-                }
+                } else {
+                    $k2 = @$recKeys[ $key ];
+                    if ($k2 && isset($lastRecModifs[ $k2 ])) {
+                        if ($lastRecModifs[ $k2 ] > $since) {
+                            $outData[$key] = $rec;
+                        }
+                    }                }
             }
         } else {
             $outData = $data;
@@ -297,33 +307,23 @@ class DataStorage2
 
     public function readRecord($recId)
     {
-        $data = $this->getData(true);
+        $this->getData(true);
 
         $recId = $this->fixRecId($recId);
-
-        if (isset($data[$recId])) {
-            return $data[$recId];
-        } else {
-            return null;
+        if (isset($this->data[ $recId ])) { // direct hit:
+            return $this->data[ $recId ];
         }
+
+        // check whether there's a record with corresponding '_key' field:
+        return $this->findRecByContent(REC_KEY_ID, $recId);
     } // readRecord
 
 
-    public function writeRecord($recId, $recData = null, $locking = true, $blocking = true, $logModifTimes = false)
+
+    public function writeRecord($recId, $recData, $locking = true, $blocking = true, $logModifTimes = false)
     {
-        // $supportedArgs defines the expected args, their default values, where null means required arg.
-        $supportedArgs = ['recId' => null, 'recData' => null, 'locking' => false, 'blocking' => false];
-        if (($recId = $this->fixRecId($recId, false, $supportedArgs)) === false) {
+        if (($recId = $this->fixRecId($recId)) === false) {
             $recId = $this->createNewRecId(); // recId -> append rec
-
-        } elseif (is_array($recId)) {
-            list($recId, $recData, $locking, $blocking) = $recId;
-        }
-
-        if (($recId === false) || !$recData) {
-            return false;
-        } elseif (is_array($recId)) {
-            list($recId, $recData, $locking, $blocking) = $recId;
         }
 
         // if $blocking=false, _awaitRecLockEnd() performs isRecLocked():
@@ -334,93 +334,11 @@ class DataStorage2
         if ($locking && !$this->lockRec($recId)) {
             return false;
         }
-        $data = $this->getData(true);
-        if ($recId !== false) {
-            $data[$recId] = $recData;
-        } else {
-            $data[] = $recData;
-        }
-
-        $this->lowLevelWrite($data);
-
-        if ($this->logModifTimes || $logModifTimes) {
-            $this->updateRecLastUpdate( $recId );
-        }
-
-        if ($locking) {
-            $this->unlockRec($recId);
-        }
-        $this->getData(true);
-        return true;
-    } // writeRecord
-
-
-
-    public function addRecord($recId, $recData, $locking = true, $blocking = true, $logModifTimes = false)
-    {
-        if (!$this->_awaitRecLockEnd($recId, $blocking, false)) {
-            return false;
-        }
-        if ($locking && $this->isDbLocked( false )) {
-            return false;
-        }
-
-        $recId = $this->createNewRecId();
-        if (isset($recData[REC_KEY_ID])) {
-            $recData[REC_KEY_ID] = $recId;
-        }
-        $res = $this->writeRecord($recId, $recData, false, false);
-
-        if ($this->logModifTimes || $logModifTimes) {
-            $this->updateRecLastUpdate( $recId );
-        }
-
-        if ($locking) {
-            $this->unlockRec($recId);
-        }
-        return $res;
-    } // appendRecord
-
-
-
-
-    // like writeRecord but with separate args recId, elemName and value:
-    public function writeRecordElement($recId, $elemName = null, $value = null, $locking = true, $blocking = true, $append = false, $logModifTimes = false)
-    {
-        $supportedArgs = ['recId' => null, 'elemName' => null, 'value' => null, 'locking' => false, 'blocking' => true, 'append' => false];
-        if (($recId = $this->fixRecId($recId, false, $supportedArgs)) === false) {
-            return false;
-        } elseif (is_array($recId)) {
-            list($recId, $elemName, $value, $locking, $blocking, $append) = $recId;
-        }
-        if (($recId === false) || ($elemName === false) || ($value === false)) {
-            return false;
-        }
-
-        if (!$this->_awaitRecLockEnd($recId, $blocking, true)) {
-            return false;
-        }
-
-        if ($locking && !$this->_lockRec($recId)) {
-            return false;
-        }
 
         $data = $this->getData(true);
-        if ($recId !== false) {
-            if ($append && isset($data[$recId][$elemName])) {
-                $data[$recId][$elemName] .= $value;
-            } else {
-                $data[$recId][$elemName] = $value;
-            }
-        } else {
-            $data[][$elemName] = $value;
-        }
+        $data[ $recId ] = $recData;
 
         $this->lowLevelWrite($data);
-
-        if ($this->logModifTimes || $locking) {
-            $this->updateRecLastUpdate( $recId );
-        }
 
         if ($this->logModifTimes || $logModifTimes) {
             $this->updateRecLastUpdate( $recId );
@@ -431,7 +349,41 @@ class DataStorage2
         }
         $this->getData(true);
         return true;
-    } // writeRecordElement
+    } // writeRecord
+
+
+
+    public function addRecord($recData, $recId = false, $locking = true, $blocking = true, $logModifTimes = false)
+    {
+        if ($locking && $this->isDbLocked( false )) {
+            return false;
+        }
+
+        $this->getData(true);
+        if (($recId === false) || ($recId === 'new-rec')) { // create new ID if none supplied:
+            $recId = $this->createNewRecId( $recId );
+        }
+
+        // make sure the new recId is unique:
+        while (isset($this->data[ $recId ])) {
+            $recId = $this->createNewRecId();
+        }
+
+        // copy recId into REC_KEY_ID field:
+        if (isset($recData[REC_KEY_ID])) {
+            $recData[REC_KEY_ID] = $recId;
+        }
+
+        // write new rec to DB:
+        $this->data[ $recId ] = $recData;
+        $this->lowLevelWrite();
+
+        if ($this->logModifTimes || $logModifTimes) {
+            $this->updateRecLastUpdate( $recId );
+        }
+        return true;
+    } // addRecord
+
 
 
 
@@ -452,12 +404,12 @@ class DataStorage2
                 return false;
             }
         }
-        $data = $this->getData(true);
+        $this->getData(true);
 
         $res = false;
-        if (isset($data[$recId])) {
-            unset($data[$recId]);
-            $this->lowLevelWrite($data);
+        if (isset($this->data[ $recId ])) {
+            unset($this->data[ $recId ]);
+            $this->lowLevelWrite();
             $res = true;
         }
 
@@ -562,11 +514,11 @@ class DataStorage2
 
     public function getNoOfRecords()
     {
-        $data = $this->getData( true );
-        if (!$data) {
+        $this->getData( true );
+        if (!$this->data) {
             return 0;
         } else {
-            return sizeof($data);
+            return sizeof($this->data);
         }
     } // getNoOfRecords
 
@@ -576,41 +528,43 @@ class DataStorage2
     // === Element level operations ==========================
     // Element applies to any level of nested data, in particular below top level (i.e. records):
 
-    public function readElement($key)
-    {// supports scalar values and arrays
+    public function readElement( $key )
+    {
+        // supports scalar values and arrays
 
-        // syntax variant '[d3][d31][d312]'
-        $key = $this->parseElementSelector($key);
+        if (strpbrk($key, ',[') === false) {
+            return $this->readRecord( $key );
+        }
+
+        $this->getData(true);
+        if (!$this->data) {
+            return null;
+        }
+
+        // convert syntax variant '[d3][d31][d312]' => 'd3,d31,d312':
+        //$key = $this->parseElementSelector($key);
 
         if (strpos($key, '*') !== false) {
             return $this->_readElementGroup( $key );
         }
 
-        $data = $this->getData(true);
+        if (strpos($key, ',') === false) {
+            return @$this->data[ $key ];
+        }
 
-        // syntax variant 'd3,d31,d312'
-        if (strpos($key, ',') !== false) {
-            $rec = $data;
-            foreach (explodeTrim(',', $key) as $k) {
-                $k = trim($k, '\'"');
-                $n = intval($k);
-                if ($n || ($k === '0')) {
-                    $k = $n;
-                }
-                if (isset($rec[$k])) {
-                    $rec = $rec[$k];
-                } else {
-                    return null;
-                }
+        // access nested element ('d3,d31,d312'):
+        $rec = $this->data;
+        foreach (explodeTrim(',', $key) as $k) {
+            $k = trim($k, '\'"');
+            if (isset($rec[$k])) { // direct hit
+                $rec = $rec[$k];
+            } elseif (is_array($rec) && isset(array_keys($rec)[$k])) { // hit via index
+                $rec = $rec[ array_keys($rec)[$k] ];
+            } else { // not found
+                $rec = null;
             }
-            return $rec;
         }
-
-        if (isset($data[$key])) {
-            return $data[$key];
-        } else {
-            return null;
-        }
+        return $rec;
     } // readElement
 
 
@@ -637,45 +591,35 @@ class DataStorage2
 
     public function writeElement($key, $value, $locking = true, $blocking = true, $logModifTimes = false)
     {
+        // convert syntax variant '[d3][d31][d312]' => 'd3,d31,d312':
+        //$key = $this->parseElementSelector($key);
+        if (strpos($key, ',') === false) {
+            return $this->writeRecord($key, $value, $locking, $blocking, $logModifTimes);
+        }
+
         if ($locking && !$this->lockDB( false, $blocking )) {
             return false;
         } elseif ($this->isDbLocked(false)) {
             return false;
         }
-        $data = $this->getData(true);
-
-        // syntax variant '[d3][d31][d312]'
-        $key = $this->parseElementSelector($key);
-
-        // syntax variant 'd3,d31,d312'
-        if (strpos($key, ',') !== false) {
-            $keys = explode(',', $key);
-            $rec = &$data;
-            foreach ($keys as $k) {
-                $k = trim($k, '\'"');
-                $n = intval($k);
-                if ($n || ($k === '0')) {
-                    $k = $n;
-                }
-                if (!isset($rec[$k])) {
-                    // if not as is, try to get element label:
-                    $k1 = $this->resolveElementKey( $k );
-                    if (!isset($rec[$k1])) {
-                        $rec[$k] = null;    // instantiate element if not existing
-                    } else {
-                        $k = $k1;
-                    }
-                }
+        $this->getData(true);
+        $rec = &$this->data;
+        foreach (explodeTrim(',', $key) as $k) {
+            $k = trim($k, '\'"');
+            if (isset($rec[$k])) { // direct hit
                 $rec = &$rec[$k];
+            } elseif (is_array($rec) && isset(array_keys($rec)[$k])) { // hit via index
+                $rec = &$rec[ array_keys($rec)[$k] ];
+            } else { // not found
+                return null;
             }
-            $rec = $value;
-
-        } else {
-            $data[$key] = $value;
         }
-        $res = $this->lowLevelWrite($data);
+        $rec = $value;
+
+        $res = $this->lowLevelWrite();
 
         if ($this->logModifTimes || $logModifTimes) {
+            $key = preg_replace('/,.*/', '', $key);
             $this->updateRecLastUpdate( $key );
         }
 
@@ -688,43 +632,6 @@ class DataStorage2
 
 
 
-    public function deleteElement($key, $locking = true, $blocking = true)
-    {
-        if ($locking && !$this->lockDB( $blocking )) {
-            return false;
-        } elseif ($this->isDbLocked( false, true )) {
-            return false;
-        }
-        $data = $this->getData(true);
-        if (isset($data[$key])) {
-            unset($data[$key]);
-            $this->lowLevelWrite($data);
-            return true;
-        }
-        if ($locking) {
-            $this->ds->unlockDB();
-        }
-        return false;
-    } // delete
-
-
-
-    public function isElementLocked( $elemKey )
-    {
-        if ($this->_isDbLocked( false )) {
-            return true;
-        }
-        $elemKey = $this->parseElementSelector( $elemKey );
-        $recId = $this->_recIdFromElementKey( $elemKey );
-        if ($this->isRecLocked( $recId )) {
-            return true;
-        }
-        return false;
-    } // isElementLocked
-
-
-
-
     public function findRecByContent($key, $value, $returnKey = false)
     {
         // find rec for which key AND value match
@@ -733,11 +640,8 @@ class DataStorage2
         if (!$data) {
             return null;
         }
-        if (!isset($data[0][$key])) {
-            return null;
-        }
         foreach ($data as $datakey => $rec) {
-            if ($value === $rec[$key]) {
+            if ($value === @$rec[$key]) {
                 if ($returnKey) {
                     return $datakey;
                 } else {
@@ -1066,49 +970,45 @@ class DataStorage2
 
     private function _readElementGroup( $key )
     {
-        $data = $this->getData(true);
-        if (!$data) {
+        // syntax variant 'd3,d31,d312'
+        if (strpos($key, ',') === false) {
             return null;
         }
 
-        // syntax variant 'd3,d31,d312'
-        if (strpos($key, ',') !== false) {
-            $rec = $data;
-            $keys = explodeTrim(',', $key);
-            foreach ($keys as $k) {
-                array_shift($keys);
-                $k = trim($k, '\'"');
-                if ($k === '*') {
-                    $outRecs = [];
-                    foreach ($rec as $k0 => $subRec) {
-                        foreach ($keys as $k1) {
-                            $n = intval($k1);
-                            if ($n || ($k1 === '0')) {
-                                $k1 = $n;
-                            }
-                            if (isset($subRec[$k1])) {
-                                $outRecs[$k0] = $subRec[$k1];
-                            } else {
-                                $outRecs[$k0] = '';
-                            }
+        $rec = $this->data;
+        $keys = explodeTrim(',', $key);
+        foreach ($keys as $k) {
+            array_shift($keys);
+            $k = trim($k, '\'"');
+            if ($k === '*') {
+                $outRecs = [];
+                foreach ($rec as $k0 => $subRec) {
+                    foreach ($keys as $k1) {
+                        $n = intval($k1);
+                        if ($n || ($k1 === '0')) {
+                            $k1 = $n;
+                        }
+                        if (isset($subRec[$k1])) {
+                            $outRecs[$k0] = $subRec[$k1];
+                        } else {
+                            $outRecs[$k0] = '';
                         }
                     }
-                    return $outRecs;
+                }
+                return $outRecs;
+            } else {
+                $n = intval($k);
+                if ($n || ($k === '0')) {
+                    $k = $n;
+                }
+                if (isset($rec[$k])) {
+                    $rec = $rec[$k];
                 } else {
-                    $n = intval($k);
-                    if ($n || ($k === '0')) {
-                        $k = $n;
-                    }
-                    if (isset($rec[$k])) {
-                        $rec = $rec[$k];
-                    } else {
-                        return null;
-                    }
+                    return null;
                 }
             }
-            return $rec;
         }
-
+        return $rec;
     } // _readElementGroup
 
 
@@ -1310,102 +1210,40 @@ class DataStorage2
 
 
 
-    private function fixRecId($recId, $allowNewRec = false, $supportedArgs = false)
+    private function fixRecId($recId)
     {
-        if (!$this->data) {
-            return $recId;
-        }
+        // returns false if recId not existing in DB
+        $recId1 = $recId;
         if (is_array($recId)) {
-            return $this->parseRecModifArgs($recId, $supportedArgs);
+            die("Error in writeRecord: args packed into redID is depricated.");
         }
-        if (isset($this->data[$recId])) {
+
+        if (!$this->data || isset($this->data[ $recId ])) { // direct hit, done:
             return $recId;
         }
-        if (is_int($recId)) { // in case it was an index:
-            if (!$this->data) {
-                return false;
-            }
-            $n = sizeof($this->data);
-            if (!$allowNewRec) {
-                $n -= 1;
-            }
-            if (($recId < 0)) {
-                $recId = $n + $recId;
-            }
-            if ($allowNewRec) {
-                $recId = max(0, min($n, $recId));
-            }
-            if (isset($this->data[$recId])) {
-                return $recId;
-            }
-            $keys = array_keys($this->data);
-            if (isset($keys[$recId])) {
-                $recId = $keys[$recId];
-            }
-            if (!$allowNewRec) {
-                if (!isset($this->data[$recId])) {
-                    return false;
-                }
-            }
-        } elseif (is_string($recId) &&  (strpbrk($recId, ',]')) !== false) {
-            $recId = preg_replace('/,.*/', '', $recId);
 
-        } elseif (preg_match('/^[A-Z][A-Z0-9]{4,}$/', $recId)) {
-            return $recId;
-
-        } elseif (isset($this->data[ intval($recId) ])) {
-            $recId = intval($recId);
+        if (preg_match('/\D/', $recId)) {     // it's a string:
+            // we need rec-level key, so if it contains further indexes, cut them away:
+            if (is_string($recId) && (strpos($recId, ',') !== false)) {
+                $recId1 = preg_replace('/,.*/', '', $recId);
+            }
         }
-        return $recId;
+        if (!isset($this->data[$recId1]) && is_numeric($recId1)) {
+            // if it's numeric, check whether it corresponds to the ordinal index within DB:
+            $keys = array_keys( $this->data );
+            if (isset($keys[ $recId1 ])) {
+                $recId1 = $keys[ $recId1 ];
+            }
+        }
+        return $recId1;
     } // fixRecId
-
-
-
-
-    private function parseRecModifArgs($writeArgs, $args)
-    {
-        $outArgs = [];
-        foreach ($args as $argName => $default) {
-            if (isset($writeArgs[$argName])) {
-                $outArgs[] = $writeArgs[$argName];
-            } elseif ($default === null) {
-                return false;
-            } else {
-                $outArgs[] = $default;
-            }
-        }
-        $outArgs[0] = $this->fixRecId($outArgs[0]);
-        return $outArgs;
-    } // parseWriteArgs
-
-
-
-
-    private function parseElementSelector($key)
-    {
-        // syntax variant '[d3][d31][d312]' or ['d3']['d31']['d312']
-        if (preg_match('/\[(.*)\]/', trim($key), $m)) {
-            $key = str_replace('][', ',', $m[1]);
-            $key = str_replace(['"', "'"], '', $key);
-        }
-        if ($this->structure['key'] !== 'index') {
-            $keys = explode(',', $key);
-            $key0 = &$keys[0];
-            if ($key0 !== '*') {
-                $dataKeys = array_keys( $this->data );
-                $key0 = isset($dataKeys[$key0])? $dataKeys[$key0] : $key0;
-                $key = implode(',', $keys);
-            }
-        }
-        return $key;
-    } // parseElementSelector
 
 
 
 
     private function _recIdFromElementKey($key )
     {
-        $key = $this->parseElementSelector($key);
+        //$key = $this->parseElementSelector($key);
         if (strpos($key, ',') !== false) {
             $a = explode(',', $key);
             $key = $a[0];
@@ -1457,7 +1295,7 @@ class DataStorage2
 
 
 
-    private function lowLevelWrite($newData, $isJson = false)
+    private function lowLevelWrite($newData = null, $isJson = false)
     {
         $this->openDbReadWrite();
 
@@ -1768,6 +1606,8 @@ EOT;
         }
         $this->updateDbModifTime();
         $this->rawData = $this->lowlevelReadRawData();
+
+        $this->checkExternalStructureDef();
     } // importFromFile
 
 
@@ -1894,8 +1734,11 @@ EOT;
 
 
 
-    private function jsonEncode($data, $isAlreadyJson = false)
+    private function jsonEncode($data = null, $isAlreadyJson = false)
     {
+        if ($data === null) {
+            $data = $this->data;
+        }
         if ($isAlreadyJson && is_string($data)) {
             $json = $data;
         } else {
@@ -1992,7 +1835,7 @@ EOT;
         $this->data = $data;
         $this->determineStructure();
         if ($outputAsJson) {
-            return $this->jsonEncode($data);
+            return $this->jsonEncode();
         }
         return $data;
     } // decode
@@ -2000,14 +1843,14 @@ EOT;
 
 
 
-    private function determineStructure()
+    private function checkExternalStructureDef()
     {
         if ($this->structureDef) {
             $this->structure = $this->structureDef;
             unset($this->structureDef);
             return $this->structure;
         }
-        $structure = @$this->structure;
+        $structure = false;
         if ($this->structureFile) {
             $structureFile = resolvePath($this->structureFile, true);
         } else {
@@ -2017,11 +1860,19 @@ EOT;
         if (file_exists( $structureFile )) {
             $structure = getYamlFile( $structureFile );
 
-        } elseif (isset($data['_structure'])) {
+        } elseif (isset($this->data['_structure'])) {
             // structure may be submitted within data in a special record '_structure':
-            $structure = $data['_structure'];
-            unset($data['_structure']);
+            $structure = $this->data['_structure'];
+            unset($this->data['_structure']);
         }
+        return $structure;
+    } // checkExternalStructureDef
+
+
+
+    private function determineStructure()
+    {
+        $structure = $this->checkExternalStructureDef();
 
         // make sure type for rec-level keys is set:
         if (!isset($structure['elements']) || !$structure['elements']) {
@@ -2035,7 +1886,8 @@ EOT;
 
         // make sure structure is complete:
         if (!isset($structure['elements']) || !$structure['elements']) { // fields missing
-            die("Error: fields missing in structure");
+            $this->structure = $structure;
+            return $structure;
         }
         if (!isset($structure['elemKeys']) || !$structure['elemKeys']) { // fields missing
             $structure['elemKeys'] = array_keys($structure['elements']);
@@ -2115,6 +1967,10 @@ EOT;
             $data = $this->getData();
             $rec0 = reset( $data );
         }
+        if (!is_array( $rec0 )) {
+            return $structure;
+        }
+
         foreach (array_keys($rec0) as $elemKey) {
             $structure['elemKeys'][] = $elemKey;
             $structure['elements'][$elemKey]['type'] = 'string';
