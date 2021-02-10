@@ -1964,7 +1964,7 @@ EOT;
         $newRec[ TIMESTAMP_KEY_ID ] = date('Y-m-d H:i:s');
         $newRec[ REC_KEY_ID ] = $recKey;
         if ($isNewRec) {
-            $ds->addRecord($recKey, $newRec);
+            $ds->addRecord($newRec, $recKey);
 
         } else {
             $ds->writeRecord($recKey, $newRec);
