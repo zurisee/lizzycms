@@ -41,11 +41,11 @@ function LzyPopup( options, index ) {
 
         this.header  = (typeof options.header !== 'undefined')? options.header : false;
         if ((this.header === '') || (this.header === true)) {
-            this.header = '&nbsp;';
+            this.header = '';
         }
         this.draggable  = (typeof options.draggable !== 'undefined')? options.draggable : (this.header !== false);
         if (this.draggable && (this.header === false)) {
-            this.header = '&nbsp;';
+            this.header = '';
         }
 
         if (this.content === 'help') {
@@ -146,7 +146,6 @@ function LzyPopup( options, index ) {
 
         var header = '';
         if (this.header !== false) {
-            header = (this.header === true) ? ' ': this.header;
             cls = this.draggable? ' lzy-draggable': '';
             header = '\t\t<div class="lzy-popup-header' + cls + '"><div>' + header + '</div>'+ this.closeButton + '</div>\n';
             this.popupClass += ' lzy-popup-with-header';
@@ -154,6 +153,7 @@ function LzyPopup( options, index ) {
             header = this.closeButton;
         }
 
+        cls = 'lzy-popup-wrapper';
         if (contentFrom) {
             if (typeof contentFrom === 'string') {
                 if ((contentFrom.charAt(0) !== '#') && (contentFrom.charAt(0) !== '.')) {
@@ -171,7 +171,9 @@ function LzyPopup( options, index ) {
             // get content and cache in a variable:
             if (!this.lzyPopupContent) { // not yet cached
                 var tmp = '';
+                cls += ' ' + $cFrom.attr('class');
                 tmp = $cFrom.html();
+                $cFrom.remove();
                 this.lzyPopupContent = tmp; // save original HTML
 
                 // shield IDs in original:
@@ -182,7 +184,6 @@ function LzyPopup( options, index ) {
         } // contentFrom
 
         // content supplied as literal or by contentFrom:
-        var cls = 'lzy-popup-wrapper';
         if (this.content) {
             // add popup HTML to DOM (at end of body element):
             var style = '';
@@ -192,7 +193,6 @@ function LzyPopup( options, index ) {
                 style += 'position: absolute;';
             }
 
-            this.popupClass += ' lzy-popup-transient';
             if (this.trigger !== true) {
                 style += 'display: none;';
             }
@@ -210,7 +210,7 @@ function LzyPopup( options, index ) {
                 '    </div></div>\n      </div>\n' +
                 '</div>\n';
             $(this.anker).append( html );
-            this.$pop = $( '#' + parent.id);
+            this.$pop = $( '#' + parent.id + ' .lzy-popup-wrapper');
 
 
         } else if (this.contentRef) {       // content as reference to DOM element:
@@ -288,7 +288,7 @@ function LzyPopup( options, index ) {
                 if ($( id ).length) {
                     obj.open();
                 } else {
-                    obj.execute();
+                    obj.init();
                 }
             });
             this.triggerInitialized = true;

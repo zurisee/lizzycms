@@ -63,6 +63,9 @@ body {
 .lzy-popup-wrapper {
 	cursor: default;
 }
+.lzy-popup-header > div {
+	min-height: 2rem;
+}
 .lzy-popup-header.lzy-draggable > div {
 	cursor: move;
 }

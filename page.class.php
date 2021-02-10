@@ -49,6 +49,7 @@ class Page
     private $debugMsg = false;
     private $redirect = false;
     public  $mdVariables = [];
+    private $popupCnt = 0;
 
     private $mdCompileModifiedContent = false;
     private $wrapperTag = 'section';
@@ -403,11 +404,30 @@ class Page
         if (is_string($args)) {
             $args = [ 'text' => $args ];
         }
+
+        $out = '';
+        // option 'triggerButton' -> render button to open popup:
+        if (isset($args['triggerButton'])) {
+            $this->popupCnt++;
+            $label = $args['triggerButton'];
+            $buttonId = "lzy-popup-trigger-$this->popupCnt";
+            $out = "\t<button id='$buttonId' class='lzy-button lzy-show-source-btn'>$label</button>\n";
+            unset($args['triggerButton']);
+            $args['trigger'] = "#$buttonId";
+            $args['closeButton'] = true;
+        }
+
         $jsArgs = '';
         foreach ($args as $key => $value) {
             if (is_string(($key))) {
-                $value = str_replace("'", "\\'", $value);
-                $jsArgs .= "\t$key: '$value',\n";
+                if ($value === true) {
+                    $jsArgs .= "\t$key: true,\n";
+                } elseif ($value === false) {
+                    $jsArgs .= "\t$key: false,\n";
+                } else {
+                    $value = str_replace("'", "\\'", $value);
+                    $jsArgs .= "\t$key: '$value',\n";
+                }
             }
         }
 
@@ -419,6 +439,8 @@ $jsArgs});
 EOT;
         $this->addJq($jq);
         $this->addModules('POPUPS');
+
+        return $out;
     } // addPopup
 
 
