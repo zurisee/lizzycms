@@ -134,6 +134,7 @@ class Transvar
 
                         // remove styling instructions from code: **
                         $var = preg_replace(['/(?<!\\\\)<strong>/', '/(?<!\\\\)<\/strong>/'], '', $var);
+                        $var = preg_replace('|//.*?↵|', '', $var);
 
                         $this->macroSources[$macName][$this->varCount] = ['text' => $srcCode, 'mode' => $mode];
                     }
@@ -214,10 +215,10 @@ class Transvar
             $this->optionAddNoComment = false;
             $this->disablePageCaching = false;
 
-            $val = $this->executeMacro($macro);
-
             $source = $this->injectMacroSource($macro);
 
+            $val = $this->executeMacro($macro);
+            
             if ($this->disablePageCaching) {
                 $GLOBALS['globalParams']['cachingActive'] = false;
             }
@@ -1098,7 +1099,7 @@ EOT;
         $source = compileMarkdownStr($source);
         $source = preg_replace('/\n\s+</ms', "\n<", "\n$source"); // remove leading space
         $source = str_replace(['&lt;strong&gt;', '&lt;/strong&gt;'], ['<strong>', '</strong>'], $source); // restore ** (strong)
-
+        $source = preg_replace("/\n\s*\n/ms", "\n", $source);
         // case popup:
         if ($this->macroSources[$macro][$this->varCount]['mode'] === 'popup') {
             $popup = $this->page->addPopup([
