@@ -129,9 +129,13 @@ class Transvar
                     // special option 'showSource':
                     if (preg_match('/^(\S+)\(/', $var, $m1) && preg_match('/showSource:\s*(\w*),?\s*/ms',$var, $m2)) {
                         $macName = $m1[1];
-                        $var= str_replace($m2[0], '', $var);
-                        $this->macroSources[$macName][$this->varCount]['text'] = $var;
-                        $this->macroSources[$macName][$this->varCount]['mode'] = $m2[1];
+                        $mode = $m2[1]; // popup or true
+                        $srcCode = str_replace($m2[0], '', $var);
+
+                        // remove styling instructions from code: **
+                        $var = preg_replace(['/(?<!\\\\)<strong>/', '/(?<!\\\\)<\/strong>/'], '', $var);
+
+                        $this->macroSources[$macName][$this->varCount] = ['text' => $srcCode, 'mode' => $mode];
                     }
                     if (strpos($var, "\n")) {
                         $var = str_replace("\n", '', $var);    // remove newlines
@@ -1089,8 +1093,11 @@ EOT;
         $source = ":::: .lzy-src-wrapper.lzy-src-wrapper{$this->varCount}\n::: .lzy-src-code\n## Code\n\t\{{ " .
             trim($source) .
             "\n\t}}\n::: .lzy-src-output\n## Output\n<div>@#@</div>\n:::\n::::\n";
+
+        // compile markdown:
         $source = compileMarkdownStr($source);
-        $source = preg_replace('/\n\s+</ms', "\n<", "\n$source");
+        $source = preg_replace('/\n\s+</ms', "\n<", "\n$source"); // remove leading space
+        $source = str_replace(['&lt;strong&gt;', '&lt;/strong&gt;'], ['<strong>', '</strong>'], $source); // restore ** (strong)
 
         // case popup:
         if ($this->macroSources[$macro][$this->varCount]['mode'] === 'popup') {
