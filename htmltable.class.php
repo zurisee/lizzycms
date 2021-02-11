@@ -1576,16 +1576,21 @@ EOT;
             foreach ($data as $r => $row) {
                 foreach ($data[$r] as $c => $col) {
                     $d = trim($data[$r][$c]);
+
+                    // email address:
                     if (preg_match_all('/ ([\w\-\.]*?) \@ ([\w\-\.]*?\.\w{2,6}) /x', $d, $m)) {
                         foreach ($m[0] as $addr) {
-                            $d = str_replace($addr, "<a href='mailto:$addr'>$addr</a>", $d);
+                            $d = str_replace($addr, "<a href='mailto:$addr'>$addr</a>@@lzy-td-email@@", $d);
                         }
 
+                    // phone number:
                     } elseif (preg_match('/^( \+? [\d\-\s\(\)]* )$/x', $d, $m)) {
                         $tel = preg_replace('/[^\d\+]/', '', $d);
                         if (strlen($tel) > 7) {
-                            $d = "<a href='tel:$tel'>$d</a>";
+                            $d = "<a href='tel:$tel'>$d</a>@@lzy-td-tel@@";
                         }
+
+                    // url:
                     } elseif (preg_match('|^( (https?://)? ([\w\-\.]+ \. [\w\-]{1,6}))$|xi', $d, $m)) {
                         if (!$m[2]) {
                             $url = "https://".$m[3];
@@ -1593,7 +1598,14 @@ EOT;
                             $url = $m[1];
                         }
                         if (strlen($url) > 7) {
-                            $d = "<a href='$url'>$d</a>";
+                            $d = "<a href='$url'>$d</a>@@lzy-td-url@@";
+                        }
+
+                    // image:
+                    } elseif (preg_match('/ img: (([\w\-~\/]+) \. (jpg|jpeg|png|gif)) /ix', $d, $m)) {
+                        if (strlen($m[1]) > 7) {
+                            $img = "{$m[2]}[x48].{$m[3]}";
+                            $d = "{{ img( src:'$img') }}@@lzy-td-img@@";
                         }
                     }
                     $data[$r][$c] = $d;
