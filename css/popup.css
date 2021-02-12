@@ -24,8 +24,10 @@ body {
 }
 .lzy-popup-wrapper {
 	position: relative;
+/*
 	max-width: 60%;
 	max-width: var(--lzy-popup-default-width, 60%);
+*/
 	vertical-align: middle;
 	border-radius: 8px;
 	padding: 1.6rem;
