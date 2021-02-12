@@ -41,7 +41,7 @@ function HTMLtable( tableObj ) {
 	var tmpHash = Math.random().toString().substr(2,10);
 	this.recViewHash = 'V' + tmpHash;
 	this.recEditHash = 'E' + tmpHash;
-	this.waitSymbol = 'X';
+	this.waitSymbol = '⌛'; //'X';
 
 
 
@@ -61,64 +61,6 @@ function HTMLtable( tableObj ) {
 			this.setupEventHandlers();
 		}
 	}; // init
-
-
-
-
-	this.updateEditForm = function ( recKey, formId, json ) {
-		try {
-			var data = JSON.parse(json);
-		} catch (e) {
-			console.log('Error condition detected');
-			console.log(json);
-			return false;
-		}
-		var i, val;
-		var sel;
-		for (i in data.data) {
-			val = data.data[ i ];
-			if (i.match(/input:/)) {
-				$( i ).prop('checked', true);
-			} else if (i.match(/option/)) {
-				$( i ).prop('selected', true);
-			} else {
-				sel ='[name=' + i + ']';
-				$( sel, formId ).val( val );
-			}
-		}
-	}; // updateEditForm
-
-
-
-
-	this.updateUI = function ( json ) {
-		try {
-			var data = JSON.parse(json);
-		} catch (e) {
-			console.log('Error condition detected');
-			console.log(json);
-			return false;
-		}
-		var data1 = data.data;
-		var targ = '';
-		var val = '';
-		var r = data1.recInx;
-		for (var c in data1.rec) {
-			val = data1.rec[ c ];
-			targ = '[data-ref="' + r + ',' + c + '"]';
-			$( targ ).text( val );
-		}
-	}; // updateUI
-
-
-
-
-	this.unlockRecord = function () {
-		const req = '?unlock-rec&ds=' + this.formHash + ':form' + this.formInx + '&recKey=' + this.recKey;
-		execAjax(false, req, function(json) {
-			mylog( json );
-		});
-	}; // unlockRecord
 
 
 
@@ -386,6 +328,82 @@ function HTMLtable( tableObj ) {
 			}
 		});
 	};
+
+
+
+
+	this.updateEditForm = function ( recKey, formId, json ) {
+		try {
+			var data = JSON.parse(json);
+		} catch (e) {
+			console.log('Error condition detected');
+			console.log(json);
+			lzyPopupClose();
+			lzyPopup('{{ lzy-table-record-locked }}');
+			return false;
+		}
+		var i, val;
+		var sel;
+		if ( data.res !== 'Ok') {
+			this.handleException( data );
+		}
+		for (i in data.data) {
+			val = data.data[ i ];
+			if (i.match(/input:/)) {
+				$( i ).prop('checked', true);
+			} else if (i.match(/option/)) {
+				$( i ).prop('selected', true);
+			} else {
+				sel ='[name=' + i + ']';
+				$( sel, formId ).val( val );
+			}
+		}
+	}; // updateEditForm
+
+
+
+	this.handleException = function ( data ) {
+		lzyPopupClose();
+		var lockedRec = null, i = null;
+		if (typeof data.lockedRecs === 'object') {
+			for (i in data.lockedRecs) {
+				lockedRec = data.lockedRecs[i];
+				$('[data-reckey="' + lockedRec + '"]').addClass('lzy-record-locked');
+			}
+			lzyPopup('{{ lzy-table-record-locked }}');
+		}
+	};
+
+
+
+	this.updateUI = function ( json ) {
+		try {
+			var data = JSON.parse(json);
+		} catch (e) {
+			console.log('Error condition detected');
+			console.log(json);
+			return false;
+		}
+		var data1 = data.data;
+		var targ = '';
+		var val = '';
+		var r = data1.recInx;
+		for (var c in data1.rec) {
+			val = data1.rec[ c ];
+			targ = '[data-ref="' + r + ',' + c + '"]';
+			$( targ ).text( val );
+		}
+	}; // updateUI
+
+
+
+
+	this.unlockRecord = function () {
+		const req = '?unlock-rec&ds=' + this.formHash + ':form' + this.formInx + '&recKey=' + this.recKey;
+		execAjax(false, req, function(json) {
+			mylog( json );
+		});
+	}; // unlockRecord
 
 
 

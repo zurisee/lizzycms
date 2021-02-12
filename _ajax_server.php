@@ -120,7 +120,6 @@ class AjaxServer
 
 
 
-	//---------------------------------------------------------------------------
 	private function handleUrlArguments()
 	{
         $this->handleGenericRequests();     // log, info
@@ -169,7 +168,6 @@ class AjaxServer
 
 
 
-    //---------------------------------------------------------------------------
 	private function getAllData()
     {
         if (!$this->openDB( )) {
@@ -181,7 +179,6 @@ class AjaxServer
 
 
 
-	//---------------------------------------------------------------------------
 	private function getDataRec()
     {
         if (!$this->openDB( )) {
@@ -193,7 +190,9 @@ class AjaxServer
         if (isset($_REQUEST['lock'])) {
             $res = $this->db->lockRec( $recKey );
             if (!$res) {
-                lzyExit('failed#get-rec=locked');
+                $json = json_encode(['res' => 'failed', 'lockedRecs' => [$recKey]]);
+                lzyExit( $json );
+//                lzyExit('failed#get-rec=locked');
             }
         }
 
@@ -259,7 +258,8 @@ class AjaxServer
         if (!$this->openDB( )) {
             lzyExit('failed#save');
         }
-        $recKey = intval( $this->get_request_data('recKey') );
+        $recKey = $this->get_request_data('recKey');
+//        $recKey = intval( $this->get_request_data('recKey') );
         // delete record:
 
     } // deleteDataRec
@@ -273,7 +273,8 @@ class AjaxServer
         if (!$this->openDB( )) {
             lzyExit('failed#save');
         }
-        $recKey = intval( $this->get_request_data('recKey') );
+        $recKey = $this->get_request_data('recKey');
+//        $recKey = intval( $this->get_request_data('recKey') );
         // lock record:
         $res = $this->db->lockRec( $recKey );
         if ($res) {
@@ -292,7 +293,8 @@ class AjaxServer
         if (!$this->openDB( )) {
             lzyExit('failed#save');
         }
-        $recKey = intval( $this->get_request_data('recKey') );
+        $recKey = $this->get_request_data('recKey');
+//        $recKey = intval( $this->get_request_data('recKey') );
         // lock record:
         $res = $this->db->unlockRec( $recKey );
         if ($res) {
@@ -306,7 +308,6 @@ class AjaxServer
 
 
 
-	//---------------------------------------------------------------------------
 	private function saveDataRec()
     {
         lzyExit( 'failed#saveDataRec() not supported yet in _ajax_server' );
@@ -315,7 +316,6 @@ class AjaxServer
 
 
 
-	//---------------------------------------------------------------------------
 	private function saveData() {
         $rawData = $this->get_request_data('data');
 		if ($rawData === 'undefined') {
@@ -383,6 +383,7 @@ class AjaxServer
 
 
 
+
     private function renameFile()
     {
         if (isset($_POST['lzy_filename'])) {
@@ -417,14 +418,13 @@ class AjaxServer
         } elseif ($key && isset($data[$key])) {
             $data = $data[$key];
         }
-        $t = json_encode($data);
+//        $t = json_encode($data);
         return json_encode($data);
     } // prepareClientData
 
 
 
 
-    //---------------------------------------------------------------------------
     private function openDB( $lockDB = false) {
         if ($this->db) {
             return true;    // already opened
@@ -472,7 +472,6 @@ class AjaxServer
 
 
 
-    //------------------------------------------------------------
     private function get_request_data($varName) {
         global $argv;
         $out = null;
@@ -496,7 +495,6 @@ class AjaxServer
 
 
 
-    //---------------------------------------------------------------------------
     private function var_r($data, $varName = false)
     {
         $out = var_export($data, true);
@@ -509,7 +507,6 @@ class AjaxServer
 
 
 
-    //---------------------------------------------------------------------------
     private function mylog($str, $file = false)
     {
         if (!is_string( $str )) {
@@ -529,7 +526,6 @@ class AjaxServer
 
 
 
-    //---------------------------------------------------------------------------
     /**
      * http://php.net/manual/de/function.session-start.php
      * Every time you call session_start(), PHP adds another
@@ -565,7 +561,6 @@ class AjaxServer
 
 
 
-    //---------------------------------------------------------------------------
     private function timestamp($short = false)
     {
         if (!$short) {
@@ -588,7 +583,6 @@ class AjaxServer
 
 
 
-    //---------------------------------------------------------------------------
     private function info()
     {
         $localhost = ($this->isLocalhost) ? 'yes':'no';
