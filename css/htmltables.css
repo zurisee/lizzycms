@@ -50,3 +50,7 @@
 .lzy-table-control-btn .lzy-icon {
 	display: block;
 }
+
+.inner-rec-edit-form {
+	overflow-x: auto;
+}

@@ -5,6 +5,9 @@
   padding: 1em;
   border: 1px solid #dbddcd;
   background: #fdffee;
+  max-width: 40rem;
+  overflow-x: auto;
+  font-size: 10pt;
   &.lzy-popup-wrapper {
     padding: 1em;
     border: none;
@@ -38,4 +41,31 @@
   padding: 0.3rem;
   font-family: arial, sans-serif;
   font-size: 10pt;
+}
+
+
+// DB
+.lzy-record-locked, .lzy-locked {
+  background: #dceeee;
+  background: repeating-linear-gradient(-55deg, #eeffff,#eeffff 10px,#edf8f8 10px,#edf8f8 15px);
+  cursor: not-allowed;
+}
+.lzy-locked { outline: 1px solid red; }
+.lzy-record-locked { outline: 1px dashed red; }
+
+
+.lzy-element-locked,
+.lzy-editable.lzy-element-locked {
+  background: #dceeee;
+  background: repeating-linear-gradient(-55deg, #eeffff,#eeffff 10px,#edf8f8 10px,#edf8f8 15px);
+  cursor: not-allowed !important;
+}
+.lzy-element-locked *,
+.lzy-editable.lzy-element-locked * {
+  cursor: not-allowed !important;
+}
+.lzy-element-frozen,
+.lzy-editable.lzy-element-frozen {
+  background: #eee;
+  cursor: not-allowed;
 }
