@@ -218,7 +218,7 @@ class Transvar
             $source = $this->injectMacroSource($macro);
 
             $val = $this->executeMacro($macro);
-            
+
             if ($this->disablePageCaching) {
                 $GLOBALS['globalParams']['cachingActive'] = false;
             }
