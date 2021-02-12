@@ -172,17 +172,20 @@ class DataStorage2
             $lastRecModifs = $this->jsonDecode($rawLastRecModif);
             $outData = [];
             foreach ($data as $key => $rec) {
-                if (isset($lastRecModifs[ $key ])) {
-                    if ($lastRecModifs[ $key ] > $since) {
-                        $outData[$key] = $rec;
-                    }
-                } else {
-                    $k2 = @$recKeys[ $key ];
-                    if ($k2 && isset($lastRecModifs[ $k2 ])) {
-                        if ($lastRecModifs[ $k2 ] > $since) {
-                            $outData[$key] = $rec;
-                        }
-                    }                }
+//ToDo: fix implementation -> correctly identify recs that have changed since $since
+$outData[$key] = $rec;
+//                if (isset($lastRecModifs[ $key ])) {
+//                    if ($lastRecModifs[ $key ] > $since) {
+//                        $outData[$key] = $rec;
+//                    }
+//                } else {
+//                    $k2 = @$recKeys[ $key ];
+//                    if ($k2 && isset($lastRecModifs[ $k2 ])) {
+//                        if ($lastRecModifs[ $k2 ] > $since) {
+//                            $outData[$key] = $rec;
+//                        }
+//                    }
+//                }
             }
         } else {
             $outData = $data;
@@ -508,6 +511,14 @@ class DataStorage2
         }
         return $locked;
     } // hasDbLockedRecords
+
+
+
+
+    public function getLockedRecords()
+    {
+        return $this->lowlevelReadRecLocks();
+    } // getLockedRecords
 
 
 
