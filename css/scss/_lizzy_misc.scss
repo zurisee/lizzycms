@@ -1,6 +1,7 @@
 /* === Misc Styles (loaded asynchronously) =========== */
 
 // === Macro source code
+.lzy-src-html-wrapper,
 .lzy-src-code {
   padding: 1em;
   border: 1px solid #dbddcd;
@@ -17,6 +18,7 @@
     }
   }
 }
+.lzy-src-html-wrapper,
 .lzy-src-wrapper {
   > div {
     margin-bottom: 1em;
@@ -25,7 +27,17 @@
       margin: 0 0 0.6em 0;
     }
   }
+  > h2 {
+    font-size: 14pt;
+    margin: 0 0 0.6em 0;
+  }
 }
+.lzy-src-html-wrapper {
+  code {
+    white-space: pre;
+  }
+}
+
 .lzy-src-code-popup {
   position: relative;
   border: 1px solid #dbddcd;
@@ -54,8 +66,8 @@
 .lzy-record-locked { outline: 1px dashed red; }
 
 
-.lzy-element-locked,
-.lzy-editable.lzy-element-locked {
+#lzy .lzy-element-locked,
+#lzy .lzy-editable.lzy-element-locked {
   background: #dceeee;
   background: repeating-linear-gradient(-55deg, #eeffff,#eeffff 10px,#edf8f8 10px,#edf8f8 15px);
   cursor: not-allowed !important;
