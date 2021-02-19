@@ -2,6 +2,7 @@
  *  Lizzy's auxiliary functions
 */
 
+var debug = false;
 // handle screen-size and resize
 (function ( $ ) {
     if ($(window).width() < screenSizeBreakpoint) {
@@ -18,6 +19,8 @@
             $('body').removeClass('lzy-small-screen').addClass('lzy-large-screen');
         }
     });
+
+    debug = ($('body.debug').length !== 0);
 }( jQuery ));
 
 
@@ -40,7 +43,8 @@ function execAjax(payload, cmd, doneFun, url) {
     if (payload) {
         json = JSON.stringify(payload);
     }
-    mylog('Sending AJAX [' + cmd + ']: ' + json);
+    var txt = json? json: 'no arguments';
+    mylog('execAjax: ' + cmd + ' ( ' + txt + ' )', false);
     ajaxHndl = $.ajax({
         method: 'POST',
         url: url,
@@ -115,14 +119,16 @@ function setupMessageHandler( delay)
         $(this).hide()
     });
     lzyMsgInitialized = true;
-}
+} // setupMessageHandler
+
+
 
 function showMessage( txt )
 {
     $('.lzy-msgbox').remove();
     $('body').prepend( '<div class="lzy-msgbox"><p>' + txt + '</p></div>' );
     setupMessageHandler(0);
-}
+} // showMessage
 
 
 
@@ -143,11 +149,13 @@ function appendToUrl(url, arg) {
 
 
 
-function mylog(txt)
-{
-	console.log(txt);
+function mylog(txt, notDebugOnly ) {
+    notDebugOnly = ((typeof notDebugOnly === 'undefined') || notDebugOnly); // default true
+    if (debug || notDebugOnly) {
+        console.log(txt);
+    }
 
-	if ($('body').hasClass('debug')) {
+	if ( debug ) {
         var $log = $('#lzy-log');
         if (!$log.length) {
             $('body').append("<div id='lzy-log-placeholder'></div><div id='lzy-log'></div>");
@@ -165,8 +173,7 @@ function mylog(txt)
 
 
 
-function serverLog(text, file)
-{
+function serverLog(text, file) {
     file = (typeof file !== 'undefined')? file: '';
     if (text) {
         $.post( systemPath+'_ajax_server.php?log', { text: text, file: file } );
@@ -177,8 +184,7 @@ function serverLog(text, file)
 
 
 
-function isServerErrMsg(json)
-{
+function isServerErrMsg(json) {
     if (json.match(/^</)) {
         console.log('- response: ' + json.replace(/<(?:.|\n)*?>/gm, ''));
         return true;
@@ -193,8 +199,7 @@ function isServerErrMsg(json)
 
 
 
-function lzyReload( arg, url )
-{
+function lzyReload( arg, url ) {
     var call = window.location.pathname.replace(/\?.*/, '');
     if (typeof url !== 'undefined') {
         call = url.trim();
@@ -204,15 +209,21 @@ function lzyReload( arg, url )
     }
     console.log('initiating page reload: "' + call + '"');
     window.location.replace(call);
-}
+} // lzyReload
 
 
 
 
-function timeStamp( long )
-{
-	var now = new Date();
-	var time = [ now.getHours(), now.getMinutes(), now.getSeconds() ];
+function time() {
+    const d = new Date();
+    return d.getTime();
+} // time
+
+
+
+function timeStamp( long ) {
+	const now = new Date();
+	const time = [ now.getHours(), now.getMinutes(), now.getSeconds() ];
 	for ( var i = 0; i < 3; i++ ) {
 		if ( time[i] < 10 ) {
 			time[i] = '0' + time[i];
