@@ -127,8 +127,8 @@ class Transvar
                     }
 
                     // special option 'showSource':
-                    if (preg_match('/^(\S+)\(/', $var, $m1) && preg_match('/showSource:\s*(\w*),?\s*/ms',$var, $m2)) {
-                        $macName = $m1[1];
+                    if (preg_match('/^(\S+) \( (.*?) \)/x', $var, $m1) && preg_match('/showSource:\s*([-\w\s\'"]*),?\s*/ms',$var, $m2)) {
+                        $macName = str_replace('-', '', $m1[1]);
                         $mode = $m2[1]; // popup or true
                         $srcCode = str_replace($m2[0], '', $var);
 
@@ -136,7 +136,11 @@ class Transvar
                         $var = preg_replace(['/(?<!\\\\)<strong>/', '/(?<!\\\\)<\/strong>/'], '', $var);
                         $var = preg_replace('|//.*?↵|', '', $var);
 
-                        $this->macroSources[$macName][$this->varCount] = ['text' => $srcCode, 'mode' => $mode];
+                        $this->macroSources[$macName][$this->varCount] = [
+                            'text' => $srcCode,
+                            'mode' => $mode,
+                            'args' => trim( $m1[2] ),
+                        ];
                     }
                     if (strpos($var, "\n")) {
                         $var = str_replace("\n", '', $var);    // remove newlines
@@ -1091,6 +1095,7 @@ EOT;
             }
             $source .= "\t$l\n";
         }
+        $source0 = $source;
         $source = ":::: .lzy-src-wrapper.lzy-src-wrapper{$this->varCount}\n::: .lzy-src-code\n## Code\n\t\{{ " .
             trim($source) .
             "\n\t}}\n::: .lzy-src-output\n## Output\n<div>@#@</div>\n:::\n::::\n";
@@ -1101,7 +1106,8 @@ EOT;
         $source = str_replace(['&lt;strong&gt;', '&lt;/strong&gt;'], ['<strong>', '</strong>'], $source); // restore ** (strong)
         $source = preg_replace("/\n\s*\n/ms", "\n", $source);
         // case popup:
-        if ($this->macroSources[$macro][$this->varCount]['mode'] === 'popup') {
+//        if ($this->macroSources[$macro][$this->varCount]['mode'] === 'popup') {
+        if (strpos($this->macroSources[$macro][$this->varCount]['mode'], 'popup') !== false) {
             $popup = $this->page->addPopup([
                 'contentFrom' => ".lzy-src-wrapper{$this->varCount} .lzy-src-code",
                 'triggerButton' => '&lt;/&gt;',
@@ -1111,6 +1117,27 @@ EOT;
             ]);
             $source = "<div class='lzy-src-code-popup'>$popup\n$source</div>";
         }
+
+        if (strpos($this->macroSources[$macro][$this->varCount]['mode'], 'html') !== false) {
+//            $source0 = compileMarkdownStr($source0);
+            $args = $this->macroSources[$macro][$this->varCount]['args'];
+            unset( $this->macroSources[$macro][$this->varCount] );
+            $source0 = $this->translateMacro($macro, $args);
+            $source0 = str_replace(['&lt;strong&gt;', '&lt;/strong&gt;'], ['<strong>', '</strong>'], $source0); // restore ** (strong)
+            $source0 = preg_replace("/\n\s*\n/ms", "\n", $source0);
+            $html = str_replace('<', '&lt;', $source0);
+            $html = str_replace("\n", "\n\t", $html);
+            $source1 = <<<EOT
+::: .lzy-src-html-wrapper
+## HTML as Rendered
+    $html
+:::
+
+EOT;
+            $source .= compileMarkdownStr($source1);
+        }
+
+
         return $source;
     } // injectMacroSource
 
