@@ -20,7 +20,7 @@ class HtmlTable
     private $errMsg = '';
     private $dataTableObj = null;
     private $strToAppend = '';
-
+    private $liveDataSrcRef = '';
     public function __construct($lzy, $options)
     {
         $this->options      = $options;
@@ -163,10 +163,10 @@ class HtmlTable
         if ($this->editingActive) {
             $out .= $this->activateEditingForm();
         } elseif ($this->editableActive) {
-            $out .= $this->activateEditable();
+            $this->liveDataSrcRef = $this->activateEditable();
         } else {
             if ($this->liveData) {            // option liveData:
-                $out = $this->activateLiveData();
+                $out .= $this->activateLiveData();
             }
             $this->editableBy = false;
         }
@@ -183,7 +183,7 @@ class HtmlTable
         $this->convertTimestamps();
         $out .= $this->renderHtmlTable() . $this->strToAppend;
         $out = <<<EOT
-  <div class='lzy-table-wrapper $this->wrapperClass'>
+  <div class='lzy-table-wrapper $this->wrapperClass'{$this->liveDataSrcRef}>
 $out
   </div>
 EOT;
@@ -240,10 +240,16 @@ EOT;
             'init' => $initEditable,
             'editableBy' => $this->editableBy,
             'liveData' => $this->liveData,
+            'execInitialDataUpload' => false,
         ] );
 
         $this->wrapperClass .= ' lzy-table-editable';
-        $this->page->addJq("$('.lzy-table-editable').closest('.dataTables_wrapper').addClass('lzy-datatable-editable')\n");
+        $jq = "$('.lzy-table-editable').closest('.dataTables_wrapper').addClass('lzy-datatable-editable');\n";
+        $this->page->addJq($jq);
+
+        if ($this->liveData) {
+            $this->wrapperClass .= ' lzy-table-livedata';
+        }
 
         $out = $edbl->render();
         return $out;
@@ -261,11 +267,10 @@ EOT;
         require_once $file;
         $this->page->addModules('~ext/livedata/js/live_data.js');
 
-        // skipInitialUpdate: initLiveData( false );
         $jq = <<<EOT
 
-if ($('[data-lzy-datasrc-ref]').length) {
-    liveDataInit( false );
+if ($('[data-datasrc-ref]').length) {
+    liveDataInit( false ); // false = skipInitialUpdate
 }
 
 EOT;
@@ -288,9 +293,8 @@ EOT;
 
         $args = [
             'dataSource' => '~/'.$this->dataSource,
-            'dataSelector' => $this->dataSelector,
-            'targetSelector' => $this->targetSelector,
             'manual' => 'silent',
+            'initJs' => false,
             //'pollingTime' => 10, // for testing
         ];
 
@@ -300,7 +304,8 @@ EOT;
         }
 
         $ld = new LiveData($this->lzy, $args);
-        return $ld->render() . "\n";
+        $this->liveDataSrcRef = $ld->render();
+        return '';
     } // activateLiveData
 
 
@@ -426,7 +431,6 @@ EOT;
             }
             $r++;
         }
-
         if ($this->includeCellRefs && $this->dataSource) {
             $dataSource = " data-lzy-source='{$this->dataSource}'";
         } else {
