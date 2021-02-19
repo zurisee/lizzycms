@@ -206,11 +206,11 @@ class Ticketing
     }
 
 
-    public function createHash( $checkExisting = false)
+    public function createHash( $checkExistingOfType = false)
     {
-        // supply type in $checkExisting if desired
-        if ($checkExisting) {
-            $type = ($checkExisting !== true)? $checkExisting : $this->defaultType;
+        // supply type in $checkExistingOfType if desired
+        if ($checkExistingOfType) {
+            $type = ($checkExistingOfType !== true)? $checkExistingOfType : $this->defaultType;
             $pathToPage = @$GLOBALS['globalParams']['pathToPage'];
             $ticketHash = getStaticVariable( "$pathToPage.tickets.$type" );
             if ($ticketHash && $this->ticketExists( $ticketHash )) {
