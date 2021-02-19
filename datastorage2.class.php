@@ -614,6 +614,9 @@ $outData[$key] = $rec;
             return false;
         }
         $this->getData(true);
+        if (!$this->data) {
+            $this->data = [];
+        }
         $rec = &$this->data;
         foreach (explodeTrim(',', $key) as $k) {
             $k = trim($k, '\'"');
@@ -621,8 +624,9 @@ $outData[$key] = $rec;
                 $rec = &$rec[$k];
             } elseif (is_array($rec) && isset(array_keys($rec)[$k])) { // hit via index
                 $rec = &$rec[ array_keys($rec)[$k] ];
-            } else { // not found
-                return null;
+            } else { // not found, create element
+                $rec[$k] = [];
+                $rec = &$rec[$k];
             }
         }
         $rec = $value;
@@ -660,7 +664,7 @@ $outData[$key] = $rec;
                 }
             }
         }
-        return false;
+        return null;
     } // findRecByContent
 
 
@@ -1176,13 +1180,21 @@ $outData[$key] = $rec;
     private function _unlockRec( $recId, $force = false )
     {
         $recLocks = $this->lowlevelReadRecLocks();
-        if (isset($recLocks[$recId])) {
+        if ($recId === '*') {
+            foreach ($recLocks as $rId => $lock) {
+                if (!$force && !$this->isMySessionID( $lock['lockOwner'] )) {
+                    continue;
+                }
+                unset($recLocks[$rId]);
+            }
+
+        } elseif (isset($recLocks[$recId])) {
             if (!$force && !$this->isMySessionID( $recLocks[$recId]['lockOwner'] )) {
                 return false;
             }
             unset($recLocks[$recId]);
-            $this->lowLevelWriteRecLocks($recLocks);
         }
+        $this->lowLevelWriteRecLocks($recLocks);
         return true;
     } // _unlockRec
 
