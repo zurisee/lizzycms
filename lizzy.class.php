@@ -1960,7 +1960,7 @@ EOT;
             $this->page->addJq("lzyPopup({ 
                 contentRef: '#lzy-login-form',
                 closeOnBgClick: false, 
-                closeButton: true, 
+                closeButton: true,
                 wrapperClass: 'lzy-login',
                 draggable: true,
                 header: '{{ lzy-login-header }}',
