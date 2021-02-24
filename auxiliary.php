@@ -1222,7 +1222,7 @@ function clearNotificationMsg()
 
 
 
-function getCliArg($argname, $stringMode = false)
+function getCliArg($argname, $stringMode = true)
 {
 	$cliarg = null;
 	if (isset($GLOBALS['argv'])) {
@@ -1233,7 +1233,10 @@ function getCliArg($argname, $stringMode = false)
 			}
 		}
 	} else {
-	    $cliarg = getUrlArg($argname, $stringMode);
+	    $cliarg = @$_REQUEST[ $argname ];
+	    if (!$stringMode) {
+	        $cliarg = ($cliarg !== null);
+        }
     }
 	return $cliarg;
 } // getCliArg
