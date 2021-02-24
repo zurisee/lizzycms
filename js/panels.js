@@ -12,6 +12,7 @@ if (typeof window.widthThreshold === 'undefined') {
 }
 
 var panelWidgetInstance = 1;    // instance number
+var lzyPanels = [];
 
 
 function LzyPanels()
@@ -543,3 +544,16 @@ function LzyPanels()
     }; // extractIdNumber
 
 } // LzyPanels
+
+
+
+
+function initLzyPanel( selector, preOpen)
+{
+    if (typeof preOpen === 'undefined') {
+        preOpen = false;
+    }
+    lzyPanels[ panelWidgetInstance ] = new LzyPanels();
+    lzyPanels[ panelWidgetInstance ].init( selector, preOpen );
+    panelWidgetInstance++;
+} // initLzyPanel

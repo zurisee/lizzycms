@@ -5,7 +5,6 @@
 
 $page->addJQFiles('PANELS');
 
-$page->addJs("var panels = [];");
 
 $macroName = basename(__FILE__, '.php');
 
