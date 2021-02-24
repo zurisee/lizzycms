@@ -231,7 +231,7 @@ class LizzyMarkdown
 		$str = preg_replace('/(\n\{\{.*\}\}\n)/U', "\n$1\n", $str); // {{}} alone on line -> add LFs
 		$str = stripNewlinesWithinTransvars($str);
 		$str = $this->handleMdVariables($str);
-		if ($this->page && $this->page->shieldHtml) {	// hide '<' from MD compiler
+		if (@$this->page && $this->page->shieldHtml) {	// hide '<' from MD compiler
 			$str = str_replace(['<', '>'], ['@/@lt@\\@', '@/@gt@\\@'], $str);
 		}
         $str = $this->prepareTabulators($str);
