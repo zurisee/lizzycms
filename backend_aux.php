@@ -155,6 +155,47 @@ function safeStr($str)
 
 
 
+function compileMarkdownStr($mdStr, $removeWrappingPTags = false)
+{
+    require_once SYSTEM_PATH.'markdown_extension.class.php';
+    require_once SYSTEM_PATH.'lizzy-markdown.class.php';
+
+    $md = new LizzyMarkdown();
+    $str = $md->compileStr($mdStr);
+    if ($removeWrappingPTags) {
+        $str = preg_replace('/^\<p>(.*)\<\/p>(\s*)$/ms', "$1$2", $str);
+    }
+    return $str;
+} // compileMarkdownStr
+
+
+
+function stripNewlinesWithinTransvars($str)
+{
+    $p1 = strpos($str, '{{');
+    if ($p1 === false) {
+        return $str;
+    }
+    do {
+        list($p1, $p2) =  strPosMatching($str, '{{',  '}}',$p1);
+
+        if ($p1 === false) {
+            break;
+        }
+        $s = substr($str, $p1, $p2-$p1+2);
+        $s = preg_replace("/\n\s*/ms", '↵ ',$s);
+
+        $str = substr($str, 0, $p1) . $s . substr($str, $p2+2);
+        $p1 += strlen($s);
+    } while (strpos($str, '{{', $p1) !== false);
+
+    return $str;
+} // stripNewlinesWithinTransvars
+
+
+
+
+
 function lzyExit( $str = '' )
 {
     if (strlen($buff = ob_get_clean ()) > 1) {
