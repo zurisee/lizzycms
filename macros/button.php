@@ -8,6 +8,7 @@ $this->addMacro($macroName, function () {
 	$inx = $this->invocationCounter[$macroName] + 1;
 
 	$text = $this->getArg($macroName, 'text', 'Text on button', '');
+	$icon = $this->getArg($macroName, 'icon', 'Icon on button', '');
 	$callbackCode = $this->getArg($macroName, 'callbackCode', '(optional) Defines JS code that will be executed when user clicks on button.', '');
 	$callbackFunction = $this->getArg($macroName, 'callbackFunction', '[name of js-function] If defined, the function with that name is called when the button is activated.', '');
 	$id = $this->getArg($macroName, 'id', '(optional) Defines the button\'s ID (default: lzy-button-N', '');
@@ -18,6 +19,10 @@ $this->addMacro($macroName, function () {
 
     if ($text === 'help') {
         return '';
+    }
+
+    if ($icon) {
+        $text = "<span class='lzy-icon lzy-icon-$icon'></span>$text";
     }
 
     if (!$id) {
