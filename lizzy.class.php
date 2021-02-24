@@ -1958,7 +1958,7 @@ EOT;
         if ($asPopup) {
             $this->page->addModules('POPUPS');
             $this->page->addJq("lzyPopup({ 
-                contentRef: '#lzy-login-form',
+                contentFrom: '#lzy-login-form',
                 closeOnBgClick: false, 
                 closeButton: true,
                 wrapperClass: 'lzy-login',
