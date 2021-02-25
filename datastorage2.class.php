@@ -123,6 +123,7 @@ class DataStorage2
         $this->sid = isset($args['sid']) ? $args['sid'] : '';
         $this->mode = isset($args['mode']) ? $args['mode'] : 'readonly';
         $this->format = isset($args['format']) ? $args['format'] : '';
+        $this->supportBlobType = isset($args['supportBlobType']) ? $args['supportBlobType'] : false;
         $this->includeKeys = isset($args['includeKeys']) ? $args['includeKeys'] : false;
         $this->includeTimestamp = isset($args['includeTimestamp']) ? $args['includeTimestamp'] : false;
         $this->secure = isset($args['secure']) ? $args['secure'] : true;
@@ -859,6 +860,10 @@ $outData[$key] = $rec;
         $json = str_replace('⌑⌇⌑', '"', $json);
         $data = $this->jsonDecode($json);
 
+        if ($this->supportBlobType) {
+            $this->importBlobData($data );
+        }
+
         if ($this->includeKeys) {
             if ($data) {
                 $rec0 = reset($data);
@@ -875,7 +880,6 @@ $outData[$key] = $rec;
         $this->data = $data;
         return $data;
     } // getData
-
 
 
 
@@ -1322,6 +1326,10 @@ $outData[$key] = $rec;
     {
         $this->openDbReadWrite();
 
+        if ($this->supportBlobType) {
+            $newData = $this->exportBlobData( $newData );
+        }
+
         $json = $this->jsonEncode($newData, $isJson);
         $modifTime = str_replace(',', '.', microtime(true)); // fix float->str conversion problem
 
@@ -1344,6 +1352,65 @@ EOT;
         return $res;
     } // lowLevelWrite
 
+
+
+    private function exportBlobData( $data )
+    {
+        if ($data !== null) {
+            $this->data = $data;
+        }
+        $data = &$this->data;
+
+        foreach ($data as $key => $rec) {
+            if (is_array( $rec )) {
+                foreach ($rec as $k) {
+                    if ((@$k[0] === '~') && ($data[ $key ][ $k ] !== '##BLOB_IN_FILE##')) {
+                        $file = resolvePath( $k );
+                        if (!file_exists( $file )) {
+                            preparePath( $file );
+                        }
+                        file_put_contents( $file, $data[ $key ][ $k ] );
+                        $data[ $key ][ $k ] = '##BLOB_IN_FILE##';
+                    }
+                }
+            }
+            if ((@$key[0] === '~') && ($data[ $key ] !== '##BLOB_IN_FILE##')) {
+                $file = resolvePath( $key );
+                if (!file_exists( $file )) {
+                    preparePath( $file );
+                }
+                file_put_contents( $file, $data[ $key ] );
+                $data[ $key ] = '##BLOB_IN_FILE##';
+            }
+        }
+        return null;
+    } // exportBlobData
+
+
+
+    private function importBlobData( &$data )
+    {
+        if (is_array( $data )) {
+            foreach ($data as $key => $rec) {
+                if (is_array($rec)) {
+                    foreach ($rec as $k) {
+                        if (@$k[0] === '~') {
+                            $file = resolvePath($k);
+                            if (file_exists($file)) {
+                                $data[$key][$k] = file_get_contents($file);
+                            }
+                        }
+                    }
+                }
+                if (@$key[0] === '~') {
+                    $file = resolvePath($key);
+                    if (file_exists($file)) {
+                        $data[$key] = file_get_contents($file);
+                    }
+                }
+            }
+        }
+    } // importBlobData
 
 
 
