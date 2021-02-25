@@ -1426,12 +1426,12 @@ function path_info($file)
 
 
 
-function preparePath($path, $accessRights = false)
+function preparePath($path0, $accessRights = false)
 {
-    if ($path && ($path[0] === '~')) {
-        $path = resolvePath($path);
+    if ($path0 && ($path0[0] === '~')) {
+        $path0 = resolvePath($path0);
     }
-	$path = dirname($path.'x');
+	$path = dirname($path0.'x');
     if (!file_exists($path)) {
         $accessRights1 = $accessRights ? $accessRights : MKDIR_MASK;
         try {
@@ -1448,6 +1448,11 @@ function preparePath($path, $accessRights = false)
             chmod($path1, $accessRights);
         }
     }
+
+    if (!file_exists($path0)) {
+        touch($path0);
+    }
+
 } // preparePath
 
 
