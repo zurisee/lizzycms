@@ -81,21 +81,23 @@ class Ticketing
     public function _createTicket($rec, $maxConsumptionCount = false, $validityPeriod = null, $type = false, $givenHash = false)
     {
         $ticketRec = $rec;
-        $ticketRec['lzy_maxConsumptionCount'] = $maxConsumptionCount ?$maxConsumptionCount : $this->defaultMaxConsumptionCount;
-        $ticketRec['lzy_ticketType'] = $type ? $type : $this->defaultType;
+        $ticketRec['_maxConsumptionCount'] = $maxConsumptionCount ?$maxConsumptionCount : $this->defaultMaxConsumptionCount;
+        $ticketRec['_ticketType'] = $type ? $type : $this->defaultType;
+        $ticketRec['_currPage'] = $GLOBALS['globalParams']['pageFolder'];
+        $ticketRec['_dataPath'] = $GLOBALS['globalParams']['dataPath'];
 
         if ($validityPeriod === null) {
-            $ticketRec['lzy_ticketValidTill'] = time() + $this->defaultValidityPeriod;
+            $ticketRec['_ticketValidTill'] = time() + $this->defaultValidityPeriod;
 
         } elseif (($validityPeriod === false) || ($validityPeriod <= 0)) {
-            $ticketRec['lzy_ticketValidTill'] = PHP_INT_MAX;
+            $ticketRec['_ticketValidTill'] = PHP_INT_MAX;
 
         } elseif (is_string($validityPeriod)) {
-            $ticketRec['lzy_ticketValidTill'] = strtotime( $validityPeriod );
-            mylog('ticket till: '.date('Y-m-d', $ticketRec['lzy_ticketValidTill']));
+            $ticketRec['_ticketValidTill'] = strtotime( $validityPeriod );
+            mylog('ticket till: '.date('Y-m-d', $ticketRec['_ticketValidTill']));
 
         } else {
-            $ticketRec['lzy_ticketValidTill'] = time() + $validityPeriod;
+            $ticketRec['_ticketValidTill'] = time() + $validityPeriod;
         }
 
         if ($givenHash) {
@@ -152,34 +154,41 @@ class Ticketing
             return false;
         }
 
-        if ($type && ($type !== $ticketRec['lzy_ticketType'])) {
+        if ($type && ($type !== $ticketRec['_ticketType'])) {
             $ticketRec = false;
             $this->lastError = 'ticket was of wrong type';
 
-        } elseif (isset($ticketRec['lzy_ticketValidTill']) && ($ticketRec['lzy_ticketValidTill'] < time())) {      // ticket expired
+        } elseif (isset($ticketRec['_ticketValidTill']) && ($ticketRec['_ticketValidTill'] < time())) {      // ticket expired
             $this->ds->deleteRecord($ticketHash);
             $ticketRec = false;
             $this->lastError = 'code timed out';
 
-        } elseif (isset($ticketRec['lzy_maxConsumptionCount'])) {
-            $n = $ticketRec['lzy_maxConsumptionCount'];
+        } elseif (isset($ticketRec['_maxConsumptionCount'])) {
+            $n = $ticketRec['_maxConsumptionCount'];
             if ($n > 1) {
-                $ticketRec['lzy_maxConsumptionCount'] = $n - 1;
+                $ticketRec['_maxConsumptionCount'] = $n - 1;
                 $this->ds->writeRecord($ticketHash, $ticketRec);
             } else {
                 $this->ds->deleteRecord($ticketHash);
             }
 
-            $lzy_ticketType = $ticketRec['lzy_ticketType'];
+            $_ticketType = $ticketRec['_ticketType'];
 
-            unset($ticketRec['lzy_maxConsumptionCount']);  // don't return private properties
-            unset($ticketRec['lzy_ticketValidTill']);
+            unset($ticketRec['_maxConsumptionCount']);  // don't return private properties
+            unset($ticketRec['_ticketValidTill']);
 
-            if ($lzy_ticketType === 'sessionVar') {     // type 'sessionVar': make ticket available in session variable
+            if ($_ticketType === 'sessionVar') {     // type 'sessionVar': make ticket available in session variable
                 $_SESSION['lizzy']['ticket'] = $ticketRec;
             }
-            unset($ticketRec['lzy_ticketType']);
+            unset($ticketRec['_ticketType']);
         }
+        if (isset( $GLOBALS['globalParams']['isBackend'])) {
+            $GLOBALS['globalParams']['pageFolder'] = $ticketRec['_currPage'];
+            $GLOBALS['globalParams']['dataPath'] = $ticketRec['_dataPath'];
+
+        }
+        unset($ticketRec['_currPage']);
+        unset($ticketRec['_dataPath']);
         return $ticketRec;
     } // consumeTicket
 
@@ -234,8 +243,8 @@ class Ticketing
         $ticketsToPurge = false;
         if ($tickets) {
             foreach ($tickets as $key => $ticket) {
-                if (!isset($ticket['lzy_ticketValidTill']) ||
-                    ($ticket['lzy_ticketValidTill'] < $now)) {    // has expired
+                if (!isset($ticket['_ticketValidTill']) ||
+                    ($ticket['_ticketValidTill'] < $now)) {    // has expired
                     unset($tickets[$key]);
                     $ticketsToPurge = true;
                 }
@@ -254,7 +263,7 @@ class Ticketing
         $data = $this->ds->read();
         $count = 0;
         foreach ($data as $key => $rec) {
-            if (@$rec['lzy_ticketType'] === $this->defaultType) {
+            if (@$rec['_ticketType'] === $this->defaultType) {
                 $count++;
             }
         }
@@ -270,7 +279,7 @@ class Ticketing
         if ($data) {
             foreach ($data as $key => $rec) {
                 // skip tickets of other type:
-                if ($this->defaultType !== @$rec['lzy_ticketType']) {
+                if ($this->defaultType !== @$rec['_ticketType']) {
                     continue;
                 }
                 // skip user's own tickets:

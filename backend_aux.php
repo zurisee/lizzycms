@@ -22,6 +22,7 @@ define('REC_KEY_ID', 	        '_key');
 define('TIMESTAMP_KEY_ID', 	    '_timestamp');
 define('PASSWORD_PLACEHOLDER', 	'●●●●');
 
+$GLOBALS['globalParams']['isBackend'] = true;
 $appRoot = getcwd().'/';
 if (strpos($appRoot, '_lizzy/') !== false) {
     $appRoot = preg_replace('/_lizzy\/.*$/', '', $appRoot);
@@ -291,8 +292,10 @@ function resolvePath($path)
         return $path;
     }
     $path = trim($path);
-    $dataPath = isset($_SESSION['lizzy']['dataPath'])? $_SESSION['lizzy']['dataPath']: 'data/';
-    $pageFolder = isset($_SESSION['lizzy']['pageFolder'])? $_SESSION['lizzy']['pageFolder']: '';
+    $dataPath = isset($GLOBALS['globalParams']['dataPath'])? $GLOBALS['globalParams']['dataPath'] :
+        (isset($_SESSION['lizzy']['dataPath'])? $_SESSION['lizzy']['dataPath']: 'data/');
+    $pageFolder = isset($GLOBALS['globalParams']['pageFolder'])? $GLOBALS['globalParams']['pageFolder'] :
+        (isset($_SESSION['lizzy']['pageFolder'])? $_SESSION['lizzy']['pageFolder']: '');
 
     $from = [
         '|~/|',
