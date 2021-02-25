@@ -151,6 +151,11 @@ function appendToUrl(url, arg) {
 
 function mylog(txt, notDebugOnly ) {
     notDebugOnly = ((typeof notDebugOnly === 'undefined') || notDebugOnly); // default true
+
+    if (txt.match(/xdebug-error/)) {
+        txt = txt.replace(/<[^>]*>?/gm, '');
+    }
+
     if (debug || notDebugOnly) {
         console.log(txt);
     }
