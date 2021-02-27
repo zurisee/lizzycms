@@ -869,10 +869,12 @@ $outData[$key] = $rec;
                 $rec0 = reset($data);
                 if (!isset($rec0[REC_KEY_ID])) {
                     foreach ($data as $key => $rec) {
-                        if ($this->includeTimestamp) {
-                            $data[ $key ][TIMESTAMP_KEY_ID] = 0;
+                        if (is_array($rec)) {
+                            if ($this->includeTimestamp) {
+                                $data[$key][TIMESTAMP_KEY_ID] = 0;
+                            }
+                            $data[$key][REC_KEY_ID] = $key;
                         }
-                        $data[ $key ][REC_KEY_ID] = $key;
                     }
                 }
             }
