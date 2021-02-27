@@ -33,6 +33,7 @@ function LzyPopup( options, index ) {
         this.options = options;
         this.text  = (typeof options.text !== 'undefined')? options.text : ''; // text synonym for content
         this.content  = (typeof options.content !== 'undefined')? options.content : this.text;
+        this.deleteAfter  = (typeof options.deleteAfter !== 'undefined')? options.deleteAfter : false;
 
         this.id  = (typeof options.id !== 'undefined')? options.id : 'lzy-popup-' + this.inx;
 
@@ -72,6 +73,7 @@ function LzyPopup( options, index ) {
         } else if (typeof options.callbacks === 'function') {
             this.callbacks[0] =  options.callbacks;
         }
+        this.closeCallback = (typeof options.closeCallback !== 'undefined') ? options.closeCallback.trim() : '';
         this.popupClass = (typeof options.class !== 'undefined') ? ' ' + options.class : '';
         this.popupClass = (typeof options.popupClass !== 'undefined') ? ' ' + options.popupClass : this.popupClass;
         if (this.closeButton) {
@@ -154,6 +156,9 @@ function LzyPopup( options, index ) {
         }
 
         cls = 'lzy-popup-wrapper';
+        if (this.deleteAfter) {
+            cls += ' lzy-popup-transient';
+        }
         if (contentFrom) {
             if (typeof contentFrom === 'string') {
                 if ((contentFrom.charAt(0) !== '#') && (contentFrom.charAt(0) !== '.')) {
@@ -203,7 +208,13 @@ function LzyPopup( options, index ) {
             if (this.wrapperClass) {
                 cls += ' ' + this.wrapperClass;
             }
-            var html = '<div id="' + parent.id + '" class="lzy-popup-bg lzy-popup-' + this.inx + this.popupClass + '"' + style + data +'>\n' +
+
+            var closeCallback = '';
+            if (this.closeCallback) {
+                closeCallback = ' data-closecallback="' + this.closeCallback + '"';
+            }
+            var html = '<div id="' + parent.id + '" class="lzy-popup-bg lzy-popup-' +
+                this.inx + this.popupClass + '"' + style + data + closeCallback + '>\n' +
                 '    <div class="' + cls + '" role="dialog"><div role="document">\n'+ header +
                 '      <div class="lzy-popup-container">\n' +
                 this.content + this.buttonHtml +
@@ -382,6 +393,10 @@ function LzyPopup( options, index ) {
 
 
 
+    this.close = function () {
+    }; // close
+
+
     this.init( options );
 } // LzyPopup
 
@@ -443,7 +458,14 @@ function lzyPopupClose( that ) {
         }
     }
     $popup.each(function () {
-        if ($(this).hasClass('lzy-popup-transient')) {
+        const closeCallback = $popup.attr('data-closecallback');
+        if (typeof window[closeCallback] === 'function') {
+            const abort = window[closeCallback]( this );
+            if (abort) {
+                return;
+            }
+        }
+        if ($('.lzy-popup-transient', $(this)).length) {
             $(this).remove();
         } else {
             $(this).hide();
