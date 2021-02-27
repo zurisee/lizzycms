@@ -8,6 +8,12 @@ date_default_timezone_set($timezone);
 error_reporting(E_ALL | E_STRICT);
 ob_start();
 
+// prevent "PHPSESSID"-Cookie warning:
+session_set_cookie_params(["SameSite" => "Strict"]); //none, lax, strict
+session_set_cookie_params(["Secure" => "true"]); //false, true
+session_set_cookie_params(["HttpOnly" => "true"]); //false, true
+
+
 require_once SYSTEM_PATH.'/third-party/jquery-upload/server/php/UploadHandler.php';
 require_once SYSTEM_PATH.'backend_aux.php';
 require_once SYSTEM_PATH.'datastorage2.class.php';
