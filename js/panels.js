@@ -11,13 +11,13 @@ if (typeof window.widthThreshold === 'undefined') {
     window.widthThreshold = 480;
 }
 
-var panelWidgetInstance = 1;    // instance number
+var lzyPanelWidgetInstance = 1;    // instance number
 var lzyPanels = [];
 
 
 function LzyPanels()
 {
-    this.panelWidgetInstance = panelWidgetInstance;
+    this.panelWidgetInstance = lzyPanelWidgetInstance;
     this.to = null;
     this.closeButton = ''; //ToDo: implement tab-close button
 
@@ -133,7 +133,7 @@ function LzyPanels()
             // create tabs header row:
             for (i = 0; i < panels.length; ++i) {
                 var hdrText = panels[i];
-                var _i = (panelWidgetInstance*100 + i + 1).toString();
+                var _i = (lzyPanelWidgetInstance*100 + i + 1).toString();
                 var tabindex = (i === 0) ? '0' : '-1';
                 var aria = ' aria-setsize="' + panels.length + '" aria-posinset="' + (i+1) + '" aria-selected="false" aria-controls="lzy-panel-id' + _i + '"';
 
@@ -145,7 +145,7 @@ function LzyPanels()
 
             $thisWidget.prepend(header);
             if (preOpen) {
-                parent.openPanel( '#lzy-panel-id' + (panelWidgetInstance*100 + parseInt(preOpen)));
+                parent.openPanel( '#lzy-panel-id' + (lzyPanelWidgetInstance*100 + parseInt(preOpen)));
             }
             if ($thisWidget.hasClass('lzy-accordion')) {
                 setTimeout( function() {
@@ -553,7 +553,7 @@ function initLzyPanel( selector, preOpen)
     if (typeof preOpen === 'undefined') {
         preOpen = false;
     }
-    lzyPanels[ panelWidgetInstance ] = new LzyPanels();
-    lzyPanels[ panelWidgetInstance ].init( selector, preOpen );
-    panelWidgetInstance++;
+    lzyPanels[ lzyPanelWidgetInstance ] = new LzyPanels();
+    lzyPanels[ lzyPanelWidgetInstance ].init( selector, preOpen );
+    lzyPanelWidgetInstance++;
 } // initLzyPanel

@@ -86,9 +86,9 @@ $this->addMacro($macroName, function () {
     if (!$omitScript) {
         $jq = <<<EOT
 
-panels[ panelWidgetInstance ] = new LzyPanels();
-panels[ panelWidgetInstance ].init( '$widgetSelector', $preOpen );
-panelWidgetInstance++;
+lzyPanels[ lzyPanelWidgetInstance ] = new LzyPanels();
+lzyPanels[ lzyPanelWidgetInstance ].init( '$widgetSelector', $preOpen );
+lzyPanelWidgetInstance++;
 
 EOT;
 
