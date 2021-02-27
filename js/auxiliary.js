@@ -48,13 +48,35 @@ function execAjax(payload, cmd, doneFun, url) {
     ajaxHndl = $.ajax({
         method: 'POST',
         url: url,
-        data: { data: json }
+        data: payload
     })
         .done(function ( json ) {
         if (typeof doneFun === 'function') {
             doneFun( json );
         }
     });
+} // execAjax
+
+
+
+
+function execAjaxPromise(cmd, options, url) {
+    return new Promise(function(resolve) {
+
+        if (typeof url === 'undefined') {
+            url = appRoot + '_lizzy/_ajax_server.php';
+        }
+        url = appendToUrl(url, cmd);
+        $.ajax({
+            method: 'POST',
+            url: url,
+            data: options
+        })
+            .done(function ( json ) {
+                resolve( json );
+            });
+    });
+
 } // execAjax
 
 
@@ -152,7 +174,7 @@ function appendToUrl(url, arg) {
 function mylog(txt, notDebugOnly ) {
     notDebugOnly = ((typeof notDebugOnly === 'undefined') || notDebugOnly); // default true
 
-    if (txt.match(/xdebug-error/)) {
+    if ((typeof txt === 'string') && txt.match(/xdebug-error/)) {
         txt = txt.replace(/<[^>]*>?/gm, '');
     }
 
