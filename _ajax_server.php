@@ -55,6 +55,12 @@ require_once 'ticketing.class.php';
 
 use Symfony\Component\Yaml\Yaml;
 
+// prevent "PHPSESSID"-Cookie warning:
+session_set_cookie_params(["SameSite" => "Strict"]); //none, lax, strict
+session_set_cookie_params(["Secure" => "true"]); //false, true
+session_set_cookie_params(["HttpOnly" => "true"]); //false, true
+
+
 if (isset($_GET['abort'])) {
     session_start();
     $_SESSION['lizzy']['ajaxServerAbort'] = time();
@@ -149,8 +155,8 @@ class AjaxServer
         if ($this->get_request_data('get-rec') !== null) {    // respond with info-msg
             $this->getDataRec();
         }
-        if ($this->get_request_data('get-rec') !== null) {    // respond with info-msg
-            $this->getDataRec();
+        if ($this->get_request_data('get-elem') !== null) {    // respond with info-msg
+            $this->getDataElem();
         }
         if ($this->get_request_data('lock-rec') !== null) {    // respond with info-msg
             $this->lockRec();
@@ -160,6 +166,9 @@ class AjaxServer
         }
         if ($this->get_request_data('save-rec') !== null) {    // respond with info-msg
             $this->saveDataRec();
+        }
+        if ($this->get_request_data('save-elem') !== null) {    // respond with info-msg
+            $this->saveDataElem();
         }
         if ($this->get_request_data('del-rec') !== null) {    // respond with info-msg
             $this->deleteDataRec();
@@ -185,6 +194,9 @@ class AjaxServer
             lzyExit('failed#get-rec');
         }
         $recKey = $this->get_request_data('recKey');
+        if (!$recKey) {
+            $recKey = $this->get_request_data('dataRef');
+        }
 
         // lock record if requested:
         if (isset($_REQUEST['lock'])) {
@@ -192,64 +204,114 @@ class AjaxServer
             if (!$res) {
                 $json = json_encode(['res' => 'failed', 'lockedRecs' => [$recKey]]);
                 lzyExit( $json );
-//                lzyExit('failed#get-rec=locked');
             }
         }
 
         $dataRec = $this->db->readRecord( $recKey );
-        $outData = [];
-        if (!$dataRec) {
-            $json = json_encode(['res' => 'Error: getDataRec() no data found', 'data' => '']);
-            lzyExit( $json );
-        }
-        if (isset($this->ticketRec['recDef'])) {
-            foreach ($this->ticketRec['recDef'] as $key => $rec) {
-                $outData["#fld_" . $rec[0]] = isset($dataRec[$key]) ? $dataRec[$key] : '';
-            }
 
-        } else {
-            foreach ( $this->ticketRec['formDescr'] as $descr) {
-                $key = $descr['name'];
-                $type = $descr['type'];
-                if (isset($dataRec[$key])) {
-                    $value = $dataRec[$key];
-                } else {
-                    $key1 = $descr['label'];
-                    $value = isset($dataRec[$key1])? $dataRec[$key1]: '';
-                }
-                if (is_array($value)) {
-                    // radio,checkbox,dropdown types have special structure:
-                    //  -> $value[0] contains display value
-                    if (isset($value[0])) {
-                        $value = $value[0];
-                    } else {
-                        $value = implode(',', $value);
-                    }
-                }
-                if ($type === 'radio') {
-                    $outData["input:radio[value='$value']"] = 'checked';
-                    continue;
-                } elseif ($type === 'checkbox') {
-                    $values = explodeTrim(',', rtrim($value, ','));
-                    foreach ($values as $vv) {
-                        $outData["input:checkbox[value='$vv']"] = 'checked';
-                    }
-                    continue;
-                } elseif ($type === 'dropdown') {
-                    // 	$('option[value=Italy]').attr('selected', 'selected');
-                    $outData["option[value='$value']"] = 'selected';
-                    continue;
-                }
-                if ($type === 'password') {
-                    $value = $value? PASSWORD_PLACEHOLDER:'';
-                }
-                $outData[ $key ] = $value;
-            }
-        }
-        $json = json_encode(['res' => 'Ok', 'data' => $outData]);
+        $json = json_encode(['res' => 'Ok', 'data' => $dataRec]);
         lzyExit( $json );
     } // getDataRec
 
+
+
+
+	private function getDataElem()
+    {
+        if (!$this->openDB( )) {
+            lzyExit('failed#get-rec');
+        }
+
+        $recKey = $this->getRecKey();
+
+        // lock record if requested:
+        if (isset($_REQUEST['lock'])) {
+            $res = $this->db->lockRec( $recKey );
+            if (!$res) {
+                $json = json_encode(['res' => 'failed', 'lockedRecs' => [$recKey]]);
+                lzyExit( $json );
+            }
+        }
+
+        $dataRec = $this->db->readElement( $recKey );
+
+        $json = json_encode(['res' => 'Ok', 'data' => $dataRec]);
+        lzyExit( $json );
+    } // getDataElem
+
+
+//	private function getDataRec()
+//    {
+//        if (!$this->openDB( )) {
+//            lzyExit('failed#get-rec');
+//        }
+//        $recKey = $this->get_request_data('recKey');
+//        if (!$recKey) {
+//            $recKey = $this->get_request_data('dataRef');
+//        }
+//
+//        // lock record if requested:
+//        if (isset($_REQUEST['lock'])) {
+//            $res = $this->db->lockRec( $recKey );
+//            if (!$res) {
+//                $json = json_encode(['res' => 'failed', 'lockedRecs' => [$recKey]]);
+//                lzyExit( $json );
+//            }
+//        }
+//
+//        $dataRec = $this->db->readRecord( $recKey );
+//        $outData = [];
+//        if (!$dataRec) {
+//            $json = json_encode(['res' => 'Error: getDataRec() no data found', 'data' => '']);
+//            lzyExit( $json );
+//        }
+//        if (isset($this->ticketRec['recDef'])) {
+//            foreach ($this->ticketRec['recDef'] as $key => $rec) {
+//                $outData["#fld_" . $rec[0]] = isset($dataRec[$key]) ? $dataRec[$key] : '';
+//            }
+//
+//        } else {
+//            foreach ( $this->ticketRec['formDescr'] as $descr) {
+//                $key = $descr['name'];
+//                $type = $descr['type'];
+//                if (isset($dataRec[$key])) {
+//                    $value = $dataRec[$key];
+//                } else {
+//                    $key1 = $descr['label'];
+//                    $value = isset($dataRec[$key1])? $dataRec[$key1]: '';
+//                }
+//                if (is_array($value)) {
+//                    // radio,checkbox,dropdown types have special structure:
+//                    //  -> $value[0] contains display value
+//                    if (isset($value[0])) {
+//                        $value = $value[0];
+//                    } else {
+//                        $value = implode(',', $value);
+//                    }
+//                }
+//                if ($type === 'radio') {
+//                    $outData["input:radio[value='$value']"] = 'checked';
+//                    continue;
+//                } elseif ($type === 'checkbox') {
+//                    $values = explodeTrim(',', rtrim($value, ','));
+//                    foreach ($values as $vv) {
+//                        $outData["input:checkbox[value='$vv']"] = 'checked';
+//                    }
+//                    continue;
+//                } elseif ($type === 'dropdown') {
+//                    // 	$('option[value=Italy]').attr('selected', 'selected');
+//                    $outData["option[value='$value']"] = 'selected';
+//                    continue;
+//                }
+//                if ($type === 'password') {
+//                    $value = $value? PASSWORD_PLACEHOLDER:'';
+//                }
+//                $outData[ $key ] = $value;
+//            }
+//        }
+//        $json = json_encode(['res' => 'Ok', 'data' => $outData]);
+//        lzyExit( $json );
+//    } // getDataRec
 
 
 
@@ -258,8 +320,7 @@ class AjaxServer
         if (!$this->openDB( )) {
             lzyExit('failed#save');
         }
-        $recKey = $this->get_request_data('recKey');
-//        $recKey = intval( $this->get_request_data('recKey') );
+        $recKey = $this->getRecKey();
         // delete record:
 
     } // deleteDataRec
@@ -271,17 +332,15 @@ class AjaxServer
     private function lockRec()
     {
         if (!$this->openDB( )) {
-            lzyExit('failed#save');
+            lzyExit(json_encode(['res' => 'failed#lock-rec openDB']));
         }
-        $recKey = $this->get_request_data('recKey');
-//        $recKey = intval( $this->get_request_data('recKey') );
+        $recKey = $this->getRecKey();
+
         // lock record:
         $res = $this->db->lockRec( $recKey );
-        if ($res) {
-            lzyExit('ok#lock-rec');
-        } else {
-            lzyExit('failed#lock-rec');
-        }
+
+        $json = json_encode(['res' => $res? 'Ok': 'failed#lock-rec']);
+        lzyExit( $json );
     } // lockRec
 
 
@@ -291,17 +350,15 @@ class AjaxServer
     private function unlockRec()
     {
         if (!$this->openDB( )) {
-            lzyExit('failed#save');
+            lzyExit(json_encode(['res' => 'failed#unlock-rec openDB']));
         }
-        $recKey = $this->get_request_data('recKey');
-//        $recKey = intval( $this->get_request_data('recKey') );
-        // lock record:
+        $recKey = $this->getRecKey();
+
+        // unlock record:
         $res = $this->db->unlockRec( $recKey );
-        if ($res) {
-            lzyExit('ok#unlock-rec');
-        } else {
-            lzyExit('failed#unlock-rec');
-        }
+
+        $json = json_encode(['res' => $res? 'Ok': 'failed#unlock-rec']);
+        lzyExit( $json );
     } // unlockRec
 
 
@@ -310,8 +367,49 @@ class AjaxServer
 
 	private function saveDataRec()
     {
-        lzyExit( 'failed#saveDataRec() not supported yet in _ajax_server' );
+        if (!$this->openDB( )) {
+            lzyExit('failed#get-rec');
+        }
+        $recKey = $this->getRecKey();
+        $text = $this->get_request_data('text');
+        $res = $this->db->writeRec( $recKey, $text );
+
+        // compile and send back:
+        if ($this->ticketRec['_renderAsMd']) {
+            $text = compileMarkdownStr($text);
+        }
+        $targId = "#{$this->ticketRec['_id']}";
+        $json = json_encode([
+            'res' => ($res === true)? 'ok': 'failed',
+            'data' => [ $targId => $text ],
+        ]);
+        lzyExit( $json );
     } // saveDataRec
+
+
+
+
+	private function saveDataElem()
+    {
+        if (!$this->openDB( )) {
+            lzyExit('failed#get-rec');
+        }
+        $recKey = $this->getRecKey();
+        $text = $this->get_request_data('text');
+        $locking = $this->get_request_data('locking');
+        $res = $this->db->writeElement( $recKey, $text, $locking );
+
+        // compile and send back:
+        if ($this->ticketRec['_renderAsMd']) {
+            $text = compileMarkdownStr($text);
+        }
+        $targId = "#{$this->ticketRec['_id']}";
+        $json = json_encode([
+            'res' => ($res === true)? 'ok': 'failed',
+            'data' => [ $targId => $text ],
+        ]);
+        lzyExit( $json );
+    } // saveDataElem
 
 
 
@@ -350,23 +448,45 @@ class AjaxServer
         }
 
         if ($this->get_request_data('getfile') !== null) {          // send md-file
-            $md = '';
-            if (isset($_POST['lzy_filename'])) {
-                $filename = $_POST['lzy_filename'];
-                $approot = trunkPath($_SERVER['SCRIPT_FILENAME']);
-                if ($filename === 'sitemap') {
-                    $filename = $approot . 'config/sitemap.txt';
-                } else {
-                    $filename = $approot . $filename;
-                }
-                if (file_exists($filename)) {
-                    $md = file_get_contents($filename);
-                }
-            }
-            lzyExit($md);
+            $this->getFile();
         }
     } // handleFileRequests
 
+
+
+    private function getFile() {
+        $md = '';
+        if (isset($_POST['lzy_filename'])) {
+            $filename = $_POST['lzy_filename'];
+            $approot = trunkPath($_SERVER['SCRIPT_FILENAME']);
+            if ($filename === 'sitemap') {
+                $filename = $approot . 'config/sitemap.txt';
+            } else {
+                $filename = $approot . $filename;
+            }
+            if (file_exists($filename)) {
+                $md = file_get_contents($filename);
+            }
+        } elseif (isset($_POST['srcRef'])) {
+            $srcRef = $_POST['srcRef'];
+            $setName = preg_replace('/.*?:/', '', $srcRef);
+            $tickHash = preg_replace('/:.*/', '', $srcRef);
+            $tick = new Ticketing();
+            $ticketRec = $tick->consumeTicket($tickHash);
+            if (isset( $ticketRec[ $setName ] )) {
+                $filename = PATH_TO_APP_ROOT . $ticketRec[ $setName ]['_dataSource'];
+                if (file_exists( $filename )) {
+                    $text = file_get_contents( $filename );
+                    lzyExit( json_encode([
+                        'result' => 'ok',
+                        'data'   => $text,
+                    ]));
+                }
+            }
+        }
+        lzyExit($md);
+
+    } // getFile
 
 
 
@@ -418,7 +538,6 @@ class AjaxServer
         } elseif ($key && isset($data[$key])) {
             $data = $data[$key];
         }
-//        $t = json_encode($data);
         return json_encode($data);
     } // prepareClientData
 
@@ -431,20 +550,20 @@ class AjaxServer
         }
         $this->dataFile = false;
         $dataRef = $this->get_request_data('ds');
-        $formRef = '';
+        $setId = '';
         if (preg_match('/(.*):(.*)/', $dataRef, $m)) {
             $dataRef = $m[1];
-            $formRef = $m[2];
+            $setId = $m[2];
         }
         if ($dataRef &&preg_match('/^[A-Z0-9]{4,20}$/', $dataRef)) {     // dataRef (=ticket hash) available
             $ticketing = new Ticketing();
             $ticketRec = $ticketing->consumeTicket($dataRef);
             if ($ticketRec) {      // corresponding ticket found
-                if ($formRef && isset($ticketRec[$formRef])) {
-                    $ticketRec = $ticketRec[$formRef];
-                    $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['dataSrc'];
+                if ($setId && isset($ticketRec[$setId])) {
+                    $ticketRec = $ticketRec[$setId];
+                    $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['_dataSource'];
                 } elseif (isset($ticketRec['dataSrc'])) {
-                    $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['dataSrc'];
+                    $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['dataSrc']; //???
                 } elseif (isset($ticketRec['form'])) {
                     $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['file'];
                 }
@@ -456,18 +575,30 @@ class AjaxServer
         }
 
         // if primary method didn't work, try default DB in page folder
-        $pagePath = isset($_SESSION["lizzy"]["pathToPage"]) ? $_SESSION["lizzy"]["pathToPage"] : '';
+        $pagePath = $GLOBALS['globalParams']['pageFolder'];
         if (!$this->dataFile && $pagePath) {
             $this->dataFile = PATH_TO_APP_ROOT . $pagePath . DEFAULT_EDITABLE_DATA_FILE;
         }
 
-        if ($this->dataFile) {
+        if ($this->dataFile && file_exists( $this->dataFile)) {
             $this->db = new DataStorage2(['dataFile' => $this->dataFile, 'includeKeys' => true]);
             return true;
         }
 
         return false;
     } // openDB
+
+
+
+    private function getRecKey()
+    {
+        $recKey = $this->get_request_data('recKey');
+        if (!$recKey) {
+            $recKey = $this->get_request_data('dataRef');
+        }
+        return $recKey;
+    } // getRecKey
+
 
 
 
