@@ -780,7 +780,8 @@ EOT;
 			return;
 		}
         $this->page->addModules('POPUPS');
-		require_once SYSTEM_PATH.'editor.class.php';
+		require_once SYSTEM_PATH.'content-editor.class.php';
+//		require_once SYSTEM_PATH.'editor.class.php';
         require_once SYSTEM_PATH.'page-source.class.php';
 
         $this->config->editingMode = $this->editingMode;

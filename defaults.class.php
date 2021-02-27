@@ -158,6 +158,9 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->loadModules['EDITABLE']              = array('module' => 'extensions/editable/js/editable.js,'.
                                                             'extensions/editable/css/editable.css', 'weight' => 120);
 
+        $this->loadModules['EDITOR']                = array('module' => 'js/editor.js, css/_editor.css', 'weight' => 117);
+        $this->loadModules['FILE_EDITOR']           = array('module' => 'js/file_editor.js, css/_file_editor.css', 'weight' => 115);
+
         $this->loadModules['PANELS']                = array('module' => 'js/panels.js, css/panels.css', 'weight' => 110);
 
         $this->loadModules['QUICKVIEW']     	    = array('module' => 'js/quickview.js, css/quickview.css', 'weight' => 92);
