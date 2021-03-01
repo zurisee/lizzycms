@@ -69,10 +69,14 @@ function LzyEditor() {
         });
 
         // initialize SimpleMDE:
+        //  see https://codemirror.net/doc/manual.html#config
         this.simplemde = new SimpleMDE({
             element: $('#lzy-editor-' + this.lzyEditorInx)[0],
             autofocus: true,
             spellChecker: false,
+            autocorrect: false,
+            tabSize: 4,
+            indentWithTabs: false,
             toolbar: [
                 'bold',
                 'italic',
@@ -87,18 +91,41 @@ function LzyEditor() {
                 'side-by-side',
                 'fullscreen',
                 'guide',
-                '  |  ',
-                    {
-                        name: 'Save',
-                        action: function customFunction(){
-                            const text = parent.simplemde.value();
-                            parent.saveEditorData( text );
-                        },
-                        className: 'fa fa-save',
-                        title: 'Save',
+                {
+                    name: 'gap',
+                    className: 'lzy-editor-buttons-gap',
+                    title: '|',
+                },
+                {
+                    name: 'Exit',
+                    action: function customFunction(){
+                        const text = parent.simplemde.value();
+                        parent.saveEditorData( text );
+                        lzyPopupClose();
                     },
+                    className: 'fa fa-check',
+                    title: '{{ Exit }}',
+                },
+                {
+                    name: 'Save',
+                    action: function customFunction(){
+                        const text = parent.simplemde.value();
+                        parent.saveEditorData( text );
+                    },
+                    className: 'fa fa-save',
+                    title: '{{ Save }}',
+                },
+                {
+                    name: 'Close',
+                    action: function customFunction(){
+                        lzyPopupClose();
+                    },
+                    className: 'fa fa-window-close',
+                    title: '{{ Close }}',
+                },
             ],
         });
+        this.simplemde.codemirror.setSelection({line:9999,ch:0}, {line:9999,ch:0});
     }; // startEditing
 
 
