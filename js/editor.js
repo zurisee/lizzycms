@@ -47,7 +47,7 @@ function LzyEditor() {
 
 
     this.startEditing = function ( text ) {
-        mylog('startEditing: ' + text);
+        mylog('startEditing: ' + text, false);
         const parent = this;
         const id = 'lzy-editor-wrapper-' + this.lzyEditorInx;
 
@@ -64,7 +64,7 @@ function LzyEditor() {
             closeButton: false,
             wrapperClass: 'lzy-editor',
             buttons: 'Cancel,Save',
-            callbacks: 'onCancel,onSave',
+            callbacks: 'lzyEditorOnCancel,lzyEditorOnSave',
             deleteAfter: true,
         });
 
@@ -118,6 +118,7 @@ function LzyEditor() {
                 {
                     name: 'Close',
                     action: function customFunction(){
+                        lzyEditorOnCancel();
                         lzyPopupClose();
                     },
                     className: 'fa fa-window-close',
@@ -197,18 +198,18 @@ function editorCallback( that ) {
 
 
 
-function onSave( that ) {
+function lzyEditorOnSave() {
     const text = lzyEditor.simplemde.value();
     lzyEditor.saveEditorData( text );
     lzyPopupClose();
-} // onSave
+} // lzyEditorOnSave
 
 
 
-function onCancel() {
+function lzyEditorOnCancel() {
     lzyEditor.cancelEditing();
     lzyPopupClose();
-} // onCancel
+} // lzyEditorOnCancel
 
 
 
