@@ -1,5 +1,5 @@
 <?php
-define('EMOJINAMES_FILE', '_lizzy/rsc/emojis.json');
+
 
 class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
 {
@@ -1030,41 +1030,6 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
             $attr = ", type:'extern'";
         }
         return "{{ link(\"$url\", \"$text\"$attr) }}";
-    }
-
-
-
-
-    // ---------------------------------------------------------------
-    /**
-     * @marker :
-     */
-    protected function parseEmoji($markdown)
-    {
-        // check whether the marker really represents a emoji/icon (i.e. there is a closing :)
-        if (preg_match('/^ : ([a-z] [a-z0-9_-]{1,35}) : /x', $markdown, $matches)) {
-            return [
-                ['emoji', $matches[1]],
-                strlen($matches[0])
-            ];
-        }
-        // in case we did not find a closing ~~ we just return the marker and skip 1 character
-        return [['text', ':'], 1];
-    }
-
-    // rendering is the same as for block elements, we turn the abstract syntax array into a string.
-    protected function renderEmoji($element)
-    {
-        if (!isset($this->emojiNames)) {
-            $this->emojiNames = json_decode( file_get_contents(EMOJINAMES_FILE), true);
-        }
-        if (isset($this->emojiNames[$element[1]])) {
-            $out = $this->emojiNames[$element[1]];
-            $out = "<span class='lzy-emoji' data-icon='$out'>&#8203;</span>";
-        } else {
-            $out = "<span class='lzy-icon lzy-icon-{$element[1]}'></span>";
-        }
-        return $out;
     }
 
 

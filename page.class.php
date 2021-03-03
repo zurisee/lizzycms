@@ -13,6 +13,7 @@
 */
 
 define('MAX_ITERATION_DEPTH', 10);
+define('EMOJINAMES_FILE', '_lizzy/rsc/emojis.json');
 
 
 
@@ -1228,7 +1229,6 @@ EOT;
 
 
 
-
     private function assembleHtml()
     {
         $html = $this->template;
@@ -1245,6 +1245,9 @@ EOT;
         } else {
             $bodyTopInjections = '';
         }
+
+        $this->content = $this->translateEmojisAndIcons( $this->content ); // :icon:
+
         $tuples = [
             'body_classes' =>           trim($this->bodyTagClasses),
             'body_tag_attributes' =>    $this->bodyTagInjections,
@@ -1301,6 +1304,33 @@ EOT;
         }
     } // injectAllowOrigin
 
+
+
+
+    private function translateEmojisAndIcons( $html )
+    {
+        $out = '';
+        while (preg_match('/(.*?) : ([a-z] [a-z0-9_-]{1,35}) : (.*)/xms', $html, $m)) {
+            if (substr($m[1], -1) === '\\') {
+                $html = $m[3];
+                $out .= substr($m[1], 0,-1) . ":{$m[2]}:";
+
+            } else {
+                $html = $m[3];
+                $out .= $m[1];
+                if (!isset($this->emojiNames)) {
+                    $this->emojiNames = json_decode( file_get_contents(EMOJINAMES_FILE), true);
+                }
+                if (isset($this->emojiNames[ $m[2] ])) {
+                    $icon = $this->emojiNames[ $m[2] ];
+                    $out .= "<span class='lzy-emoji' data-icon='$icon'>&#8203;</span>";
+                } else {
+                    $out .= "<span class='lzy-icon lzy-icon-{$m[2]}'></span>";
+                }
+            }
+        }
+        return $out.$html;
+    } // translateEmojisAndIcons
 
 
 

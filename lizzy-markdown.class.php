@@ -227,6 +227,7 @@ class LizzyMarkdown
 
 		$str = str_replace('\\<', '@/@\\lt@\\@', $str);       // shield \<
 		$str = str_replace('\\[[', '@/@[@\\@', $str);       // shield \[[
+		$str = str_replace('\\:', '@/@:@\\@', $str);       // shield \:
 		$str = str_replace(['\\{', '\\}'], ['&#123;', '&#125;'], $str);    // shield \{{
 		$str = preg_replace('/(\n\{\{.*\}\}\n)/U', "\n$1\n", $str); // {{}} alone on line -> add LFs
 		$str = stripNewlinesWithinTransvars($str);
@@ -592,8 +593,7 @@ class LizzyMarkdown
 
         $out = $this->postprocessLiteralBlock($out); // ::: .box!
 
-        // $out = htmlspecialchars_decode($out); // conflicts with content like '&lt;x>'
-        $out = str_replace(['@/@\\lt@\\@', '@/@\\gt@\\@'], ['&lt;', '&gt;'], $out); // shielded < and > (source: \< \>)
+        $out = str_replace(['@/@\\lt@\\@', '@/@\\gt@\\@', '@/@:@\\@'], ['&lt;', '&gt;', '\\:'], $out); // shielded < and > (source: \< \>)
 
 		return $out;
 	} // postprocess
@@ -615,7 +615,7 @@ class LizzyMarkdown
             }
         }
 
-		if (!preg_match('/(.*) \[\[ (.*?) \]\] (.*)/x', $line, $m)) {
+		if (!preg_match('/(.*) \[\[ (.*?) ]] (.*)/x', $line, $m)) {
             if ($returnElements) {
                 return [$line, null, null, null, null];
             } else {
