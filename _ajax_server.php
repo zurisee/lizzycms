@@ -122,6 +122,8 @@ class AjaxServer
 		$this->isLocalhost = (($this->remoteAddress === 'localhost') || (strpos($this->remoteAddress, '192.') === 0) || ($this->remoteAddress === '::1'));
 		$this->handleUrlArguments();
 		$this->formElements = [];
+
+		$this->error = false;
 	} // __construct
 
 
@@ -332,13 +334,20 @@ class AjaxServer
     private function lockRec()
     {
         if (!$this->openDB( )) {
-            lzyExit(json_encode(['res' => 'failed#lock-rec openDB']));
+            if ( $this->error ) {
+                mylog("AjaxServer: lock-rec -> openDB failed ($this->dataFile)");
+                lzyExit(json_encode(['res' => 'restart#lock-rec openDB']));
+            } else {
+                mylog("AjaxServer: lock-rec -> openDB failed ($this->dataFile)");
+                lzyExit(json_encode(['res' => 'failed#lock-rec openDB']));
+            }
         }
         $recKey = $this->getRecKey();
 
         // lock record:
         $res = $this->db->lockRec( $recKey );
 
+        mylog("AjaxServer: lock-rec -> success ($recKey)");
         $json = json_encode(['res' => $res? 'Ok': 'failed#lock-rec']);
         lzyExit( $json );
     } // lockRec
@@ -350,6 +359,7 @@ class AjaxServer
     private function unlockRec()
     {
         if (!$this->openDB( )) {
+            mylog("AjaxServer: unlock-rec -> openDB failed ($this->dataFile)");
             lzyExit(json_encode(['res' => 'failed#unlock-rec openDB']));
         }
         $recKey = $this->getRecKey();
@@ -357,6 +367,7 @@ class AjaxServer
         // unlock record:
         $res = $this->db->unlockRec( $recKey );
 
+        mylog("AjaxServer: unlock-rec -> success ($recKey)");
         $json = json_encode(['res' => $res? 'Ok': 'failed#unlock-rec']);
         lzyExit( $json );
     } // unlockRec
@@ -368,6 +379,7 @@ class AjaxServer
 	private function saveDataRec()
     {
         if (!$this->openDB( )) {
+            mylog("AjaxServer: save-rec -> openDB failed ($this->dataFile)");
             lzyExit('failed#get-rec');
         }
         $recKey = $this->getRecKey();
@@ -383,6 +395,7 @@ class AjaxServer
             'res' => ($res === true)? 'ok': 'failed',
             'data' => [ $targId => $text ],
         ]);
+        mylog("AjaxServer: save-rec ". (($res === true)? 'success': 'failed') ." ($recKey)");
         lzyExit( $json );
     } // saveDataRec
 
@@ -392,7 +405,8 @@ class AjaxServer
 	private function saveDataElem()
     {
         if (!$this->openDB( )) {
-            lzyExit('failed#get-rec');
+            mylog("AjaxServer: save-elem -> openDB failed ($this->dataFile)");
+            lzyExit('failed#save-elem');
         }
         $recKey = $this->getRecKey();
         $text = $this->get_request_data('text');
@@ -408,6 +422,7 @@ class AjaxServer
             'res' => ($res === true)? 'ok': 'failed',
             'data' => [ $targId => $text ],
         ]);
+        mylog("AjaxServer: save-elem -> openDB ". (($res === true)? 'success': 'failed') ." ($recKey)");
         lzyExit( $json );
     } // saveDataElem
 
@@ -571,6 +586,9 @@ class AjaxServer
                 if (isset($ticketRec['formDescr'])) {
                     $this->formElements = $ticketRec['formDescr'];
                 }
+            } else {
+                $this->error = 'restart';
+                return false;
             }
         }
 
