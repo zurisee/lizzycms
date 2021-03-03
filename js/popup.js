@@ -413,6 +413,7 @@ function lzyPopup( options, popupHash ) {
     } else {
         popupInstance[hash].init( options );
     }
+    return popupInstance[hash];
 } // lzyPopup
 
 

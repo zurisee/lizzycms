@@ -38,6 +38,9 @@ function LzyEditor() {
                 mylog( result );
             }
             if (typeof data.data !== 'undefined') {
+                if (data.data === null) {
+                    data.data = '';
+                }
                 parent.origText = data.data;
                 parent.startEditing( data.data );
             }
@@ -50,6 +53,10 @@ function LzyEditor() {
         mylog('startEditing: ' + text, false);
         const parent = this;
         const id = 'lzy-editor-wrapper-' + this.lzyEditorInx;
+        var wrapperClass = 'lzy-editor';
+        if (parent.args.useRichEditor) {
+            wrapperClass += ' lzy-editor-rich';
+        }
 
         if (!$('#lzy-editor-' + this.lzyEditorInx).length) {
             const html = '<div id="' + id + '"><textarea id="lzy-editor-' + this.lzyEditorInx +
@@ -58,75 +65,89 @@ function LzyEditor() {
         }
 
         // open popup:
-        lzyPopup({
+        this.popup = lzyPopup({
             contentFrom: '#' + id,
             closeOnBgClick: false,
             closeButton: false,
-            wrapperClass: 'lzy-editor',
+            wrapperClass: wrapperClass,
             buttons: 'Cancel,Save',
             callbacks: 'lzyEditorOnCancel,lzyEditorOnSave',
             deleteAfter: true,
         });
 
-        // initialize SimpleMDE:
-        //  see https://codemirror.net/doc/manual.html#config
-        this.simplemde = new SimpleMDE({
-            element: $('#lzy-editor-' + this.lzyEditorInx)[0],
-            autofocus: true,
-            spellChecker: false,
-            autocorrect: false,
-            tabSize: 4,
-            indentWithTabs: false,
-            toolbar: [
-                'bold',
-                'italic',
-                'strikethrough',
-                'heading-1',
-                'heading-2',
-                'heading-3',
-                'unordered-list',
-                'ordered-list',
-                'horizontal-rule',
-                'preview',
-                'side-by-side',
-                'fullscreen',
-                'guide',
-                {
-                    name: 'gap',
-                    className: 'lzy-editor-buttons-gap',
-                    title: '|',
-                },
-                {
-                    name: 'Exit',
-                    action: function customFunction(){
-                        const text = parent.simplemde.value();
-                        parent.saveEditorData( text );
-                        lzyPopupClose();
+        if (parent.args.useRichEditor) {
+            // initialize SimpleMDE:
+            //  see https://codemirror.net/doc/manual.html#config
+            this.simplemde = new SimpleMDE({
+                element: $('#lzy-editor-' + this.lzyEditorInx)[0],
+                autofocus: true,
+                spellChecker: false,
+                autocorrect: false,
+                tabSize: 4,
+                indentWithTabs: false,
+                toolbar: [
+                    'bold',
+                    'italic',
+                    'strikethrough',
+                    'heading-1',
+                    'heading-2',
+                    'heading-3',
+                    'unordered-list',
+                    'ordered-list',
+                    'horizontal-rule',
+                    'preview',
+                    'side-by-side',
+                    'fullscreen',
+                    'guide',
+                    {
+                        name: 'gap',
+                        className: 'lzy-editor-buttons-gap',
+                        title: '|',
                     },
-                    className: 'fa fa-check',
-                    title: '{{ Exit }}',
-                },
-                {
-                    name: 'Save',
-                    action: function customFunction(){
-                        const text = parent.simplemde.value();
-                        parent.saveEditorData( text );
+                    {
+                        name: 'Exit',
+                        action: function customFunction() {
+                            const text = parent.simplemde.value();
+                            parent.saveEditorData(text);
+                            lzyPopupClose();
+                        },
+                        className: 'fa fa-check',
+                        title: '{{ Exit }}',
                     },
-                    className: 'fa fa-save',
-                    title: '{{ Save }}',
-                },
-                {
-                    name: 'Close',
-                    action: function customFunction(){
-                        lzyEditorOnCancel();
-                        lzyPopupClose();
+                    {
+                        name: 'Save',
+                        action: function customFunction() {
+                            const text = parent.simplemde.value();
+                            parent.saveEditorData(text);
+                        },
+                        className: 'fa fa-save',
+                        title: '{{ Save }}',
                     },
-                    className: 'fa fa-window-close',
-                    title: '{{ Close }}',
-                },
-            ],
-        });
-        this.simplemde.codemirror.setSelection({line:9999,ch:0}, {line:9999,ch:0});
+                    {
+                        name: 'Close',
+                        action: function customFunction() {
+                            lzyEditorOnCancel();
+                            lzyPopupClose();
+                        },
+                        className: 'fa fa-window-close',
+                        title: '{{ Close }}',
+                    },
+                ],
+            });
+
+            // place focus into editor field at end of text:
+            this.simplemde.codemirror.setSelection({line: 9999, ch: 0}, {line: 9999, ch: 0});
+
+        } else {
+            // place focus into editor field at end of text:
+            $('textarea.lzy-editor').focus(function(){
+                var that = this;
+                setTimeout(function(){ that.selectionStart = that.selectionEnd = 100000; }, 0);
+            });
+            const $textarea = $('textarea.lzy-editor', parent.popup.$pop);
+            $textarea.get(0).focus();
+            $textarea.scrollTop($textarea[0].scrollHeight);
+        }
     }; // startEditing
 
 
@@ -144,7 +165,14 @@ function LzyEditor() {
             }
         })
             .done(function ( json ) {
-            const data = JSON.parse( json );
+            var data = null;
+            try {
+                data = JSON.parse( json );
+            } catch (e) {
+                mylog('editor: Error condition detected \n==>' + json);
+                return false;
+            }
+
             const result = data.res;
             if (!result.match(/^ok/i)) {
                 mylog( result );
@@ -180,6 +208,7 @@ function initLzyEditor( args ) {
 
 
 
+//??? still used?
 function editorCallback( that ) {
     const text = lzyEditor.simplemde.value();
     const origText = lzyEditor.origText;
@@ -198,11 +227,27 @@ function editorCallback( that ) {
 
 
 
-function lzyEditorOnSave() {
-    const text = lzyEditor.simplemde.value();
-    lzyEditor.saveEditorData( text );
+
+function lzyEditorOnSave( that ) {
+    const isRichEditor = $( that ).closest('.lzy-editor-rich').length;
+    var text = null;
+    if (isRichEditor) {
+        text = lzyEditor.simplemde.value();
+    } else {
+        const $editor = $( that ).closest('.lzy-editor');
+        text = $('textarea.lzy-editor', $editor).val();
+    }
+
+    const origText = lzyEditor.origText;
+    if (origText !== text) {
+        lzyEditor.saveEditorData( text );
+    } else {
+        lzyEditor.cancelEditing();
+        mylog('lzyEditor: no change, noting to save', false);
+    }
     lzyPopupClose();
 } // lzyEditorOnSave
+
 
 
 
