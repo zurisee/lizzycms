@@ -77,6 +77,7 @@ class HtmlTable
         $this->headersLeft          = $this->getOption('headersLeft', '(optional) Row headers may be supplied in the form [A|B|C...]');
         $this->headersAsVars        = $this->getOption('headersAsVars', '(optional) If true, header elements will be rendered as variables (i.e. in curly brackets).');
         $this->showRowNumbers       = $this->getOption('showRowNumbers', '(optional) Adds a left most column showing row numbers.');
+        $this->injectSelectionCol   = $this->getOption('injectSelectionCol', '(optional) Adds a column showing row selection checkboxes.');
         $this->hideMetaFields       = $this->getOption('hideMetaFields', '(optional) If true, system (or "meta") fields are not rendered (default: true).', true);
         $this->renderAsDiv	        = $this->getOption('renderAsDiv', '(optional) If set, the table is rendered as &lt;div> tags rather than &lt;table>');
         $this->tableDataAttr	    = $this->getOption('tableDataAttr', '(optional) ');
@@ -394,7 +395,11 @@ EOT;
                 $rowClass = 'lzy-hdr-row';
                 $thead = "\t<thead>\n\t\t<tr class='$rowClass'>\n";
                 if ($this->showRowNumbers) {
-                    $thead .= "\t\t\t<th class='lzy-table-row-nr'></th>\n";
+                    $thead .= "\t\t\t<th class='lzy-table-row-nr'>{{^ lzy-table-row-nr-header }}</th>\n";
+                }
+                if ($this->injectSelectionCol) {
+                    $thead .= "\t\t\t<th class='lzy-table-row-selector'>{{^ lzy-table-row-selector }}".
+                        "<input class='lzy-table-row-all-selector' type='checkbox' title='{{ lzy-table-select-all-rows }}'></th>\n";
                 }
                 for ($c = 0; $c < $nCols; $c++) {
                     $cell = $this->getDataElem($recId, $c, 'th', true);
@@ -418,6 +423,10 @@ EOT;
                         $n = $r + 1;
                     }
                     $tbody .= "\t\t\t<td class='lzy-table-row-nr'>$n</td>\n";
+
+                }
+                if ($this->injectSelectionCol) {
+                    $tbody .= "\t\t\t<td class='lzy-table-row-selector'><input class='lzy-table-row-selector' type='checkbox'></td>\n";
                 }
                 for ($c = 0; $c < $nCols; $c++) {
                     $tag = (($c === 0) && $this->headersLeft)? 'th': 'td';
@@ -449,6 +458,18 @@ EOT;
 
         if ($this->activityButtons) {
             $out = $this->renderTableActionButtons() . $out;
+        }
+
+        if ($this->injectSelectionCol) {
+            $jq = <<<EOT
+
+$('#{$this->id} .lzy-table-row-all-selector').change(function() {
+    const state = $( this ).prop('checked');
+    $('#{$this->id} .lzy-table-row-selector').prop('checked', state);
+});
+
+EOT;
+            $this->page->addJq( $jq );
         }
         return $out;
     } // renderHtmlTable
@@ -1783,6 +1804,20 @@ $('#{$this->id}-add-rec').click(function() {
     return;
 });
 EOT;
+        }
+        if ($this->activityButtons) {
+            $buttonArray = explodeTrim(',', $this->activityButtons);
+            foreach ($buttonArray as $button) {
+                $attributes = '';
+                if (preg_match('/(.*?) \s* \{ (.*) \}/x', $button, $m)) {
+                    $button = $m[1];
+                    $attributes = str_replace(['&#34;','&#39;'], ['"',"'"], $m[2]);
+                }
+                $cls = translateToClassName($button);
+                $buttons .= <<<EOT
+    <button id='$cls-{$this->id}' class='lzy-button lzy-button-lean lzy-table-$cls-btn' $attributes>{{ $button }}</button>
+EOT;
+            }
         }
 
         $out = <<<EOT

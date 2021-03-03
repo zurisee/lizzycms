@@ -866,6 +866,9 @@ lzy-recview-header:
     de: 'Ansicht'
     _:  'View'
 
+lzy-table-select-all-rows:
+    de: 'Alle Zeilen auswählen'
+    _:  'Select/deselect all rows'
 
 
 #--- DataTables ----------------------
