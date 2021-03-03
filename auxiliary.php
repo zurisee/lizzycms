@@ -1692,6 +1692,7 @@ function writeLogStr($str, $errlog = false)
 {
     global $globalParams;
 
+    $user = isset($_SESSION['lizzy']['user']) && $_SESSION['lizzy']['user'] ? $_SESSION['lizzy']['user'] : 'anon';
     if (is_array($str)) {
         $str = json_encode($str);
     }
@@ -1707,12 +1708,12 @@ function writeLogStr($str, $errlog = false)
         }
         if (is_string($errlog)) {
             // only allow files in LOGS_PATH and only with extension .txt or .log:
-            $destination = $errlog;
+            $destination = LOGS_PATH . basename( $errlog );
         } else {
             $destination = $globalParams['errorLogFile'];
         }
         if ($destination) {
-            file_put_contents($destination, timestamp() . "  $str\n\n", FILE_APPEND);
+            file_put_contents($destination, timestamp() . " [$user]: $str\n\n", FILE_APPEND);
         }
     }
 } // writeLogStr

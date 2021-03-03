@@ -330,13 +330,13 @@ function mylog($str, $user = false)
 function writeLog($str, $user = false, $destFile = SERVICE_LOG)
 {
     if (!$user) {
-        $user = isset($_SESSION['lizzy']['user']) && $_SESSION['lizzy']['user'] ? $_SESSION['lizzy']['user'] : 'anonymous';
+        $user = isset($_SESSION['lizzy']['user']) && $_SESSION['lizzy']['user'] ? $_SESSION['lizzy']['user'] : 'anon';
     }
     $path = dirname($destFile);
     if (!file_exists($path)) {
         mkdir($path, MKDIR_MASK, true);
     }
-    file_put_contents($destFile, timestamp()." user $user:  $str\n\n", FILE_APPEND);
+    file_put_contents($destFile, timestamp()." [$user]:  $str\n\n", FILE_APPEND);
 } // writeLog
 
 
