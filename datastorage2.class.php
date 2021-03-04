@@ -42,16 +42,16 @@ use Symfony\Component\Yaml\Yaml;
 class DataStorage2
 {
     private $lzyDb = null;
-	private $dataFile;
-	private $tableName;
-	private $data = null;
-	private $rawData = null;
-	private $exportRequired = false;
-	private $sid;
-	private $format;
-	private $lockDB = false;
-	private $defaultTimeout = 30; // [s]
-	private $defaultPollingSleepTime = LZY_DB_POLLING_CYCLE_TIME; // [us]
+    private $dataFile;
+    private $tableName;
+    private $data = null;
+    private $rawData = null;
+    private $exportRequired = false;
+    private $sid;
+    private $format;
+    private $lockDB = false;
+    private $defaultTimeout = 30; // [s]
+    private $defaultPollingSleepTime = LZY_DB_POLLING_CYCLE_TIME; // [us]
     private $structure = null;
     private $structureFile = null;
     private $includeKeys;
@@ -129,11 +129,11 @@ class DataStorage2
         $this->secure = isset($args['secure']) ? $args['secure'] : true;
         $this->userCsvFirstRowAsLabels = isset($args['userCsvFirstRowAsLabels']) ? $args['userCsvFirstRowAsLabels'] : true;
         $this->useRecycleBin = isset($args['useRecycleBin']) ? $args['useRecycleBin'] : false;
-        $this->format = ($this->format) ? $this->format : pathinfo($this->dataFile, PATHINFO_EXTENSION) ;
+        $this->format = ($this->format) ? $this->format : pathinfo($this->dataFile, PATHINFO_EXTENSION);
         $this->tableName = isset($args['tableName']) ? $args['tableName'] : '';
         if ($this->tableName && !$this->dataFile) {
             $rawData = $this->lowlevelReadRawData();
-            $this->dataFile = PATH_TO_APP_ROOT.$rawData["origFile"];
+            $this->dataFile = PATH_TO_APP_ROOT . $rawData["origFile"];
         }
         $this->resetCache = isset($args['resetCache']) ? $args['resetCache'] : false;
         $this->structureFile = isset($args['structureFile']) ? $args['structureFile'] : false;
@@ -174,7 +174,7 @@ class DataStorage2
             $outData = [];
             foreach ($data as $key => $rec) {
 //ToDo: fix implementation -> correctly identify recs that have changed since $since
-$outData[$key] = $rec;
+                $outData[$key] = $rec;
 //                if (isset($lastRecModifs[ $key ])) {
 //                    if ($lastRecModifs[ $key ] > $since) {
 //                        $outData[$key] = $rec;
@@ -249,7 +249,7 @@ $outData[$key] = $rec;
     {
         // to be depricated!
         // die("Method isLockDB() has been depricated, use isLockDB() instead");
-        return $this->isDbLocked( $checkOnLockedRecords, $blocking);
+        return $this->isDbLocked( $checkOnLockedRecords, $blocking );
     } // isLockDB
 
 
@@ -415,6 +415,8 @@ $outData[$key] = $rec;
             unset($this->data[ $recId ]);
             $this->lowLevelWrite();
             $res = true;
+        } else {
+            mylog("### Datastorage:deleteRecord: '$recId' not found", false);
         }
 
         if ($locking) {
