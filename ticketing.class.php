@@ -39,6 +39,9 @@ class Ticketing
         $this->unambiguous = isset($options['unambiguous']) ? $options['unambiguous'] : false;
         $this->defaultValidityPeriod = isset($options['defaultValidityPeriod']) ? $options['defaultValidityPeriod'] : DEFAULT_TICKET_VALIDITY_TIME;
         $this->defaultMaxConsumptionCount = isset($options['defaultMaxConsumptionCount']) ? $options['defaultMaxConsumptionCount'] : 1;
+        if (($this->defaultMaxConsumptionCount === false) || ($this->defaultMaxConsumptionCount == -1)) {
+            $this->defaultMaxConsumptionCount = PHP_INT_MAX;
+        }
         $this->ds = new DataStorage2($dataSrc);
         $this->purgeExpiredTickets();
     } // __construct
