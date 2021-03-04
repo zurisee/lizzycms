@@ -385,7 +385,7 @@ function LzyPopup( options, index ) {
     this.open = function () {
         const $popBg = this.$pop.parent();
         if (this.header) {
-            $('.lzy-popup-header > div', $popBg).text(this.header);
+            $('.lzy-popup-header > div', $popBg).html(this.header);
         }
         this.$pop.parent().show();
         $('body').addClass('lzy-no-scroll');

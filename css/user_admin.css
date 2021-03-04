@@ -11,6 +11,10 @@ body {
     margin: 0 auto;
 }
 
+.lzy-popup-wrapper.lzy-login-menu.lzy-login strong {
+    font-weight: normal;
+    color: #ffcc6e;
+}
 
 .lzy-create-accesslink-response:empty {
     display: none;
