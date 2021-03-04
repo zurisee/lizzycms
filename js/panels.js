@@ -43,8 +43,9 @@ function LzyPanels()
     this.setupCloseButtonHandler = function() {
         var parent = this;
         if (this.closeButton) {
-            $('.lzy-panel-close-btn').unbind('click');
-            $('.lzy-panel-close-btn').click(function() {
+            // $('.lzy-panel-close-btn').unbind('click');
+            // $('.lzy-panel-close-btn').click(function() {
+            $('body').on('click', '.lzy-panel-close-btn', function() {
                 var $thisLi = $(parent).closest('li');
                 var $next = $thisLi.next();
                 if (!$next.length) {
@@ -233,15 +234,13 @@ function LzyPanels()
     this.setupTabsHeaderEvents = function() {
         var parent = this;
         // click on tab header -> open tab:
-        $('.lzy-tabs-mode-panel-header').unbind('click');
-        $('.lzy-tabs-mode-panel-header').click(function() {
+        $('body').on('click', '.lzy-tabs-mode-panel-header', function() {
             var id = '#' + $( this ).attr('aria-controls');
             parent.operatePanel( id, true);
         });
 
         // show close button upon leaving tab header:
-        $('.lzy-tabs-mode-panel-header').unbind('mouseleave');
-        $('.lzy-tabs-mode-panel-header').mouseleave( function() {
+        $('body').on('mouseleave', '.lzy-tabs-mode-panel-header',  function() {
             if (($( this ).attr('aria-selected') === 'true') && ($('.lzy-tabs-mode-panel-header').length > 1)) {
                 $('.lzy-panel-close-btn', $( this )).show();
             }
@@ -451,8 +450,7 @@ function LzyPanels()
             var id = '#' + $( this ).attr('id').replace(/lzy-tabs-mode-panel-header-/, 'lzy-panel-');
             id = id.substr(0, id.length-2);
             var idN = parseInt($( this ).attr('id').substr(-2));
-            var idN1 = null;
-            var id1 = null;
+            var idN1, id1, $last = null;
 
             if (keyCode === 39) {    // right arrow
                 event.preventDefault();
