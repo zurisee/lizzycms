@@ -1400,7 +1400,7 @@ function get_post_data($varName, $permitNL = false)
 	$out = false;
 	if (isset($_POST) && isset($_POST[$varName])) {
 		$out = $_POST[$varName];
-		$out = safeStr($out, $permitNL);
+		$out = safeStr($out, $permitNL, false);
 	}
 	return $out;
 } // get_post_data
@@ -1496,7 +1496,7 @@ function is_safe($str, $multiline = false)
 
 
 
-function safeStr($str, $permitNL = false)
+function safeStr($str, $permitNL = false, $isGetArg = true)
 {
 	if (preg_match('/^\s*$/', $str)) {
 		return '';
@@ -1507,6 +1507,9 @@ function safeStr($str, $permitNL = false)
 
     } else {
         $str = preg_replace('/[^[:print:]À-ž]/m', ' ', $str);
+    }
+    if ($isGetArg) {
+        $str = substr($str, 0, MAX_URL_ARG_SIZE);    // restrict size to safe value
     }
 	return $str;
 } // safeStr
@@ -1529,7 +1532,6 @@ function strToASCII($str)
 
 
 
-
 function translateUmlauteToHtml($str)
 {
  // transliterate special characters (such as ä, ö, ü) into pure ASCII
@@ -1545,7 +1547,6 @@ function translateUmlauteToHtml($str)
 
 
 
-
 function timestamp($short = false)
 {
 	if (!$short) {
@@ -1554,7 +1555,6 @@ function timestamp($short = false)
 		return date('Y-m-d');
 	}
 } // timestamp
-
 
 
 
@@ -1572,8 +1572,6 @@ function dateFormatted($date = false, $format = false)
     $out = strftime($format, $date);
     return $out;
 } // dateFormatted
-
-
 
 
 
@@ -1729,20 +1727,28 @@ function logError($str)
 
 
 
-function explodeTrim($sep, $str)
+function explodeTrim($sep, $str, $excludeEmptyElems = false)
 {
-    if (!$str) {
+    $str = trim($str);
+    if ($str === '') {
         return [];
     }
-    if (strpbrk($str, $sep) === false) {
+    if (strpos($str, $sep) === false) {
         return [ $str ];
     }
     if (strlen($sep) > 1) {
         $sep = preg_quote($sep);
-        return array_map('trim', preg_split("/[$sep]/", $str));
+        $out = array_map('trim', preg_split("/[$sep]/", $str));
     } else {
-        return array_map('trim', explode($sep, $str));
+        $out = array_map('trim', explode($sep, $str));
     }
+
+    if ($excludeEmptyElems) {
+        $out = array_filter($out, function ($item) {
+            return ($item !== '');
+        });
+    }
+    return $out;
 } // explodeTrim
 
 

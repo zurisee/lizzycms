@@ -69,9 +69,10 @@ function strToASCII($str)
 
 
 
-function explodeTrim($sep, $str)
+function explodeTrim($sep, $str, $excludeEmptyElems = false)
 {
-    if (!$str) {
+    $str = trim($str);
+    if ($str === '') {
         return [];
     }
     if (strpos($str, $sep) === false) {
@@ -80,11 +81,30 @@ function explodeTrim($sep, $str)
     if (strlen($sep) > 1) {
         $sep = preg_quote($sep);
         $out = array_map('trim', preg_split("/[$sep]/", $str));
-        return $out;
     } else {
-        return array_map('trim', explode($sep, $str));
+        $out = array_map('trim', explode($sep, $str));
     }
+
+    if ($excludeEmptyElems) {
+        $out = array_filter($out, function ($item) {
+            return ($item !== '');
+        });
+    }
+    return $out;
 } // explodeTrim
+
+
+
+
+function get_post_data($varName, $permitNL = false)
+{
+    $out = false;
+    if (isset($_POST) && isset($_POST[$varName])) {
+        $out = $_POST[$varName];
+        $out = safeStr($out, $permitNL, false);
+    }
+    return $out;
+} // get_post_data
 
 
 
@@ -145,12 +165,20 @@ function fileExt($file0, $reverse = false)
 
 
 
-function safeStr($str)
+function safeStr($str, $permitNL, $isGetArg = true)
 {
     if (preg_match('/^\s*$/', $str)) {
         return '';
     }
-    $str = substr($str, 0, MAX_URL_ARG_SIZE);	// restrict size to safe value
+    if ($permitNL) {
+        $str = preg_replace("/[^[:print:]À-ž\n\t]/m", ' ', $str);
+
+    } else {
+        $str = preg_replace('/[^[:print:]À-ž]/m', ' ', $str);
+    }
+    if ($isGetArg) {
+        $str = substr($str, 0, MAX_URL_ARG_SIZE);    // restrict size to safe value
+    }
     return $str;
 } // safe_str
 
