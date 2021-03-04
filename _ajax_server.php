@@ -5,39 +5,6 @@
  *	Ajax Service for dynamic data, in particular 'editable' data
  * http://localhost/Lizzy/_lizzy/_ajax_server.php?lock=ed1
  *
- *  Protocol:
-
-conn
-	GET:	?conn=list-of-editable-fields
-
-upd
-	GET:	?upd=time
-
-lock
-	GET:	?lock=id
-
-unlock
-	GET:	?unlock=id
-
-save
-	GET:	?save=id
-    POST:   text => data
-
-get
-	GET:	?get=id
-
-reset
-	GET:	?reset
-
-log
-	GET:	?log=message
-
-info
-	GET:	?info
-
-getfile
-	GET:	?getfile=filename
-
 */
 
 define('SYSTEM_PATH', 		'');		                            // same directory
@@ -133,7 +100,6 @@ class AjaxServer
         $this->handleGenericRequests();     // log, info
         $this->handleFileRequests();        // Files: newfile, renamefile, getfile
     } // handleUrlArguments
-
 
 
 
@@ -320,11 +286,33 @@ class AjaxServer
     private function deleteDataRec()
     {
         if (!$this->openDB( )) {
-            lzyExit('failed#save');
+            lzyExit('failed#del-rec');
         }
-        $recKey = $this->getRecKey();
-        // delete record:
+        $recKeyStr = get_post_data('recKeys');
+        mylog("deleteDataRec: $recKeyStr from $this->dataFile", false);
+        $recKeys = explodeTrim(',', $recKeyStr);
 
+        if (!$this->db->lockDB()) {
+            lzyExit('failed#del-rec: error locking DB');
+        }
+
+        $res = true;
+        rsort($recKeys);
+        foreach ($recKeys as $recKey) {
+            $res &= $this->db->deleteRecord($recKey, false, false);
+        }
+
+        if (!$this->db->unlockDB()) {
+            lzyExit('failed#del-rec: error unlocking DB');
+        }
+
+        if (!$res) {
+            mylog("deleteDataRec: Error deleting");
+        }
+        $res = $res? 'Ok': "del-rec#Error deleting records '$recKeyStr'";
+
+        $json = json_encode(['res' => $res]);
+        lzyExit( $json );
     } // deleteDataRec
 
 
@@ -576,6 +564,8 @@ class AjaxServer
             if ($ticketRec) {      // corresponding ticket found
                 if ($setId && isset($ticketRec[$setId])) {
                     $ticketRec = $ticketRec[$setId];
+                    $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['_dataSource'];
+                } elseif (isset($ticketRec['_dataSource'])) {
                     $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['_dataSource'];
                 } elseif (isset($ticketRec['dataSrc'])) {
                     $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['dataSrc']; //???
