@@ -1492,6 +1492,10 @@ EOT;
 
 	private function handleUrlArgs2()
 	{
+        if (getUrlArg('force')) {			            // force client reload
+            $this->config->debug_forceBrowserCacheUpdate = true;
+        }
+
         if (getUrlArg('reset')) {			            // reset (cache)
             $srv = new ServiceTasks( $this );
             $srv->resetLizzy(); // reloads, never returns
@@ -2111,6 +2115,7 @@ Available URL-commands:
 <a href='?logout'>?logout</a>		    logout
 <a href='?mobile'>?mobile</a>,<a href='?touch'>?touch</a>,<a href='?notouch'>?notouch</a>	emulate modes  *)
 <a href='?nc'>?nc</a>		        supress caching (?nc=false to enable caching again)  *)
+<a href='?force'>?force</a>		    force browser to reload css and js from host
 <a href='?print'>?print</a>		    starts printing mode and launches the printing dialog
 <a href='?print-preview'>?print-preview</a>  presents the page in print-view mode    
 <a href='?timer'>?timer</a>		    switch timer on or off  *)
