@@ -97,9 +97,7 @@ function scrollToBottom( sel ) {
 
 
 
-
-function scrollIntoView( selector, container )
-{
+function scrollIntoView( selector, container ) {
     if (typeof container !== 'undefined') {
         $( container ).animate({
             scrollTop: $( selector ).offset().top
@@ -127,8 +125,7 @@ Date.prototype.addHours = function(h) {
 if ($('.lzy-msgbox').length) {
     setupMessageHandler(800);
 }
-function setupMessageHandler( delay)
-{
+function setupMessageHandler( delay) {
     setTimeout(function () {
         $('.lzy-msgbox').addClass('lzy-msg-show');
     }, delay);
@@ -145,8 +142,7 @@ function setupMessageHandler( delay)
 
 
 
-function showMessage( txt )
-{
+function showMessage( txt ) {
     $('.lzy-msgbox').remove();
     $('body').prepend( '<div class="lzy-msgbox"><p>' + txt + '</p></div>' );
     setupMessageHandler(0);
@@ -210,7 +206,6 @@ function serverLog(text, file) {
 
 
 
-
 function isServerErrMsg(json) {
     if (json.match(/^</)) {
         console.log('- response: ' + json.replace(/<(?:.|\n)*?>/gm, ''));
@@ -221,7 +216,6 @@ function isServerErrMsg(json) {
     }
     return false;
 } // isServerErrMsg
-
 
 
 
@@ -248,6 +242,7 @@ function time() {
 
 
 
+
 function timeStamp( long ) {
 	const now = new Date();
 	const time = [ now.getHours(), now.getMinutes(), now.getSeconds() ];
@@ -268,6 +263,7 @@ function timeStamp( long ) {
     }
 	return out;
 } // timeStamp
+
 
 
 
