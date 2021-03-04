@@ -144,7 +144,7 @@ class HtmlTable
         // for "active tables": create ticket and set data-field:
         if ($this->editingActive || $this->editableActive || $this->activityButtons || $this->recViewButtonsActive) {
             $this->page->addModules('MD5');
-            $tck = new Ticketing();
+            $tck = new Ticketing(['defaultMaxConsumptionCount' => false]);
             $this->tickHash = $tck->createHash( 'lzy-form' );
             $this->tableDataAttr .= " data-table-hash='{$this->tickHash}' data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
 
@@ -373,16 +373,20 @@ EOT;
 
     private function renderHtmlTable()
     {
+        $out = '';
         if ($this->editableBy) {
             $this->tableDataAttr .= " data-table-hash='{$this->tickHash}' data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
         }
+        if ($this->activityButtons) {
+            $out = $this->renderTableActionButtons();
+        }
+
         $data = &$this->data;
 
         $header = ($this->headers !== false);
 
-        $tableClass = @$this->options['tableClass'] ? $this->options['tableClass']. ' ' : "lzy-table lzy-table-{$this->tableCounter} ";
-        $tableClass .= $this->tableClass;
-        $tableClass = trim($tableClass);
+        $tableClass = $this->tableClass ? $this->tableClass : "lzy-table-{$this->tableCounter} ";
+        $tableClass = trim( "lzy-table $tableClass" );
         $thead = '';
         $tbody = '';
         $nCols = sizeof(reset( $data ));
@@ -440,13 +444,13 @@ EOT;
             }
             $r++;
         }
-        if ($this->includeCellRefs && $this->dataSource) {
-            $dataSource = " data-lzy-source='{$this->dataSource}'";
-        } else {
-            $dataSource = '';
-        }
 
-        $out = <<<EOT
+        // data-ref:
+        $tck = new Ticketing(['defaultMaxConsumptionCount' => false]);
+        $tickHash = $tck->createTicket( ['_dataSource' => $this->dataSource],false,null,'lzy-table' );
+        $dataSource = " data-ref='$tickHash'";
+
+        $out .= <<<EOT
 
   <table id='{$this->id}' class='$tableClass'$dataSource{$this->tableDataAttr} data-inx="$this->tableCounter">
 {$this->caption}
@@ -455,10 +459,6 @@ $tbody	</tbody>
   </table>
 
 EOT;
-
-        if ($this->activityButtons) {
-            $out = $this->renderTableActionButtons() . $out;
-        }
 
         if ($this->injectSelectionCol) {
             $jq = <<<EOT
@@ -1789,7 +1789,8 @@ EOT;
     {
         $buttons = $jq = '';
 
-        if ($this->editingActive && (($this->activityButtons === true) || (strpos(',edit,', $this->activityButtons) !== false))) {
+        if ($this->editingActive && (($this->activityButtons === true) ||
+                (strpos(',edit,', $this->activityButtons) !== false))) {
             $buttons .= <<<EOT
     <button id='{$this->id}-add-rec' class='lzy-button lzy-table-add-rec-btn' title="{{ lzy-edit-form-new-rec }}">{{ lzy-table-add-rec-btn }}</button>
 EOT;
@@ -1813,6 +1814,33 @@ EOT;
                     $button = $m[1];
                     $attributes = str_replace(['&#34;','&#39;'], ['"',"'"], $m[2]);
                 }
+
+                // Handle special button name "Delete":
+                if (strcasecmp($button, 'delete') === 0) {
+                    $this->injectSelectionCol = true;
+                    $button = ':trash:';
+                    $jq .= <<<'EOT'
+$('.lzy-table-trash-btn, .lzy-table-delete-btn').click(function() {
+    const $table = $('.lzy-table', $(this).closest('.lzy-table-wrapper '));
+    const ds = $table.attr('data-ref');
+    var recs = '';
+    $('.lzy-table-row-selector:checked', $table).each(function() {
+        const recKey = $(this).closest('tr').attr('data-reckey');
+        mylog('Delete: ' + recKey, false);
+        recs += recKey + ',';
+    });
+    recs = recs.slice(0, -1);
+    lzyConfirm('Delete selected records?'). then(function() {
+        execAjaxPromise('del-rec', {ds: ds, recKeys: recs})
+        .then(function() {
+            lzyReload();
+        });
+    });
+});
+
+EOT;
+                }
+
                 $cls = translateToClassName($button);
                 $buttons .= <<<EOT
     <button id='$cls-{$this->id}' class='lzy-button lzy-button-lean lzy-table-$cls-btn' $attributes>{{ $button }}</button>
