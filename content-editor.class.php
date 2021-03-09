@@ -23,7 +23,7 @@ class ContentEditor
         while ($this->getNextSrcSegment()) {
             $inx++;
 
-            $editorHeader = "\n\t\t\t  <button class='lzy-editor-btn' title='{{ Edit Section }}'><span class='lzy-icon-edit'></span></button>\n\t\t\t  <div id='lzy-editor-wrapper$inx' class='lzy-editor-wrapper'>\n\n";
+            $editorHeader = "\n\t\t\t  <button class='lzy-editor-btn' title='{{ Edit Section }}'><span class='lzy-icon lzy-icon-edit'></span></button>\n\t\t\t  <div id='lzy-editor-wrapper$inx' class='lzy-editor-wrapper'>\n\n";
             $editorFooter = "\n\t\t\t  </div><!-- /lzy-editor-wrapper -->\n";
             $edSelector = PageSource::renderEditionSelector($this->fileName);
             if ($edSelector) {
@@ -64,9 +64,9 @@ class ContentEditor
     private function loadEditorButtons()
     {
         $buttons = <<<EOT
-                    <button class="lzy-cancel-btn" title='{{ Cancel }}'><span class="lzy-icon-cancel"></span></button>
-                    <button class="lzy-save-btn" title='{{ Save }}'><span class="lzy-icon-save"></span></button>
-                    <button class="lzy-done-btn" title='{{ Done }}'><span class="lzy-icon-ok"></span></button>
+                    <button class="lzy-cancel-btn" title='{{ Cancel }}'><span class="lzy-icon lzy-icon-cancel"></span></button>
+                    <button class="lzy-save-btn" title='{{ Save }}'><span class="lzy-icon lzy-icon-save"></span></button>
+                    <button class="lzy-done-btn" title='{{ Done }}'><span class="lzy-icon lzy-icon-ok"></span></button>
 
 EOT;
 

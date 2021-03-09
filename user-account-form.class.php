@@ -3,8 +3,8 @@
 define('MSG', 'lzy-account-form-message');
 define('NOTI', 'lzy-account-form-notification');
 
-define('SHOW_PW_INFO_ICON', '<span class="lzy-icon-info"></span>');
-define('SHOW_PW_ICON', '<span class="lzy-icon-show"></span>');
+define('SHOW_PW_INFO_ICON', '<span class="lzy-icon lzy-icon-info"></span>');
+define('SHOW_PW_ICON', '<span class="lzy-icon lzy-icon-show"></span>');
 
 $lizzyAccountCounter = 0;
 

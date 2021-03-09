@@ -852,7 +852,7 @@ EOT;
         if (!$this->auth->getKnownUsers()) {    // case when no users defined yet:
             $login = <<<EOT
     <span class="lzy-tooltip-arrow tooltip" title='{{ lzy-no-users-defined-warning }}'>
-        <span class='lzy-icon-error'></span>
+        <span class='lzy-icon lzy-icon-error'></span>
     </span>
 
 EOT;
@@ -887,7 +887,7 @@ EOT;
         $this->trans->addVariable('lzy-config--open-button', $configBtn, false);
 
         if ($this->config->admin_enableFileManager && $this->auth->checkGroupMembership('fileadmins')) {
-            $this->trans->addVariable('lzy-fileadmin-button', "<button class='lzy-fileadmin-button' title='{{ lzy-fileadmin-button-tooltip }}'><span class='lzy-icon-docs'></span>{{^ lzy-fileadmin-button-text }}</button>", false);
+            $this->trans->addVariable('lzy-fileadmin-button', "<button class='lzy-fileadmin-button' title='{{ lzy-fileadmin-button-tooltip }}'><span class='lzy-icon lzy-icon-docs'></span>{{^ lzy-fileadmin-button-text }}</button>", false);
 //ToDo: injectUploader creates Hash -> avoid?
             $uploader = $this->injectUploader($this->pagePath);
             $this->page->addBodyEndInjections($uploader);

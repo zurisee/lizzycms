@@ -28,23 +28,23 @@ class FileUpload
         <div class="row lzy-fileupload-buttonbar fileupload-buttonbar">
             <div class="lzy-fileupload-buttons">
                 <button type="button" class="lzy-button lzy-editor-new-file">
-                    <i class="lzy-icon-doc"></i>
+                    <i class="lzy-icon lzy-icon-doc"></i>
                     <span>{{ lzy-editor-new-file }}</span>
                 </button>
                 <span class="">
-                    <label class="lzy-button lzy-editor-add-files" for="lzy-file-uploader-input"><i class="lzy-icon-select"></i> {{ lzy-editor-add-files }}</label>
+                    <label class="lzy-button lzy-editor-add-files" for="lzy-file-uploader-input"><i class="lzy-icon lzy-icon-select"></i> {{ lzy-editor-add-files }}</label>
                     <input type="file" id="lzy-file-uploader-input" class='lzy-invisible' name="files[]" multiple />
                 </span>
                 <button type="submit" class="lzy-button lzy-editor-start-upload btn btn-primary start">
-                    <i class="lzy-icon-upload"></i>
+                    <i class="lzy-icon lzy-icon-upload"></i>
                     <span>{{ lzy-editor-start-upload }}</span>
                </button>
                 <button type="reset" class="lzy-button lzy-editor-cancel-upload cancel">
-                    <i class="lzy-icon-cancel"></i>
+                    <i class="lzy-icon lzy-icon-cancel"></i>
                     <span>{{ lzy-editor-cancel-upload }}</span>
                 </button>
                 <button type="button" class="lzy-button lzy-editor-delete-files">
-                    <i class="lzy-icon-trash"></i>
+                    <i class="lzy-icon lzy-icon-trash"></i>
                     <span>{{ lzy-editor-delete-file }}</span>
                 </button>
                 <input type="checkbox" class="toggle">
@@ -124,7 +124,7 @@ class FileUpload
                   {% } %}
                   {% if (!i && !o.options.autoUpload) { %}
                       <button class="lzy-button lzy-editor-start-upload start" disabled title="{{ lzy-editor-start-upload }}">
-                          <i class="lzy-icon-upload"></i>
+                          <i class="lzy-icon lzy-icon-upload"></i>
                       </button>
                   {% } %}
                   {% if (!i) { %}
