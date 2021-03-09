@@ -155,7 +155,8 @@ private $userConfigurableSettingsAndDefaults      = [
 
         $this->loadModules['HTMLTABLE']             = array('module' => 'js/htmltable.js', 'weight' => 123);
 
-        $this->loadModules['EDITABLE']              = array('module' => 'extensions/editable/js/editable.js,'.
+        $this->loadModules['LIVE_DATA']             = array('module' => 'extensions/livedata/js/live_data.js', 'weight' => 121);
+        $this->loadModules['EDITABLE']              = array('module' => 'extensions/livedata/js/live_data.js,extensions/editable/js/editable.js,'.
                                                             'extensions/editable/css/editable.css', 'weight' => 120);
 
         $this->loadModules['EDITOR']                = array('module' => 'js/editor.js, css/_editor.css', 'weight' => 117);
