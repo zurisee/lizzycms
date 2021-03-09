@@ -413,6 +413,9 @@ class DataStorage2
         $res = false;
         if (isset($this->data[ $recId ])) {
             unset($this->data[ $recId ]);
+            if ($this->structure['key'] === 'index') {
+                $this->data = array_values($this->data);
+            }
             $this->lowLevelWrite();
             $res = true;
         } else {
@@ -544,39 +547,37 @@ class DataStorage2
 
     public function readElement( $key )
     {
-        // supports scalar values and arrays
-
-        if (strpbrk($key, ',[') === false) {
-            return $this->readRecord( $key );
-        }
-
         $this->getData(true);
         if (!$this->data) {
             return null;
         }
 
-        // convert syntax variant '[d3][d31][d312]' => 'd3,d31,d312':
-        //$key = $this->parseElementSelector($key);
-
         if (strpos($key, '*') !== false) {
             return $this->_readElementGroup( $key );
-        }
-
-        if (strpos($key, ',') === false) {
-            return @$this->data[ $key ];
         }
 
         // access nested element ('d3,d31,d312'):
         $rec = $this->data;
         foreach (explodeTrim(',', $key) as $k) {
             $k = trim($k, '\'"');
-            if (isset($rec[$k])) { // direct hit
-                $rec = $rec[$k];
-            } elseif (is_array($rec) && isset(array_keys($rec)[$k])) { // hit via index
-                $rec = $rec[ array_keys($rec)[$k] ];
-            } else { // not found
+            if (is_array($rec)) {
+                if (isset($rec[$k])) { // direct hit
+                    $rec = $rec[$k];
+                } elseif (isset(array_keys($rec)[$k])) { // hit via index
+                    $rec = $rec[ array_keys($rec)[$k] ];
+                } else { // not found
+                    $rec = null;
+                    break;
+                }
+
+            } else {
                 $rec = null;
+                break;
             }
+        }
+
+        if (is_array($rec)) {
+            $rec = null;
         }
         return $rec;
     } // readElement
@@ -605,8 +606,6 @@ class DataStorage2
 
     public function writeElement($key, $value, $locking = true, $blocking = true, $logModifTimes = false)
     {
-        // convert syntax variant '[d3][d31][d312]' => 'd3,d31,d312':
-        //$key = $this->parseElementSelector($key);
         if (strpos($key, ',') === false) {
             return $this->writeRecord($key, $value, $locking, $blocking, $logModifTimes);
         }
@@ -623,22 +622,36 @@ class DataStorage2
         $rec = &$this->data;
         foreach (explodeTrim(',', $key) as $k) {
             $k = trim($k, '\'"');
-            if (isset($rec[$k])) { // direct hit
-                $rec = &$rec[$k];
-            } elseif (is_array($rec) && isset(array_keys($rec)[$k])) { // hit via index
-                $rec = &$rec[ array_keys($rec)[$k] ];
-            } else { // not found, create element
-                $rec[$k] = [];
-                $rec = &$rec[$k];
+            if (is_array($rec)) {
+                if (isset($rec[$k])) { // direct hit
+                    $rec = &$rec[$k];
+                } elseif (isset(array_keys($rec)[$k])) { // hit via index
+                    $rec = &$rec[ array_keys($rec)[$k] ];
+                } else { // not found, create element
+                    $rec[$k] = [];
+                    $rec = &$rec[$k];
+                }
+
+            } else {
+                list($r,$c) = explodeTrim(',', $key);
+                if (!isset($this->data[$r][$c]) || is_array($this->data[$r])) {
+                    $this->data[$r][$c] = $value;
+                    $rec = &$this->data[$r][$c];
+                } else {
+                    // Error: parent elem exists, but is of scalar type:
+                    $rec = null;
+                }
             }
         }
-        $rec = $value;
 
-        $res = $this->lowLevelWrite();
+        if ($rec !== null) {
+            $rec = $value;
+            $res = $this->lowLevelWrite();
 
-        if ($this->logModifTimes || $logModifTimes) {
-            $key = preg_replace('/,.*/', '', $key);
-            $this->updateRecLastUpdate( $key );
+            if ($this->logModifTimes || $logModifTimes) {
+                $key = preg_replace('/,.*/', '', $key);
+                $this->updateRecLastUpdate( $key );
+            }
         }
 
         if ($locking) {
@@ -942,7 +955,7 @@ class DataStorage2
     {
         switch ($this->structure['key']) {
             case 'hash':
-                return createHash();;
+                return createHash();
             case 'index':
                 return sizeof($this->getData(true));
             case 'number':
@@ -1274,7 +1287,6 @@ class DataStorage2
 
     private function _recIdFromElementKey($key )
     {
-        //$key = $this->parseElementSelector($key);
         if (strpos($key, ',') !== false) {
             $a = explode(',', $key);
             $key = $a[0];
@@ -1939,7 +1951,7 @@ EOT;
 
     private function checkExternalStructureDef()
     {
-        if ($this->structureDef) {
+        if (@$this->structureDef) {
             $this->structure = $this->structureDef;
             unset($this->structureDef);
             return $this->structure;
@@ -2030,6 +2042,7 @@ EOT;
                     if ((($this->format === 'yaml') && ($rawData[0] === '-')) ||
                         (($this->format === 'json') && ($rawData[0] === '['))) {
                         $keyType = 'index';
+                        $structure['key'] = 'index';
                     }
                 }
             }
@@ -2047,6 +2060,7 @@ EOT;
 
         } elseif ($this->format === 'csv') {    // csv
             $keyType = 'index';
+            $structure['key'] = 'index';
             $data = $this->getData();
             if ($data) {
                 $rec0 = reset($data);
@@ -2157,7 +2171,7 @@ EOT;
     private function deriveTableName()
     {
         $tableName = str_replace(['/', '.'], '_', $this->dataFile);
-        $tableName = preg_replace('|^[\./_]*|', '', $tableName);
+        $tableName = preg_replace('|^[./_]*|', '', $tableName);
         return $tableName; // remove leading '../...'
     } // deriveTableName
 
