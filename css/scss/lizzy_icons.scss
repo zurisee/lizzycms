@@ -25,53 +25,24 @@
 
 
 // generic styles:
-[data-icon],
-[class*='lzy-icon-'] {
+[class*=' lzy-icon-'] {
   display: inline-block;
   position: relative;
-  vertical-align: baseline;
-  padding-left: calc(1.1em * var(--lzy-icon-factor, 1));
 }
-[data-icon]:before,
-[class*='lzy-icon-']:before {
+[class*=' lzy-icon-']:before {
     position: absolute;
-    display: inline-block;
     font-family: 'Lzy Icons';
     font-style: normal;
     font-weight: normal;
-    font-size: calc(var(--lzy-icon-factor, 1) * 90%);
-    left: calc(var(--lzy-icon-factor, 1) * 4% + 26%);
-    top: 50%;
-    transform: translate(-50%, -50%);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale
+    display: block;
 }
 
-[data-icon]:empty,
-[class*='lzy-icon-']:empty {
-//    height: 1em;
-    height: calc(var(--lzy-icon-factor, 1) * 1em);
-    margin-right: 0.07em;
-}
-[data-icon]:empty:before,
-[class*='lzy-icon-']:empty:before {
-    position: absolute;
-    left: 50%;
-    top: 65%;
-    transform: translate(-50%, -50%);
+[class*=' lzy-icon-']:empty {
+  min-width: 0.8em;
 }
 
-[data-icon]:before {
-  content: attr(data-icon);
-}
-[data-icon],
-[class*='lzy-icon-'] {
-    line-height: calc(var(--lzy-icon-factor, 1) * 1em);
-}
-[data-icon]:before,
-.lzy-emoji.lzy-emoji:before {
-    top: 44%;
-    left: 0.66em;
+[class*=' lzy-icon-']:empty:before {
+    transform: translate(-0.1em, -1em);
 }
 
 .lzy-negate:after { 
@@ -190,12 +161,13 @@
 
 // === Triangle icon used in nav:
 .lzy-icon-triangle.lzy-icon-triangle {
-    --lzy-icon-factor: 0.66;
+//    --lzy-icon-factor: 0.66;
     transform: rotate(var(--lzy-triangle-angle, 0));
     width: calc(1em * var(--lzy-icon-factor, 1));
     height: calc(1em * var(--lzy-icon-factor, 1));
     &:before {
         font-family: 'Lzy Triangle';
+        font-size: 67%;
         content: 'A';
         width: calc(1em * var(--lzy-icon-factor, 1));
         height: calc(1em * var(--lzy-icon-factor, 1));
