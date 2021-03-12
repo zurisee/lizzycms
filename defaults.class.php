@@ -59,7 +59,6 @@ private $userConfigurableSettingsAndDefaults      = [
     'feature_autoLoadClassBasedModules' => [true, 'If true, automatically loads modules that are invoked by applying classes, e.g. .editable', 3 ],
     'feature_autoLoadJQuery'            => [true, 'If true, jQuery will be loaded automatically (even if not initiated explicitly by macros)', 3 ],
     'feature_enableScssInPageFolder'    => [false, 'If true, Lizzy checks for .scss files in page folder and compiles them to .css. Alternatively use "enableScssInPageFolder" in Frontmatter of specific pages.', 3 ],
-    'feature_enableAllowOrigin'         => ['false', 'Set to "*" or explicitly to a domain to allow other websites to include pages of this site.', 1 ],
     'feature_enableIFrameResizing'      => [false, 'If true, includes js code required by other pages to iFrame-embed this site', 1 ],
     'feature_externalLinksInNewWin'     => [false, 'If true, automatically makes links open in new window for all external links (i.e. starting with http).', 1 ],
     'feature_filterRequestString'       => [true, 'If true, permits only regular text in requests. Special characters will be discarded.', 3 ],
@@ -101,6 +100,9 @@ private $userConfigurableSettingsAndDefaults      = [
     'site_timeZone'                     => ['auto', 'Name of timezone, e.g. "UTC" or "CET". If auto, attempts to set it automatically.', 2 ],
     'site_cacheResetIntervall'          => [24, '(number of hours) Defines the interval after which the cache shall be reset. When that happens,'.
                                             'page requests will build up the cache again.', 3 ],
+    'site_ContentSecurityPolicy'        => ['report', '[true,report,false] Enables "Content Security Policy (CSP)" for scripts embedded in pages. (Default: report)', 2 ],
+    'site_enableAllowOrigin'            => ['false', 'Set to "*" or explicitly to a domain to allow other websites to include pages of this site.', 2 ],
+    'site_allowFrameAncestors'          => ['\'self\'', 'Defines who can import pages from this site via &lt;frame>. Default: \'self\'. Add URL to allow others.', 3 ],
 ];
 
 
@@ -494,7 +496,6 @@ EOT;
                 $diff = ' class="lzy-config-viewer-hl"';
             }
             $checked = '';
-
             if (is_bool($defaultValue)) {
                 $displayValue = $currValue ? 'true' : 'false';
                 $inputValue = 'true';

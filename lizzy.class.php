@@ -96,6 +96,7 @@ class Lizzy
 	private $editingMode = false;
 	private $timer = false;
 	private $debugLogBuffer = '';
+	private $cspHeader = '';
 
 
 
@@ -317,6 +318,8 @@ private function loadRequired()
 		}
 
         $this->runUserFinalCode($html );   // optional custom code to operate on final HTML output
+
+        $this->applyContentSecurityPolicy();
 
         $this->storeToCache( $html );
 
@@ -2221,6 +2224,46 @@ EOT;
 
 
 
+    private function applyContentSecurityPolicy()
+    {
+        // Content-Security-Policy:
+        //   check using https://webbkoll.dataskydd.net/
+
+        // CSP header code assembled in page.class -> send in header now if defined:
+        if (!$this->config->site_ContentSecurityPolicy) {
+            return;
+        }
+        $cspReportMode = ($this->config->site_ContentSecurityPolicy === 'report')? '-Report-Only' : '';
+
+        $cspStr = "Content-Security-Policy$cspReportMode:";
+
+        // CSP generic rule -> allow only objects from own host:
+        $cspStr .= " default-src 'self';";
+
+        // CSP for styles:
+        $cspStr .= " style-src 'self' 'unsafe-inline';";
+
+        // CPS for scripts:
+        $cspStr .= $this->page->getContentSecurityPolicyHeader();
+
+        // CSP for FrameAncestors:
+        if ($this->config->site_allowFrameAncestors) {
+            $cspStr .= " frame-ancestors {$this->config->site_allowFrameAncestors};";
+        }
+
+        // misc CSP rules:
+        $cspStr .= " base-uri 'self'; form-action 'self'; connect-src 'self';";
+
+        $this->cspHeader = $cspStr;
+        header( $cspStr );
+
+        // activate Strict-Transport-Security:
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
+
+    } // applyContentSecurityPolicy
+
+
+
 
     private function storeToCache($html)
     {
@@ -2233,8 +2276,15 @@ EOT;
 
         $requestedPage = $this->getCacheFilename( false );
         preparePath($requestedPage);
+
+        // inject body-class 'lzy-cached' to signal page being cached:
         if (preg_match('/^( .* <body.*?class=["\'] .+? ) (["\'] .* )$/xms', $html, $m)) {
             $html = $m[1] . ' lzy-cached' . $m[2];
+        }
+
+        // check CSP, inject code at top of cached file:
+        if ($this->cspHeader) {
+            $html = "<!-- %CSP $this->cspHeader -->\n$html";
         }
         file_put_contents($requestedPage, $html);
     } // storeToCache
@@ -2289,6 +2339,18 @@ EOT;
                 $trans = new Transvar($this);
                 $trans->readTransvarsFromFiles([ SYSTEM_PATH.'config/sys_vars.yaml', CONFIG_PATH.'user_variables.yaml' ]);
                 $html = $trans->translate($html, true);
+            }
+
+            // check for CSP injection:
+            if (strpos($html, '<!-- %CSP') === 0) {
+                if (preg_match('/^ <!--\s %CSP\s (.*?) -->/x', $html, $m)) {
+                    $header = $m[1];
+                    header( $header );
+                    $html = substr($html, strlen( $m[0] ) + 1);
+                }
+
+                // activate Strict-Transport-Security:
+                header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
             }
 
             exit ($html);

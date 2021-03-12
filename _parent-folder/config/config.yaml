@@ -5,21 +5,20 @@
 debug_enableDevMode: true                   # => settings in config/dev-mode-config.yaml become active
 debug_enableDevModeAutoOff: false           # -> if true, automatically returns to normal mode on next morning
 
-site_enableFilesCaching: true               # caching of CSS and JS files
+site_supportedLanguages: en                 # supported languages, first one is default, e.g. 'de,fr,en'
+
+#site_enableFilesCaching: true               # caching of CSS and JS files
+#site_enableCaching: true                    # Caching of HTML files
+
+#custom_permitUserCode: true                 # If true, user-provided code can be executed. And only if located in 'code/'
+
+#site_robots: true                          # If true, Lizzy will add a meta-tag to inform search engines, not to index this site.
+#site_ContentSecurityPolicy: true           # CSP: set true to activate, default is "report only" (-> reports in browser's console)
 
 __END__
-
-#=== Often used options ==============================================
-
-custom_permitUserCode: true                 # If true, user-provided code can be executed. And only if located in 'code/'
-site_supportedLanguages: de,en              # supported languages, first one is default
-site_enableCaching: true                    # Caching of HTML files
-
 
 my_option: true                             # custom options available to user code (-> starting with 'my_')
 
-
-__END__
 
 #=== List of available configuration items and their default values ===========================
 
@@ -72,7 +71,6 @@ feature_SrcsetDefaultStepSize: 250           # Defines the step size when Lizzy 
 feature_autoConvertLinks: false              # If true, automatically converts text that looks like links to HTML-links (i.e. <a> tags).
 feature_autoLoadClassBasedModules: true      # If true, automatically loads modules that are invoked by applying classes, e.g. .editable
 feature_autoLoadJQuery: true                 # If true, jQuery will be loaded automatically (even if not initiated explicitly by macros)
-feature_enableAllowOrigin: false             # Set to "*" or explicitly to a domain to allow other websites to include pages of this site.
 feature_enableIFrameResizing: false          # If true, includes js code required by other pages to iFrame-embed this site
 feature_enableScssInPageFolder: false        # If true, Lizzy checks for .scss files in page folder and compiles them to .css. Alternatively use "enableScssInPageFolder" in Frontmatter of specific pages.
 feature_externalLinksInNewWin: false         # If true, automatically makes links open in new window for all external links (i.e. starting with http).
@@ -95,12 +93,15 @@ path_logPath: .#logs/                        # [true|Name] Name of folder to whi
 path_stylesPath: css/                        # Name of folder in which style sheets reside
 path_userCodePath: code/                     # Name of folder in which user-provided PHP-code must reside.
 
+site_ContentSecurityPolicy: report           # [true,report,false] Enables "Content Security Policy (CSP)" for scripts embedded in pages. (Default: report)
+site_allowFrameAncestors: 'self'             # Defines who can import pages from this site via <frame>. Default: 'self'. Add URL to allow others.
 site_allowInsecureConnectionsTo: 192.*       # [domain(s)] Permit login over insecure connections to webhost on stated domain/ip-address.
 site_cacheResetIntervall: 24                 # (number of hours) Defines the interval after which the cache shall be reset. When that happens,page requests will build up the cache again.
 site_compiledStylesFilename: __styles.css    # Name of style sheet containing collection of compiled user style sheets
 site_dataPath: data/                         # Path to data/ folder.
-site_devDataPath:                            # Activates a mechanism that, in dev-mode, switches /Lizzy-Dev/Caching-Modules/data/ to given destination. Thus, you can savely develop and test in dev-mode without overwriting hot data. Hint: set site_dataPath to "../db/".
+site_devDataPath:                            # Activates a mechanism that, in dev-mode, switches /Lizzy-Dev/CSP/data/ to given destination. Thus, you can savely develop and test in dev-mode without overwriting hot data. Hint: set site_dataPath to "../db/".
 site_devDataPathPattern: /-                  # Regex-pattern to match against appRoot path to identify, whether we are running on a dev site, e.g. "/(dev|-)". Default: "/-"
+site_enableAllowOrigin: false                # Set to "*" or explicitly to a domain to allow other websites to include pages of this site.
 site_enableCaching: false                    # If true, Lizzy's caching mechanism is activated.
 site_enableFilesCaching: false               # If true, Lizzy's module caching mechanism is activated. I.e. CSS and JS files are collected and delivered to browser in just two requests.
 site_enableMdCaching: false                  # If true, Lizzy's MD caching mechanism is activated. (not fully implemented yet)

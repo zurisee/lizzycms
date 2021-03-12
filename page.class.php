@@ -58,6 +58,7 @@ class Page
     private $assembledCss = '';
     private $assembledJs = '';
     private $assembledJq = '';
+    private $headerContentSecurityPolicy = ''; // -> http-header "Content-Security-Policy:"
 
     private $assembledCssFiles = '';
     private $assembledJsFiles = '';
@@ -871,7 +872,7 @@ EOT;
 
         if ($this->assembledCss) {
             $assembledCss = "\t\t".preg_replace("/\n/", "\n\t\t", $this->assembledCss);
-            $headInjections .= "\t<style>\n{$assembledCss}\n\t</style>\n";
+            $headInjections .= "\t<style>\n$assembledCss\n\t</style>\n";
         }
 
         if ($this->config->site_enableRelLinks) {
@@ -945,11 +946,16 @@ EOT;
 
         if ($rootJs.$this->assembledJs) {
             $assembledJs = "\t\t".preg_replace("/\n/", "\n\t\t", $this->assembledJs);
+
+            $assembledJs = <<<EOT
+
+$rootJs$assembledJs
+    
+EOT;
+
             $bodyEndInjections = <<<EOT
 {$this->bodyLateInjections}
-    <script>
-$rootJs$assembledJs
-    </script>
+    <script>$assembledJs</script>
 $bodyEndInjections
 EOT;
         }
@@ -963,15 +969,25 @@ EOT;
 
         if ($this->assembledJq) {
             $assembledJq = "\t\t\t".preg_replace("/\n/", "\n\t\t\t", $this->assembledJq);
-            $bodyEndInjections .= <<<EOT
-    <script>
+            $assembledJq = <<<EOT
+
         $( document ).ready(function() {
 $assembledJq
         });        
-    </script>
+    
+EOT;
+
+            $bodyEndInjections .= <<<EOT
+    <script>$assembledJq</script>
 EOT;
         }
 
+        // if CSP is enabled -> prepare header:
+        if ($this->config->site_ContentSecurityPolicy) {
+            $hash1 = base64_encode(hash('sha256', $assembledJs, true));
+            $hash2 = base64_encode(hash('sha256', $assembledJq, true));
+            $this->headerContentSecurityPolicy .= " script-src 'self' 'sha256-$hash1' 'sha256-$hash2';";
+        }
 
         $bodyEndInjections = "<!-- body_end_injections -->\n$bodyEndInjections\n<!-- /body_end_injections -->";
 
@@ -1273,7 +1289,7 @@ EOT;
         if (isset($this->allowOrigin)) {  // from frontmatter
             $allowOrigin = $this->allowOrigin;
         } else {
-            $allowOrigin = $this->config->feature_enableAllowOrigin;
+            $allowOrigin = $this->config->site_enableAllowOrigin;
         }
 
         if (is_bool($allowOrigin)) {
@@ -1413,7 +1429,14 @@ EOT;
             $html = substr($html, 0, $p).$msg.substr($html, $p);
         }
         return $html;
-    }
+    } // lateApplyMessage
+
+
+
+    public function getContentSecurityPolicyHeader()
+    {
+        return $this->headerContentSecurityPolicy;
+    } // getContentSecurityPolicyHeader
 
 
 
