@@ -5,6 +5,11 @@ admin_autoAdminOnLocalhost: true
 debug_compileScssWithLineNumbers: true
 debug_errorLogging: true
 
+site_enableFilesCaching: false
+site_enableCaching: false
+
+
+
 #debug_forceBrowserCacheUpdate: true
 
 #my_option: true       # custom options available to user code
