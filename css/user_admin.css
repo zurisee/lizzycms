@@ -46,11 +46,6 @@ body {
 .lzy-login-menu ol li {
     list-style-type: none;
 }
-.lzy-logged-in-user * {
-    height: 1.2em;
-    line-height: 1.2em;
-    display: inline-block;
-}
 .lzy-login-link-menu img,
 .lzy-login-link img {
     width: auto;
