@@ -320,9 +320,6 @@ nav li {
         color: #{$mobile-nav-txt-color};
         color: var(--lzy-mobile-nav-txt-color, #{$mobile-nav-txt-color});
         position: relative;
-        .lzy-nav-arrow {
-            position: absolute;
-        }
     }
     .lzy-nav-title {
         padding-left: 2em;

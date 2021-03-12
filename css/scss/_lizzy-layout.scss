@@ -39,7 +39,7 @@ $mobile-nav-title-color:  #333;
 $mobile-nav-title-bg-color: #ddd;
 
 // mobile footer:
-$mobile-footer-height: 2rem;
+$mobile-footer-height:    3rem;
 $mobile-footer-txt-color: #ddd;
 $mobile-footer-font-size: 5vw;
 
@@ -112,16 +112,14 @@ $box-width: 300px;
     background: $mobile-nav-bg-color;
     background: var(--lzy-mobile-nav-bg-color, $mobile-nav-bg-color);
     .lzy-page {
-        padding: 1rem 0 0 0;
-        //margin: $mobile-header-height 0 0 0;
+        padding: 0;
         position: absolute;
-        top: 0;
+        top: var(--lzy-mobile-header-height, #{$mobile-header-height});
         left: 0;
         right: 0;
         bottom: 0;
         margin: 0;
-        //        background: #333;
-        height: 100vh;
+        height: calc(100vh - var(--lzy-mobile-header-height, #{$mobile-header-height}));
         width: 100vw;
         overflow-y: auto;
     }
@@ -142,9 +140,6 @@ $box-width: 300px;
     .lzy-large-screen-footer {
         display: none;
     }
-    .lzy-footer {
-        margin-top: 0;
-    }
 
     .lzy-main,
     .lzy-header {
@@ -158,7 +153,7 @@ $box-width: 300px;
         left: 0;
         width: 60vw;
         box-shadow: inset -4px 0 4px 0px #333;
-        height: #{$mobile-footer-height};
+        height: #{$mobile-header-height};
         height: calc(100vh - var(--lzy-mobile-header-height, #{$mobile-header-height}) - var(--lzy-mobile-footer-height, #{$mobile-footer-height}) );
         .lzy-nav.lzy-nav {
             a {
@@ -173,7 +168,7 @@ $box-width: 300px;
     .lzy-main {
         left: 0;
         width: 100vw;
-        height: #{$mobile-footer-height};
+        height: 100%;
         height: calc(100vh - var(--lzy-mobile-header-height, #{$mobile-header-height}) - var(--lzy-mobile-footer-height, #{$mobile-footer-height}) );
         background: var(--lzy-mobile-bg-color, $mobile-main-bg-color);
         color: var(--lzy-mobile-txt-color, $mobile-main-txt-color);
@@ -207,8 +202,9 @@ $box-width: 300px;
         color: var(--lzy-mobile-footer-txt-color, #000);
         background: #{$mobile-header-bg-color};
         background: var(--lzy-mobile-footer-bg-color, var(--lzy-mobile-header-bg-color, #{$mobile-header-bg-color}));
-        padding-left: 1rem;
-        padding-right: 0.5rem;
+        padding: 2px 0.5rem 2px 1rem;
+        margin-top: 0;
+        height: var(--lzy-mobile-footer-height, #{$mobile-footer-height});
     }
     .lzy-footer * {
         color: #{$mobile-header-txt-color};

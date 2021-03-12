@@ -259,8 +259,8 @@ function openCurrentElement() {
 function adaptMainMenuToScreenSize( smallScreen ) {
     if (smallScreen) {
         $('.lzy-primary-nav .lzy-nav')
-            .removeClass('lzy-nav-top-horizontal lzy-nav-hover lzy-nav-colored lzy-nav-dark-theme')
-            .addClass('lzy-nav-collapsed lzy-nav-open-current');
+            .removeClass('lzy-nav-top-horizontal lzy-nav-hover lzy-nav-colored lzy-nav-dark-theme lzy-nav-hoveropen')
+            .addClass('lzy-nav-vertical lzy-nav-collapsed lzy-nav-open-current');
 
         if ($('.lzy-nav-small-tree').length) {
             openAccordion($('.lzy-primary-nav .lzy-has-children'), true, true); // open all
@@ -272,6 +272,7 @@ function adaptMainMenuToScreenSize( smallScreen ) {
         }
 
     } else {
+        // restore classes:
         $('.lzy-primary-nav .lzy-nav').attr('class', largeScreenClasses);
         $('.lzy-primary-nav .lzy-has-children').removeClass('lzy-open');
         $('body').removeClass('lzy-nav-mobile-open');
