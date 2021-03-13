@@ -11,14 +11,14 @@ $this->addMacro($macroName, function () {
 	$macroName = basename(__FILE__, '.php');
 	$this->invocationCounter[$macroName] = (!isset($this->invocationCounter[$macroName])) ? 0 : ($this->invocationCounter[$macroName]+1);
 
-    $href = $this->getArg($macroName, 'href', 'Path or URL to link target', '');
+    $href = $this->getArg($macroName, 'url', 'Path or URL to link target', '');
     $this->getArg($macroName, 'text', 'Link-text. If missing, "href" will be displayed instead.', '');
     $this->getArg($macroName, 'type', '[intern, extern or mail, pdf, sms, tel, gsm, geo, slack] "mail" renders link as "mailto:", "intern" suppresses automatic prepending of "https://", "extern" causes link target to be opened in new window.', '');
     $this->getArg($macroName, 'id', 'ID to be applied to the &lt;a> Tag.', '');
     $this->getArg($macroName, 'class', 'Class to be applied to the &lt;a> Tag.', '');
     $this->getArg($macroName, 'title', 'Title attribute to be applied to the &lt;a> Tag.', '');
     $this->getArg($macroName, 'altText', 'Text appended to "text", but made visually hidden. I.e. text only available to assistive technologies.', '');
-    $this->getArg($macroName, 'target', 'Target attribute to be applied to the &lt;a> Tag.', '');
+    $this->getArg($macroName, 'target', '[newwin] Target attribute to be applied to the &lt;a> Tag. "newwin" means opening page in new window (or tab).', '');
     $this->getArg($macroName, 'subject', 'In case of "mail" and "sms": subject to be preset.', '');
     $this->getArg($macroName, 'body', 'In case of "mail": mail body to be preset.', '');
     $option = $this->getArg($macroName, 'option', '[download,abs,src,url] Modifies the output. "download" forces a download action. "abs" renders absolute paths/urls. "src" renders the source code. "url" renders the resulting address (without HTML wrapper)', '');

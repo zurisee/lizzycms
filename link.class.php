@@ -12,7 +12,10 @@ class CreateLink
     //----------------------------------------------------------
     public function render($args)
     {
-        $this->href = $args['href'];
+        $this->href = @$args['url'];
+        if (!$this->href) {
+            $this->href = @$args['href'];
+        }
         $this->text = $args['text'];
         $this->type = isset($args['type'])? $args['type']: 'href';
         $this->id = isset($args['id'])? $args['id']: '';
@@ -102,9 +105,9 @@ class CreateLink
         }
         $class = trim("lzy-link $this->class");
         $class = " class='$class'";
-        if (preg_match('/^ ([^\?&]*) (.*)/x', $this->href, $m)) {     // remove blanks from href
-            $this->href = str_replace(' ', '', $m[1]).str_replace(' ', '%20', $m[2]);
-        }
+
+        // replace blanks in url with %20:
+        $this->href = str_replace(' ', '%20', $this->href);
 
         // now assemble code:
         $str = "<a href='{$this->href}' {$this->id}{$class}{$this->title}{$this->target}>{$this->text}$hiddenText</a>";
@@ -229,9 +232,9 @@ class CreateLink
             $this->text = base_name($this->href);
         }
         if (stripos($this->option, 'abs') !== false) {
-            $this->href = resolvePath($this->href, true, true, true);
+            $this->href = resolvePath($this->href, $this->relativeToPage, true, true);
         } else {
-            $this->href = resolvePath($this->href, true, true);
+            $this->href = resolvePath($this->href, $this->relativeToPage, true);
         }
     } // renderPdfLink
 
