@@ -58,6 +58,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'feature_autoConvertLinks'          => [false, 'If true, automatically converts text that looks like links to HTML-links (i.e. &lt;a> tags).', 1 ],
     'feature_autoLoadClassBasedModules' => [true, 'If true, automatically loads modules that are invoked by applying classes, e.g. .editable', 3 ],
     'feature_autoLoadJQuery'            => [true, 'If true, jQuery will be loaded automatically (even if not initiated explicitly by macros)', 3 ],
+    'feature_enableScssTreeNotation'    => [true, 'If true, compilation of CSS and SCSS in ~/css/scss/ and frontmatter uses relaxed syntax: curly braces may be omitted - indentation level is used instead.', 3 ],
     'feature_enableScssInPageFolder'    => [false, 'If true, Lizzy checks for .scss files in page folder and compiles them to .css. Alternatively use "enableScssInPageFolder" in Frontmatter of specific pages.', 3 ],
     'feature_enableIFrameResizing'      => [false, 'If true, includes js code required by other pages to iFrame-embed this site', 1 ],
     'feature_externalLinksInNewWin'     => [false, 'If true, automatically makes links open in new window for all external links (i.e. starting with http).', 1 ],
