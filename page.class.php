@@ -1262,8 +1262,6 @@ EOT;
             $bodyTopInjections = '';
         }
 
-        $this->content = $this->translateEmojisAndIcons( $this->content ); // :icon:
-
         $tuples = [
             'body_classes' =>           trim($this->bodyTagClasses),
             'body_tag_attributes' =>    $this->bodyTagInjections,
@@ -1274,6 +1272,8 @@ EOT;
             'body_end_injections' =>    $this->getBodyEndInjections(),
         ];
         $html = $this->lateTranslateVariables($html, $tuples);
+
+        $html = $this->translateEmojisAndIcons( $html ); // :icon:
 
         $this->injectAllowOrigin(); // send 'Access-Control-Allow-Origin' in header
 
