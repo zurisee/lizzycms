@@ -31,6 +31,11 @@ class SCssCompiler
         $this->aggregatedCss = '';
         $this->aggregatedCssV2 = '';
         $this->aggregatedCssV2aux = '';
+        $this->treeParser = null;
+        $this->runTreeParser = $this->config->feature_enableScssTreeNotation;
+        if ($this->config->feature_enableScssTreeNotation) {
+            $this->treeParser = new Tree();
+        }
 
         if (isset($_GET['reset'])) {
             $this->deleteCache();
@@ -50,6 +55,7 @@ class SCssCompiler
         $files = getDir($this->fromFiles.'scss/*.scss');
         $mustCompile = $this->checkUpToDate($this->fromFiles, $files, $compiledFilename);
         if ($mustCompile) {
+            $this->runTreeParser = $this->config->feature_enableScssTreeNotation;
             foreach ($files as $file) {
                 $namesOfCompiledFiles .= $this->doCompile($this->fromFiles, $file);
             }
@@ -72,6 +78,7 @@ class SCssCompiler
         $compiledFilenameV2 = $this->sysCssPath.$this->compiledSysStylesFilenameV2;
         $compiledFilenameV2aux = $this->sysCssPath.$this->compiledSysStylesFilenameV2aux;
 
+        $this->runTreeParser = false;
         $files = getDir($this->sysCssPath.'scss/*.scss');
         $mustCompile = $this->checkUpToDate($this->sysCssPath, $files, $compiledFilenameV2);
         if ($mustCompile) {
@@ -125,6 +132,9 @@ class SCssCompiler
             $targetFile = $toPath . "_$fname.css";
         }
         $scssStr = $this->getFile($file);
+        if ($this->runTreeParser) {
+            $scssStr = $this->treeParser->toScss($scssStr);
+        }
         $scssStr = preg_replace('/\#\{([\d\s]+)\}/', "XXX$1YYY", $scssStr);
         $cssStr = '';
         try {
@@ -243,6 +253,10 @@ class SCssCompiler
 
     public function compileStr($scssStr)
     {
+        if ($this->config->feature_enableScssTreeNotation) {
+            $this->treeParser = new Tree();
+            $scssStr = $this->treeParser->toScss($scssStr);
+        }
         if (!$this->scss) {
             $this->scss = new Compiler;
         }

@@ -162,6 +162,7 @@ private function loadRequired()
     require_once SYSTEM_PATH.'user-account-form.class.php';
     require_once SYSTEM_PATH.'ticketing.class.php';
     require_once SYSTEM_PATH.'service-tasks.class.php';
+    require_once SYSTEM_PATH.'tree.class.php';
 } // loadRequired
 
 
@@ -1301,9 +1302,18 @@ EOT;
                 $scssStr = ".$class { $scssStr }";
             }
         }
-        if ($scssStr) {
-            $cssStr .= $this->scss->compileStr($scssStr);
+
+        // if tree notation for CSS is enabled, compile first:
+        if ($cssStr && $this->config->feature_enableScssTreeNotation) {
+            $this->treeParser = new Tree();
+            $cssStr = $this->treeParser->toScss($cssStr);
         }
+
+        // if SCSS found, compile it:
+        if ($scssStr) {
+            $cssStr .= $this->scss->compileStr($scssStr); // handles optional tree notation inside
+        }
+
         $class = preg_replace('/\s+/', '.', $class);
         $cssStr = str_replace(['#this', '.this'], ["#$id", ".$class"], $cssStr); // '#this', '.this' are short-hands for section class/id
         $newPage->addCss($cssStr, true);
