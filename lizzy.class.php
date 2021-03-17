@@ -175,10 +175,7 @@ private function loadRequired()
         $this->getConfigValues(); // from config/config.yaml
 
         // get info about browser
-        list($ua, $this->isLegacyBrowser) = $this->getBrowser();
-        $globalParams['userAgent'] = $ua;
-        $_SESSION['lizzy']['userAgent'] = $ua;
-        $globalParams['HTTP_USER_AGENT'] = $_SERVER['HTTP_USER_AGENT'];
+        $ua = $this->getBrowser();
 
         if ($this->config->debug_debugLogging && $this->debugLogBuffer) {
             writeLog( $this->debugLogBuffer . "  ($ua)" );
@@ -1077,16 +1074,16 @@ EOT;
 
 	private function getTemplate()
 	{
-		if ($tpl = $this->page->get('template')) {
-			$template = basename($tpl);
+		if ($template = $this->page->get('template')) {
 		} elseif (isset($this->siteStructure->currPageRec['template'])) {
 			$template = $this->siteStructure->currPageRec['template'];
 		} else {
 			$template = $this->config->site_pageTemplateFile;
 		}
+        $template = base_name($template, false). '.html';
 		$tmplStr = getFile($this->config->configPath.$template);
 		if ($tmplStr === false) {
-			$this->page->addOverlay("Error: templage file not found: '$template'");
+			$this->page->addPageSubstitution("Error: template file not found: '$template'");
 			return '';
 		}
 		return $tmplStr;
@@ -1262,7 +1259,7 @@ EOT;
 
 			$wrapperId = "{$wrapperTag}_$id";
 			$wrapperCls = "{$wrapperTag}_$cls";
-			$str = "\n\t\t    <$wrapperTag id='$wrapperId' class='$editingClass$wrapperCls'$dataFilename>\n$str\t\t    </$wrapperTag><!-- /lzy-src-wrapper -->\n";
+			$str = "\n\t\t    <$wrapperTag id='$wrapperId' class='lzy-section $editingClass$wrapperCls'$dataFilename>\n$str\t\t    </$wrapperTag><!-- /lzy-src-wrapper -->\n";
 			if ($aside) {
                 $str .= "\t$aside\n";
             }
@@ -1505,10 +1502,6 @@ EOT;
 
 	private function handleUrlArgs2()
 	{
-        if (getUrlArg('force')) {			            // force client reload
-            $this->config->debug_forceBrowserCacheUpdate = true;
-        }
-
         if (getUrlArg('reset')) {			            // reset (cache)
             $srv = new ServiceTasks( $this );
             $srv->resetLizzy(); // reloads, never returns
@@ -1819,8 +1812,15 @@ EOT;
 
     private function getBrowser()
     {
+        global $globalParams;
         $ua = new UaDetector( $this->config->debug_collectBrowserSignatures );
-        return [$ua->get(), $ua->isLegacyBrowser()];
+
+        $globalParams['userAgent'] = $ua->get();
+        $this->isLegacyBrowser = $ua->isLegacyBrowser();
+        $_SESSION['lizzy']['userAgent'] = $globalParams['userAgent'];
+        $globalParams['HTTP_USER_AGENT'] = $_SERVER['HTTP_USER_AGENT'];
+
+        return  $globalParams['userAgent'];
     } // browserDetection
 
 
@@ -2128,7 +2128,6 @@ Available URL-commands:
 <a href='?logout'>?logout</a>		    logout
 <a href='?mobile'>?mobile</a>,<a href='?touch'>?touch</a>,<a href='?notouch'>?notouch</a>	emulate modes  *)
 <a href='?nc'>?nc</a>		        supress caching (?nc=false to enable caching again)  *)
-<a href='?force'>?force</a>		    force browser to reload css and js from host
 <a href='?print'>?print</a>		    starts printing mode and launches the printing dialog
 <a href='?print-preview'>?print-preview</a>  presents the page in print-view mode    
 <a href='?timer'>?timer</a>		    switch timer on or off  *)
