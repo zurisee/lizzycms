@@ -28,7 +28,7 @@ $mobile-main-bg-color: white;
 
 // mobile header:
 $mobile-header-font-size: 6vw;
-$mobile-header-height:    3rem;;
+$mobile-header-height:    3em;
 $mobile-header-txt-color: #ddd;
 $mobile-header-bg-color:  #444;
 
@@ -39,7 +39,7 @@ $mobile-nav-title-color:  #333;
 $mobile-nav-title-bg-color: #ddd;
 
 // mobile footer:
-$mobile-footer-height:    3rem;
+$mobile-footer-height:    3em;
 $mobile-footer-txt-color: #ddd;
 $mobile-footer-font-size: 5vw;
 
@@ -49,11 +49,28 @@ $dl-as-table-dt-width: 6em;
 $grid-gap: 10px;
 $box-width: 300px;
 
+$min-font-size: 18;
+$max-font-size: 28;
 
 // === Default Layouts:
 .lzy-default-layout {
+    --min-font-size1: var(--min-font-size, 16);
+    --max-font-size1: var(--max-font-size, 28);
+    --fluid-size: var(--min-font-size1) * 1px + (var(--max-font-size1) - var(--min-font-size1)) * ((100vw - 420px) / (1200 - 420));
+    font-size:
+            clamp(
+                    var(--min-font-size1) * 1px,
+                    var(--fluid-size),
+                    var(--max-font-size1) * 1px
+            );
+
 
 } // lzy-default-layout
+
+.lzy-section {
+    padding: 1rem;
+    overflow: auto; /* to avoid inside margin to affect outer element */
+}
 
 
 // === Footer
@@ -79,7 +96,6 @@ $box-width: 300px;
     }
 }
 .lzy-large-screen.lzy-default-layout {
-    font-size: 13pt;
     .lzy-small-screen-footer {
         display: none;
     }
@@ -97,8 +113,11 @@ $box-width: 300px;
             margin-left: -0.1em;
             margin-right: 0.5em;
         }
-        .lzy-footer-left {
-            padding-top: 0.2rem;
+        & > div {
+            padding-top: 0.5em;
+        }
+        .lzy-footer-right.lzy-footer-right {
+            padding-top: 0;
         }
     }
 
@@ -108,7 +127,7 @@ $box-width: 300px;
 
 // === Small/Mobile Screen:
 .lzy-small-screen.lzy-default-layout {
-    font-size: $mobile-page-font-size;
+//    font-size: $mobile-page-font-size; //??? better to define separately?
     background: $mobile-nav-bg-color;
     background: var(--lzy-mobile-nav-bg-color, $mobile-nav-bg-color);
     .lzy-page {
@@ -172,7 +191,6 @@ $box-width: 300px;
         height: calc(100vh - var(--lzy-mobile-header-height, #{$mobile-header-height}) - var(--lzy-mobile-footer-height, #{$mobile-footer-height}) );
         background: var(--lzy-mobile-bg-color, $mobile-main-bg-color);
         color: var(--lzy-mobile-txt-color, $mobile-main-txt-color);
-        padding: 1rem;
         padding-bottom: 20vh;
         transition: left 0.3s;
     }
@@ -211,6 +229,9 @@ $box-width: 300px;
         color: var(--lzy-mobile-footer-txt-color, #{$mobile-header-txt-color});
         font-size: #{$mobile-footer-font-size};
         font-size: var(--lzy-mobile-footer-txt-size, #{$mobile-footer-font-size});
+    }
+    .lzy-footer .lzy-small-only {
+        padding-top: 0.5rem;
     }
     .lzy-mobile-page-header {
         display: block;
