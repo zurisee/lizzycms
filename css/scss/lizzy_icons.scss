@@ -45,6 +45,13 @@
     transform: translate(-0.1em, -1em);
 }
 
+.lzy-emoji[data-icon] {
+    line-height: calc(var(--lzy-icon-factor, 1) * 1em);
+}
+.lzy-emoji[data-icon]:before {
+    content: attr(data-icon);
+}
+
 .lzy-negate:after { 
     content: '\005c';
     font-size: 1.8em;
