@@ -148,6 +148,7 @@ a:focus > .lzy-focus-only {
 // Page Switcher Links
 .lzy-page-switcher-links a {
 	position: absolute;
+	display: block;
 	top: 0;
 	border-bottom: none;
 	z-index: 10000;

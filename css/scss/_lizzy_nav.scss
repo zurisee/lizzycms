@@ -36,6 +36,7 @@ $nav-focus-border-color: magenta;
 // mobile nav:
 $mobile-nav-font-size:    5vw;
 $mobile-nav-txt-color:    #ddd;
+$mobile-nav-bg-color:     #333;
 $mobile-nav-title-indent: 20px;
 $mobile-nav-first-indent: 20px;
 $mobile-nav-indent-step:  20px;
@@ -313,6 +314,10 @@ nav li {
 
 // === mobile menu:
 #lzy.lzy-small-screen .lzy-primary-nav {
+    background: $mobile-nav-bg-color;
+    padding-top: 0.6rem;
+    padding-left: 5px;
+    position: relative;
     a:visited,
     a {
         font-size: #{$mobile-nav-font-size};
