@@ -36,7 +36,6 @@ class Tree
 
     public function parse( $source )
     {
-        $source = removeHashTypeComments( $source );
         $source = removeCStyleComments( $source );
         if (!$source) {
             return [];
@@ -92,9 +91,10 @@ class Tree
 
             } else {
                 $name = rtrim( $name );
-                if ($this->autoAppendSemicolon && (strpos(';,', substr($name, -1)) === false)) {
-                    $name .= ';';
-                }
+//???
+//                if ($this->autoAppendSemicolon && (strpos(';,', substr($name, -1)) === false)) {
+//                    $name .= ';';
+//                }
                 $out .= "$indent$name\n";
             }
         }
