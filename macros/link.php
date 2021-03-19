@@ -11,7 +11,7 @@ $this->addMacro($macroName, function () {
 	$macroName = basename(__FILE__, '.php');
 	$this->invocationCounter[$macroName] = (!isset($this->invocationCounter[$macroName])) ? 0 : ($this->invocationCounter[$macroName]+1);
 
-    $href = $this->getArg($macroName, 'url', 'Path or URL to link target', '');
+    $href = $this->getArg($macroName, 'href', 'Path or URL to link target', '');
     $this->getArg($macroName, 'text', 'Link-text. If missing, "href" will be displayed instead.', '');
     $this->getArg($macroName, 'type', '[intern, extern or mail, pdf, sms, tel, gsm, geo, slack] "mail" renders link as "mailto:", "intern" suppresses automatic prepending of "https://", "extern" causes link target to be opened in new window.', '');
     $this->getArg($macroName, 'id', 'ID to be applied to the &lt;a> Tag.', '');
@@ -33,7 +33,7 @@ $this->addMacro($macroName, function () {
     }
 
 
-    $args = $this->getArgsArray($macroName, false, ['href','text','type','id','class','title','altText','target','subject','body','option']);
+    $args = $this->getArgsArray($macroName, false, ['href','text','type','id','class','title','altText','target','subject','body','option','url']);
 
     $text = $args['text'];
 
