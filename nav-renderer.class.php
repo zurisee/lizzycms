@@ -139,7 +139,8 @@ class NavRenderer
         $liClass = (isset($options['liClass'])) ? $options['liClass']: '';
         $hasChildrenClass = (isset($options['hasChildrenClass'])) ? $options['hasChildrenClass']: '';
         $aClass = (isset($options['aClass'])) ? $options['aClass']: '';
-        $navWrapperClass = (isset($options['navWrapperClass'])) ? $options['navWrapperClass']: '';
+        $navWrapperClass = (isset($options['wrapperClass'])) ? $options['wrapperClass']: '';
+        $navWrapperClass = (isset($options['navWrapperClass'])) ? $options['navWrapperClass']: $navWrapperClass;
         $navOptions = (isset($options['options'])) ? $options['options']: '';
         $title = (isset($options['title'])) ? $options['title']: '';
         $ariaLabel = (isset($options['ariaLabel'])) ? $options['ariaLabel']: $title;
