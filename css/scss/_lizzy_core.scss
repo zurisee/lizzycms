@@ -450,7 +450,6 @@ div.lzy-editable-hdr {
 .lzy-link {
 	position: relative;
 	white-space: nowrap;
-	padding-left: 1.25em;
 }
 .lzy-link:before {
 	position: absolute;
@@ -460,7 +459,6 @@ div.lzy-editable-hdr {
 	font-family: 'Lzy Icons';
 	font-style: normal;
 	font-weight: normal;
-//	font-size: 110%;
 	line-height: 1;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
@@ -469,6 +467,11 @@ div.lzy-editable-hdr {
 	padding-left: 0;
 }
 
+.lzy-mail_link {
+	padding-left: 1.25em;
+}
+
+.lzy-pdf_link,
 .lzy-download_link,
 .lzy-newwin_link,
 .lzy-external_link {
@@ -834,7 +837,6 @@ body {
 .lzy-reveal-container {
     overflow: hidden;
     &.lzy-elem-revealed {
-        //		margin-bottom: 1em;
         transition: margin-bottom 0.3s;
         > div {
             margin-top: 0 !important;
@@ -843,7 +845,6 @@ body {
     }
     > div {
         margin-top: -100vh;
-//         transition: margin-top 0.3s;
     }
 }
 
