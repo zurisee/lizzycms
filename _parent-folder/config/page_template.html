@@ -21,14 +21,15 @@
 	  <a href="#lzy-primary-nav">{{ Skip to Navigation }}</a>
 	  <a href="~/sitemap">{{ Skip to Sitemap }}</a>
   </div>
-{{^ lzy-page-switcher-links }}
 
   <div class='lzy-page page'>
 
 		<header class='lzy-header header'>
 
 {{^ header }}
+
 		</header>
+
 
 {{ nav( top, class:'lzy-nav-colored' ) }}
 
@@ -40,18 +41,17 @@
 
 {{ content }}
 
-            <div data-iframe-height=''>&nbsp;</div>
 		</main>
 <!-- === /page content =============== -->
 
 
-
-		<footer class="lzy-footer footer">
+        
+		<footer class="lzy-footer footer" data-iframe-height=''>
 			<div class="lzy-footer-left">
 {{^ footer }}
 				<div class="lzy-large-only">{{^ large-screen-footer }}</div>
 				<div class="lzy-small-only">{{^ small-screen-footer }}</div>
-			</div>
+			</div><!-- /lzy-footer-left -->
 
 	        <div class='lzy-footer-right lzy-logged-in-user'>
 {{ lzy-lang-selection }}
@@ -69,6 +69,8 @@
 {{ nav( small-screen-header ) }}
 
   </div><!-- /.lzy-page -->
+  
+{{^ lzy-page-switcher-links }}
 
 
 {{ body_end_injections }}
