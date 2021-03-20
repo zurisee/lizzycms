@@ -45,6 +45,9 @@ $mobile-footer-height:    3rem;
 $mobile-footer-txt-color: #ddd;
 $mobile-footer-font-size: 5vw;
 
+// mobile nav:
+$mobile-nav-width:       18rem;     // must be same as _lizzy_nav.scss
+
 $yPadding: 0.4rem;
 
 $dl-as-table-dt-width: 6em;
@@ -629,7 +632,7 @@ $max-font-size: 28;
 
 // === when menu button clicked:
 #lzy.lzy-default-layout.lzy-nav-mobile-open main {
-    left: 60vw;
+    left: $mobile-nav-width;
     transition: left 0.3s;
 }
 

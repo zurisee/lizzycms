@@ -40,6 +40,7 @@ $mobile-nav-bg-color:     #333;
 $mobile-nav-title-indent: 20px;
 $mobile-nav-first-indent: 20px;
 $mobile-nav-indent-step:  20px;
+$mobile-nav-width:        18rem; // must be same as _lizzy-layout.scss
 $mxCorr: 1.8em;
 
 
@@ -318,6 +319,7 @@ nav li {
     padding-top: 0.6rem;
     padding-left: 5px;
     position: relative;
+    width: $mobile-nav-width;
     a:visited,
     a {
         font-size: #{$mobile-nav-font-size};
@@ -481,6 +483,9 @@ nav li {
             left:     6em;
             left:     calc(var(--lzy-mobile-nav-first-indent, #{$nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
         }
+    }
+    .lzy-nav-for-touch-only.lzy-nav-for-touch-only {
+        display: none;
     }
 
 } // vertical nav
