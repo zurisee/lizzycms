@@ -193,13 +193,33 @@ lzy-please-correct:
 
 
 #--- Links -------------------------------
-opens mail app: 
-    de: 'Öffnet in Mail-Anwendung'
-    en: opens in your mail-application
-
 opens in new win:
     de: Öffnet in neuem Fester
     en: Opens in new window
+
+opens PDF in new window:
+    de: Öffnet das PDF in einem neuen Fester
+    en: Opens the PDF in a new window
+
+opens mail app:
+    de: Öffnet die Mail-App in einem neuen Fenster
+    en: opens your mail app in a new window
+
+opens messaging app:
+    de: Öffnet die Messaging App in einem neuen Fenster
+    en: Opens your default messaging app in a new window
+
+opens telephone app:
+    de: Öffnet die Telefon App in einem neuen Fenster
+    en: Opens your default telephone app in a new window
+
+opens map app:
+    de: Öffnet die Karten App in einem neuen Fenster
+    en: Opens your default messaging app in a new window
+
+opens slack app:
+    de: Öffnet die Slack App in einem neuen Fenster
+    en: Opens your Slack app in a new window
 
 
 lzy-next-page-link-label: "<span class='nextLinkArrow lzy-focus-only' title='{{ lzy-to-next-page-title }}'>{{ lzy-to-next-page-title }}$nextLabel</span>"
