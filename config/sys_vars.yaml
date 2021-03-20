@@ -230,7 +230,7 @@ lzy-breadcrumb-title:
     _:  'Breadcrumb path:'
 
 lzy-nav-main-title:
-    de: 'Lizzy Hauptnavigation'
+    de: 'Hauptnavigation'
     _:  'Main Navigation'
 
 InPage TOC:
