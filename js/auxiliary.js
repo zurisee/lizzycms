@@ -21,6 +21,9 @@ var debug = false;
     });
 
     debug = ($('body.debug').length !== 0);
+    if ( $('body.touch').length ) {
+        $('html').removeClass('no-touchevents').addClass('touchevents');
+    }
 }( jQuery ));
 
 
