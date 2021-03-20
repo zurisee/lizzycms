@@ -13,7 +13,8 @@ define('DEFAULT_CONFIG_FILE',   CONFIG_PATH.'config.yaml');
 define('DEV_MODE_CONFIG_FILE',  CONFIG_PATH.'dev-mode-config.yaml');
 
 define('PAGES_PATH',            'pages/');
-define('DATA_PATH',            'data/');
+define('HOMEPAGE_PATH',         'home/');
+define('DATA_PATH',             'data/');
 define('CACHE_PATH',            '.cache/');
 define('MODULES_CACHE_PATH',    '.cache/files/');
 define('PAGE_CACHE_PATH',       CACHE_PATH.'pages/');
@@ -827,8 +828,6 @@ EOT;
 
     private function addStandardModules()
     {
-        $this->page->addModules('TOOLTIPSTER');
-        $this->page->addJq('$(\'.tooltip\').tooltipster({contentAsHTML: true});');
     } // addStandardModules
 
 
@@ -852,11 +851,13 @@ EOT;
         $loginMenu = $login = $userName = $groups = '';
         if (!$this->auth->getKnownUsers()) {    // case when no users defined yet:
             $login = <<<EOT
-    <span class="lzy-tooltip-arrow tooltip" title='{{ lzy-no-users-defined-warning }}'>
+    <span class="lzy-tooltip-arrow lzy-tooltip" title='{{ lzy-no-users-defined-warning }}'>
         <span class='lzy-icon lzy-icon-error'></span>
     </span>
 
 EOT;
+            $this->page->addModules('TOOLTIPSTER');
+            $this->page->addJq('$(\'.lzy-tooltip\').tooltipster({contentAsHTML: true});');
         } else {
 	        if ($this->auth->isLoggedIn()) {
                 $userAcc = new UserAccountForm($this);
@@ -1130,7 +1131,6 @@ EOT;
 			$folder = $currRec['folder'];
 		}
 		if (isset($currRec['file'])) {
-            registerFileDateDependencies($currRec['file']);
 			return $this->loadHtmlFile($folder, $currRec['file']);
 		}
 
@@ -1138,14 +1138,12 @@ EOT;
 		$this->handleMissingFolder($folder);
 
 		$mdFiles = getDir($folder.'*.{md,html,txt}');
-        registerFileDateDependencies($mdFiles);
 
 		// Case: no .md file available, but page has sub-pages -> show first sub-page instead
 		if (!$mdFiles && isset($currRec[0])) {
 			$folder = $currRec[0]['folder'];
 			$this->siteStructure->currPageRec['folder'] = $folder;
 			$mdFiles = getDir(PAGES_PATH.$folder.'*.{md,html,txt}');
-            registerFileDateDependencies($mdFiles);
 		}
 		
         $handleEditions = false;
@@ -2315,12 +2313,20 @@ EOT;
 
     private function checkAndRenderCachePage()
     {
-        if (isset($_GET['reset'])) {  // nc = no-caching -> when specified, make sure page cache is cleared
+        if (isset($_GET['reset'])) {  // reset page cache
             purgePageCache();
         }
+
         if (isset($_GET['nc'])) {  // nc = no-caching
-            $_SESSION['lizzy']['nc'] = true;
-            return;
+            if ($_GET['nc'] === 'false') {
+                unset($_SESSION['lizzy']['nc']);
+                unset($_GET['nc']);
+            } else {
+                $_SESSION['lizzy']['nc'] = true;
+            }
+            if ($_SESSION['lizzy']['nc']) {
+                return;
+            }
         } elseif (@$_SESSION['lizzy']['nc'] || @$_SESSION['lizzy']['debug']) {
             return;
         }
@@ -2379,9 +2385,9 @@ EOT;
         }
         $appRoot = fixPath(commonSubstr( $scriptPath, dir_name($requestUri), '/'));
         $ru = preg_replace('/\?.*/', '', $requestUri); // remove opt. '?arg'
-        $requestedpageHttpPath = dir_name(substr($ru, strlen($appRoot)));
-        if ($requestedpageHttpPath === '.') {
-            $requestedpageHttpPath = '';
+        $requestedPageHttpPath = dir_name(substr($ru, strlen($appRoot)));
+        if ($requestedPageHttpPath === '.') {
+            $requestedPageHttpPath = '';
         }
 
         $lang = isset($_SESSION['lizzy']['lang']) ? $_SESSION['lizzy']['lang'] : '';
@@ -2389,16 +2395,19 @@ EOT;
             $lang = ".$lang";
         }
 
-        $requestedPage = PAGE_CACHE_PATH . fixPath($requestedpageHttpPath) . "index$lang.html";
+        $requestedPage = PAGE_CACHE_PATH . fixPath($requestedPageHttpPath) . "index$lang.html";
 
         if ($verify) {
             if (file_exists($requestedPage)) {
-                if (!$requestedpageHttpPath) {
-                    $requestedpageHttpPath = 'home/';
+                if (!$requestedPageHttpPath && file_exists(HOMEPAGE_PATH)) {
+                    $requestedPageHttpPath = HOMEPAGE_PATH;
                 }
-                $requestedpageHttpPath = './' . PAGES_PATH . $requestedpageHttpPath;
+                $requestedPageHttpPath = './' . PAGES_PATH . $requestedPageHttpPath;
                 $t0 = 0;
-                $it = new RecursiveDirectoryIterator( $requestedpageHttpPath );
+                if (!file_exists($requestedPageHttpPath)) {
+                    die("Error: folder not found: '$requestedPageHttpPath'");
+                }
+                $it = new \RecursiveDirectoryIterator( $requestedPageHttpPath );
                 foreach (new RecursiveIteratorIterator($it) as $fileRec) {
                     // ignore files starting with . or # or _
                     $f = $fileRec->getFilename();
