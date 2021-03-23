@@ -42,7 +42,10 @@ class Ticketing
         if (($this->defaultMaxConsumptionCount === false) || ($this->defaultMaxConsumptionCount == -1)) {
             $this->defaultMaxConsumptionCount = PHP_INT_MAX;
         }
-        $this->ds = new DataStorage2($dataSrc);
+        $this->ds = new DataStorage2([
+            'dataSource' => $dataSrc,
+            'exportInternalFields' => true,
+        ]);
         $this->purgeExpiredTickets();
     } // __construct
 
@@ -85,6 +88,7 @@ class Ticketing
     {
         $ticketRec = $rec;
         $ticketRec['_maxConsumptionCount'] = $maxConsumptionCount ?$maxConsumptionCount : $this->defaultMaxConsumptionCount;
+        $ticketRec['_maxConsumptionCount'] = intval( $ticketRec['_maxConsumptionCount'] );
         $ticketRec['_ticketType'] = $type ? $type : $this->defaultType;
         $ticketRec['_currPage'] = $GLOBALS['globalParams']['pageFolder'];
         $ticketRec['_dataPath'] = $GLOBALS['globalParams']['dataPath'];
@@ -183,7 +187,9 @@ class Ticketing
             if ($_ticketType === 'sessionVar') {     // type 'sessionVar': make ticket available in session variable
                 $_SESSION['lizzy']['ticket'] = $ticketRec;
             }
-            unset($ticketRec['_ticketType']);
+            if ($type || ($ticketRec['_ticketType']=== 'generic')) {
+                unset($ticketRec['_ticketType']);
+            }
         }
         if (isset( $GLOBALS['globalParams']['isBackend'])) {
             $GLOBALS['globalParams']['pageFolder'] = $ticketRec['_currPage'];
