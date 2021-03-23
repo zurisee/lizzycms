@@ -110,6 +110,10 @@ EOT;
             }
             $res = [false, $msg, 'Override'];
 
+        } elseif ($requestType === 'createTicket') {           // admin creation of a ticket:
+            if (!$this->auth->isAdmin()) { return false; }
+            $this->handleCreateTicketRequest();
+
         } else {
             $user = $this->loggedInUser;
             $userRec = $this->auth->getLoggedInUser( true );
@@ -829,5 +833,84 @@ EOT;
         }
         return false;
     } // checkPasswordQuality
+
+
+
+
+    private function handleCreateTicketRequest()
+    {
+        if (!$_POST) {
+            $accountForm = new UserAccountForm($this->lzy);
+            $form = $accountForm->renderCreateTicketForm();
+            $this->page->addOverlay(['text' => $form, 'closable' => 'reload']); // close shall reload page to remove url-arg
+            $jq = <<<EOT
+
+$('#lzy-create-ticket-panel').addClass('lzy-tilted');
+lzyPanels[ lzyPanelWidgetInstance ] = new LzyPanels();
+lzyPanels[ lzyPanelWidgetInstance ].init( '#lzy-create-ticket-panel', 1 );
+lzyPanelWidgetInstance++;
+
+EOT;
+            $this->page->addJq( $jq );
+            $this->page->addModules( 'PANELS' );
+        } else {
+
+            $n = get_post_data('max_accesses');
+            if (!$n) {
+                $n = 1;
+            }
+            $user = get_post_data('user');
+            if (!$user) {
+                $user = 'guest';
+            }
+            $group = get_post_data('group');
+            if (!$group) {
+                $group = 'guests';
+            }
+            $page = get_post_data('lzy-selected-page');
+            $pgRec = $this->lzy->siteStructure->findSiteElem( $page, true, true );
+            $folder = ($pgRec['urlpath'] !== false) ? $pgRec['urlpath']: $pgRec['folder'];
+            $link = $GLOBALS['globalParams']['absAppRootUrl'] . $folder;
+            if (@$_POST['util']) {
+                $accessCodeValidyTime = strtotime($_POST['util']) - time();
+
+            } else {
+                $accessCodeValidyTime = get_post_data('duration');
+                $unit = @$_POST['unit'];
+                if ($unit === 'minutes') {
+                    $accessCodeValidyTime = 60 * $accessCodeValidyTime;
+
+                } elseif ($unit === 'hours') {
+                    $accessCodeValidyTime = 3600 * $accessCodeValidyTime;
+
+                } elseif ($unit === 'days') {
+                    $accessCodeValidyTime = 86400 * $accessCodeValidyTime;
+
+                }
+                if (!$accessCodeValidyTime) {
+                    $accessCodeValidyTime = 86400; // one day
+                }
+            }
+            $payload = [
+                'user' => $user,
+                'group' => $group,
+                'link' => $folder,
+            ];
+            $tick = new Ticketing(['hashSize' => 12, 'defaultType' => 'user-ticket']);
+            $hash = $tick->createHash();
+            $hash = $tick->createTicket($payload, $n, $accessCodeValidyTime, false, $hash);
+            $str = <<<EOT
+<pre>
+Ticket: $hash
+
+Link:   $link$hash
+</pre>
+EOT;
+
+            $this->page->addOverlay(['text' => $str, 'closable' => 'reload']); // close shall reload page to remove url-arg
+        }
+    } // handleCreateTicketRequest
+
+
 
 } // class

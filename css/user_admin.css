@@ -370,3 +370,13 @@ input.lzy-login-email[type=email]:valid {
 .lzy-adduser-response > div > span:first-child {
     width: 8em;
 }
+
+/* === create ticket ============== */
+#lzy .lzy-create-ticket-form {
+    font-size: 10pt;
+    --lzy-form-width: 36em;
+    --lzy-label-width: 8em;
+}
+.lzy-create-ticket-form select {
+    width: calc(100% - var(--lzy-label-width) - 10px);
+}

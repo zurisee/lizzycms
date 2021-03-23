@@ -813,7 +813,7 @@ lzy-link-expired:
 
 lzy-link-expired-explanation:
     de: 'Der Link, mit dem Sie diese Website aufgerufen haben, ist abgelaufen oder war nie gültig:'
-    _:  'The you used to access this website has expired or has never been valid:'
+    _:  'The link you used to access this website has expired or has never been valid:'
 
 lzy-signup-username-not-available:
     de: 'Benutzername bereits vergeben - bitte wählen Sie einen anderen.'

@@ -87,10 +87,10 @@ class Lizzy
 	private $currPage = false;
 	private $configPath = CONFIG_PATH;
 	private $systemPath = SYSTEM_PATH;
-	private $autoAttrDef = [];
+//	private $autoAttrDef = [];
 	public  $pathToRoot;
 	public  $pagePath;
-	private $reqPagePath;
+    public $reqPagePath;
 	public  $siteStructure;
 	public  $trans;
 	public  $page;
@@ -1689,9 +1689,13 @@ EOT;
             $this->page->addOverlay(['text' => $str, 'closable' => 'reload']); // close shall reload page to remove url-arg
         }
 
+        if (getUrlArg('ticket')) {
+            require_once SYSTEM_PATH.'admintasks.class.php';
+            $adm = new AdminTasks($this);
+            $adm->handleAdminRequests( 'createTicket' );
+        }
 
     } // handleUrlArgs2
-
 
 
 

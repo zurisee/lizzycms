@@ -266,6 +266,105 @@ EOT;
 
 
 
+    public function renderCreateTicketForm()
+    {
+        $pages = $this->lzy->siteStructure->getListOfPages();
+        $select = '';
+        $currPg = $this->lzy->siteStructure->getPageName();
+        foreach ($pages as $page) {
+            if ($currPg === $page) {
+                $select .= "\t\t<option value='$page' selected>$page</option>\n";
+            } else {
+                $select .= "\t\t<option value='$page'>$page</option>\n";
+            }
+        }
+        $select = "\t<select name='lzy-selected-page'>\n$select\n\t</select>\n";
+
+        $form = <<<EOT
+
+    <h1>Create Ticket</h1>
+	<div class='lzy-create-ticket-form lzy-form-wrapper lzy-form-colored'>
+	  <form id='test-form' class='test-form lzy-form lzy-encapsulated' method='post' novalidate>
+		<input type='hidden' name='_lizzy-form-id' value='1' />
+		<input type='hidden' name='_lizzy-form-label' value='Test Form:' />
+		<input type='hidden' name='_lizzy-form' value='VDE92A:form1' class='lzy-form-hash' />
+		<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-cmd' value='./' />
+
+        <h2>Access Restrictions</h2>
+		<div class='lzy-form-field-wrapper lzy-form-field-wrapper-1 lzy-form-field-type-number'>
+			<label for='fld_max_accesses_1'>Max accesses:
+			</label><input type='number' id='fld_max_accesses_1' name='max_accesses' placeholder="1" value='1' />
+		</div><!-- /field-wrapper -->
+
+
+		<div  id='lzy-create-ticket-panel'>
+		<div  class="lzy-panel-ticket-duration">
+            <h1>Duration</h1>
+            <div class='lzy-form-field-wrapper lzy-form-field-wrapper-2 lzy-form-field-type-number'>
+                <label for='fld_duration_1'>Duration:
+                </label><input type='number' id='fld_duration_1' name='duration' value="1" />
+            </div><!-- /field-wrapper -->
+        
+            <div class='lzy-form-field-wrapper lzy-form-field-wrapper-3 lzy-form-field-type-radio lzy-form-field-type-choice  lzy-horizontal'>
+                <fieldset class='lzy-form-label lzy-form-radio-label'><legend class='lzy-legend'>Unit:</legend>
+                  <div class='lzy-fieldset-body'>
+                <div class='lzy-radio_unit_1-1 lzy-form-radio-elem lzy-form-choice-elem'>
+                    <input id='lzy-radio_unit_1-1' type='radio' name='unit' value='minutes' /><label for='lzy-radio_unit_1-1'>Minute(s)</label>
+                </div>
+                <div class='lzy-radio_unit_1-2 lzy-form-radio-elem lzy-form-choice-elem'>
+                    <input id='lzy-radio_unit_1-2' type='radio' name='unit' value='hours' /><label for='lzy-radio_unit_1-2'>Hour(s)</label>
+                </div>
+                <div class='lzy-radio_unit_1-3 lzy-form-radio-elem lzy-form-choice-elem'>
+                    <input id='lzy-radio_unit_1-3' type='radio' name='unit' value='days' checked="checked" /><label for='lzy-radio_unit_1-3'>Day(s)</label>
+                </div>
+                  </div><!--/lzy-fieldset-body -->
+                </fieldset>
+            </div><!-- /field-wrapper -->
+		</div><!-- /.lzy-panel-ticket-duration -->
+
+		<div  class="lzy-panel-ticket-time">
+            <h1>Until</h1>
+            <div class='lzy-form-field-wrapper lzy-form-field-wrapper-4 lzy-form-field-type-datetime'>
+                <label for='fld_util_1'>Util:
+                </label><input type='datetime-local' id='fld_util_1' name='util' />
+            </div><!-- /field-wrapper -->
+		</div><!-- /.lzy-panel-ticket-time -->
+		</div><!-- /#lzy-create-ticket-panel -->
+
+
+        <h2>For</h2>
+		<div class='lzy-form-field-wrapper lzy-form-field-wrapper-5 lzy-form-field-type-text'>
+			<label for='fld_user_1'>User:
+			</label><input type='text' id='fld_user_1' name='user' placeholder="guest" />
+		</div><!-- /field-wrapper -->
+
+
+		<div class='lzy-form-field-wrapper lzy-form-field-wrapper-6 lzy-form-field-type-text'>
+			<label for='fld_group_1'>Group:
+			</label><input type='text' id='fld_group_1' name='group' placeholder="guests"/>
+		</div><!-- /field-wrapper -->
+
+
+		<div class='lzy-form-field-wrapper lzy-form-field-wrapper-7 lzy-form-field-type-text'>
+			<label for='fld_link_1'>Page:
+			</label>$select
+		</div><!-- /field-wrapper -->
+
+		<div class='lzy-form-field-type-buttons'>
+		<input type='submit' id='btn_test-form_submit' value='Submit'  class='lzy-button lzy-form-button lzy-form-button-submit' />
+		<input type='reset' id='btn_test-form_reset' value='Cancel'  class='lzy-button lzy-form-button lzy-form-button-reset' />
+		</div><!-- /field-wrapper -->
+
+
+	  </form>
+	</div><!-- /lzy-form-wrapper -->
+
+EOT;
+        return $form;
+    } // renderCreateTicketForm
+
+
+
     public function renderInviteUserForm($userRec, $notification = '', $message = '')
     {
         $html = "\t\t<h2>{{ lzy-invite-user-request-header }}</h2>\n";

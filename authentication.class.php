@@ -180,7 +180,11 @@ EOT;
         //  1) from analyzeHttpRequest() -> code = last part of url
         //  2) from authenticate() -> code from post variable
 
-        list($userRec, $oneTimeRec) = $this->readOneTimeAccessCode($code);
+        $res = $this->readOneTimeAccessCode($code);
+        if (!is_array($res)) {
+            return $res;
+        }
+        list($userRec, $oneTimeRec) = $res;
         $res = $this->handleOneTimeCodeActions($oneTimeRec); // reloads if login successful
         if ($res === 'ok') {
             return 'ok';
@@ -216,7 +220,13 @@ EOT;
             $this->lastLogMsg = "*** one-time link rejected: $code ($errMsg) [".getClientIP().']';
             return false;
         }
-        $username = $ticket['username'];
+        if ($ticket['_ticketType'] === 'user-ticket') {
+            $user = $ticket['user'];
+            $this->lzy->reqPagePath = $ticket['link'];
+            $this->setUserAsLoggedIn($user);
+            return 'ok';
+        }
+        $username = $ticket ['username'];
         $userRec = $this->getUserRec( $username );
 
         return [$userRec, $ticket];
@@ -351,6 +361,11 @@ EOT;
 	            return false;
             }
         }
+	    if (!$rec) {
+            $this->logout();
+            return false;
+        }
+
         $this->userRec = $rec;
 
         $this->loginTimes[$user] = time();
