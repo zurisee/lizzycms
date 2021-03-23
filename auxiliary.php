@@ -863,6 +863,26 @@ function convertFsToHttpPath($path)
 
 
 
+function resolvePathSecured($path, $relativeToCurrPage = false, $httpAccess = false, $absolutePath = false, $isResource = null, $caller = false)
+{
+    $path1 = resolvePath($path, $relativeToCurrPage, $httpAccess, $absolutePath, $isResource);
+
+    if (!preg_match('/\b(code|config|.cache|\.\#tickets|_lizzy)\b/', $path1)) {
+        return [$path1, false]; // path is ok
+    }
+
+    mylog("=== Warning: suspicious path request in $caller(): '$path'");
+    $path = str_replace('~', '&#126;', $path);
+    $msg = '';
+    if ($GLOBALS['globalParams']['isLocalhost']) {
+        $msg = "<strong>Warning: suspicious path request in $caller(): '$path'</strong>";
+    }
+    return [null, $msg];
+} // resolvePathSecured
+
+
+
+
 function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $absolutePath = false, $isResource = null)
 {
     global $globalParams;
