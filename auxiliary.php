@@ -2368,18 +2368,34 @@ function renderList( $list, $args )
     $outerWrapperTag     = isset($args['wrapperTag'])? $args['wrapperTag']: '';
     $outerWrapperClass   = isset($args['wrapperClass'])? $args['wrapperClass']: '';
     $mode           = isset($args['mode'])? $args['mode']: '';
+    $options        = isset($args['options'])? $args['options']: '';
+    $splitter       = isset($args['splitter'])? $args['splitter']: ',';
+    if ($options) {
+        $options = ",$options,";
+        if (strpos($options, ',capitalize,') !== false) {
+            $capitalize = true;
+        }
+        if (strpos($options, ',sort,') !== false) {
+            $sort = true;
+        }
+        if (strpos($options, ',ul,') !== false) {
+            $mode = 'ul';
+        } elseif (strpos($options, ',ol,') !== false) {
+            $mode = 'ol';
+        }
+    }
 
     // short-hands:
     if (($mode === 'ul') || ($mode === 'ol')) {
-        $args['wrapperTag'] = 'li';
-        $args['separator'] = '';
+        $wrapperTag = 'li';
+        $separator = '';
         $outerWrapperTag = $mode;
     }
 
     if (is_array($list)) {
         $elements = $list;
     } else {
-        $elements = explodeTrim(',', $list);
+        $elements = explodeTrim($splitter, $list);
     }
     if ($sort) {
         if (($sort === true) || ($sort && ($sort[0] !== 'd'))) {
