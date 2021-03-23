@@ -835,13 +835,13 @@ EOT;
 
 	private function setTransvars0()
 	{
-        $requestScheme = ((isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'])) ? $_SERVER['REQUEST_SCHEME'].'://' : 'HTTP://';
+        $requestScheme  = ((isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'])) ? $_SERVER['REQUEST_SCHEME'].'://' : 'HTTP://';
         $requestUri     = (isset($_SERVER["REQUEST_URI"])) ? rawurldecode($_SERVER["REQUEST_URI"]) : '';
         $appRoot        = fixPath(commonSubstr( dir_name($_SERVER['SCRIPT_NAME']), dir_name($requestUri), '/'));
-        $appRootUrl = $requestScheme.$_SERVER['HTTP_HOST'] . $appRoot;
+        $appRootUrl     = $requestScheme.$_SERVER['HTTP_HOST'] . $appRoot;
         $this->trans->addVariable('appRootUrl', $appRootUrl);
         $this->trans->addVariable('lzy-password-min-length', $this->config->admin_minPasswordLength);
-
+        $this->trans->addVariable('php-version', phpversion() );
     } // setTransvars0
 
 
