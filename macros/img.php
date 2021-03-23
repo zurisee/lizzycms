@@ -72,6 +72,11 @@ $this->addMacro($macroName, function () {
         }
     }
 
+    list($src, $errMsg) = resolvePathSecured($args['src'], true, false, false, null, 'img');
+    if ($src === null) {
+        return $errMsg;
+    }
+
     $args['origSrc'] = $args['src'];
     $args['src'] = prepareImageWorkingCopy($args['src'], $this->config->feature_ImgDefaultMaxDim);
     if (!$args['src']) {
@@ -79,7 +84,7 @@ $this->addMacro($macroName, function () {
     }
 
     // make sure img filename doesn't contain blanks:
-    $args['srcFile'] = resolvePath($args['src']);
+    $args['srcFile'] = $src;
 
     $impTag = new ImageTag($this, $args);
     $str = $impTag->render($id);

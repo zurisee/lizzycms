@@ -100,7 +100,10 @@ class DirRenderer
             $this->linkClass = " class='lzy-link lzy-newwin_link'";
         }
 
-        $path = resolvePath($this->path);
+        list($path, $errMsg) = resolvePathSecured($this->path, false, false, false, null, 'dir');
+        if ($path === null) {
+            return $errMsg;
+        }
         if ($this->deep) {
             if ($this->deep === 'flat') {
                 if (is_array($this->pattern)) {

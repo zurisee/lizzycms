@@ -26,6 +26,9 @@ $this->addMacro($macroName, function () {
     $compileMarkdown = $this->getArg($macroName, 'compileMarkdown', '(optional) Flag to activate MD-compilation of .md files.', null);
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
+    if ($file === 'help') {
+        return '';
+    }
     if ($wrapperClass) {
         $wrapperClass = " class='$wrapperClass'";
     }
@@ -54,8 +57,13 @@ $this->addMacro($macroName, function () {
             $allMD = false;
             $compileMarkdown = true;
         }
-        $file = resolvePath($file, true);
-        $str = getFile($file);
+
+        list($file1, $errMsg) = resolvePathSecured($file, true, false, false, null, 'include');
+        if ($file1 === null) {
+            return $errMsg;
+        }
+
+        $str = getFile($file1);
         if ($trim) {
             $str = trim($str, "\n\r");
         }
@@ -92,7 +100,11 @@ $this->addMacro($macroName, function () {
     }
 
     if ($folder) {
-        $folder = resolvePath(fixPath($folder), true);
+        list($folder1, $errMsg) = resolvePathSecured(fixPath($folder), true, false, false, null, 'include');
+        if ($folder1 === null) {
+            return $errMsg;
+        }
+
         $files = getDir($folder.'*');
         if ($reverseOrder) {
             rsort($files);
