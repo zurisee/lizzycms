@@ -130,10 +130,21 @@ class Transvar
                     if (preg_match('/^(\S+) \( (.*?) \)/x', $var, $m1) && preg_match('/showSource:\s*([-\w\s\'"]*),?\s*/ms',$var, $m2)) {
                         $macName = str_replace('-', '', $m1[1]);
                         $mode = $m2[1]; // popup or true
+                        $skipMd = false;
+                        if (preg_match('/skipmd/i', $mode, $m)) {
+                            $mode = str_replace($m[0], '', $mode);
+                            $skipMd = true;
+                        }
                         $srcCode = str_replace($m2[0], '', $var);
+                        if ($skipMd) {
+                            $srcCode = preg_replace(['/(?<!\\\\)<strong>/', '/(?<!\\\\)<\/strong>/'], '**', $srcCode);
+                            $srcCode = preg_replace(['/(?<!\\\\)<em>/', '/(?<!\\\\)<\/em>/'], '_', $srcCode);
+                        } else {
+                            $var = preg_replace(['/(?<!\\\\)<strong>/', '/(?<!\\\\)<\/strong>/'], '', $var);
+                            $var = preg_replace(['/(?<!\\\\)<em>/', '/(?<!\\\\)<\/em>/'], '', $var);
+                        }
 
                         // remove styling instructions from code: **
-                        $var = preg_replace(['/(?<!\\\\)<strong>/', '/(?<!\\\\)<\/strong>/'], '', $var);
                         $var = preg_replace('|//.*?↵|', '', $var);
 
                         $this->macroSources[$macName][$this->varCount] = [
