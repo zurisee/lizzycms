@@ -138,6 +138,7 @@ class DataStorage2
         $this->resetCache = isset($args['resetCache']) ? $args['resetCache'] : false;
         $this->structureFile = isset($args['structureFile']) ? $args['structureFile'] : false;
         $this->structureDef = isset($args['structureDef']) ? $args['structureDef'] : false;
+        $this->exportInternalFields = isset($args['exportInternalFields']) ? $args['exportInternalFields'] : false;
         return;
     } // parseArguments
 
@@ -915,7 +916,7 @@ class DataStorage2
         }
 
         // remove elements where key starts with '_':
-        if (strpos(",$s", ',_')) {
+        if (!$this->exportInternalFields && strpos(",$s", ',_')) {
             foreach ($data as $recKey => $rec) {
                 if (is_string($recKey) && $recKey && ($recKey[0] === '_')) {
                     unset($data[ $recKey ]);
