@@ -38,7 +38,9 @@ class SiteStructure
     private $internalArgs =
         ',level,isCurrPage,listInx,urlExt,active,noContent,actualFolder,hasChildren,parentInx,';
 
-    //....................................................
+
+
+
     public function __construct($lzy, $currPage = false)
     {
         $this->lzy = $lzy;
@@ -109,7 +111,16 @@ class SiteStructure
     } // __construct
 
 
-    //....................................................
+
+
+    public function getPageName()
+    {
+        return $this->currPageRec['name'];
+    } // getPageName
+
+
+
+
     public function getPagePath()
     {
         $pagePath = $this->currPageRec['folder'];
@@ -117,7 +128,8 @@ class SiteStructure
     } // getPagePath
 
 
-    //....................................................
+
+
     public function getPageFolder()
     {
         if ($this->currPageRec['actualFolder'] !== false) {
@@ -128,7 +140,8 @@ class SiteStructure
     } // getPageFolder
 
 
-    //....................................................
+
+
     public function isPageDislocated()
     {
         // if 'showThis' is active, the browser's page folder differs from filesystem location
@@ -136,21 +149,24 @@ class SiteStructure
     } // isPageDislocated
 
 
-    //....................................................
+
+
     public function getSiteList()
     {
         return $this->list;
     } // getSiteList
 
 
-    //....................................................
+
+
     public function getSiteTree()
     {
         return $this->tree;
     } // getSiteTree
 
 
-    //....................................................
+
+
     // first pass: parse config/sitemap.txt and assemble $this->list :
     private function parseSitemapDef()
     {
@@ -239,6 +255,7 @@ class SiteStructure
 
 
 
+
     private function getSitemapLines()
     {
         $rawLines = file($this->site_sitemapFile);
@@ -256,6 +273,7 @@ class SiteStructure
         }
         return $lines;
     } // getSitemapLines
+
 
 
 
@@ -280,6 +298,7 @@ class SiteStructure
 
 
 
+
     private function handleSpecificOptions( $rec )
     {
         // hide option -> always propagate:
@@ -298,7 +317,7 @@ class SiteStructure
 
 
 
-	//....................................................
+
     // second pass: derive hierarchical structure $this->tree from $this->list :
 	private function parseList()
 	{
@@ -310,7 +329,7 @@ class SiteStructure
 
 
 
-    //....................................................
+
     private function _parseList($path, $parentLevel, $parentInx)
     {
         $listInx = &$this->listInx;
@@ -371,7 +390,6 @@ class SiteStructure
 
 
 
-    //....................................................
     private function getSitemapFromFolders() {
         $list = array();
         $i = 0;
@@ -381,7 +399,6 @@ class SiteStructure
 
 
 
-    //....................................................
     private function _traverseDir($path, &$i, $level, &$list)
     {
         if ($dh = opendir($path)) {
@@ -414,6 +431,7 @@ class SiteStructure
         };
         return $list;
     } // _traverseDir
+
 
 
 
@@ -563,7 +581,6 @@ class SiteStructure
 
 
 
-	//....................................................
 	private function markParents()
 	{
 		$this->currPageRec['active'] = true;
@@ -576,7 +593,7 @@ class SiteStructure
 
 
 
-	//....................................................
+
 	public function findSiteElem($requestedPath, $returnRec = false, $allowNameToSearch = false)
 	{
 	    if (($requestedPath === '/') || ($requestedPath === './')) {
@@ -649,6 +666,24 @@ class SiteStructure
 
 
 
+    public function getListOfPages( $asLink = false)
+    {
+        $pages = [];
+        $appRootUrl = $GLOBALS["globalParams"]["appRootUrl"];
+        foreach ($this->list as $rec) {
+            if ($asLink) {
+                $path = ($rec['urlpath'] !== false) ? $rec['urlpath']: $rec['folder'];
+                $pages[] = "<a href='$appRootUrl$path'>{$rec['name']}</a>";
+            } else {
+                $pages[] = $rec['name'];
+            }
+        }
+        return $pages;
+    } // getListOfPages
+
+
+
+
     public function hasActiveAncestor($elem)
     {
         if ($elem['active']) {
@@ -665,7 +700,8 @@ class SiteStructure
     } // hasActiveAncestor
 
 
-	
+
+
 	private function writeCache()
 	{
 		if ($this->site_enableCaching) {
@@ -676,7 +712,7 @@ class SiteStructure
 
 
 
-	
+
 	private function readCache()
 	{   // when cache can be used:
         // - config>site_enableCaching: true
