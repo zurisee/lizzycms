@@ -50,6 +50,7 @@ define('HACK_MONITORING_FILE',  CACHE_PATH.'_hack_monitoring.yaml');
 define('ONETIME_PASSCODE_FILE', CACHE_PATH.'_onetime-passcodes.yaml');
 define('HACKING_THRESHOLD',     10);
 define('HOUSEKEEPING_FILE',     CACHE_PATH.'_housekeeping.txt');
+define('IMG_DEFAULT_MAX_DIM',   '1920x1024');
 define('MIN_SITEMAP_INDENTATION', 4);
 define('REC_KEY_ID', 	        '_key');
 define('TIMESTAMP_KEY_ID', 	    '_timestamp');
@@ -2117,8 +2118,9 @@ Available URL-commands:
 <a href='?config'>?config</a>		    list configuration-items in the config-file
 <a href='?convert'>?convert</a>	    convert password to hash
 <a href='?debug'>?debug</a>		    adds 'debug' class to page on non-local host *)
-<a href='?gitstat'>?gitstat</a>		    displays the Lizzy-s GIT-status
+<a href='?gitstat'>?gitstat</a>		displays the Lizzy-s GIT-status
 <a href='?hash'>?hash</a>		    create a hash value e.g. for accessCodes
+<a href='?ticket'>?ticket</a>		    create a user-access-ticket
 <a href='?notranslate'>?notranslate</a>    show untranslated variables
 <a href='?edit'>?edit</a>		    start editing mode *)
 <a href='?iframe'>?iframe</a>		    show code for embedding as iframe
