@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="{{ lang }}">
+<html lang="{{ lang }}" class="lzy-responsive-fontsize">
 <head>
 	<meta charset="utf-8" />
 	<title>{{ page_title }}</title>
@@ -13,7 +13,9 @@
 
 </head>
 
-<body id='lzy' class='{{ body_classes }} lzy-default-layout'{{ body_tag_attributes }}>
+
+<!-- default-template -->
+<body id='lzy' class='{{ body_classes }} lzy-default-layout lzy-flex-layout'{{ body_tag_attributes }}>
 {{ body_top_injections }}
 
   <div class="lzy-skiplinks" aria-label="{{ Skip-links }}">
@@ -21,19 +23,10 @@
 	  <a href="#lzy-primary-nav">{{ Skip to Navigation }}</a>
 	  <a href="~/sitemap">{{ Skip to Sitemap }}</a>
   </div>
+{{^ lzy-page-switcher-links }}
+
 
   <div class='lzy-page page'>
-
-		<header class='lzy-header header'>
-
-{{^ header }}
-
-		</header>
-
-
-{{ nav( top, class:'lzy-nav-colored' ) }}
-
-
 
 
 <!-- === page content =============== -->
@@ -45,13 +38,28 @@
 <!-- === /page content =============== -->
 
 
-        
+		<header class='lzy-header header'>{{^ header }}</header>
+
+{{ nav( top, class:'lzy-nav-colored' ) }}
+
+
+
+
+		<!-- <aside class="lzy-sidebar">{{#^ sidebar }}</aside> -->
+
+
+        <!-- <div data-iframe-height=''>&nbsp;</div> -->
+
 		<footer class="lzy-footer footer" data-iframe-height=''>
 			<div class="lzy-footer-left">
 {{^ footer }}
-				<div class="lzy-large-only">{{^ large-screen-footer }}</div>
+				<div class="lzy-large-only">{{^ large-screen-footer-left }}</div>
 				<div class="lzy-small-only">{{^ small-screen-footer }}</div>
-			</div><!-- /lzy-footer-left -->
+			</div>
+
+			<div>
+				<div class="lzy-large-only">{{^ large-screen-footer }}</div>
+			</div>
 
 	        <div class='lzy-footer-right lzy-logged-in-user'>
 {{ lzy-lang-selection }}
@@ -69,8 +77,6 @@
 {{ nav( small-screen-header ) }}
 
   </div><!-- /.lzy-page -->
-  
-{{^ lzy-page-switcher-links }}
 
 
 {{ body_end_injections }}

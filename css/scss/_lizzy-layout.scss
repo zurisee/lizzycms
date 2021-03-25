@@ -54,23 +54,69 @@ $dl-as-table-dt-width: 6em;
 $grid-gap: 10px;
 $box-width: 300px;
 
-$min-font-size: 18;
-$max-font-size: 28;
+$min-font-size: 15;
+$max-font-size: 24;
 
 // === Default Layouts:
-.lzy-default-layout {
-    --min-font-size1: var(--min-font-size, 16);
-    --max-font-size1: var(--max-font-size, 28);
-    --fluid-size: var(--min-font-size1) * 1px + (var(--max-font-size1) - var(--min-font-size1)) * ((100vw - 420px) / (1200 - 420));
-    font-size:
-            clamp(
-                    var(--min-font-size1) * 1px,
-                    var(--fluid-size),
-                    var(--max-font-size1) * 1px
-            );
-
-
+html:not(.lzy-responsive-fontsize) .lzy-default-layout {
+    font-size: calc(var(--root-font-size, #{$min-font-size}) * 1px);
 } // lzy-default-layout
+
+
+.lzy-default-layout {
+    font-size: 1rem;
+}
+
+.lzy-responsive-fontsize {
+    // responsive font-size:
+    --min-font-size1: var(--min-font-size, #{$min-font-size});
+    --max-font-size1: var(--max-font-size, #{$max-font-size});
+    --fluid-size: var(--min-font-size1) * 1px + (var(--max-font-size1) - var(--min-font-size1)) * ((100vw - 420px) / (1200 - 420));
+    font-size: clamp(
+            var(--min-font-size1) * 1px,
+            var(--fluid-size),
+            var(--max-font-size1) * 1px
+    );
+}
+
+.lzy-flex-layout {
+    .lzy-header,
+    .lzy-nav-wrapper,
+    .lzy-sidebar {
+        &:empty {
+            display: none;
+        }
+    }
+
+    .lzy-page {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .lzy-header {
+        order: -30;
+        flex: 0 0 100%;
+    }
+
+    .lzy-nav-wrapper {
+        order: -20;
+        flex: 0 0 100%;
+    }
+
+    .lzy-main {
+        order: -10;
+        flex: 1 1 80%;
+    }
+
+    .lzy-sidebar {
+        order: -11;
+        flex: 0 1 20%;
+    }
+
+    .lzy-footer {
+        flex: 0 0 100%;
+    }
+} // lzy-flex-layout
 
 .lzy-section {
     padding: 1rem;
@@ -261,34 +307,12 @@ $max-font-size: 28;
             margin-bottom: 1px !important;
         }
     }
-    //&.touchevents #lzy {
-    //    .lzy-nav-for-touch-only {
-    //        display: none;
-    //    }
-        //.lzy-has-children.lzy-nav-no-content .lzy-nav-for-touch-only {
-        //    display: none;
-        //}
-        //
-        //.lzy-nav-small-tree .lzy-nav-has-content .lzy-nav-for-touch-only {
-        //    display: none;
-        //}
-    //}
     .lzy-primary-nav.lzy-nav-wrapper {
         min-height: 200vh;
     }
 
 } // small-screen
 
-#lzy.lzy-small-screen.lzy-default-layout {
-    .lzy-nav-for-touch-only {
-        display: none;
-    }
-}
-.touchevents #lzy.lzy-small-screen.lzy-default-layout {
-    .lzy-nav-for-touch-only {
-        display: block;
-    }
-}
 
 
 //=== Mobile Page Header
