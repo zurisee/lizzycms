@@ -15,9 +15,6 @@
 	height: 100vh;
 	z-index: -1;
 	background-color: rgba(200, 200, 200, 0.8);
-	background-image: url(../rsc/loader.gif);
-	background-repeat: no-repeat;
-	background-position: center center;
 	cursor: url(../rsc/reduce.png), auto;
 }
 #lzy .lzy-quickview-overlay img {
@@ -41,4 +38,13 @@
 	height: 1px;
 	overflow: hidden;
 	clip: rect(1px, 1px, 1px, 1px);
+}
+
+.lzy-laziest-load,
+.lzy-late-loading {
+	position: relative;
+	background: #444;
+	background-image: url( ../rsc/loader_white.gif );
+	background-repeat: no-repeat;
+	background-position: center;
 }

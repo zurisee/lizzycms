@@ -39,24 +39,35 @@ class ImageTag
         $this->getFileInfo();
 
         $qvDataAttr = $this->renderQuickview();
+        $qvDataAttr = "\n\t\t" . trim($qvDataAttr);
 
         $this->prepareLateLoading();
 
 
         // prepare srcset:
         $srcset = $this->renderSrcset();
+        $srcset = "\n\t\t" . trim($srcset);
 
         if ($class = $this->class) {
             $class = trim("$id $class");
         }
 
-        $genericAttibs = $this->imgTagAttributes ? ' '.$this->imgTagAttributes : '';
+        $genericAttibs = $this->imgTagAttributes ? "\n\t\t".$this->imgTagAttributes : '';
 
         $src = $globalParams["appRoot"].$globalParams["pageFolder"].'_/'.base_name($this->src);
 
+        $style = "\n\t\tstyle='width: {$this->w}px; height: {$this->h}px;'";
 
         // basic img code:
-        $str = "<img id='$id' class='$class' {$this->lateImgLoadingPrefix}src='{$src}'{$srcset} title='{$this->alt}' alt='{$this->alt}'$genericAttibs $qvDataAttr />";
+        $str = <<<EOT
+
+    <img id='$id' 
+        class='$class'
+        {$this->lateImgLoadingPrefix}src='$src'$srcset
+        title='{$this->alt}'$style
+        alt='{$this->alt}'$genericAttibs$qvDataAttr />
+
+EOT;
 
         return $str;
     } // render
