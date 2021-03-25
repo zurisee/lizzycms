@@ -21,7 +21,7 @@ class ImageTag
             $this->$key = $value;
         }
         // convert [WxH] -> (WxH):
-        if (preg_match('/( \[ [^\] ]* \] )/x', $this->src)) {
+        if (preg_match('/( \[ .*? ] )/x', $this->src)) {
             $this->src = str_replace(['[', ']'], ['(', ')'], $this->src);
         }
     } // __construct

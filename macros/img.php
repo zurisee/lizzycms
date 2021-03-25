@@ -72,19 +72,19 @@ $this->addMacro($macroName, function () {
         }
     }
 
-    list($src, $errMsg) = resolvePathSecured($args['src'], true, false, false, null, 'img');
-    if ($src === null) {
-        return $errMsg;
+    $args['origSrc'] = $args['src'];
+    $src = prepareImageWorkingCopy($args['src'], $this->config->feature_ImgDefaultMaxDim);
+    if (is_array( $src )) {
+        return $src[1];
+    } elseif (!$src) {
+        return "\t<div class='lzy-warning'>&#123;&#123; Error: image file '{$args['origSrc']}' not found. }}</div>\n";
+    } else {
+        $args['src'] = $src;
     }
 
-    $args['origSrc'] = $args['src'];
-    $args['src'] = prepareImageWorkingCopy($args['src'], $this->config->feature_ImgDefaultMaxDim);
-    if (!$args['src']) {
-        return "\t<div class='lzy-warning'>&#123;&#123; Error: image file '{$args['origSrc']}' not found. }}</div>\n";
-    }
 
     // make sure img filename doesn't contain blanks:
-    $args['srcFile'] = $src;
+    $args['srcFile'] = resolvePath($args['src']);
 
     $impTag = new ImageTag($this, $args);
     $str = $impTag->render($id);
@@ -129,19 +129,22 @@ $this->addMacro($macroName, function () {
 
 
 
-function prepareImageWorkingCopy($reqImg0, $imgDefaultMaxDim = '1920x1024')
+function prepareImageWorkingCopy($reqImg, $imgDefaultMaxDim = IMG_DEFAULT_MAX_DIM)
 {
     // takes the img from the page/ folder, resizes and copies it to _/
     // requested img may contain sizing code, e.g. xxx[300x200] -> ignored
     // returns path of working copy of image
-    $reqImg = $reqImg0;
-    if (preg_match('/(.*) ( \[ [^\] ]*? \] ) (\.\w{1,6}) $/x', $reqImg, $m)) {
+    if (preg_match('/(.*) ( \[ .*? ] ) (\.\w{1,6}) $/x', $reqImg, $m)) {
         $reqImg = $m[1] . $m[3];
-    } elseif (preg_match('/(.*) ( \( [^\) ]*? \) ) (\.\w{1,6}) $/x', $reqImg, $m)) {
+    } elseif (preg_match('/(.*) ( \( .*? \) ) (\.\w{1,6}) $/x', $reqImg, $m)) {
         $reqImg = $m[1] . $m[3];
     }
 
-    $reqImgFile = resolvePath($reqImg, true);
+    list($reqImgFile, $errMsg) = resolvePathSecured($reqImg, true, false, false, null, 'img');
+    if ($reqImgFile === null) {
+        return [$reqImgFile, $errMsg];
+    }
+
 
     $path = dir_name($reqImgFile);
     $fileName = base_name($reqImgFile);
