@@ -917,6 +917,8 @@ EOT;
 
     public function getBodyEndInjections()
     {
+        $assembledJs = '';
+        $assembledJq = '';
         $bodyEndInjections = $this->bodyEndInjections;
 
         if ($this->config->site_enableFilesCaching) {
@@ -946,11 +948,10 @@ EOT;
 
         if ($rootJs.$this->assembledJs) {
             $assembledJs = "\t\t".preg_replace("/\n/", "\n\t\t", $this->assembledJs);
-
             $assembledJs = <<<EOT
 
 $rootJs$assembledJs
-    
+
 EOT;
 
             $bodyEndInjections = <<<EOT
@@ -984,9 +985,16 @@ EOT;
 
         // if CSP is enabled -> prepare header:
         if ($this->config->site_ContentSecurityPolicy) {
-            $hash1 = base64_encode(hash('sha256', $assembledJs, true));
-            $hash2 = base64_encode(hash('sha256', $assembledJq, true));
-            $this->headerContentSecurityPolicy .= " script-src 'self' 'sha256-$hash1' 'sha256-$hash2';";
+            $this->headerContentSecurityPolicy .= " script-src 'self'";
+            if ($assembledJs) {
+                $hash = base64_encode(hash('sha256', $assembledJs, true));
+                $this->headerContentSecurityPolicy .= " 'sha256-$hash'";
+            }
+            if ($assembledJq) {
+                $hash = base64_encode(hash('sha256', $assembledJq, true));
+                $this->headerContentSecurityPolicy .= " 'sha256-$hash'";
+            }
+            $this->headerContentSecurityPolicy .= ";";
         }
 
         $bodyEndInjections = "<!-- body_end_injections -->\n$bodyEndInjections\n<!-- /body_end_injections -->";
