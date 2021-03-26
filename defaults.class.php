@@ -58,7 +58,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'feature_autoConvertLinks'          => [false, 'If true, automatically converts text that looks like links to HTML-links (i.e. &lt;a> tags).', 1 ],
     'feature_autoLoadClassBasedModules' => [true, 'If true, automatically loads modules that are invoked by applying classes, e.g. .editable', 3 ],
     'feature_autoLoadJQuery'            => [true, 'If true, jQuery will be loaded automatically (even if not initiated explicitly by macros)', 3 ],
-    'feature_enableScssTreeNotation'    => [true, 'If true, compilation of CSS and SCSS in ~/css/scss/ and frontmatter uses relaxed syntax: curly braces may be omitted - indentation level is used instead.', 3 ],
+    'feature_enableScssTreeNotation'    => [false, 'If true, compilation of CSS and SCSS in &#126;/css/scss/ and frontmatter uses relaxed syntax: curly braces may be omitted - indentation level is used instead.', 3 ],
     'feature_enableScssInPageFolder'    => [false, 'If true, Lizzy checks for .scss files in page folder and compiles them to .css. Alternatively use "enableScssInPageFolder" in Frontmatter of specific pages.', 3 ],
     'feature_enableIFrameResizing'      => [false, 'If true, includes js code required by other pages to iFrame-embed this site', 1 ],
     'feature_externalLinksInNewWin'     => [false, 'If true, automatically makes links open in new window for all external links (i.e. starting with http).', 1 ],
@@ -85,7 +85,7 @@ private $userConfigurableSettingsAndDefaults      = [
 
     'site_compiledStylesFilename'       => ['__styles.css', 'Name of style sheet containing collection of compiled user style sheets', 2 ],
     'site_dataPath'                     => [DATA_PATH, 'Path to data/ folder.', 3 ],
-    'site_devDataPath'                  => ['', 'Activates a mechanism that, in dev-mode, switches ~data/ to given destination. Thus, you can savely develop and test in dev-mode without overwriting hot data. Hint: set site_dataPath to "../db/".', 2 ],
+    'site_devDataPath'                  => ['', 'Activates a mechanism that, in dev-mode, switches &#126;data/ to given destination. Thus, you can savely develop and test in dev-mode without overwriting hot data. Hint: set site_dataPath to "../db/".', 2 ],
     'site_devDataPathPattern'           => ['/-', 'Regex-pattern to match against appRoot path to identify, whether we are running on a dev site, e.g. "/(dev|-)". Default: "/-"', 3 ],
     'site_enableCaching'                => [false, 'If true, Lizzy\'s caching mechanism is activated.', 1 ],
     'site_enableFilesCaching'           => [false, 'If true, Lizzy\'s module caching mechanism is activated. I.e. CSS and JS files are collected and delivered to browser in just two requests.', 1 ],
