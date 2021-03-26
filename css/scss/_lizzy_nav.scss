@@ -392,8 +392,6 @@ nav li {
         --lzy-icon-factor: 0.8;
         transform-origin: center;
         &:before {
-            left: 33%;
-//            left: 60%;
             top: 36%;
         }
     }
@@ -409,12 +407,6 @@ nav li {
         vertical-align: top;
     }
 
-    .lzy-has-children {
-        .lzy-nav-for-touch-only.lzy-nav-for-touch-only a {
-            padding-left: #{$nav-top-horizontal-padding};
-            padding-left: var(--lzy-nav-top-horizontal-padding, #{$nav-top-horizontal-padding});
-        }
-    }
 } // lzy-nav-top-horizontal
 
 
@@ -484,10 +476,6 @@ nav li {
             left:     calc(var(--lzy-mobile-nav-first-indent, #{$nav-first-indent}) + 5 * var(--lzy-mobile-nav-indent-step, #{$mobile-nav-indent-step}) - 1em );
         }
     }
-    .lzy-nav-for-touch-only.lzy-nav-for-touch-only {
-        display: none;
-    }
-
 } // vertical nav
 
 
@@ -497,20 +485,11 @@ nav li {
 // while in touch mode, the parent element can't be activated as it is reserved for opening/closing the accordion
 // thus we need to repeat that element in the text sub-menu, but hide it while not in touch mode:
 #lzy.lzy-large-screen {
-    .lzy-nav-top-horizontal .lzy-nav-title,
-    .lzy-has-children .lzy-nav-for-touch-only {
+    .lzy-nav-top-horizontal .lzy-nav-title {
         display: none;
     }
 }
 
-// when in touch mode, we show these elements, provided there actually is a page associated
-// if not, we jump to the next lower page anyway and don't need to make these "gost elements" visible:
-#lzy.touch .lzy-nav-top-horizontal,
-.touchevents #lzy .lzy-nav-top-horizontal {
-    .lzy-nav-has-content .lzy-lvl2.lzy-nav-for-touch-only {
-        display: block;
-    }
-}
 
 
 

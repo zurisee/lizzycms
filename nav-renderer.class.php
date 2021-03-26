@@ -21,6 +21,7 @@ class NavRenderer
         $this->page = $lzy->page;
         $this->config = $lzy->config;
         $this->inx = $inx;
+        $this->page->addModules( 'TABBABLE' );
     }
 
 
@@ -70,18 +71,18 @@ class NavRenderer
             $options['options'] .= " editable $primaryClass";
 
         } elseif ($type === 'side') {
-            $options['navClass'] = trim($options['navClass'].' lzy-nav-vertical lzy-nav-indented lzy-nav-collapsible lzy-nav-open-current lzy-nav-animated lzy-encapsulated');
+            $options['navClass'] = trim($options['navClass'].' lzy-nav-side lzy-nav-vertical lzy-nav-indented lzy-nav-collapsible lzy-nav-open-current lzy-nav-animated lzy-encapsulated');
             $options['options'] .= " editable $primaryClass";
 
         } elseif ($type === 'side-accordion') {
-            $options['navClass'] = trim($options['navClass'].' lzy-nav-vertical lzy-nav-indented lzy-nav-animated lzy-nav-accordion lzy-nav-collapsed lzy-nav-open-current lzy-encapsulated');
+            $options['navClass'] = trim($options['navClass'].' lzy-nav-side lzy-nav-vertical lzy-nav-indented lzy-nav-animated lzy-nav-accordion lzy-nav-collapsed lzy-nav-open-current lzy-encapsulated');
             $options['options'] .= " editable $primaryClass";
 
         } elseif ($type === 'sitemap') {
-            $options['navClass'] = trim($options['navClass'].' lzy-nav-vertical lzy-nav-indented lzy-encapsulated');
+            $options['navClass'] = trim($options['navClass'].' lzy-sitemap lzy-nav-vertical lzy-nav-indented lzy-encapsulated');
 
         } elseif ($type === 'sitemap-accordion') {
-            $options['navClass'] = trim($options['navClass'].' lzy-nav-vertical lzy-nav-indented lzy-nav-animated lzy-nav-collapsed lzy-encapsulated');
+            $options['navClass'] = trim($options['navClass'].' lzy-sitemap lzy-nav-vertical lzy-nav-indented lzy-nav-animated lzy-nav-collapsed lzy-encapsulated');
 
         } elseif ($type === 'breadcrumb') {
             return $this->renderBreadcrumb($options);
@@ -163,7 +164,7 @@ class NavRenderer
         $this->currBranch = (strpos($navOptions, 'curr-branch') !== false);
         $this->currBranchEmpty = true;
 
-        $nav = $this->_renderNav(false, $type, 0, "\t\t", '', $navOptions);
+        $nav = $this->_renderNav(false, $type, 0, "\t\t", $navOptions);
 
         if ($this->currBranch && $this->currBranchEmpty) {
             return null;
@@ -227,7 +228,7 @@ EOT;
 
 
     //....................................................
-    private function _renderNav($tree, $type, $level, $indent, $firstElem = '', $navOptions = false)
+    private function _renderNav($tree, $type, $level, $indent, $navOptions = false)
     {
         $level++;
         $indent = str_replace('\t', "\t", $indent);
@@ -266,12 +267,7 @@ EOT;
         $modif = false;
         $out = '';
 
-        // in case curr folder has md content, firstElem is added on lower level to support touch devices:
-        if ($firstElem) {
-            $headingElem = "$indent1<$li class='lzy-lvl$level lzy-nav-for-touch-only'>$firstElem</$li>\n";
-        } else {
-            $headingElem = '';
-        }
+        $headingElem = '';
 
         $aClass = ($this->aClass) ? " class='{$this->aClass}'" : '';
         foreach($tree as $n => $elem) {
@@ -360,19 +356,13 @@ EOT;
                     $liClass .= ' lzy-nav-hidden-elem';
                 }
                 if (!$stop && isset($elem[0])) {	// does it have children?
-
-
-                    if ($this->accordion) {
-                        $firstElem = "<a href='$path'$aClass$target $tabindex>$name</a>";   // A1
-                    }
-
                     if ($this->horizTop && ($level !== 1)) {
                         $aria1 = '';
                     }
                     $contentClass = $elem["noContent"] ? ' lzy-nav-no-content': ' lzy-nav-has-content';
 
                     // --- recursion:
-                    $out1 = $this->_renderNav($elem, $type, $level, "$indent\t\t", $firstElem, $navOptions);
+                    $out1 = $this->_renderNav($elem, $type, $level, "$indent\t\t", $navOptions);
 
                     if ($out1) {
                         $liClass .= ' '.$this->hasChildrenClass."$liClassOpen$contentClass";
@@ -380,7 +370,7 @@ EOT;
                         $liClass = ($liClass) ? " class='$liClass'" : '';
                         $out .= "$indent1<$li$liClass>\n";
 
-                        $out .= "$indent2<a onclick='return handleAccordion(this, event);' href='$path'$aClass$target $tabindex $aria1>$aElem</a>\n"; // A0
+                        $out .= "$indent2<a href='$path' class='$this->aClass lzy-handle-accordion'$target $tabindex $aria1>$aElem</a>\n"; // A0
 
                         $out .= "$indent2$listWrapper\n";
                         $out .= "$out1";
