@@ -12,7 +12,7 @@ var debug = false;
     }
 
     $(window).resize(function(){
-        var w = $(this).width();
+        let w = $(this).width();
         if (w < screenSizeBreakpoint) {
             $('body').addClass('lzy-small-screen').removeClass('lzy-large-screen');
         } else {
@@ -29,7 +29,7 @@ var debug = false;
 
 
 function isValidEmail(email) {
-    var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     return re.test(String(email).toLowerCase());
 }
 
@@ -42,11 +42,11 @@ function execAjax(payload, cmd, doneFun, url) {
         url = appRoot + '_lizzy/_ajax_server.php';
     }
     url = appendToUrl(url, cmd);
-    var json = '';
+    let json = '';
     if (payload) {
         json = JSON.stringify(payload);
     }
-    var txt = json? json: 'no arguments';
+    let txt = json? json: 'no arguments';
     mylog('execAjax: ' + cmd + ' ( ' + txt + ' )', false);
     ajaxHndl = $.ajax({
         method: 'POST',
@@ -90,7 +90,7 @@ function scrollToBottom( sel ) {
         if (typeof sel === 'undefined') {
             sel = '.lzy-scroll-to-bottom';
         }
-        var $elem = $( sel );
+        let $elem = $( sel );
         $elem.animate({
             scrollTop: $elem.get(0).scrollHeight + 10
         }, 500);
@@ -119,7 +119,7 @@ function scrollIntoView( selector, container ) {
 Date.prototype.addHours = function(h) {
     this.setTime(this.getTime() + (h*60*60*1000));
     return this;
-}
+}; // addHours
 
 
 
@@ -182,7 +182,7 @@ function mylog(txt, notDebugOnly ) {
     }
 
 	if ( debug ) {
-        var $log = $('#lzy-log');
+        let $log = $('#lzy-log');
         if (!$log.length) {
             $('body').append("<div id='lzy-log-placeholder'></div><div id='lzy-log'></div>");
             $log = $('#lzy-log');
@@ -224,7 +224,7 @@ function isServerErrMsg(json) {
 
 
 function lzyReload( arg, url ) {
-    var call = window.location.pathname.replace(/\?.*/, '');
+    let call = window.location.pathname.replace(/\?.*/, '');
     if (typeof url !== 'undefined') {
         call = url.trim();
     }
@@ -249,14 +249,14 @@ function time() {
 function timeStamp( long ) {
 	const now = new Date();
 	const time = [ now.getHours(), now.getMinutes(), now.getSeconds() ];
-	for ( var i = 0; i < 3; i++ ) {
+	for ( let i = 0; i < 3; i++ ) {
 		if ( time[i] < 10 ) {
 			time[i] = '0' + time[i];
 		}
 	}
-	var out = time.join(':');
+	let out = time.join(':');
 	if (typeof long !== 'undefined') {
-        var day = [ now.getFullYear(), now.getMonth() + 1, now.getDate() ];
+        let day = [ now.getFullYear(), now.getMonth() + 1, now.getDate() ];
         for ( i = 1; i < 3; i++ ) {
             if ( day[i] < 10 ) {
                 day[i] = '0' + day[i];
@@ -272,18 +272,18 @@ function timeStamp( long ) {
 
 function timeToStr( UNIX_timestamp ){
     if (typeof UNIX_timestamp === 'undefined') {
-        var a = new Date();
+        let a = new Date();
     } else {
-        var a = new Date(UNIX_timestamp * 1000);
+        let a = new Date(UNIX_timestamp * 1000);
     }
-    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    var year = a.getFullYear();
-    var month = months[a.getMonth()];
-    var date = a.getDate();
-    var hour = a.getHours();
-    var min = a.getMinutes();
-    var sec = a.getSeconds();
-    var time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
+    let months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    let year = a.getFullYear();
+    let month = months[a.getMonth()];
+    let date = a.getDate();
+    let hour = a.getHours();
+    let min = a.getMinutes();
+    let sec = a.getSeconds();
+    let time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
     return time;
 }
 
@@ -308,17 +308,17 @@ jQuery.fn.selText = function() {
         }
         $(this).prev().html($(this).val());
     });
-    var doc = document;
-    var element = this[0];
+    let doc = document;
+    let element = this[0];
     if (doc.body.createTextRange) {
-        var range = document.body.createTextRange();
+        let range = document.body.createTextRange();
         range.moveToElementText(element);
         range.select();
     } else if (window.getSelection) {
-        var selection = window.getSelection();
-        var range = document.createRange();
+        let selection = window.getSelection();
+        let range = document.createRange();
         range.selectNodeContents(element);
         selection.removeAllRanges();
         selection.addRange(range);
     }
-}
+};
