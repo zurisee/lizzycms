@@ -1,58 +1,68 @@
-var largeScreenClasses = '';
-var hoverTimer = [];
+// Lizzy Nav.js
 
-(function ( $ ) {
+"use strict";
+
+
+function LzyNav() {
+    this.largeScreenClasses = '';
+    this.hoverTimer = [];
+}
+
+
+
+LzyNav.prototype.init = function() {
     if (!$('#lzy').length) {
         alert("Warning: '#lzy'-Id missing within this page \n-> Lizzy's nav() objects not working.");
     }
-    largeScreenClasses = $('.lzy-primary-nav .lzy-nav').attr('class');
+    this.largeScreenClasses = $('.lzy-primary-nav .lzy-nav').attr('class');
 
     var isSmallScreen = ($(window).width() < screenSizeBreakpoint);
-    adaptMainMenuToScreenSize(isSmallScreen);
+    this.adaptMainMenuToScreenSize( isSmallScreen );
 
+    let parent = this;
     $(window).resize(function(){
-        var w = $(this).width();
-        var isSmallScreen = (w < screenSizeBreakpoint);
-        adaptMainMenuToScreenSize(isSmallScreen);
-        setHightOnHiddenElements();
+        let w = $(this).width();
+        let isSmallScreen = (w < screenSizeBreakpoint);
+        parent.adaptMainMenuToScreenSize(isSmallScreen);
+        parent.setHightOnHiddenElements();
     });
 
 
     if ($('.lzy-nav-collapsed, .lzy-nav-collapsible, .lzy-nav-top-horizontal').length) {
-        setHightOnHiddenElements();
+        this.setHightOnHiddenElements();
     }
 
 
     // menu button in mobile mode:
     $('#lzy-nav-menu-icon').click(function(e) {
         e.stopPropagation();
-        operateMobileMenuPane();
+        parent.operateMobileMenuPane();
     });
 
 
     // mouse:
     $('.lzy-has-children > * > .lzy-nav-arrow').dblclick(function(e) {        // double click -> open all
         e.stopPropagation();
-        var $parentLi = $(this).closest('.lzy-has-children');
-        toggleAccordion($parentLi, true, true);
+        let $parentLi = $(this).closest('.lzy-has-children');
+        parent.toggleAccordion($parentLi, true, true);
         return false;
     });
     $('.lzy-has-children > a > .lzy-nav-arrow').click(function(e) {  // click arrow
         e.stopPropagation();
-        var $parentLi = $(this).closest('.lzy-has-children');
+        let $parentLi = $(this).closest('.lzy-has-children');
         $parentLi.removeClass('lzy-hover');
-        var deep = ($('.lzy-nav-top-horizontal').length !== 0);
-        toggleAccordion($parentLi, deep);
+        let deep = ($parentLi.closest('.lzy-nav-top-horizontal').length !== 0);
+        parent.toggleAccordion($parentLi, deep);
         return false;
     });
 
     // hover:
-   $('.lzy-nav-hoveropen .lzy-has-children').hover(
+    $('.lzy-nav-hoveropen .lzy-has-children').hover(
         function() {    // mouseover
-            var $this = $(this);
-            var tInx = $('> li', $this.parent()).index($this);
-            if ((typeof hoverTimer[tInx] !== 'undefined') && (hoverTimer[tInx])) {
-                clearTimeout(hoverTimer[tInx]);
+            let $this = $(this);
+            let tInx = $('> li', $this.parent()).index($this);
+            if ((typeof parent.hoverTimer[tInx] !== 'undefined') && (parent.hoverTimer[tInx])) {
+                clearTimeout(parent.hoverTimer[tInx]);
             }
             if ($('body').hasClass('touch') || $this.hasClass('lzy-open')) {
                 return;
@@ -60,37 +70,37 @@ var hoverTimer = [];
             if ($this.closest('.lzy-nav').hasClass('lzy-nav-top-horizontal')) { // top-nav:
                 if ($this.hasClass('lzy-lvl1')) {
                     $this.addClass('lzy-hover');
-                    openAccordion($this, true);
+                    parent.openAccordion($this, true);
                 }
             } else {        // side-nav or sitemap
                 $this.addClass( 'lzy-hover' );
-                openAccordion($this);
+                parent.openAccordion($this);
             }
         },
 
         function() {     // mouseout
-           var $this = $(this);
-            var tInx = $('> li', $this.parent()).index($this);
+            let $this = $(this);
+            let tInx = $('> li', $this.parent()).index($this);
             if ($('body').hasClass('touch')) {  // no-touch only
                 return;
             }
             if ($this.hasClass('lzy-open')) {
-               $this.removeClass('lzy-hover');
-               return;
-           }
-           if ($this.closest('.lzy-nav').hasClass('lzy-nav-top-horizontal')) {  // top-nav
-               if ($this.hasClass('lzy-lvl1')) {
-                   hoverTimer[tInx] = setTimeout(function () {
-                       $this.removeClass('lzy-hover');
-                       closeAccordion($this, true);
-                   }, 400);
-               }
-           } else {        // side-nav or sitemap
-               $this.removeClass( 'lzy-hover' );
-               closeAccordion($this);
-           }
+                $this.removeClass('lzy-hover');
+                return;
+            }
+            if ($this.closest('.lzy-nav').hasClass('lzy-nav-top-horizontal')) {  // top-nav
+                if ($this.hasClass('lzy-lvl1')) {
+                    parent.hoverTimer[tInx] = setTimeout(function () {
+                        $this.removeClass('lzy-hover');
+                        parent.closeAccordion($this, true);
+                    }, 400);
+                }
+            } else {        // side-nav or sitemap
+                $this.removeClass( 'lzy-hover' );
+                parent.closeAccordion($this);
+            }
         }
-   );
+    );
 
 
     // activate animations now (avoiding flicker)
@@ -99,93 +109,61 @@ var hoverTimer = [];
     });
 
     if ($('body').hasClass('lzy-small-screen')) {
-        operateMobileMenuPane( false );
+        this.operateMobileMenuPane( false );
     }
 
-    setupKeyboardEvents();
-    initPrimaryNav();
-    openCurrentElement();
-}( jQuery ));
+    $('html').on('click', '.touch .lzy-nav-wrapper .lzy-has-children > a', function (event) {
+        parent.handleAccordion(this, event);
+    });
+
+    this.setupKeyboardEvents();
+    this.openCurrentElement();
+}; // init
 
 
 
 
-// called from HTML <a onclick:
-function handleAccordion( elem, ev ) {
-    ev.stopPropagation();
-// console.log('handleAccordion');
+LzyNav.prototype.handleAccordion = function( elem, ev ) {
     if ($( 'body' ).hasClass('touch') || $('html').hasClass('touchevents')) {
-        var $parentLi = $(elem).parent();
-        if (!$parentLi.closest('.lzy-nav-top-horizontal').length) { // only active for horizontal nav:
+        let $parentLi = $(elem).parent();
+        if ($parentLi.hasClass('lzy-open')) {
             return true;
-        }
-        if ($parentLi.hasClass('lzy-lvl1')) {
-            toggleAccordion($parentLi, true);
+        } else {
+            this.toggleAccordion($parentLi, true);
+            ev.preventDefault();
             return false;
         }
     }
-} // handleAccordion
+}; // handleAccordion
 
 
 
 
-
-function initPrimaryNav() {
-    // return;
-    if ($('.lzy-large-screen .lzy-primary-nav .lzy-nav').hasClass('lzy-nav-collapsed')) {
-        $('.lzy-large-screen .lzy-primary-nav .lzy-has-children').each(function () {
-            closeAllAccordions($( this ), true);
-            return;
-            // var $elem = $(this);
-            // var $nextDivs = $('div', $elem);
-            // $elem.removeClass('lzy-open lzy-hover');
-            // $('li', $elem).removeClass('lzy-open');       // close all li below parent li
-            // $nextDivs.attr({'aria-hidden': 'true'});        // make all sub-elements hidden
-            // $('a', $nextDivs).attr({'tabindex': '-1'}); // make sub-menus un-focusable
-        });
-    } else {
-        $('.lzy-large-screen .lzy-primary-nav .lzy-nav').each(function() {
-            if (!$( this ).hasClass('lzy-nav-collapsed')) {
-                openAccordion($( this ), true, true);
-            }
-        });
-    }
-} // initPrimaryNav
-
-
-
-
-function toggleAccordion($parentLi, deep, newState) {
+LzyNav.prototype.toggleAccordion = function( $parentLi, deep, newState ) {
+    let expanded = null;
     if (typeof newState === 'undefined') {
-        var expanded = $parentLi.hasClass('lzy-open');
+        expanded = $parentLi.hasClass('lzy-open');
     } else {
-        var expanded = !newState;
+        expanded = !newState;
     }
 
     if ($parentLi.closest('.lzy-nav').hasClass('lzy-nav-top-horizontal')) {
-        closeAllAccordions($parentLi, deep, true);
+        this.closeAllAccordions($parentLi, deep, true);
 
     } else if (expanded) { // -> close
-        closeAccordion($parentLi, deep, true);
-
+        this.closeAccordion($parentLi, deep, true);
     }
     if (!expanded) { // -> open
-        openAccordion($parentLi, deep, true);
-        if ($( 'body' ).hasClass('touch')) {
-            $('body').click(function (e) {
-                e.stopPropagation();
-                $('body').off('click');
-                closeAccordion($parentLi, deep, true);
-            });
-        }
+        this.openAccordion($parentLi, deep, true);
         return true;
     }
     return false;
-} // toggleAccordion
+}; // toggleAccordion
 
 
 
-function openAccordion($parentLi, deep, setOpenCls) {
+
+LzyNav.prototype.openAccordion = function( $parentLi, deep, setOpenCls ) {
     if (typeof setOpenCls !== 'undefined') {
         $parentLi.addClass('lzy-open');
     }
@@ -201,13 +179,12 @@ function openAccordion($parentLi, deep, setOpenCls) {
         $( '> div', $parentLi ).attr({'aria-hidden': 'false'});
         $('> div > ol > li > a', $parentLi).attr({'tabindex': ''});  // make focusable
     }
-} // openAccordion
+}; // openAccordion
 
 
 
 
-function closeAccordion($parentLi, deep, setOpenCls) {
-    var $nextDiv = $('> div', $parentLi);
+LzyNav.prototype.closeAccordion = function( $parentLi, deep, setOpenCls ) {    let $nextDiv = $('> div', $parentLi);
     if (deep === true) {
         $nextDiv = $('div', $parentLi);
     }
@@ -219,73 +196,74 @@ function closeAccordion($parentLi, deep, setOpenCls) {
         $('.lzy-open', $parentLi).removeClass('lzy-open');       // parent li
     }
     $('li > a', $parentLi).attr('tabindex', '-1');             // make un-focusable
-} // closeAccordion
+
+}; // closeAccordion
 
 
 
 
-// all accordions includes siblings:
-function closeAllAccordions($parentLi, setOpenCls) {
-    var $nav = $parentLi.closest('.lzy-nav');
+LzyNav.prototype.closeAllAccordions = function( $parentLi, setOpenCls ) {
+    let $nav = $parentLi.closest('.lzy-nav');
     $('> a', $parentLi).attr({'aria-expanded': 'false'});  // make focusable
     $('a', $parentLi).attr({'tabindex': ''});  // make focusable
     $('.lzy-has-children', $nav).each(function() {
-        var $elem = $(this);
-        var $nextDivs = $('div', $elem);
+        let $elem = $(this);
+        let $nextDivs = $('div', $elem);
         if (typeof setOpenCls !== 'undefined') {
             $elem.removeClass('lzy-open');
             $('li', $elem ).removeClass('lzy-open');            // all li below parent li
         }
-        $nextDivs.attr({'aria-hidden':'true' });        // next div
+        $nextDivs.attr({'aria-hidden':'true' });              // next div
         $('a', $nextDivs).attr('tabindex', '-1');            // make un-focusable
     });
-} // closeAllAccordions
+}; // closeAllAccordions
 
 
 
 
-function openCurrentElement() {
+LzyNav.prototype.openCurrentElement = function() {
     $('.lzy-nav.lzy-nav-open-current .lzy-active').each(function () {
-        $parentLi = $( this );
+        let $parentLi = $( this );
         $parentLi.addClass('lzy-open');
         $( 'div', $parentLi ).attr({'aria-hidden': 'false'});        // next div
         $('a', $parentLi).attr({'tabindex': ''});  // set aria-expanded and make focusable
-    })
-} // openCurrentElement
+    });
+}; // openCurrentElement
 
 
 
 
-function adaptMainMenuToScreenSize( smallScreen ) {
+LzyNav.prototype.adaptMainMenuToScreenSize = function( smallScreen ) {
+    let parent = this;
     if (smallScreen) {
         $('.lzy-primary-nav .lzy-nav')
             .removeClass('lzy-nav-top-horizontal lzy-nav-hover lzy-nav-colored lzy-nav-dark-theme lzy-nav-hoveropen')
             .addClass('lzy-nav-vertical lzy-nav-collapsed lzy-nav-open-current');
 
         if ($('.lzy-nav-small-tree').length) {
-            openAccordion($('.lzy-primary-nav .lzy-has-children'), true, true); // open all
+            this.openAccordion($('.lzy-primary-nav .lzy-has-children'), true, true); // open all
         } else {
             $('.lzy-primary-nav .lzy-active').each(function() {
-                console.log( $(this) );
-                openAccordion( $(this), false, true );
+                mylog( $(this) , false);
+                parent.openAccordion( $(this), false, true );
             });
         }
 
     } else {
         // restore classes:
-        $('.lzy-primary-nav .lzy-nav').attr('class', largeScreenClasses);
+        $('.lzy-primary-nav .lzy-nav').attr('class', this.largeScreenClasses);
         $('.lzy-primary-nav .lzy-has-children').removeClass('lzy-open');
         $('body').removeClass('lzy-nav-mobile-open');
     }
-}
+}; // adaptMainMenuToScreenSize
 
 
 
 
-function operateMobileMenuPane( newState ) {
-    var $nav = $( '.lzy-nav-wrapper' );
-    var expanded = ($nav.attr('aria-expanded') === 'true');
-    if (typeof newState != 'undefined') {
+LzyNav.prototype.operateMobileMenuPane = function( newState ) {
+    let $nav = $( '.lzy-nav-wrapper' );
+    let expanded = ($nav.attr('aria-expanded') === 'true');
+    if (typeof newState !== 'undefined') {
         expanded = !newState;
     }
     if (expanded) {
@@ -296,65 +274,305 @@ function operateMobileMenuPane( newState ) {
     } else {
         $nav.attr('aria-expanded', 'true');
         $('body').addClass('lzy-nav-mobile-open');
-        var $primaryNav = $('.lzy-primary-nav .lzy-nav');
+        let $primaryNav = $('.lzy-primary-nav .lzy-nav');
         $('> ol > li > a', $primaryNav).attr('tabindex', '0');            // make un-focusable
     }
-} // operateMobileMenuPane
+}; // operateMobileMenuPane
 
 
 
 
-function setHightOnHiddenElements() {
+LzyNav.prototype.setHightOnHiddenElements = function() {
     if (!($('html').hasClass('touchevents') || $('body').hasClass('touch'))) {
         $('#lzy .lzy-nav-accordion .lzy-has-children, ' +
             '#lzy .lzy-nav-top-horizontal .lzy-has-children, ' +
             '#lzy .lzy-nav-collapsed .lzy-has-children, ' +
             '#lzy .lzy-nav-collapsible .lzy-has-children').each(function () {
-            var h = $('>div>ol', this).height() + 20 + 'px';                // set height to optimize animation
+            let h = $('>div>ol', this).height() + 20 + 'px';                // set height to optimize animation
             $('>div>ol', this).css('margin-top', '-' + h);
         });
     }
-} // setHightOnHiddenElements
+}; // setHightOnHiddenElements
 
 
 
 
-function setupKeyboardEvents() {
+LzyNav.prototype.setupKeyboardEvents = function() {
+    let parent = this;
     // supports: left/right, up/down, space and home
     $('.lzy-nav a').keydown(function (event) {
-        var keyCode = event.keyCode;
         event.stopPropagation();
-        var $this = $(this);
+        let keyCode = event.keyCode;
+        let isHorizontal = ($(this).closest('.lzy-nav-vertical').length === 0);
+        let $this = $(this);
 
-        if (keyCode == 39) {            // right arrow
-            event.preventDefault();
-            toggleAccordion($this.parent(),false, true);
+        if (isHorizontal) {
+            if (keyCode === 39) {           // right
+                event.preventDefault();
+                $('> a',$this.parent().next()).focus();
 
-        } else if (keyCode == 37) {    // left arrow
-            event.preventDefault();
-            var expanded = $this.parent().hasClass('lzy-open');
-            if (expanded) { // if open -> close
-                toggleAccordion($this.parent(),false, false);
-            } else {    // if already closed -> jump to parent element
-                $('> a', $this.parent().parent().closest('li')).focus();
+            } else if (keyCode === 37) {    // left
+                event.preventDefault();
+                $('> a',$this.parent().prev()).focus();
+
+            } else if (keyCode === 38) {    // up
+                event.preventDefault();
+                if ($this.parent().hasClass('lzy-lvl1')) {
+                    parent.toggleAccordion($this.parent(),false, false);
+                } else {
+                    $.tabPrev();
+                }
+
+            } else if (keyCode === 40) {    // down
+                event.preventDefault();
+                let expanded = $this.closest('.lzy-lvl1').hasClass('lzy-open');
+                if (expanded) { // if open -> close
+                    $.tabNext();
+                } else {
+                    parent.toggleAccordion($this.parent(), false, true);
+                }
             }
 
-        } else if (keyCode == 36) {    // home
-            event.preventDefault();
-            $('.lzy-lvl1:first-child a').focus();
+        } else {
+            if (keyCode === 40) {    // down
+                event.preventDefault();
+                let expanded = $this.closest('.lzy-open').hasClass('lzy-open');
+                if (expanded) {
+                    let $l = $this;
+                    console.log($l);
+                    if ( $this.parent().is(':last-child') ) {
+                        mylog('last-child');
+                    }
+                    $.tabNext();
+                } else {
+                    $('> a', $this.parent().next()).focus();
+                }
 
-        } else if (keyCode == 38) {    // up
-            event.preventDefault();
-            $.tabPrev();
+            } else if (keyCode === 38) {    // up
+                event.preventDefault();
+                $('> a',$this.parent().prev()).focus();
 
-        } else if (keyCode == 40) {    // down
-            event.preventDefault();
-            $.tabNext();
+            } else if (keyCode === 37) {    // left
+                event.preventDefault();
+                if ($this.parent().hasClass('lzy-lvl1')) {
+                    parent.toggleAccordion($this.parent(),false, false);
+                } else {
+                    $.tabPrev();
+                }
 
-        } else if (keyCode == 32) {    // space
-            event.preventDefault();
-            toggleAccordion($this.parent(), true);
+            } else if (keyCode === 39) {           // right
+                event.preventDefault();
+                let expanded = $this.closest('.lzy-lvl1').hasClass('lzy-open');
+                if (expanded) { // if open -> close
+                    $.tabNext();
+                } else {
+                    parent.toggleAccordion($this.parent(), false, true);
+                }
+            }
         }
-    });
-} // setupKeyboardEvents
+        if (keyCode === 36) {    // home
+            event.preventDefault();
+            $('.lzy-lvl1:first-child > a', $this.closest('ol')).focus();
 
+        } else if (keyCode === 35) {    // end
+            event.preventDefault();
+            $('.lzy-lvl1:last-child > a', $this.closest('ol')).focus();
+
+        } else if (keyCode === 32) {    // space
+            event.preventDefault();
+            parent.toggleAccordion($this.parent(), true);
+        }
+        //??? => tab -> auto-open when in sub-elem
+// return;
+        // // if (keyCode === 39) {            // right arrow
+        // // if (keyCode === 40) {            // down
+        // if ((isHorizontal && (keyCode === 40)) || (!isHorizontal && (keyCode === 39))) {  // down resp.
+        //     event.preventDefault();
+        //     let expanded = $this.closest('.lzy-lvl1').hasClass('lzy-open');
+        //     if (expanded) { // if open -> close
+        //         $.tabNext();
+        //     } else {
+        //         parent.toggleAccordion($this.parent(), false, true);
+        //     }
+        //
+        // // } else if (keyCode === 37) {    // left arrow
+        // // } else if (keyCode === 38) {    // up
+        // } else if ((isHorizontal && (keyCode === 38)) || (!isHorizontal && (keyCode === 37))) {  // up resp.
+        //     event.preventDefault();
+        //     let expanded = $this.parent().hasClass('lzy-open');
+        //     if (expanded) { // if open -> close
+        //         parent.toggleAccordion($this.parent(),false, false);
+        //     } else {    // if already closed -> jump to parent element
+        //         $('> a', $this.parent().parent().closest('li')).focus();
+        //     }
+        //
+        // // } else if (keyCode === 39) {    // right arrow
+        // } else if ((isHorizontal && (keyCode === 39)) || (!isHorizontal && (keyCode === 40))) {  // up resp.
+        //     event.preventDefault();
+        //     $.tabNext();
+        //     // $('> a',$this.parent().next()).focus();
+        //     // $this.trigger({
+        //     //     type: 'keypress',
+        //     //     which: 9
+        //     // });
+        //     // focusNextElement(false, $this[0]);
+        //
+        // // } else if (keyCode === 37) {    // left arrow
+        // } else if ((isHorizontal && (keyCode === 37)) || (!isHorizontal && (keyCode === 38))) {  // up resp.
+        //     // $('> a',$this.parent().prev()).focus();
+        //     $.tabPrev();
+        //
+        // } else if (keyCode === 36) {    // home
+        //     event.preventDefault();
+        //     // let $ol = $this.closest('ol');
+        //     // let $first = $('.lzy-lvl1:first-child > a', $this.closest('ol'));
+        //     // $first.focus();
+        //     $('.lzy-lvl1:first-child > a', $this.closest('ol')).focus();
+        //
+        // } else if (keyCode === 35) {    // end
+        //     event.preventDefault();
+        //     $('.lzy-lvl1:last-child > a', $this.closest('ol')).focus();
+        //
+        //     // } else if (keyCode === 38) {    // up
+        // //     event.preventDefault();
+        // //     $.tabPrev();
+        // //
+        // // } else if (keyCode === 40) {    // down
+        // //     event.preventDefault();
+        // //     $.tabNext();
+        //
+        // } else if (keyCode === 32) {    // space
+        //     event.preventDefault();
+        //     parent.toggleAccordion($this.parent(), true);
+        // }
+    });
+}; // setupKeyboardEvents
+// LzyNav.prototype.setupKeyboardEvents = function() {
+//     let parent = this;
+//     // supports: left/right, up/down, space and home
+//     $('.lzy-nav a').keydown(function (event) {
+//         event.stopPropagation();
+//         let keyCode = event.keyCode;
+//         let isHorizontal = ($(this).closest('.lzy-nav-vertical').length === 0);
+//         let $this = $(this);
+// mylog('keyCode: ' + keyCode);
+//
+//         // if (keyCode === 39) {            // right arrow
+//         // if (keyCode === 40) {            // down
+//         if ((isHorizontal && (keyCode === 40)) || (!isHorizontal && (keyCode === 39))) {  // down resp.
+//             event.preventDefault();
+//             let expanded = $this.closest('.lzy-lvl1').hasClass('lzy-open');
+//             if (expanded) { // if open -> close
+//                 $.tabNext();
+//             } else {
+//                 parent.toggleAccordion($this.parent(), false, true);
+//             }
+//
+//         // } else if (keyCode === 37) {    // left arrow
+//         // } else if (keyCode === 38) {    // up
+//         } else if ((isHorizontal && (keyCode === 38)) || (!isHorizontal && (keyCode === 37))) {  // up resp.
+//             event.preventDefault();
+//             let expanded = $this.parent().hasClass('lzy-open');
+//             if (expanded) { // if open -> close
+//                 parent.toggleAccordion($this.parent(),false, false);
+//             } else {    // if already closed -> jump to parent element
+//                 $('> a', $this.parent().parent().closest('li')).focus();
+//             }
+//
+//         // } else if (keyCode === 39) {    // right arrow
+//         } else if ((isHorizontal && (keyCode === 39)) || (!isHorizontal && (keyCode === 40))) {  // up resp.
+//             event.preventDefault();
+//             $.tabNext();
+//             // $('> a',$this.parent().next()).focus();
+//             // $this.trigger({
+//             //     type: 'keypress',
+//             //     which: 9
+//             // });
+//             // focusNextElement(false, $this[0]);
+//
+//         // } else if (keyCode === 37) {    // left arrow
+//         } else if ((isHorizontal && (keyCode === 37)) || (!isHorizontal && (keyCode === 38))) {  // up resp.
+//             // $('> a',$this.parent().prev()).focus();
+//             $.tabPrev();
+//
+//         } else if (keyCode === 36) {    // home
+//             event.preventDefault();
+//             // let $ol = $this.closest('ol');
+//             // let $first = $('.lzy-lvl1:first-child > a', $this.closest('ol'));
+//             // $first.focus();
+//             $('.lzy-lvl1:first-child > a', $this.closest('ol')).focus();
+//
+//         } else if (keyCode === 35) {    // end
+//             event.preventDefault();
+//             $('.lzy-lvl1:last-child > a', $this.closest('ol')).focus();
+//
+//             // } else if (keyCode === 38) {    // up
+//         //     event.preventDefault();
+//         //     $.tabPrev();
+//         //
+//         // } else if (keyCode === 40) {    // down
+//         //     event.preventDefault();
+//         //     $.tabNext();
+//
+//         } else if (keyCode === 32) {    // space
+//             event.preventDefault();
+//             parent.toggleAccordion($this.parent(), true);
+//         }
+//     });
+// }; // setupKeyboardEvents
+
+
+
+(function ( $ ) {
+    var nav = new LzyNav();
+    nav.init();
+}( jQuery ));
+
+
+
+
+function focusNextElement( reverse, activeElem ) {
+    /*check if an element is defined or use activeElement*/
+    activeElem = activeElem instanceof HTMLElement ? activeElem : document.activeElement;
+
+    let queryString = [
+            'a:not([disabled]):not([tabindex="-1"])',
+            'button:not([disabled]):not([tabindex="-1"])',
+            'input:not([disabled]):not([tabindex="-1"])',
+            'select:not([disabled]):not([tabindex="-1"])',
+            '[tabindex]:not([disabled]):not([tabindex="-1"])'
+            /* add custom queries here */
+        ].join(','),
+        queryResult = Array.prototype.filter.call(document.querySelectorAll(queryString), elem => {
+            /*check for visibility while always include the current activeElement*/
+            return elem.offsetWidth > 0 || elem.offsetHeight > 0 || elem === activeElem;
+        }),
+        indexedList = queryResult.slice().filter(elem => {
+            /* filter out all indexes not greater than 0 */
+            return elem.tabIndex == 0 || elem.tabIndex == -1 ? false : true;
+        }).sort((a, b) => {
+            /* sort the array by index from smallest to largest */
+            return a.tabIndex != 0 && b.tabIndex != 0
+                ? (a.tabIndex < b.tabIndex ? -1 : b.tabIndex < a.tabIndex ? 1 : 0)
+                : a.tabIndex != 0 ? -1 : b.tabIndex != 0 ? 1 : 0;
+        }),
+        focusable = [].concat(indexedList, queryResult.filter(elem => {
+            /* filter out all indexes above 0 */
+            return elem.tabIndex == 0 || elem.tabIndex == -1 ? true : false;
+        }));
+
+    let thisIndex = focusable.indexOf(activeElem);
+    let nextElem = null;
+    if (reverse) {
+        nextElem = (focusable[thisIndex - 1]);
+        // nextElem = (focusable[thisIndex - 1] || focusable[focusable.length - 1]);
+    } else {
+        nextElem = (focusable[thisIndex + 1] );
+        // nextElem = (focusable[thisIndex + 1] || focusable[0]);
+    }
+    $( nextElem ).focus();
+    /* if reverse is true return the previous focusable element
+       if reverse is false return the next focusable element */
+    // return reverse ? (focusable[focusable.indexOf(activeElem) - 1] || focusable[focusable.length - 1])
+    //     : (focusable[focusable.indexOf(activeElem) + 1] || focusable[0]);
+} // focusNextElement

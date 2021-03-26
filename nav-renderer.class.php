@@ -370,7 +370,7 @@ EOT;
                         $liClass = ($liClass) ? " class='$liClass'" : '';
                         $out .= "$indent1<$li$liClass>\n";
 
-                        $out .= "$indent2<a href='$path' class='$this->aClass lzy-handle-accordion'$target $tabindex $aria1>$aElem</a>\n"; // A0
+                        $out .= "$indent2<a href='$path'$aClass$target $tabindex $aria1>$aElem</a>\n"; // A0
 
                         $out .= "$indent2$listWrapper\n";
                         $out .= "$out1";
