@@ -253,7 +253,7 @@ function LzyPopup( options, index ) {
                     $popupElem.addClass(this.popupClass);
                 }
                 var $popupContent = $('> div', $popupElem);
-                cls = ' lzy-popup-wrapper-ref';
+                cls = ' lzy-popup-wrapper lzy-popup-wrapper-ref';
                 if (this.wrapperClass) {
                     cls += ' ' + this.wrapperClass;
                 }
