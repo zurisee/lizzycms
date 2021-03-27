@@ -51,7 +51,7 @@ body {
 	border-top-left-radius: 0;
 	border-top-right-radius: 0;
 }
-.lzy-popup-header {
+#lzy .lzy-popup-header {
 	position: relative;
 	padding: 5px;
 	background: #666;
@@ -61,6 +61,9 @@ body {
 	border-top-left-radius: 8px;
 	border-top-right-radius: 8px;
 	padding-left: 1rem;
+}
+#lzy label {
+	color: black;
 }
 .lzy-popup-wrapper {
 	cursor: default;
