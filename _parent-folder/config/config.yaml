@@ -2,6 +2,8 @@
 #   see https://getlizzy.net/site/site_configuration/ for documentation
 #--------------------------------------------------------------------------
 
+# site_timeZone:                            # set appropriate value, e.g 'Europe/Zurich' (but not a short value like 'CET')
+
 debug_enableDevMode: true                   # => settings in config/dev-mode-config.yaml become active
 debug_enableDevModeAutoOff: false           # -> if true, automatically returns to normal mode on next morning
 
