@@ -59,7 +59,7 @@ $this->addMacro($macroName, function () {
         }
 
         list($file1, $errMsg) = resolvePathSecured($file, true, false, false, null, 'include');
-        if ($file1 === null) {
+        if ($errMsg) {
             return $errMsg;
         }
 
@@ -101,7 +101,7 @@ $this->addMacro($macroName, function () {
 
     if ($folder) {
         list($folder1, $errMsg) = resolvePathSecured(fixPath($folder), true, false, false, null, 'include');
-        if ($folder1 === null) {
+        if ($errMsg) {
             return $errMsg;
         }
 

@@ -141,7 +141,7 @@ function prepareImageWorkingCopy($reqImg, $imgDefaultMaxDim = IMG_DEFAULT_MAX_DI
     }
 
     list($reqImgFile, $errMsg) = resolvePathSecured($reqImg, true, false, false, null, 'img');
-    if ($reqImgFile === null) {
+    if ($errMsg) {
         return [$reqImgFile, $errMsg];
     }
 

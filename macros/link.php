@@ -72,7 +72,7 @@ $this->addMacro($macroName, function () {
         $args['relativeToPage'] = false;
     } else {
         list($path, $errMsg) = resolvePathSecured($args['href'], $args['relativeToPage'], true, false, null, 'link');
-        if ($path === null) {
+        if ($errMsg) {
             return $errMsg;
         }
     }

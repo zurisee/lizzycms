@@ -867,7 +867,8 @@ function resolvePathSecured($path, $relativeToCurrPage = false, $httpAccess = fa
 {
     $path1 = resolvePath($path, $relativeToCurrPage, $httpAccess, $absolutePath, $isResource);
 
-    if (!preg_match('/\b(code|config|.cache|\.\#tickets|_lizzy)\b/', $path1)) {
+    $adminPermit = $GLOBALS['globalParams']['isLocalhost'] || $GLOBALS['globalParams']['isAdmin'];
+    if ($adminPermit || !preg_match('/\b(code|config|.cache|\.\#tickets|_lizzy)\b/', $path1)) {
         return [$path1, false]; // path is ok
     }
 
@@ -877,7 +878,7 @@ function resolvePathSecured($path, $relativeToCurrPage = false, $httpAccess = fa
     if ($GLOBALS['globalParams']['isLocalhost']) {
         $msg = "<strong>Warning: suspicious path request in $caller(): '$path'</strong>";
     }
-    return [null, $msg];
+    return [$path1, $msg];
 } // resolvePathSecured
 
 

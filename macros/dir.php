@@ -101,7 +101,7 @@ class DirRenderer
         }
 
         list($path, $errMsg) = resolvePathSecured($this->path, false, false, false, null, 'dir');
-        if ($path === null) {
+        if ($errMsg) {
             return $errMsg;
         }
         if ($this->deep) {
