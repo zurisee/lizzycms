@@ -228,6 +228,7 @@ function stripNewlinesWithinTransvars($str)
 function lzyExit( $str = '' )
 {
     if (strlen($buff = ob_get_clean ()) > 1) {
+        $buff = strip_tags( $buff );
         file_put_contents(PATH_TO_APP_ROOT.'.#logs/output-buffer-backend.txt', $buff);
     }
     exit($str);

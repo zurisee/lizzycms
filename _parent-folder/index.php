@@ -2,7 +2,7 @@
 /*
 **  Lizzy Entry Point
 **
-**  all requests pass through this file
+**  all page requests pass through this file
 */
 
 ob_start();
@@ -15,8 +15,9 @@ require_once '_lizzy/lizzy.class.php';
 $website = new Lizzy();
 $out = $website->render();
 
-if (strlen($str = ob_get_clean ()) > 1) {
-    file_put_contents('.#logs/output-buffer.txt', strip_tags($str));
+if (strlen($buff = ob_get_clean ()) > 1) {
+    $buff = strip_tags( $buff );
+	file_put_contents('.#logs/output-buffer.txt', $buff);
 }
 
 exit( $out );
