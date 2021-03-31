@@ -115,7 +115,7 @@ class Page
 
 
 
-    public function update($values)
+    public function updateFromFrontmatter($values)
     {
         // merge given values into the page object's properties:
         foreach ($values as $key => $value) {
@@ -127,18 +127,22 @@ class Page
                         $this->$key = array_merge($this->$key, $value);
 
                     } elseif (is_string($this->$key) && is_string($value)) {
-                        $this->$key .= $value;
+                        if (strpos('jq,js', $key) !== false) {
+                            $this->$key .= "\n$value";
+                        } else {
+                            $this->$key .= $value;
+                        }
 
                     } elseif (is_int($this->$key) && is_int($value)) {
                         $this->$key += $value;
 
                     } else {
-                        fatalError("page->update: type clash or unsupported type: $value");
+                        fatalError("page->updateFromFrontmatter: type clash or unsupported type: $value");
                     }
                 }
             }
         }
-    } // update
+    } // updateFromFrontmatter
 
 
 
@@ -164,7 +168,11 @@ class Page
                         }
 
                     } else {
-                        $this->$key = $this->$key ? "{$this->$key} $value" : $value;
+                        if (strpos('jq,js', $key) !== false) {
+                            $this->$key .= "\n$value";
+                        } else {
+                            $this->$key .= " $value";
+                        }
                     }
                 }
             } else {
@@ -360,7 +368,7 @@ class Page
             return;
         }
 
-        $str = trim($str, " \t\n")."\n";
+        $str = trim($str, " \t\n");
 
         if ($replace === 'append') {
             $this->addToProperty('jqEnd', $str);
@@ -556,7 +564,15 @@ EOT;
         } elseif ($replace) {
             $this->$key = $var;
         } else {
-            $this->$key .= $var;
+            if ($this->$key) {
+                if (strpos('jq,js', $key) !== false) {
+                    $this->$key .= "\n$var";
+                } else {
+                    $this->$key .= $var;
+                }
+            } else {
+                $this->$key = $var;
+            }
         }
     } // addToProperty
 
@@ -917,8 +933,6 @@ EOT;
 
     public function getBodyEndInjections()
     {
-        $assembledJs = '';
-        $assembledJq = '';
         $bodyEndInjections = $this->bodyEndInjections;
 
         if ($this->config->site_enableFilesCaching) {
@@ -930,6 +944,25 @@ EOT;
             $bodyEndInjections .= $this->getModules('js');
         }
 
+        if ($this->config->debug_allowDebugInfo &&
+            ((($this->config->debug_showDebugInfo)) || getUrlArgStatic('debug'))) {
+            if ($this->config->isPrivileged) {
+                $bodyEndInjections .= $this->renderDebugInfo();
+            }
+        }
+
+        $this->assembleInlineJsAndJq( $bodyEndInjections );
+
+        $bodyEndInjections = "<!-- body_end_injections -->\n$bodyEndInjections\n<!-- /body_end_injections -->";
+
+        return $bodyEndInjections;
+    } // getBodyEndInjections
+
+
+
+
+    private function assembleInlineJsAndJq( &$bodyEndInjections )
+    {
         $screenSizeBreakpoint = $this->config->feature_screenSizeBreakpoint;
         $pathToRoot = $this->lzy->pathToRoot;
         $rootJs  = <<<EOT
@@ -939,20 +972,16 @@ EOT;
         var pagePath = '{$this->lzy->pagePath}';
 EOT;
 
-        if ($this->config->debug_allowDebugInfo &&
-            ((($this->config->debug_showDebugInfo)) || getUrlArgStatic('debug'))) {
-            if ($this->config->isPrivileged) {
-                $bodyEndInjections .= $this->renderDebugInfo();
-            }
-        }
-
+        $assembledJs = '';
+        $assembledJq = '';
         if ($rootJs.$this->assembledJs) {
             $assembledJs = "\t\t".preg_replace("/\n/", "\n\t\t", $this->assembledJs);
             $assembledJs = <<<EOT
 
 $rootJs$assembledJs
-
+\t
 EOT;
+            $assembledJs = $this->lzy->resolveAllPaths($assembledJs);
 
             $bodyEndInjections = <<<EOT
 {$this->bodyLateInjections}
@@ -983,24 +1012,84 @@ EOT;
 EOT;
         }
 
-        // if CSP is enabled -> prepare header:
-        if ($this->config->site_ContentSecurityPolicy) {
-            $this->headerContentSecurityPolicy .= " script-src 'self'";
-            if ($assembledJs) {
-                $hash = base64_encode(hash('sha256', $assembledJs, true));
-                $this->headerContentSecurityPolicy .= " 'sha256-$hash'";
-            }
-            if ($assembledJq) {
-                $hash = base64_encode(hash('sha256', $assembledJq, true));
-                $this->headerContentSecurityPolicy .= " 'sha256-$hash'";
-            }
-            $this->headerContentSecurityPolicy .= ";";
+        $this->assembledJs = $assembledJs;
+        $this->assembledJq = $assembledJq;
+    } // assembleInlineJsAndJq
+
+
+    
+
+    public function applyContentSecurityPolicy()
+    {
+        // Content-Security-Policy:
+        //   check using https://webbkoll.dataskydd.net/
+
+        // CSP header code assembled in page.class -> send in header now if defined:
+        if (!$this->config->site_ContentSecurityPolicy) {
+            return;
         }
 
-        $bodyEndInjections = "<!-- body_end_injections -->\n$bodyEndInjections\n<!-- /body_end_injections -->";
+        $cspReportMode = ($this->config->site_ContentSecurityPolicy === 'report')? '-Report-Only' : '';
 
-        return $bodyEndInjections;
-    } // getBodyEndInjections
+        $cspStr = "Content-Security-Policy$cspReportMode:";
+
+        // CSP generic rule -> allow only objects from own host:
+        $cspStr .= " default-src 'self';";
+
+        // CSP for styles:
+        $cspStr .= " style-src 'self' 'unsafe-inline';";
+
+        // CSP for fonts:
+        $cspStr .= " font-src 'self'";
+
+        // special case: Calendar macro loaded:
+        if (@$GLOBALS['lizzy']['calInitialized']) {
+            // $fontStr = "data:application/x-font-ttf;charset=utf-8;base64,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";
+            // $hash = base64_encode(hash('sha256', $fontStr, true));
+            $hash = 'F5KvOoc41xMgBeFnHQMjO4D5c2zog/bWJ1I0bzCNPpQ='; // precomputed hash of above
+            $cspStr .= " 'sha256-$hash'";
+        }
+        $cspStr .= ";";
+
+        // CSP for FrameAncestors:
+        if ($this->config->site_allowFrameAncestors) {
+            $cspStr .= " frame-ancestors {$this->config->site_allowFrameAncestors};";
+        }
+
+        // misc CSP rules:
+        $cspStr .= " base-uri 'self'; form-action 'self'; connect-src 'self';";
+
+
+        // CSP for Scripts:
+        $cspStr .= " script-src 'self'";
+        if ($this->assembledJs) {
+            $hash = base64_encode(hash('sha256', $this->assembledJs, true));
+            $cspStr .= " 'sha256-$hash'";
+        }
+        if ($this->assembledJq) {
+            $hash = base64_encode(hash('sha256', $this->assembledJq, true));
+            $cspStr .= " 'sha256-$hash'";
+        }
+        $cspStr .= ";";
+
+        // CSP for images:
+        // Just a small fix for a problem with Chrome: loads this image when opening a date-input element.
+        // $str = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPS
+        // IxNiIgaGVpZ2h0PSIxNSIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJXaW5kb3dUZXh0IiBkPSJNMjAgM2gtMV
+        // YxaC0ydjJIN1YxSDV2Mkg0Yy0xLjEgMC0yIC45LTIgMnYxNmMwIDEuMS45IDIgMiAyaDE2YzEuMSAwIDItLjkgMi0yVjVjMC
+        // 0xLjEtLjktMi0yLTJ6bTAgMThINFY4aDE2djEzeiIvPjxwYXRoIGZpbGw9Im5vbmUiIGQ9Ik0wIDBoMjR2MjRIMHoiLz48L3
+        // N2Zz4=';
+        // $hash = base64_encode(hash('sha256', $str, true));
+        $hash = 'BORJ0g0DZdiBpU7SSvftAP553Z+eYBJI9P13kwA5JPI='; // precomputed hash of above
+        $cspStr .= " img-src 'self' 'sha256-$hash';";
+
+        $this->lzy->setCspHeader( $cspStr ); // report back, required in caching
+        header( $cspStr );
+
+        // activate Strict-Transport-Security:
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
+
+    } // applyContentSecurityPolicy
 
 
 
@@ -1441,13 +1530,6 @@ EOT;
 
 
 
-    public function getContentSecurityPolicyHeader()
-    {
-        return $this->headerContentSecurityPolicy;
-    } // getContentSecurityPolicyHeader
-
-
-
 
     public function lateApplyDebugMsg($html, $msg)
     {
@@ -1626,7 +1708,7 @@ EOT;
         }
         if ($hdr && is_array($hdr)) {
             $this->extractSettings($hdr);
-            $this->update($hdr);
+            $this->updateFromFrontmatter($hdr);
             $this->set('frontmatter', $hdr);
 
             if ($this->trans && isset($hdr['variables'])) {
