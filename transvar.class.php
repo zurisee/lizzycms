@@ -1116,8 +1116,8 @@ EOT;
         $source = preg_replace('/\n\s+</ms', "\n<", "\n$source"); // remove leading space
         $source = str_replace(['&lt;strong&gt;', '&lt;/strong&gt;'], ['<strong>', '</strong>'], $source); // restore ** (strong)
         $source = preg_replace("/\n\s*\n/ms", "\n", $source);
+
         // case popup:
-//        if ($this->macroSources[$macro][$this->varCount]['mode'] === 'popup') {
         if (strpos($this->macroSources[$macro][$this->varCount]['mode'], 'popup') !== false) {
             $popup = $this->page->addPopup([
                 'contentFrom' => ".lzy-src-wrapper{$this->varCount} .lzy-src-code",
@@ -1130,7 +1130,6 @@ EOT;
         }
 
         if (strpos($this->macroSources[$macro][$this->varCount]['mode'], 'html') !== false) {
-//            $source0 = compileMarkdownStr($source0);
             $args = $this->macroSources[$macro][$this->varCount]['args'];
             unset( $this->macroSources[$macro][$this->varCount] );
             $source0 = $this->translateMacro($macro, $args);
