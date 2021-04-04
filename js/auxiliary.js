@@ -3,6 +3,54 @@
 */
 
 var debug = false;
+var windowTimeout = false;
+
+function freezeWindowAfter( delay, onClick, retrigger = false ) {
+    let t = 0;
+    if (typeof delay === 'number') {
+        t = delay;
+    } else if (typeof delay === 'string') {
+        let m = delay.match(/(\d+)\s*(\w+)/);
+        if (m) {
+            let unit = m[2];
+            switch (unit.charAt(0).toLowerCase()) {
+                case 's':
+                    t = m[1] * 1000;
+                    break;
+                case 'h':
+                    t = m[1] * 3600000;
+                    break;
+                case 'd':
+                    t = m[1] * 86400000;
+                    break;
+            }
+        }
+    }
+    const img = appRoot + '_lizzy/rsc/sleeping.png';
+    const overlay = '<div class="lzy-overlay-background lzy-v-h-centered"><div><img src="'+img+'" alt="Sleeping..." class="lzy-timeout-img" /></div></div>';
+    if (windowTimeout) {
+        clearTimeout(windowTimeout);
+    }
+    windowTimeout = setTimeout(function () {
+        $('body').append(overlay).addClass('lzy-overlay-background-frozen');
+        $('.lzy-overlay-background').click(function () {
+            $('body').removeClass('lzy-overlay-background-frozen');
+            if (typeof onClick === 'function') {
+                $(this).remove();
+                let res = onClick();
+                if (res || retrigger) {
+                    freezeWindowAfter( delay, onClick, retrigger );
+                }
+            } else {
+                lzyReload();
+            }
+        });
+    }, t);
+} // freezeWindowAfter
+
+
+
+
 // handle screen-size and resize
 (function ( $ ) {
     if ($(window).width() < screenSizeBreakpoint) {
