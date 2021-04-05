@@ -64,7 +64,7 @@ function LzyPopup( options, index ) {
         this.buttons = (typeof options.buttons === 'string') ? options.buttons.split(',') : [];
 
         // omit closeButton if buttons are defined (unless header is active):
-        if ((typeof options.closeButton === 'undefined') && (this.buttons !== []) && !this.header) {
+        if ((typeof options.closeButton === 'undefined') && (this.buttons.length) && !this.header) {
             this.closeButton = false;
         }
         this.callbacks = [];
@@ -96,8 +96,10 @@ function LzyPopup( options, index ) {
         }
 
         if (typeof options.onConfirm !== 'undefined') {
-            buttonHtml = '<button class="lzy-button lzy-popup-btn-cancel">{{ lzy-cancel }}</button> ';
-            buttonHtml += '<button class="lzy-button lzy-popup-btn-confirm">{{ lzy-confirm }}</button> ';
+            let label = unTransvar('{{ lzy-Cancel }}');
+            buttonHtml = '<button class="lzy-button lzy-popup-btn-cancel">' + label + '</button> ';
+            label = unTransvar('{{ lzy-Confirm }}');
+            buttonHtml += '<button class="lzy-button lzy-popup-btn-confirm">' + label + '</button> ';
             this.buttonHtml = '<div class="lzy-popup-buttons">' + buttonHtml + '</div>';
             return;
         }
@@ -190,6 +192,8 @@ function LzyPopup( options, index ) {
 
         // content supplied as literal or by contentFrom:
         if (this.content) {
+            this.content = unTransvar( this.content );
+
             // add popup HTML to DOM (at end of body element):
             var style = '';
 
@@ -426,6 +430,7 @@ function lzyConfirm( prompt ) {
         options.onConfirm = true;
         options.onCancel = true;
         options.closeOnBgClick = false;
+        options.closeButton = false;
         $('body').on('click','.lzy-popup-btn-confirm', function () {
             lzyPopupClose();
             $('body').off('click','.lzy-popup-btn-confirm').off('click','.lzy-popup-btn-cancel');
