@@ -274,11 +274,11 @@ function serverLog(text, file) {
 
 function isServerErrMsg(json) {
     if (json.match(/^</)) {
-        console.log('- response: ' + json.replace(/<(?:.|\n)*?>/gm, ''));
+        mylog('- response: ' + json.replace(/<(?:.|\n)*?>/gm, ''));
         return true;
     }
     if ( json ) {
-        console.log('- response: ' + json);
+        mylog('- response: ' + json, false);
     }
     return false;
 } // isServerErrMsg
