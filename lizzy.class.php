@@ -175,6 +175,8 @@ private function loadRequired()
 
         $this->getConfigValues(); // from config/config.yaml
 
+        $this->determineLanguage();
+
         // get info about browser
         $ua = $this->getBrowser();
 
@@ -247,8 +249,6 @@ private function loadRequired()
 		if ($this->timer) {
 			startTimer();
 		}
-
-		$this->selectLanguage();
 
 		$accessGranted = $this->checkAdmissionToCurrentPage();   // override page with login-form if required
 
@@ -1731,7 +1731,7 @@ EOT;
 
 
 
-    private function selectLanguage()
+    private function determineLanguage()
     {
         global $globalParams;
         // check sitemap for language option:
@@ -1758,6 +1758,8 @@ EOT;
             }
         }
 
+        $this->config->site_supportedLanguages = str_replace(' ', '', $this->config->site_supportedLanguages);
+
         // check that selected language is among supported ones:
         if (strpos(",{$this->config->site_supportedLanguages},", ",$lang,") === false) {
             $lang = $this->config->site_defaultLanguage;
@@ -1767,7 +1769,7 @@ EOT;
         $globalParams['lang'] = $lang;
         $_SESSION['lizzy']['lang'] = $lang;
         return $lang;
-    } // selectLanguage
+    } // determineLanguage
 
 
 
