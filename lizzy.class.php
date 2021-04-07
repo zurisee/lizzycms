@@ -105,7 +105,16 @@ class Lizzy
     public function __construct()
     {
         session_start();
-        $user = @$_SESSION['lizzy']['user']? $_SESSION['lizzy']['user']: 'anon';
+        $GLOBALS['globalParams'] = [];
+        if (isset($_SESSION['lizzy']['user']) && $_SESSION['lizzy']['user']) {
+            $user = $_SESSION['lizzy']['user'];
+            $GLOBALS['globalParams']['user'] = $user;
+        } else {
+            $_SESSION['lizzy']['user'] = '';
+            $GLOBALS['globalParams']['user'] = '';
+            $user = 'anon';
+        }
+
         $this->debugLogBuffer = "REQUEST_URI: {$_SERVER["REQUEST_URI"]}  FROM: [$user]\n";
         if ($_REQUEST) {
             $this->debugLogBuffer .= "REQUEST: ".var_r($_REQUEST, 'REQUEST', true)."\n";
@@ -716,12 +725,10 @@ EOT;
 
     private function getConfigValues()
     {
-        global $globalParams;
-
         $this->config = new Defaults( $this );
         $this->config->pathToRoot = $this->pathToRoot;
 
-        $globalParams['path_logPath'] = $this->config->path_logPath;
+        $GLOBALS['globalParams']['logPath'] = $this->config->path_logPath;
 
         if (!isset($_SESSION['lizzy']['lang'])) {
             if ($this->config->site_multiLanguageSupport) {
@@ -902,8 +909,11 @@ EOT;
         $this->trans->addVariable('systemPath', $this->systemPath);		// -> file access path
         $this->trans->addVariable('lang', $this->config->lang);
 
+        if ($this->config->debug_forceDebugMode) {
+            setStaticVariable('debug', true);
+        }
 
-		if  (getUrlArgStatic('debug') || $this->config->debug_forceDebugMode) {
+		if  (getUrlArgStatic('debug')) {
             if  (!$this->localCall) {   // log only on non-local host
                 writeLog('starting debug mode');
             }
