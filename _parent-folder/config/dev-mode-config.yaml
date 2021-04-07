@@ -8,6 +8,7 @@ debug_errorLogging: true
 site_enableFilesCaching: false
 site_enableCaching: false
 
+debug_forceDebugMode: true
 
 
 #debug_forceBrowserCacheUpdate: true
