@@ -2127,34 +2127,43 @@ function isLocalCall()
 
 
 
-function checkPermission($str, $lzy = false) {
-    $neg = false;
-    $res = false;
-    if (preg_match('/^((non|not|\!)\-?)/i', $str, $m)) {
-        $neg = true;
-        $str = substr($str, strlen($m[1]));
-    }
-
-    if ( ($str === true) || ($str === 'true') ) {
-        $res = true;
-    } elseif ( ($str === false) || ($str === 'false') ) {
+function checkPermission($str0, $lzy = false, $and = false) {
+    $resOut = $and;
+    $strs = explodeTrim(',', $str0);
+    foreach ($strs as $str) {
+        $neg = false;
         $res = false;
-    } elseif (preg_match('/privileged/i', $str)) {
-        $res = $GLOBALS['globalParams']['isPrivileged'];
-    } elseif (preg_match('/loggedin/i', $str)) {
-        $res = $GLOBALS['globalParams']['isLoggedin'] || $GLOBALS['globalParams']['isAdmin'];
-    } elseif (($str !== 'true') && !is_bool($str)) {
-        if ($lzy) {
-            // if not 'true', it's interpreted as a group
-            $res = $lzy->auth->checkGroupMembership($str);
-        } else {
+        if (preg_match('/^((non|not|\!)\-?)/i', $str, $m)) {
+            $neg = true;
+            $str = substr($str, strlen($m[1]));
+        }
+
+        if (($str === true) || ($str === 'true')) {
+            $res = true;
+        } elseif (($str === false) || ($str === 'false')) {
             $res = false;
+        } elseif (preg_match('/privileged/i', $str)) {
+            $res = $GLOBALS['globalParams']['isPrivileged'];
+        } elseif (preg_match('/loggedin/i', $str)) {
+            $res = $GLOBALS['globalParams']['isLoggedin'] || $GLOBALS['globalParams']['isAdmin'];
+        } elseif (($str !== 'true') && !is_bool($str)) {
+            if ($lzy) {
+                // if not 'true', it's interpreted as a group
+                $res = $lzy->auth->checkGroupMembership($str);
+            } else {
+                $res = false;
+            }
+        }
+        if ($neg) {
+            $res = !$res;
+        }
+        if ($and) {
+            $resOut = $resOut && $res;
+        } else {
+            $resOut = $resOut || $res;
         }
     }
-    if ($neg) {
-        $res = !$res;
-    }
-    return $res;
+    return $resOut;
 } // checkPermission
 
 
