@@ -1727,7 +1727,7 @@ EOT;
             return;
         }
 
-        if (isset($GLOBALS['appRoot'])) {
+        if (@$GLOBALS['appRoot'] && @$rawData['origFile']) {
             $filename = $GLOBALS['appRoot'] . $rawData['origFile'];
 
         } else {
