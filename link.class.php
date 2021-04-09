@@ -24,7 +24,8 @@ class CreateLink
         $this->target = isset($args['target'])? $args['target']: '';
         $this->subject = isset($args['subject'])? $args['subject']: '';
         $this->body = isset($args['body'])? $args['body']: '';
-        $this->option = isset($args['option'])? $args['option']: '';
+        $this->option = isset($args['options'])? $args['options']: ''; // synonym
+        $this->option = isset($args['option'])? $args['option']: $this->option;
         $this->relativeToPage = isset($args['relativeToPage'])? $args['relativeToPage']: false;
 
         if ($this->title) {
@@ -148,7 +149,7 @@ class CreateLink
         }
         $this->href = "mailto:{$this->href}$arg";
         return $hiddenText;
-    }
+    } // renderMailLink
 
 
 
@@ -309,9 +310,12 @@ class CreateLink
         }
 
         // prepareLinkText:
+        $this->text0 = $this->text;
         if (!$this->text) {
             $text = $this->href;
-            $text = preg_replace('|^ HTTPS?://|xi', '', $text);
+            if ((stripos($this->option, 'abs') === false)) {
+                $text = preg_replace('|^ HTTPS?://|xi', '', $text);
+            }
             $text = preg_replace('|^ [./~]*|xi', '', $text);
             $text = preg_replace('|[?&#] .*|xi', '', $text);
 
@@ -335,6 +339,9 @@ class CreateLink
             if (stripos($this->href, 'http') !== 0) {  // still no HTTP(S) in href:
                 if ((stripos($this->option, 'abs') !== false)) {
                     $this->href = resolvePath($this->href, true, true, true);
+                    if (!$this->text0) {
+                        $this->text = $this->href;
+                    }
                 }
                 $this->class = trim("lzy-local-link $this->class");
             }
