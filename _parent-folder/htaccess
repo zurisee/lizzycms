@@ -39,7 +39,7 @@ RewriteCond %{REQUEST_URI} !\.(?:css|js|jpe?g|gif|png|pdf|mp3|vtt|webm|m4v|mp4|o
 RewriteCond %{REQUEST_URI} !(robots.txt|browserconfig.xml|manifest.json) [NC]
 
 # Pass through spedific folders:
-RewriteCond %{REQUEST_URI} !(/assets|/download)
+RewriteCond %{REQUEST_URI} !(/assets|/download|/ics)
 
 # Path through any folders starting with '/-'
 RewriteCond %{REQUEST_URI} !^-
