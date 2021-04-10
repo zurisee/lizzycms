@@ -386,14 +386,14 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
         } else {
             fatalError("Error in Markdown source line $current: $line", 'File: '.__FILE__.' Line: '.__LINE__);
         }
-
-        list($tag, $attr, $lang, $comment, $literal, $mdCompile) = $this->parseInlineStyling($rest);
+        list($tag, $attr, $lang, $comment, $literal, $mdCompile, $text, $meta) = $this->parseInlineStyling($rest, false);
 
         $block['tag'] = $tag ? $tag : 'div';
         $block['attributes'] = $attr;
         $block['comment'] = $comment;
         $block['lang'] = $lang;
         $block['literal'] = $literal;
+        $block['meta'] = $meta;
         $block['mdcompile'] = $mdCompile;
 
         // consume all lines until end-tag, i.e. :::...
@@ -441,6 +441,10 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
         }
 
         $out = implode("\n", $block['content']);
+
+        if (strpos($block['meta'], 'html') !== false) {
+            return $out;
+        }
 
         if (!$block['literal'] && $block['mdcompile']) {  // within such a block we need to compile explicitly:
             $out = \cebe\markdown\Markdown::parse($out);

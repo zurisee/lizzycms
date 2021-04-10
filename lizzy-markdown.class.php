@@ -80,7 +80,7 @@ class LizzyMarkdown
 			$this->md = new MarkdownExtra;
 			$str = $this->md->parse($str);
 
-		} else {										// Lizzy's MD extensions
+		} elseif ($this->page->mdVariant !== false) {	// Lizzy's MD extensions
 			$str = $this->preprocess($str);
 			if (isset($this->page->md) && ($this->page->md === false)) {
 				$this->page->addContent($str);
@@ -145,7 +145,11 @@ class LizzyMarkdown
 	{
 		if (!isset($this->page->mdVariant)) {		// 'mdVariant' or 'markdown' -> true, false, 'extended'
 			if (!isset($this->page->markdown)) {
-				$this->page->mdVariant = 'extended';
+                if (isset($this->page->frontmatter['markdown'])) {  // Frontmatter "markdown: false"
+                    $this->page->mdVariant = $this->page->frontmatter['markdown'];
+                } else {
+                    $this->page->mdVariant = 'extended';
+                }
 			} else {
 				$this->page->mdVariant = $this->page->markdown;
 			}

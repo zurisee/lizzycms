@@ -149,6 +149,7 @@ function parseInlineBlockArguments($str, $returnElements = false)
 
     $tag = $id = $class = $style = $attr = $lang = $comment = $text = '';
     $literal = false;
+    $metaOut = '';
     $mdCompile = true;
     $elems = [];
     $str = preg_replace('|//.*|', '', $str);    // ignore //-style comments
@@ -158,32 +159,33 @@ function parseInlineBlockArguments($str, $returnElements = false)
         $str = $m[1].$m[3];
         if (strpos($m[2], '=') !== false) {
             $arr = explode('=', strtolower($m[2]));
-            $k = isset($arr[0]) ? strtolower($arr[0]) : '';
+            $meta = isset($arr[0]) ? strtolower($arr[0]) : '';
             $v = isset($arr[1]) ? strtolower($arr[1]) : '';
         } else {
-            $k = strtolower($m[2]);
+            $meta = strtolower($m[2]);
             $v = 'true';
         }
-        if ($k === 'lang') {                                                  // lang
+        $metaOut .= "$meta,";
+        if ($meta === 'lang') {                                                  // lang
             $attr .= " lang='$v' data-lang='$v'";
             $lang = $v;
 
-        } elseif ($k === 'off') {                                             // off
+        } elseif ($meta === 'off') {                                             // off
             $style = ' display:none;';
 
-        } elseif ($k === 'literal') {                                         // literal
+        } elseif ($meta === 'literal') {                                         // literal
             $literal = $v? (stripos($v, 'true') !== false): true;
 
-        } elseif ($k === 'md-compile') {                                      // md-compile
+        } elseif ($meta === 'md-compile') {                                      // md-compile
             $mdCompile = $v? (stripos($v, 'true') !== false): true;
 
-        } elseif (($k === 'showtill')) {                                      // showTill
+        } elseif (($meta === 'showtill')) {                                      // showTill
             $t = strtotime($v);
             if ($t < time()) {
                 $lang = 'none';
             }
 
-        } elseif (($k === 'showfrom')) {                                      // showFrom
+        } elseif (($meta === 'showfrom')) {                                      // showFrom
             $t = strtotime($v);
             if ($t > time()) {
                 $lang = 'none';
@@ -277,10 +279,10 @@ function parseInlineBlockArguments($str, $returnElements = false)
     }
 
     if ($returnElements) {
-        return [$tag, $id, $class, trim($style), $attr, $text, $comment];
+        return [$tag, $id, $class, trim($style), $attr, $text, $comment, rtrim($metaOut, ',')];
     } else {
         $str = "$id$class$style$attr";
-        return [$tag, $str, $lang, $comment, $literal, $mdCompile, $text];
+        return [$tag, $str, $lang, $comment, $literal, $mdCompile, $text, rtrim($metaOut, ',')];
     }
 } // parseInlineBlockArguments
 
