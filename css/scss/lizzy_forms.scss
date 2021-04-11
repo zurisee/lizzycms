@@ -58,7 +58,7 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
 
         * {
             box-sizing: border-box;
-            vertical-align: middle;
+            //vertical-align: middle;
         }
         label a,
         legend a {
@@ -75,16 +75,21 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         line-height: 2em;
     }
 
-    label {
+    .lzy-label-wrapper {
+        display: inline-block;
         width: 7em;
         width: var(--lzy-label-width, $label-width);
+    }
+    .lzy-label-wrapper,
+    label {
+//        width: 7em;
+//        width: var(--lzy-label-width, $label-width);
         display: inline-block;
         text-align: left;
     }
-
     input {
         width: 16em;
-        width: calc(100% - var(--lzy-label-width, #{$label-width}));
+        width: calc(100% - var(--lzy-label-width, #{$label-width}) - 6px);
         padding: 0.2em 0.4em;
         display: inline-block;
     }
@@ -151,6 +156,15 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
     /* === Password ================================ */
     .lzy-form-field-type-password {
         position: relative;
+        //> div {
+        .lzy-form-input-elem {
+            position: relative;
+            display: inline-block;
+            width: calc(100% - var(--lzy-label-width, #{$label-width}) - 6px);
+        }
+        input {
+            width: 100%;
+        }
 
         .lzy-form-pw-toggle {
             position: absolute;
@@ -228,7 +242,8 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         textarea {
             display: inline-block;
             margin: 0 0 0.5em;
-            width: calc(100% - var(--lzy-label-width, #{$label-width}));
+//            width: calc(100% - var(--lzy-label-width, #{$label-width}));
+            width: calc(100% - var(--lzy-label-width, #{$label-width}) - 6px);
             height: 5em;
         }
 
