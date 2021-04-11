@@ -98,6 +98,8 @@ class Lizzy
 	private $timer = false;
 	private $debugLogBuffer = '';
 	private $cspHeader = '';
+	private $loginFormRendered = false;
+	private $loginFormRequired = false;
 
 
 
@@ -304,7 +306,8 @@ private function loadRequired()
             $this->trans->loadUserComputedVariables();
         }
 
-        $this->appendLoginForm($accessGranted);   // sleeping code for popup population
+//        $this->appendLoginForm($accessGranted);   // sleeping code for popup population
+        $this->appendLoginForm();
         $this->handleAdminRequests2();
         $this->handleUrlArgs2();
 
@@ -516,7 +519,8 @@ private function loadRequired()
                 $ok = $this->auth->checkGroupMembership( $reqGroups );
             }
             if (!$ok) {
-                $this->renderLoginForm( false );
+//                $this->renderLoginForm( false );
+                $this->loginFormRequired = true;
                 return false;
             }
             setStaticVariable('isRestrictedPage', $this->auth->getLoggedInUser());
@@ -530,21 +534,29 @@ private function loadRequired()
 
 
 
-    private function appendLoginForm($accessGranted)
+//    private function appendLoginForm($accessGranted)
+    private function appendLoginForm()
     {
+        $user = getUrlArg('login', true);
+        if (!$this->loginFormRequired && ($user === null)) {
+            return '';
+        }
         if ( !$this->auth->getKnownUsers() ) { // don't bother with login if there are no users
             return;
         }
 
-        if (($user = getUrlArg('login', true)) !== null) {
+        if ($user !== null) {
+//        if (($user = getUrlArg('login', true)) !== null) {
             $this->renderLoginForm( true, $user );
 
-        } elseif (!$accessGranted) {
+//        } elseif (!$accessGranted && !$this->loginFormRendered) {
+        } else {
             $loginForm = $this->renderLoginForm( false );
-            $this->page->addContent($loginForm);
-            $this->page->addBodyClasses('lzy-page-override');
-            $jq = "initLzyPanel('.lzy-panels-widget', 1);";
-            $this->page->addJq( $jq );
+            $this->page->addOverride($loginForm);
+//            $this->page->addContent($loginForm);
+//            $this->page->addBodyClasses('lzy-page-override');
+//            $jq = "initLzyPanel('.lzy-panels-widget', 1);";
+//            $this->page->addJq( $jq );
         }
 
         if ($this->auth->isLoggedIn()) {   // signal in body tag class whether user is logged in
@@ -1999,6 +2011,10 @@ EOT;
 
     private function renderLoginForm($asPopup = true, $presetUser = false)
     {
+        if ($this->loginFormRendered) {
+            return '';
+        }
+        $this->loginFormRendered = true;
         $accForm = new UserAccountForm($this);
         $html = $accForm->renderLoginForm($this->auth->message, false, true);
         $jq = '';
