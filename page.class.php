@@ -614,6 +614,7 @@ EOT;
                 $override = compileMarkdownStr($override);
             }
             $this->addContent($override, true);
+            $this->addBodyClasses('lzy-page-override');
             return true;
 
         } else {
@@ -640,6 +641,7 @@ EOT;
             }
             $text = "\t<section class='lzy-overridden'>$text</section>\n";
             $this->addContent($text, true);
+            $this->addBodyClasses('lzy-page-override');
             return true;
         }
         return false;
