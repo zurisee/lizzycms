@@ -21,6 +21,7 @@ define('PAGE_CACHE_PATH',       CACHE_PATH.'pages/');
 define('LOGS_PATH',             '.#logs/');
 define('MACROS_PATH',           SYSTEM_PATH.'macros/');
 define('EXTENSIONS_PATH',       SYSTEM_PATH.'extensions/');
+define('LOCALES_PATH',          'locales/');
 define('USER_INIT_CODE_FILE',   USER_CODE_PATH.'init-code.php');
 define('USER_FINAL_CODE_FILE',  USER_CODE_PATH.'final-code.php');
 define('USER_VAR_DEF_FILE',     USER_CODE_PATH.'var-definitions.php');
@@ -59,7 +60,7 @@ define('PASSWORD_PLACEHOLDER', 	'●●●●');
 define('MKDIR_MASK',            0700); // permissions for file access by Lizzy
 define('MKDIR_MASK_WEBACCESS',  0755); // permissions for files cache
 
-$files = ['config/user_variables.yaml', '_lizzy/config/*', '_lizzy/macros/transvars/*'];
+$files = ['config/user_variables.yaml', SYSTEM_PATH.LOCALES_PATH.'*', '_lizzy/macros/'.LOCALES_PATH.'*'];
 
 
 use Symfony\Component\Yaml\Yaml;
@@ -100,6 +101,7 @@ class Lizzy
 	private $cspHeader = '';
 	private $loginFormRendered = false;
 	private $loginFormRequired = false;
+	public  $loginFormRequiredOverride = true; // to suppress login form in case of onetime code sent
 
 
 
@@ -213,7 +215,10 @@ private function loadRequired()
 
         $this->setDataPath();
 
-        $this->trans->readTransvarsFromFiles([ SYSTEM_PATH.'config/sys_vars.yaml', CONFIG_PATH.'user_variables.yaml' ]);
+        $this->trans->readTransvarsFromFiles([
+            SYSTEM_PATH.LOCALES_PATH.'sys_vars.yaml',
+            CONFIG_PATH.'user_variables.yaml'
+        ]);
 
         $this->auth = new Authentication($this);
 
@@ -306,7 +311,6 @@ private function loadRequired()
             $this->trans->loadUserComputedVariables();
         }
 
-//        $this->appendLoginForm($accessGranted);   // sleeping code for popup population
         $this->appendLoginForm();
         $this->handleAdminRequests2();
         $this->handleUrlArgs2();
@@ -519,8 +523,7 @@ private function loadRequired()
                 $ok = $this->auth->checkGroupMembership( $reqGroups );
             }
             if (!$ok) {
-//                $this->renderLoginForm( false );
-                $this->loginFormRequired = true;
+                $this->loginFormRequired = true; // login form rendered later in appendLoginForm()
                 return false;
             }
             setStaticVariable('isRestrictedPage', $this->auth->getLoggedInUser());
@@ -534,29 +537,23 @@ private function loadRequired()
 
 
 
-//    private function appendLoginForm($accessGranted)
     private function appendLoginForm()
     {
-        $user = getUrlArg('login', true);
-        if (!$this->loginFormRequired && ($user === null)) {
+        $presetUser = getUrlArg('login', true);
+        $loginFormRequired = $this->loginFormRequiredOverride && ($this->loginFormRequired || ($presetUser !== null));
+        if (!$loginFormRequired) {
             return '';
         }
         if ( !$this->auth->getKnownUsers() ) { // don't bother with login if there are no users
             return;
         }
 
-        if ($user !== null) {
-//        if (($user = getUrlArg('login', true)) !== null) {
-            $this->renderLoginForm( true, $user );
+        if ($presetUser !== null) {
+            $this->renderLoginForm( true, $presetUser );
 
-//        } elseif (!$accessGranted && !$this->loginFormRendered) {
         } else {
             $loginForm = $this->renderLoginForm( false );
             $this->page->addOverride($loginForm);
-//            $this->page->addContent($loginForm);
-//            $this->page->addBodyClasses('lzy-page-override');
-//            $jq = "initLzyPanel('.lzy-panels-widget', 1);";
-//            $this->page->addJq( $jq );
         }
 
         if ($this->auth->isLoggedIn()) {   // signal in body tag class whether user is logged in
@@ -2016,25 +2013,28 @@ EOT;
         }
         $this->loginFormRendered = true;
         $accForm = new UserAccountForm($this);
-        $html = $accForm->renderLoginForm($this->auth->message, false, true);
-        $jq = '';
-        $this->page->addModules('EVENT_UE,PANELS');
+        $preOpenPanel = $presetUser? 2:1;
+        $html = $accForm->renderLoginForm($this->auth->message, false, true, $preOpenPanel);
         if ($presetUser) {    // preset username if known
-            $jq .= "$('.lzy-login-username').val('$presetUser');\nsetTimeout(function() { $('.lzy-login-email').val('$presetUser').focus(); },500);";
+            $jq = <<<EOT
+$('#fld_lzy-login-username-1').val('$presetUser')
+setTimeout(function() { 
+    $('#fld_lzy-login-password-1').focus(); 
+}, 500);
+EOT;
+            $this->page->addJq( $jq );
         }
-        $jq .= "initLzyPanel('.lzy-panels-widget', 1);";
-        $this->page->addJq( $jq );
 
         if ($asPopup) {
             $this->page->addModules('POPUPS');
             $this->page->addJq("lzyPopup({ 
-                contentFrom: '#lzy-login-form',
-                closeOnBgClick: false, 
-                closeButton: true,
-                wrapperClass: 'lzy-login',
-                draggable: true,
-                header: '{{ lzy-login-header }}',
-            });");
+    contentFrom: '#lzy-login-form',
+    closeOnBgClick: false, 
+    closeButton: true,
+    wrapperClass: 'lzy-login',
+    draggable: true,
+    header: '{{ lzy-login-header }}',
+});", 'prepend');
 
             $html = <<<EOT
 
