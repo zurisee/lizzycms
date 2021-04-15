@@ -2482,3 +2482,17 @@ EOT;
 
     return $out;
 } // renderList
+
+
+
+
+function replaceQuotesByCodes( $str ) {
+    return str_replace(['"', "'"], ['&#34;', '&#39;'], $str);
+} // replaceQuotesToCodes
+
+
+
+
+function replaceCodesByQuotes( $str ) {
+    return str_replace(['&#34;', '&#39;'], ['"', "'"], $str);
+} // replaceCodesByQuotes
