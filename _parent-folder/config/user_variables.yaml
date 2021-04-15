@@ -10,10 +10,6 @@ page_title: $page_name / {{site_title}}
 webmaster_email: webmaster@domain.net
 webmaster_link: "<a href='mailto:{{webmaster_email}}'>Webmaster</a>"
 
-lzy-sign-up further info:
-    de: "<p>Für weitere Informationen kontaktieren Sie bitte den {{webmaster_link}}.</p><p><br />(Mit der Taste ESC dieses Overlay schliessen)</p>"
-    _:  "<p>For further information contact the {{webmaster_link}}.</p><p><br />(Press ESC to remove overlay)</p>"
-
 Main Menu:
     de: Hauptmenü
     _:  Main Menu
