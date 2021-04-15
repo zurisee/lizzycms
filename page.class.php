@@ -369,7 +369,6 @@ class Page
         }
 
         $str = trim($str, " \t\n");
-
         if ($replace === 'append') {
             $this->addToProperty('jqEnd', $str);
 
@@ -565,7 +564,7 @@ EOT;
             $this->$key = $var;
         } else {
             if ($this->$key) {
-                if (strpos('jq,js', $key) !== false) {
+                if (strpos('jq,js', substr($key,0,2)) !== false) {
                     $this->$key .= "\n$var";
                 } else {
                     $this->$key .= $var;
@@ -975,7 +974,6 @@ EOT;
 EOT;
 
         $assembledJs = '';
-        $assembledJq = '';
         if ($rootJs.$this->assembledJs) {
             $assembledJs = "\t\t".preg_replace("/\n/", "\n\t\t", $this->assembledJs);
             $assembledJs = <<<EOT
@@ -992,15 +990,20 @@ $bodyEndInjections
 EOT;
         }
 
+
+        $assembledJq = $this->assembledJq;
         if ($this->jqStart) {
-            $this->assembledJq = $this->jqStart . $this->assembledJq;
+            $assembledJq = $this->jqStart . $assembledJq;
         }
         if ($this->jqEnd) {
-            $this->assembledJq .= $this->jqEnd;
+            $assembledJq .= $this->jqEnd;
         }
 
-        if ($this->assembledJq) {
-            $assembledJq = "\t\t\t".preg_replace("/\n/", "\n\t\t\t", $this->assembledJq);
+        if ($assembledJq) {
+            if (strpos($assembledJq, '{{') !== false) {
+                $assembledJq = $this->trans->translate($assembledJq);
+            }
+            $assembledJq = "\t\t\t".preg_replace("/\n/", "\n\t\t\t", $assembledJq);
             $assembledJq = <<<EOT
 
         $( document ).ready(function() {
@@ -1015,6 +1018,7 @@ EOT;
         }
 
         $this->assembledJs = $assembledJs;
+
         $this->assembledJq = $assembledJq;
     } // assembleInlineJsAndJq
 
@@ -1584,11 +1588,11 @@ EOT;
             return;
         }
         // directly apply any config properties 'feature_...' to the global config values:
-        $featureConfigProps = $this->config->getConfigProperties( 'feature' );
+        $featureConfigProps = $this->config->getConfigProperties('feature');
         foreach ($featureConfigProps as $key => $value) {
             $k = substr($key, 8);
-            if (isset($hdr[ $k ])) {
-                $this->config->setConfigValue($key, $hdr[ $k ]);
+            if (isset($hdr[$k])) {
+                $this->config->setConfigValue($key, $hdr[$k]);
                 // special case 'dataPath': activate immediately (i.e. copy to S_SESSION and $GLOBALS):
                 if ($k === 'dataPath') {
                     $_SESSION['lizzy']['dataPath'] = $hdr['dataPath'];
@@ -1666,6 +1670,10 @@ EOT;
                 unset($hdr[$key]);
             }
             $this->mdVariables = $mdVariables;
+        }
+
+        if (isset($hdr['locales'])) {
+            $this->trans->readTransvarsFromFiles( $hdr['locales'] );
         }
     } // extractSettings
 
