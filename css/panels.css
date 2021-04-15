@@ -246,6 +246,7 @@ li.lzy-tabs-mode-panel-header {
             border: 1px solid #444;
         }
         /* Text in accordion-headers: */
+        #lzy .lzy-accordion-mode-panel-header a,
         .lzy-accordion-mode-panel-header a {
             color: #ddd;
         }

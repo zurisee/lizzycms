@@ -17,6 +17,7 @@ $this->addMacro($macroName, function () {
     $mode = $this->getArg($macroName, 'mode', '[ tabs | accordion | auto ] (optional) If set, forces a particular mode.', 'auto');
     $background = $this->getArg($macroName, 'background', 'Defines the background color, e.g. #ff0', '');
     $unselectedTabsBackground = $this->getArg($macroName, 'unselectedTabsBackground', '', '');
+    $class = $this->getArg($macroName, 'class', 'The class applied to the panel\'s wrapper element.', '');
     $outlineColor = $this->getArg($macroName, 'outlineColor', 'Defines the background color of unselected tabs', '');
     $selectedTextColor = $this->getArg($macroName, 'selectedTextColor', 'Defines text color of selected tabs', '');
     $unselectedTextColor = $this->getArg($macroName, 'unselectedTextColor', 'Defines text color of unselected tabs', '');
@@ -66,6 +67,10 @@ $this->addMacro($macroName, function () {
 
     } elseif ($mode === 'tabs') {
         $this->page->addJq("$('$widgetSelector').addClass('lzy-tabs'); setMode();\n");
+    }
+
+    if ($class) {
+        $this->page->addJq("$('$widgetSelector').addClass('$class');\n");
     }
 
     if ($tilted) {

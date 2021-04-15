@@ -43,8 +43,6 @@ function LzyPanels()
     this.setupCloseButtonHandler = function() {
         var parent = this;
         if (this.closeButton) {
-            // $('.lzy-panel-close-btn').unbind('click');
-            // $('.lzy-panel-close-btn').click(function() {
             $('body').on('click', '.lzy-panel-close-btn', function() {
                 var $thisLi = $(parent).closest('li');
                 var $next = $thisLi.next();
@@ -127,10 +125,6 @@ function LzyPanels()
             $thisWidget.attr('data-lzy-panels', panels.length);
 
             var header = '';
-            // if (typeof parent.closeButton === 'undefined') {
-            //     parent.closeButton = '';
-            // }
-
             // create tabs header row:
             for (i = 0; i < panels.length; ++i) {
                 var hdrText = panels[i];
@@ -208,7 +202,7 @@ function LzyPanels()
             .attr('id', 'lzy-tabs-mode-panel-header-id' + newN)
             .attr('aria-controls', 'lzy-panel-id' + newN)
             .attr('aria-selected', 'false')
-        // .attr('aria-posinset', nPanels)
+        // .attr('aria-posinset', nPanels) //??? moved elsewhere?
         ;
         $('.lzy-tabs-mode-panels-header-list', $thisWidget).append( $newH );
 
