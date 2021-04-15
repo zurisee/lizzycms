@@ -39,7 +39,9 @@ class Authentication
         if (isset($_POST['lzy-login-username']) && isset($_POST['lzy-login-password'])) {    // user sent un & pw
             $credentials = array('username' => $_POST['lzy-login-username'], 'password' => $_POST['lzy-login-password']);
             if (($user = $this->validateCredentials($credentials))) {
-                $res = [$user, "{{ lzy-login-successful }}", 'Message'];
+                $user = $this->setUserAsLoggedIn($user);
+                $msg = $this->lzy->trans->translate('{{ lzy-login-successful-as }}');
+                reloadAgent(false, "$msg: $user");
             } else {
                 $res = [null, "{{ lzy-login-failed }}", 'Message'];
             }
@@ -54,9 +56,8 @@ class Authentication
 
         if ($res === null) {        // no login attempt detected -> check whether already logged in:
             if (isset($_GET['logout'])) {
-                unset($_GET['logout']);
                 $this->logout();
-                return;
+                reloadAgent();
             }
             $user = $this->setUserAsLoggedIn();
             $res = true;
@@ -192,7 +193,7 @@ EOT;
 
         $getArg = false;
         if ($userRec) {
-            $user = $userRec['username'];
+            $user = $username = $userRec['username'];
             $this->setUserAsLoggedIn( $user, null, $oneTimeRec["email"] );
             $user .= " ({$oneTimeRec['email']})";
             writeLogStr("one time link accepted: $user [".getClientIP().']', LOGIN_LOG_FILENAME);
@@ -201,7 +202,9 @@ EOT;
                 // access granted, remove hash-code from url, if there is one:
                 $requestedUrl = $GLOBALS['globalParams']['requestedUrl'];
                 $requestedUrl = preg_replace('|/[A-Z][A-Z0-9]{4,}/?$|', '', $requestedUrl);
-                reloadAgent($requestedUrl, 'lzy-login-successful'); // access granted, remove hash-code from url
+                $requestedUrl = preg_replace('|/\?.*$|', '', $requestedUrl);
+                $msg = $this->lzy->trans->translate('{{ lzy-login-successful-as }}');
+                reloadAgent($requestedUrl, "$msg: $username");
             }
         }
         return $getArg;
@@ -214,22 +217,28 @@ EOT;
         // checks whether there is a pending oneTimeAccessCode, purges old entries
         $tick = new Ticketing();
         $code = strtoupper($code);
-        $ticket = $tick->consumeTicket($code);
+        $ticket = $tick->consumeTicket($code, true); // type=true keeps '_ticketType' from being suppressed $ticket
         if (!$ticket) {
             $errMsg = $tick->getLastError();
             $this->lastLogMsg = "*** one-time link rejected: $code ($errMsg) [".getClientIP().']';
             return false;
         }
+
         if ($ticket['_ticketType'] === 'user-ticket') {
             $user = $ticket['user'];
             $this->lzy->reqPagePath = $ticket['link'];
             $this->setUserAsLoggedIn($user);
             return 'ok';
-        }
-        $username = $ticket ['username'];
-        $userRec = $this->getUserRec( $username );
 
-        return [$userRec, $ticket];
+        } elseif ($ticket['_ticketType'] === 'ot-access-ticket') { // reponse from login-by-email
+            $username = $ticket ['username'];
+            $userRec = $this->getUserRec($username);
+            return [$userRec, $ticket];
+
+        } else {
+            $this->lastLogMsg = "*** one-time link rejected: $code (wrong ticket-type) [".getClientIP().']';
+            return false;
+        }
     } // readOneTimeAccessCode
 
 
@@ -1003,6 +1012,7 @@ EOT;
             } else {
                 list($message, $displayName) = $this->sendOneTimeCode($emailRequest, $rec);
                 $res = [false, $message, 'Override'];   // if successful, a mail with a link has been sent and user will be authenticated on using that link
+                $this->lzy->loginFormRequiredOverride = false;
             }
         } else {
             $res = [false, "<p>{{ lzy-login-user-unknown }}</p>", 'Message'];   //

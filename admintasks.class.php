@@ -14,7 +14,7 @@ class AdminTasks
         $this->trans = $lzy->trans;
         $this->loggedInUser = $this->auth->getLoggedInUser();
 
-        $this->trans->readTransvarsFromFile('~sys/config/admin.yaml', false, true);
+        $this->trans->readTransvarsFromFile('~sys/' .LOCALES_PATH. '/admin.yaml', false, true);
         $this->userAdminInitialized = file_exists(CONFIG_PATH.$this->lzy->config->admin_usersFile);
     }
 
@@ -648,7 +648,6 @@ EOT;
 
 
     public function updateDbUserRec($user, $rec, $overwrite = false)
-//    private function updateDbUserRec($user, $rec)
     {
         $userRecs = $this->auth->getKnownUsers();
         if (!isset($userRecs[$user])) {
@@ -684,7 +683,7 @@ EOT;
             $displayName = $submittedEmail;
         }
 
-        $tick = new Ticketing(['unambiguous' => true]);
+        $tick = new Ticketing(['unambiguous' => true, 'defaultType' => 'ot-access-ticket']);
 
         $otRec = ['username' => $user, 'email' => $submittedEmail,'mode' => $mode];
         $hash = $tick->createTicket($otRec, 1, $accessCodeValidyTime);
@@ -699,6 +698,7 @@ EOT;
             $userAcc = new UserAccountForm(null);
 
             $message = $userAcc->renderOnetimeLinkEntryForm($user, $validUntilStr, 'lzy-onetime access link');
+            $this->lzy->loginFormRequiredOverride = false;
             writeLogStr("one time link sent to: $submittedEmail -> '$hash'", LOGIN_LOG_FILENAME);
 
         } elseif ($mode === 'email-signup') {
@@ -763,7 +763,7 @@ EOT;
                 continue;
             }
 
-            $tick = new Ticketing();
+            $tick = new Ticketing(['defaultType' => 'user-ticket']);
 
             $otRec = ['username' => '', 'displayName' => $name, 'email' => $email, 'mode' => 'user-signup-invitation', 'groups' => $groups];
             $ac = get_post_data('lzy-invite-user-create-hash-');
