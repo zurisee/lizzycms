@@ -113,77 +113,72 @@ class Transvar
             // handle macro-modifiers, e.g. {{# }}
             $var = $this->handleModifers($var);
 
-            // if dontCache set for this var/macro -> shield now and translate after read-cache:
-            if ($GLOBALS['globalParams']['cachingActive'] && $this->dontCache) {
-                $str = $this->shieldVariableInstanceForCache($str, $p1, $var, $p2);
+            if ($this->commmented) {
+                $str = substr($str, 0, $p1) . substr($str, $p2 + 2);
 
-            } else {
-                if ($this->commmented) {
-                    $str = substr($str, 0, $p1) . substr($str, $p2 + 2);
+            } else { // not commented
+                if (strpos($var, '{{') !== false) {     // nested transvar/macros
+                    $modified |= $this->doTranslate($var, $iterationDepth + 1);
+                }
 
-                } else { // not commented
-                    if (strpos($var, '{{') !== false) {     // nested transvar/macros
-                        $modified |= $this->doTranslate($var, $iterationDepth + 1);
+                // special option 'showSource':
+                if (preg_match('/^(\S+) \( (.*?) \)/x', $var, $m1) && preg_match('/showSource:\s*([-\w\s\'"]*),?\s*/ms',$var, $m2)) {
+                    $macName = str_replace('-', '', $m1[1]);
+                    $mode = $m2[1]; // popup or true
+                    $skipMd = false;
+                    if (preg_match('/skipmd/i', $mode, $m)) {
+                        $mode = str_replace($m[0], '', $mode);
+                        $skipMd = true;
                     }
-
-                    // special option 'showSource':
-                    if (preg_match('/^(\S+) \( (.*?) \)/x', $var, $m1) && preg_match('/showSource:\s*([-\w\s\'"]*),?\s*/ms',$var, $m2)) {
-                        $macName = str_replace('-', '', $m1[1]);
-                        $mode = $m2[1]; // popup or true
-                        $skipMd = false;
-                        if (preg_match('/skipmd/i', $mode, $m)) {
-                            $mode = str_replace($m[0], '', $mode);
-                            $skipMd = true;
-                        }
-                        $srcCode = str_replace($m2[0], '', $var);
-                        if ($skipMd) {
-                            $srcCode = preg_replace(['/(?<!\\\\)<strong>/', '/(?<!\\\\)<\/strong>/'], '**', $srcCode);
-                            $srcCode = preg_replace(['/(?<!\\\\)<em>/', '/(?<!\\\\)<\/em>/'], '_', $srcCode);
-                        } else {
-                            $var = preg_replace(['/(?<!\\\\)<strong>/', '/(?<!\\\\)<\/strong>/'], '', $var);
-                            $var = preg_replace(['/(?<!\\\\)<em>/', '/(?<!\\\\)<\/em>/'], '', $var);
-                        }
-
-                        // remove styling instructions from code: **
-                        $var = preg_replace('|//.*?↵|', '', $var);
-
-                        $this->macroSources[$macName][$this->varCount] = [
-                            'text' => $srcCode,
-                            'mode' => $mode,
-                            'args' => trim( $m1[2] ),
-                        ];
-                    }
-                    if (strpos($var, "\n")) {
-                        $var = str_replace("\n", '', $var);    // remove newlines
-                    }
-
-                    // ----------------------------------------------------------------------- translate now:
-                    if (preg_match('/^([\w\-]+)\((.*)\)/', $var, $m)) {    // macro
-                        $macro = $m[1];
-                        $macro = str_replace('-', '', $macro);
-                        $argStr = $m[2];
-                        $val = $this->translateMacro($macro, $argStr);
-
-                    } else {                                        // variable
-                        $val = $this->translateVariable($var);
-                    }
-
-                    // postprocessing:
-                    if (!$this->optional && ($val === false)) { // handle case when element unknown:
-                        $str = substr($str, 0, $p1) . $var . substr($str, $p2 + 2);
+                    $srcCode = str_replace($m2[0], '', $var);
+                    if ($skipMd) {
+                        $srcCode = preg_replace(['/(?<!\\\\)<strong>/', '/(?<!\\\\)<\/strong>/'], '**', $srcCode);
+                        $srcCode = preg_replace(['/(?<!\\\\)<em>/', '/(?<!\\\\)<\/em>/'], '_', $srcCode);
                     } else {
-                        $before = substr($str, 0, $p1);
-                        $after = substr($str, $p2 + 2);
-
-                        // remove spurious <p></p>:
-                        if ((substr($before, -3) === '<p>') && (substr($after, 0, 4) === '</p>')) {
-                            $before = substr($before, 0, -3);
-                            $after = substr($after, 4);
-                        }
-                        $str = $before . $val . $after;
+                        $var = preg_replace(['/(?<!\\\\)<strong>/', '/(?<!\\\\)<\/strong>/'], '', $var);
+                        $var = preg_replace(['/(?<!\\\\)<em>/', '/(?<!\\\\)<\/em>/'], '', $var);
                     }
+
+                    // remove styling instructions from code: **
+                    $var = preg_replace('|//.*?↵|', '', $var);
+
+                    $this->macroSources[$macName][$this->varCount] = [
+                        'text' => $srcCode,
+                        'mode' => $mode,
+                        'args' => trim( $m1[2] ),
+                    ];
+                }
+                if (strpos($var, "\n")) {
+                    $var = str_replace("\n", '', $var);    // remove newlines
+                }
+
+                // ----------------------------------------------------------------------- translate now:
+                if (preg_match('/^([\w\-]+)\((.*)\)/', $var, $m)) {    // macro
+                    $macro = $m[1];
+                    $macro = str_replace('-', '', $macro);
+                    $argStr = $m[2];
+                    $val = $this->translateMacro($macro, $argStr);
+
+                } else {                                        // variable
+                    $val = $this->translateVariable($var);
+                }
+
+                // postprocessing:
+                if (!$this->optional && ($val === false)) { // handle case when element unknown:
+                    $str = substr($str, 0, $p1) . $var . substr($str, $p2 + 2);
+                } else {
+                    $before = substr($str, 0, $p1);
+                    $after = substr($str, $p2 + 2);
+
+                    // remove spurious <p></p>:
+                    if ((substr($before, -3) === '<p>') && (substr($after, 0, 4) === '</p>')) {
+                        $before = substr($before, 0, -3);
+                        $after = substr($after, 4);
+                    }
+                    $str = $before . $val . $after;
                 }
             }
+
             $this->nestingDepth--;
             list($p1, $p2) = strPosMatching($str, '{{', '}}', $p1+1);
 		}
