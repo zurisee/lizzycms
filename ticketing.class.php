@@ -161,7 +161,7 @@ class Ticketing
             return false;
         }
 
-        if ($type && ($type !== $ticketRec['_ticketType'])) {
+        if (is_string($type) && ($type !== $ticketRec['_ticketType'])) {
             $ticketRec = false;
             $this->lastError = 'ticket was of wrong type';
 
@@ -187,7 +187,7 @@ class Ticketing
             if ($_ticketType === 'sessionVar') {     // type 'sessionVar': make ticket available in session variable
                 $_SESSION['lizzy']['ticket'] = $ticketRec;
             }
-            if ($type || ($ticketRec['_ticketType']=== 'generic')) {
+            if ($type !== true) {
                 unset($ticketRec['_ticketType']);
             }
         }
