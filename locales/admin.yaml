@@ -6,10 +6,22 @@
 #    de: 'Ihre neue E-Mail Adresse wurde gespeichert'
 #    _:  'Your new e-mail address has been stored successfully'
 #
-# Login / onetime-link:
+
+
+
+# Login:
+lzy-login-with-password:
+    de: 'Per Benutzername &amp; Kennwort'
+    _:  'By Username &amp; Password'
+
+lzy-login-without-password:
+    de: 'Per E-Mail'
+    _:  'By E-Mail'
+
+
 lzy-onetimelogin-request-prompt:
-    de: 'E-Mail Adresse'
-    _:  'E-mail address'
+    de: 'E-Mail Adresse:'
+    _:  'E-mail address:'
     
 lzy-onetimelogin-request-title:
     de: "Hilfe: Zugang per E-Mail"
@@ -28,8 +40,54 @@ lzy-onetimelogin-request-info-text:
     <p>Note: for this to work your e-mail address must be registered. Contact the {{ Webmaster }} if that is not the case.</p>"
 
 lzy-onetime-link-send:
-    de: 'Zugangscode senden'
-    _:  'Send access code'
+    de: 'Zugangscode anfordern'
+    _:  'Request access code'
+
+lzy-login-username-prompt:
+    de: E-Mail Adresse (oder Benutzername)
+    en: E-mail address (or username)
+
+lzy-login-username-info-text:
+    de: |
+        <p>Falls Sie <em>Benutzernamen</em> und <em>Kennwort</em> kennen, können Sie sich hier anmelden.</p>
+        <p>Geben Sie hier Ihren <strong>Benutzernamen</strong> ein.&nbsp;
+        Üblicherweise entspricht dies Ihrer E-Mail Adresse.</p>
+    en: |
+        <p>If you know your username and password you can log in now.</p>
+        <p>Enter your <strong>username</strong> here.&nbsp;
+        Usually, this is your e-mail address.</p>
+
+lzy-login-password-prompt:
+    de: Kennwort
+    en: Password
+
+lzy-login-show-password:
+    de: 'Kennwort anzeigen/verstecken'
+    _:  'Show/hide password'
+
+lzy-login-password-info-text:
+    de: |
+        <p>Geben Sie hier Ihr <strong>Kennwort</strong> ein.</p>
+        <p>Verwenden Sie &#34;Anmelden ohne Kennwort&#34;,&nbsp;
+        falls Sie ihr Kennwort nicht kennen (oder dieses nicht funktionierte).</p>
+    en: |
+        <p>Enter your <strong>password</strong> here.</p>
+        <p>Use &#34;By E-Mail&#34; if you don&#39;t have your password available (or if that didn&#39;t work).</p>
+
+lzy-login-submit:
+    de: Anmelden
+    en: Log in
+
+lzy-login-show-info-title:
+    de: 'Erläuterungen anzeigen'
+    _:  'Show explanations'
+
+
+
+
+
+
+
 
 lzy-login-user-unknown:
     de: 'Keinen entsprechenden Benutzer gefunden.'
@@ -52,8 +110,8 @@ lzy-email-access-link1:
     _:  "\n\nSomebody requested an access code using your e-mail address.\nIf you know nothing about it, please ignore this message.\n\nHere is the link with which you can access the webpage: \n\n\t"
 
 lzy-email-access-link2:
-    de: "\n\nSie können auch den folgenden Code ins Eingabefeld in der Website eintragen:"
-    _:  "\n\nOr you can enter the following code into the entry field in the webpage:"
+    de: "\n\nAlternativ können Sie auch den folgenden Code ins Eingabefeld in der Website eintragen:"
+    _:  "\n\nAlternatively, you can enter the following code into the entry field in the webpage:"
 
 lzy-email-access-link3:
     de: "\n\nBitte beachten Sie, dass der Link und der Code nur einmal innerhalb der nächsten 15 Minuten funktioniert.\n\nBeste Grüsse, Ihre Lizzy\n"
@@ -166,21 +224,9 @@ lzy-login-with-choice:
     _:  Log in
 
 
-lzy-login-with-password:
-    de: 'Per Benutzername &amp; Kennwort'
-    _:  'By Username &amp; Password'
-
-lzy-login-without-password:
-    de: 'Per E-Mail'
-    _:  'By E-Mail'
-
 lzy-add-user-group-is:
     de: Gruppe
     _:  Group
-
-lzy-login-show-password:
-    de: Kennwort offen anzeigen
-    _:  Show password in plain text
 
 
 # Change PW Form:
@@ -311,11 +357,11 @@ lzy-onetime access link sent:
     de: |
         <h1>Zugangs-Link versendet</h1>
         <p>Wir haben eine E-Mail an Sie gesendet. Diese enthält einen <strong>Link</strong>.<br />
-        &rarr; Klicken Sie auf diesen Link. So gelangen Sie zurück zu dieser Seite. </p>
+        &rarr; Klicken Sie auf diesen Link. So gelangen Sie zurück zur Seite und sind gleich angemeldet.</p>
     _:  |
         <h1>Access Link sent</h1>
         <p>We have sent an e-mail to you. It contains a <strong>link</strong>.<br />
-        &rarr; Click on this link to access the web-page you wanted to see. </p>
+        &rarr; Click on this link, which takes you to the requested web-page and logs you in automatically.</p>
 
 lzy-enter onetime code:
     de: "Code aus zugesandter E-Mail:"
@@ -329,10 +375,9 @@ lzy-onetime access link sent3:
     de: ".<p><br />Alternativ können Sie sich auch mit Benutzername und Kennwort anmelden.</p>"
     _:  ".<p><br />Alternatively, if you have a valid username and password you may log in directly.</p>"
 
-#lzy-sign-up further info:
-#    de: "<p>Weitere Informationen finden Sie unter: <a href='https://getlizzy.net' target='_blank'>getlizzy.net</a></p><p><br />(Mit der Taste ESC dieses Overlay schliessen)</p>"
-#    _:  "<p>For further information goto:  <a href='https://getlizzy.net' target='_blank'>getlizzy.net</a></p><p><br />(Press ESC to remove overlay)</p>"
-# -> user_variables.yaml
+lzy-sign-up further info:
+    de: "<p>Für weitere Informationen kontaktieren Sie bitte den {{ webmaster_link }}.</p>"
+    _:  "<p>For further information contact the {{ webmaster_link }}.</p>"
 
 
 # Change Password:
@@ -418,8 +463,8 @@ lzy-email-change-mail-up1:
         Please click on this link to confirm your e-mail address: \n\t
     
 lzy-email-change-mail-up2:
-    de: "\n\nSie können auch den folgenden Code ins Eigabefeld in der Website eintragen:"
-    _:  "\n\nOr you can enter the following code into the entry field in the webpage:"
+    de: "\n\nAlternativ können Sie den folgenden Code ins Eigabefeld in der Website eintragen:"
+    _:  "\n\nAlternatively, you can enter the following code into the entry field in the webpage:"
 
 lzy-email-change-mail-up3:
     de: |

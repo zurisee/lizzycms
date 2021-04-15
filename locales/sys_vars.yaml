@@ -406,46 +406,19 @@ lzy-onetimelogin-email-info-text:
         <p>Note: for this to work your e-mail address must be registered.
         Contact the {{ webmaster_link }} if that is not the case.</p>
 
-lzy-login-username-prompt:
-    de: E-Mail Adresse (oder Benutzername)
-    en: E-mail address (or username)
-
 info-lzy-onetimelogin-title:
-
-lzy-login-username-info-text:
-    de: |
-        Falls Sie Benutzernamen und Kennwort kennen, können Sie sich hier anmelden.
-        Geben Sie in das folgende Feld Ihren Benutzernamen ein.
-        Dies entspricht normalerweise Ihrer E-Mail Adresse.
-    en: |
-        If you know your username and password you can log in now.
-        Enter your username in the following field.
-        Usually your e-mail address is used as your username.
-
-lzy-login-password-prompt:
-    de: Kennwort
-    en: Password
 
 lzy-login-username-info-title:
     de: Hilfe
     en: Help
 
-lzy-login-password-info:
-    de: |
-        Geben Sie hier Ihr Kennwort ein.
-        Verwenden Sie &#34;Anmelden ohne Kennwort&#34;,
-        falls Sie ihr Kennwort nicht kennen (oder dieses nicht funktionierte).
-    en: |
-        Enter your password here.
-        Use <strong>login by e-mail</strong> if you don&#39;t have your password available (if that didn&#39;t work).
-
 login-email-prompt:
     de: Ihre E-Mail Adresse
     en: Your e-mail address
 
-lzy-login-send:
-    de: Anmelden
-    en: Login
+#lzy-login-send:
+#    de: Anmelden
+#    en: Login
 
 Login comment:
     de: Um diese Seite zu sehen, benötigen Sie gültige Zugangsdaten.
@@ -511,6 +484,10 @@ email required for one-time-access-link:
 lzy-login-successful:
     de: 'Sie sind jetzt angemeldet.'
     _: 'You are successfully logged in now.'
+
+lzy-login-successful-as:
+    de: 'Sie sind jetzt angemeldet als'
+    _: 'You are successfully logged in now as'
 
 lzy-logout-successful:
     de: 'Sie sind jetzt abgemeldet.'
