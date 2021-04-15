@@ -47,6 +47,10 @@ $this->addMacro($macroName, function () {
         $this->getArg($macroName, 'options', '[nocolor,validate,norequiredcomment] "nocolor" disables default coloring '.
             'of form elements; "validate" enables form validation by browser; "norequiredcomment" suppresses the explation of *=required', '');
 
+        $this->getArg($macroName, 'labelWidth', '[width incl. unit] Defines the default label width, e.g. "8em" (default: 6em)', 'auto');
+
+        $this->getArg($macroName, 'labelPosition', '[left,above,auto] Defines where field labels are positioned (default: auto)', 'auto');
+
         $this->getArg($macroName, 'translateLabels', 'If true, Lizzy will try to translate all labels in this form (default: false)', '');
 
         $this->getArg($macroName, 'formTimeout', 'Defines the max time a user can wait between opening the form and '.

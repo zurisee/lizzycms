@@ -14,7 +14,7 @@ define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,ma
     'encapsulate,formTimeout,avoidDuplicates,export,exportKey,confirmationEmail,'.
     'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,'.
     'validate,showData,showDataMinRows,options,encapsulate,disableCaching,'.
-    'translateLabel,formName,formHeader,formHint,formFooter,');
+    'translateLabel,labelPosition,formName,formHeader,formHint,formFooter,showSource,');
 
 define('ELEM_ATTRIBUTES', 	    ',label,type,id,class,wrapperClass,name,required,value,'.
 	'options,optionLabels,layout,info,comment,translateLabel,'.
@@ -166,6 +166,7 @@ class Forms
 
         $currForm->formName = $label;
         $currForm->translateLabels = (isset($args['translateLabels'])) ? $args['translateLabels'] : false;
+        $currForm->labelPosition = (isset($args['labelPosition'])) ? $args['labelPosition'] : 'auto';
 
         $currForm->class = (isset($args['class'])) ? $args['class'] : 'lzy-form';
         $currForm->wrapperClass = (isset($args['wrapperClass'])) ? $args['wrapperClass'] : '';
@@ -177,6 +178,7 @@ class Forms
         $currForm->formHeader = (isset($args['legend'])) ? $args['legend'] : $currForm->formHeader;
         $currForm->formHint = (isset($args['formHint'])) ? $args['formHint'] : '';
         $currForm->formFooter = (isset($args['formFooter'])) ? $args['formFooter'] : '';
+
         $currForm->customResponseEvaluation = (isset($args['customResponseEvaluation'])) ? $args['customResponseEvaluation'] : '';
         $currForm->next = (isset($args['next'])) ? $args['next'] : './';
         $currForm->file = (isset($args['file'])) ? $args['file'] : '';
@@ -195,6 +197,7 @@ class Forms
         $currForm->confirmationEmail = (isset($args['confirmationEmail'])) ? $args['confirmationEmail'] : false;
         $currForm->confirmationEmailTemplate = (isset($args['confirmationEmailTemplate'])) ? $args['confirmationEmailTemplate'] : false;
         $currForm->labelColons = (isset($args['labelColons'])) ? $args['labelColons'] : true;
+        $currForm->labelWidth = (isset($args['labelWidth'])) ? $args['labelWidth'] : false;
         if ($currForm->export === true) {
             $currForm->export = DEFAULT_EXPORT_FILE;
         }
@@ -252,6 +255,18 @@ class Forms
 
         $currForm->ticketPayload = (isset($args['ticketPayload'])) ? $args['ticketPayload'] : null;
         $currForm->ticketHash = (isset($args['ticketHash'])) ? $args['ticketHash'] : false;
+
+        if (stripos('above', $currForm->labelPosition) !== false) {
+            $currForm->class .= ' lzy-form-labels-above';
+        }
+
+        $jq = <<<EOT
+$('.lzy-textarea-autogrow textarea').on('input', function() {
+    this.parentNode.dataset.replicatedValue = this.value;
+});
+EOT;
+
+        $this->page->addJq( $jq );
 
         return 'form-head';
     } // parseHeadElemArgs
@@ -340,7 +355,6 @@ class Forms
         }
         $rec->label = $label;
 
-//        $rec->class = @$args['class'] ? "{$args['class']} lzy-form-input-elem" : 'lzy-form-input-elem';
         $rec->class = @$args['class'] ? $args['class'].' ' : '';
         $rec->wrapperClass = @$args['wrapperClass']? $args['wrapperClass']: '';
 
@@ -467,7 +481,8 @@ EOT;
         $rec->errorMsg = (isset($args['errorMsg'])) ? $args['errorMsg'] : '';
         $rec->autoGrow = (isset($args['autoGrow'])) ? $args['autoGrow'] : true;
         $rec->fieldWrapperAttr = (isset($args['fieldWrapperAttr'])) ? ' '.$args['fieldWrapperAttr'] : '';
-        $cutomImpAttr = (isset($args['inpAttr'])) ? ' '.$args['inpAttr'] : '';
+        $cutomImpAttr = (isset($args['inputAttr'])) ? ' '.$args['inputAttr'] : '';
+        $cutomImpAttr = replaceCodesByQuotes( $cutomImpAttr );
 
         foreach (['min', 'max', 'pattern', 'placeholder'] as $attr) {
             if (isset($args[$attr])) {
@@ -681,7 +696,8 @@ EOT;
             if ($this->currRec->comment) {
                 $comment = "\t<span class='lzy-form-elem-comment'><span>{$this->currRec->comment}</span>\n\t\t</span>";
             }
-		    $out = "\t\t<div $class{$this->currRec->fieldWrapperAttr}>$error\n$elem\t\t$comment</div><!-- /field-wrapper -->\n\n";
+            $out = "\n\t\t<!-- [{$this->currRec->label}] -->\n";
+		    $out .= "\t\t<div $class{$this->currRec->fieldWrapperAttr}>$error\n$elem\t\t$comment</div><!-- /field-wrapper -->\n\n";
         } elseif ($this->currRec->type !== 'bypassed') {
             $out = "\t\t$elem";
         }
@@ -726,6 +742,13 @@ EOT;
         $currForm = $this->currForm;
 
         $this->initButtonHandlers();
+
+        if ($currForm->labelWidth) {
+            if (!preg_match('/\D/', $currForm->labelWidth)) {
+                $currForm->labelWidth .= 'px';
+            }
+            $this->page->addCss("\n#$formId { --lzy-label-width: {$currForm->labelWidth}; };");
+        }
 
         $this->userSuppliedData = $this->getUserSuppliedDataFromCache($formId);
         $currForm->creationTime = time();
@@ -814,28 +837,13 @@ EOT;
             $out .= "\t\t\t<div class='lzy-form-field-errorMsg' aria-hidden='true'>{$this->currRec->errorMsg}</div>\n";
         }
         $out .= $this->getLabel(); // includes infoIcon
-//        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
         $value = $this->getValueAttr();
         $autocomplete = $this->currRec->autocomplete? " autocomplete='{$this->currRec->autocomplete}'": '';
-//        $descrId = "{$this->currRec->fldPrefix}{$this->currRec->elemId}-descr";
-//        $descrBy = $this->currRec->description? " aria-describedby='$descrId'": '';
-//        $descrBy = '';
         list($descrBy, $description) = $this->renderElemDescription();
-//        if ($this->currRec->description) {
-//            $descrId = "{$this->currRec->fldPrefix}{$this->currRec->elemId}-descr";
-//            $descrBy = " aria-describedby='$descrId'";
-//
-//        } elseif ($this->currRec->info) {
-//            $descrId = $this->currRec->infoId;
-//            $descrBy = " aria-describedby='{$this->currRec->infoId}'";
-//        }
 
         $out .= "\t\t\t<input type='text' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value$autocomplete$descrBy />\n";
         $out .= $description;
-//        if ($this->currRec->description) {
-//            $out .= "\t\t\t<div id='$descrId' class='lzy-form-field-description'>{$this->currRec->description}</div>\n";
-//        }
         return $out;
     } // renderText
 
@@ -848,8 +856,6 @@ EOT;
         $label = $this->getLabel();
         list($descrBy, $description) = $this->renderElemDescription();
         $input = "<input type='password' class='lzy-form-password' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr} aria-invalid='false'$cls$descrBy />\n";
-//        $input = "<input type='password' class='lzy-form-password' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr} aria-invalid='false'$cls />\n";
-//        $input = "<input type='password' class='lzy-form-password' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr} aria-invalid='false' aria-describedby='password-hint'$cls />\n";
         $id = "lzy-form-show-pw-{$this->formInx}-{$this->inx}";
         $showPw = <<<EOT
                     <label class='lzy-form-pw-toggle' for="$id">
@@ -858,12 +864,8 @@ EOT;
                     </label>
 
 EOT;
-//        $out = $this->getLabel();
-//        $out .= $input;
-//        $out .= $input . $showPw;
         $out = str_replace("\n", "\n\t\t", $label);
         if (@$this->currRec->{"reverse-order"}) {
-//            $out = "\t\t\t<div class='lzy-form-pw-wrapper'>\n\t\t\t  <div class='lzy-form-input-elem'>\n\t\t\t  $input$showPw\t\t\t</div>\n$out</div>\n";
             $out = <<<EOT
             <div class='lzy-form-pw-wrapper'>
                 <div class='lzy-form-input-elem'>
@@ -876,7 +878,6 @@ EOT;
 
 
         } else {
-//            $out .= "<div class='lzy-form-input-elem'>\n\t\t\t  $input$showPw\t\t\t</div>\n";
             $out .= <<<EOT
             <div class='lzy-form-input-elem'>
                 $input$showPw
@@ -894,16 +895,21 @@ EOT;
 
     private function renderTextarea()
     {
-//        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
         $value = @$this->currRec->prefill;
         $out = $this->getLabel();
+        list($descrBy, $description) = $this->renderElemDescription();
         if ($this->currRec->autoGrow) {
-//            $out .= "\n\t\t\t<div class='lzy-textarea-autogrow'>\n\t\t\t\t<textarea id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls onInput='this.parentNode.dataset.replicatedValue = this.value'>$value</textarea>\n\t\t\t</div>\n";
-            $out .= "\n\t\t\t<div class='lzy-textarea-autogrow lzy-form-input-elem'>\n\t\t\t\t<textarea id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls onInput='this.parentNode.dataset.replicatedValue = this.value'>$value</textarea>\n\t\t\t</div>\n";
+            $out .= <<<EOT
+            <div class='lzy-textarea-autogrow lzy-form-input-elem'>
+                <textarea id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$descrBy>$value</textarea>
+            </div><!-- /lzy-form-input-elem -->
+EOT;
+
         } else {
-            $out .= "<textarea id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls>$value</textarea>\n";
+            $out .= "<textarea id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$descrBy>$value</textarea>\n";
         }
+        $out .= $description;
         return $out;
     } // renderTextarea
 
@@ -912,11 +918,12 @@ EOT;
 
     private function renderEMail()
     {
-//        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
         $value = $this->getValueAttr('email');
         $out = $this->getLabel();
-        $out .= "<input type='email' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        list($descrBy, $description) = $this->renderElemDescription();
+        $out .= "\t\t\t<input type='email' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value$descrBy />\n";
+        $out .= $description;
         return $out;
     } // renderEMail
 
@@ -933,6 +940,7 @@ EOT;
         }
         $checkedElem = isset($this->currRec->prefill)? $this->currRec->prefill: false;
         $label = $this->getLabel(false, false);
+        list($descrBy, $description) = $this->renderElemDescription();
 
         $target = $this->currRec->target;
         if ($target) {
@@ -963,10 +971,11 @@ EOT;
 
             $checked = ($checkedElem && @$checkedElem[$name]) || $preselectedValue ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-radio-elem lzy-form-choice-elem'>\n";
-            $out .= "\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked$cls$attr /><label for='$id'>$optionLabel</label>\n";
+            $out .= "\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked$cls$attr$descrBy /><label for='$id'>$optionLabel</label>\n";
             $out .= "\t\t\t</div>\n";
         }
         $out .= "\t\t\t  </div><!--/lzy-fieldset-body -->\n\t\t\t</fieldset>\n";
+        $out .= $description;
         return $out;
     } // renderRadio
 
@@ -980,6 +989,7 @@ EOT;
         $presetValues = isset($this->currRec->prefill)? $this->currRec->prefill: false;
         $groupName = translateToIdentifier($rec->name, false, true, false);
         $label = $this->getLabel(false, false);
+        list($descrBy, $description) = $this->renderElemDescription();
         $wrapperId = @$rec->wrapperId ? " id='$rec->wrapperId'": '';
 
         $target = $this->currRec->target;
@@ -1012,10 +1022,11 @@ EOT;
 
             $checked = (($presetValues !== false) && @$presetValues[$name]) || $preselectedValue ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-checkbox-elem lzy-form-choice-elem'>\n";
-            $out .= "\t\t\t\t<input id='$id' type='checkbox' name='${groupName}[]' value='$name'$checked$cls$attr /><label for='$id'>$optionLabel</label>\n";
+            $out .= "\t\t\t\t<input id='$id' type='checkbox' name='${groupName}[]' value='$name'$checked$cls$attr$descrBy /><label for='$id'>$optionLabel</label>\n";
             $out .= "\t\t\t</div>\n";
         }
         $out .= "\t\t\t  </div><!--/lzy-fieldset-body -->\n\t\t\t</fieldset>\n";
+        $out .= $description;
         return $out;
     } // renderCheckbox
 
@@ -1039,7 +1050,8 @@ EOT;
         $selectedElem = isset($rec->prefill)? $rec->prefill: [];
         $selectedElem = @$selectedElem[0];
         $out = $this->getLabel();
-        $out .= "<select id='{$rec->fldPrefix}{$rec->elemId}' name='{$rec->name}'$cls>\n";
+        list($descrBy, $description) = $this->renderElemDescription();
+        $out .= "<select id='{$rec->fldPrefix}{$rec->elemId}' name='{$rec->name}'$cls$descrBy>\n";
 
         foreach ($rec->optionLabels as $i => $optionLabel) {
             if ($i === 0) { continue; } // skip group name
@@ -1061,6 +1073,7 @@ EOT;
             $out .= "\t\t\t\t<option value='$val'$selected$attr>$optionLabel</option>\n";
         }
         $out .= "\t\t\t</select>\n";
+        $out .= $description;
 
         return $out;
     } // renderDropdown
@@ -1070,11 +1083,12 @@ EOT;
 
     private function renderUrl()
     {
-//        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
         $value = $this->getValueAttr('url');
         $out = $this->getLabel();
-        $out .= "<input type='url' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        list($descrBy, $description) = $this->renderElemDescription();
+        $out .= "<input type='url' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$descrBy$value />\n";
+        $out .= $description;
         return $out;
     } // renderUrl
 
@@ -1083,11 +1097,12 @@ EOT;
 
     private function renderDate()
     {
-//        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
         $value = $this->getValueAttr('date');
         $out = $this->getLabel();
-        $out .= "<input type='date' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        list($descrBy, $description) = $this->renderElemDescription();
+        $out .= "<input type='date' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$descrBy$value />\n";
+        $out .= $description;
         return $out;
     } // renderDate
 
@@ -1096,11 +1111,12 @@ EOT;
 
     private function renderTime()
     {
-//        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
         $value = $this->getValueAttr('time');
         $out = $this->getLabel();
-        $out .= "<input type='time' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        list($descrBy, $description) = $this->renderElemDescription();
+        $out .= "<input type='time' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$descrBy$value />\n";
+        $out .= $description;
         return $out;
     } // renderTime
 
@@ -1109,11 +1125,12 @@ EOT;
 
     private function renderDateTime()
     {
-//        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
         $value = $this->getValueAttr('datetime');
         $out = $this->getLabel();
-        $out .= "<input type='datetime-local' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        list($descrBy, $description) = $this->renderElemDescription();
+        $out .= "<input type='datetime-local' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$descrBy$value />\n";
+        $out .= $description;
         return $out;
     } // renderDateTime
 
@@ -1122,11 +1139,12 @@ EOT;
 
     private function renderMonth()
     {
-//        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
         $value = $this->getValueAttr('month');
         $out = $this->getLabel();
-        $out .= "<input type='month' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        list($descrBy, $description) = $this->renderElemDescription();
+        $out .= "<input type='month' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$descrBy$value />\n";
+        $out .= $description;
         return $out;
     } // renderMonth
 
@@ -1135,11 +1153,12 @@ EOT;
 
     private function renderNumber()
     {
-//        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
         $value = $this->getValueAttr('number');
         $out = $this->getLabel();
-        $out .= "<input type='number' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        list($descrBy, $description) = $this->renderElemDescription();
+        $out .= "<input type='number' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$descrBy$value />\n";
+        $out .= $description;
         return $out;
     } // renderNumber
 
@@ -1148,11 +1167,12 @@ EOT;
 
     private function renderRange()
     {
-//        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
         $value = $this->getValueAttr('number');
         $out = $this->getLabel();
-        $out .= "<input type='range' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        list($descrBy, $description) = $this->renderElemDescription();
+        $out .= "<input type='range' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$descrBy$value />\n";
+        $out .= $description;
         return $out;
     } // renderRange
 
@@ -1161,11 +1181,12 @@ EOT;
 
     private function renderTel()
     {
-//        $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
         $value = $this->getValueAttr('tel');
         $out = $this->getLabel();
-        $out .= "<input type='tel' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        list($descrBy, $description) = $this->renderElemDescription();
+        $out .= "<input type='tel' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$descrBy$value />\n";
+        $out .= $description;
         return $out;
     } // renderTel
 
@@ -1552,7 +1573,6 @@ EOT;
         $infoIcon = $this->renderInfoIcon();
 
         if ($wrapOutput) {
-//            return "\t\t\t<span class='lzy-label-wrapper'><label for='$id'>$label</label>$infoIcon\t\t\t</span>\n\t\t\t";
             return <<<EOT
                 <span class='lzy-label-wrapper'>
                     <label for='$id'>$label</label>
@@ -1560,9 +1580,6 @@ EOT;
                 </span><!-- /lzy-label-wrapper -->
 
 EOT;
-
-//            return "\t\t\t<div><label for='$id'>$label</label>$infoIcon\t\t\t</div>\n\t\t\t";
-//            return "\t\t\t<label for='$id'>$label$infoIcon\n\t\t\t</label>";
         } else {
             return "$label$infoIcon";
         }
@@ -1580,11 +1597,15 @@ EOT;
 
         $elemInx = "{$this->formInx}-{$this->currRec->elemInx}";
         $this->currRec->infoId = "lzy-formelem-info-text-$elemInx";
+        $infoIconText = $this->currRec->info;
+        if (@$infoIconText[0] === '-') {
+            $infoIconText = $this->trans->translateVariable( substr($infoIconText,1) );
+        }
 
         $infoIconText = <<<EOT
 
                     <span  class="lzy-invisible">
-                        <span id="{$this->currRec->infoId}" class="lzy-formelem-info-text lzy-formelem-info-text-$elemInx">{$this->currRec->info}</span>
+                        <span id="{$this->currRec->infoId}" class="lzy-formelem-info-text lzy-formelem-info-text-$elemInx">$infoIconText</span>
                     </span>
             
 EOT;
@@ -1592,14 +1613,11 @@ EOT;
         $icon = '<span class="lzy-icon lzy-icon-info"></span>';
         $infoIcon = <<<EOT
 
-                <button class="lzy-formelem-show-info" aria-label="{{ lzy-formelem-info-title }}" data-tooltip-content="#lzy-formelem-info-text-$elemInx">
+                <button class="lzy-formelem-show-info" aria-hidden="true" data-tooltip-content="#lzy-formelem-info-text-$elemInx" type="button">
                     $icon$infoIconText
                 </button>
 
 EOT;
-        if (@$infoIconText[0] === '-') {
-            $infoIconText = $this->trans->translateVariable( substr($infoIconText,1) );
-        }
         return "$infoIcon";
     } // renderInfoIcon
 
@@ -2504,16 +2522,11 @@ EOT;
         $formId = '#'.$this->currForm->formId;
 
         $logFile = SPAM_LOG_FILE;
-        $jq = <<<EOT
-$('.lzy-formelem-show-info').click( function ( e ) {
-     e.preventDefault();
-});
 
-EOT;
-
+        $jq = '';
         if ($this->currForm->submitButtonCallback === 'auto') {
             if ($this->currForm->antiSpam) {
-                $jq = <<<EOT
+                $jq .= <<<EOT
 
 $('$formId input[type=submit]').click(function(e) {
     var \$form = $('$formId');

@@ -14,6 +14,26 @@ $label-width: 6em;      // --lzy-label-width
 $form-box-width: 7em;   // --lzy-form-box-width
 $form-grid-gap: 10px;   // --lzy-form-grid-gap
 
+$formInputColor: #444;            // --lzy-form-input-color
+$formInputBgColor: #ffffed;       // --lzy-form-input-bg-color
+$formBorderStyle: 1px solid #ddd; // --lzy-form-border-style
+
+$formElemCommentColor: gray;      // --form-elem-comment-color
+
+
+/* === Mixin's ===================================== */
+@mixin lzy-form-label-above {
+    .lzy-label-wrapper {
+        display: block;
+        --lzy-label-width: 100%;
+    }
+    .lzy-form-input-elem.lzy-form-input-elem {
+        display: block;
+        width: 100%;
+        margin-top: 0.3em;
+    }
+}
+
 
 /* === Parametrization Arguments ======================= */
 .lzy-form {
@@ -70,6 +90,7 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
     textarea,
     input {
         border: 1px solid #ddd;
+        border: var(--lzy-form-border-style, $formBorderStyle);
     }
     input {
         line-height: 2em;
@@ -111,6 +132,12 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         ::before {
             color: gray;
         }
+    }
+
+
+    /* === Layout ================================== */
+    &.lzy-form-label-above {
+        @include lzy-form-label-above;
     }
 
 
@@ -184,16 +211,23 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         .lzy-form-pw-toggle:hover {
             opacity: 1;
         }
-    }
+        .lzy-form-pw-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            .lzy-label-wrapper {
+                order: -1;
+            }
+        }
+    } // lzy-form-field-type-password
 
 
     /* === Text Area === */
     .lzy-form-field-type-textarea {
-        label {
-            display: block;
-            margin: 1em 0 0.3em;
-            width: 100%;
-        }
+        //label {
+        //    display: block;
+        //    margin: 1em 0 0.3em;
+        //    width: 100%;
+        //}
 
         textarea {
             display: block;
@@ -219,7 +253,9 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
         }
         & > textarea,
         &::after {
-            border: 1px solid black;
+            //border: 1px solid black;
+            border: 1px solid #ddd;
+            border: var(--lzy-form-border-style, $formBorderStyle);
             padding: 0.5rem;
             font: inherit;
             grid-area: #{ 1 } / #{ 1 } / #{ 2 } / #{ 2 };
@@ -529,9 +565,12 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
     .lzy-form-error input {
         box-shadow: inset 0 0 3px red;
     }
+    textarea,
     input {
-        background-color: #f1f1f1;
-        color: #666;
+        background-color: $formInputBgColor;
+        background-color:var(--lzy-form-input-bg-color, $formInputBgColor);
+        color: $formInputColor;
+        color: var(--lzy-form-input-color, $formInputColor);
         box-shadow: inset 0 0 0 1px #bbb;
     }
     .lzy-form-header {
@@ -559,7 +598,13 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
             margin: 0 0 0.5em 0;
         }
     }
-}
+    .lzy-form-elem-comment {
+        font-style: italic;
+        color: $formElemCommentColor;
+        color: var(--form-elem-comment-color, $formElemCommentColor);
+    }
+
+} // lzy-form-colored
 
 
 
@@ -583,8 +628,6 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
 .lzy-form-elem-comment {
     margin-top: 0.6em;
     display: block;
-    font-style: italic;
-    color: gray;
 }
 .lzy-form-error-msg {
     padding: 5px 0 !important;
@@ -596,20 +639,20 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
 .lzy-small-screen .lzy-form {
     .lzy-form-field-wrapper {
         font-size: 14pt;
-
-        label {
-            margin: 0 0 0.2em;
-        }
-
-        label.lzy-form-pw-toggle {
-            margin: 0;
-        }
-
-        textarea,
-        input {
-            display: block;
-            width: 100%;
-        }
+        @include lzy-form-label-above;
+        //label {
+        //    margin: 0 0 0.2em;
+        //}
+        //
+        //label.lzy-form-pw-toggle {
+        //    margin: 0;
+        //}
+        //
+        //textarea,
+        //input {
+        //    display: block;
+        //    width: 100%;
+        //}
     }
 
 
@@ -743,6 +786,51 @@ $form-grid-gap: 10px;   // --lzy-form-grid-gap
     }
 }
 
+/* === Login Form =========================== */
+.lzy-login-form {
+    font-family: verdana;
+    --lzy-panels-label-color: #444;
+    --lzy-panels-bg-color: white;
+    --lzy-panels-bg-color-non-selected: #444;
+    --lzy-panels-label-color-non-selected: #ddd;
+    color: black;
+}
+.lzy-form.lzy-login-form {
+    margin: 2em 0 1em;
+}
+#lzy .tooltipster-sidetip {
+    font-family: verdana;
+    .tooltipster-box {
+        background: #f3ffd3;
+        border: 1px solid #778c3d;
+        border-radius: 6px;
+        line-height: 1.4em;
+        padding: 0.5em;
+    }
+    .tooltipster-content {
+        color: black;
+        padding: 8px;
+    }
+    &.tooltipster-top {
+        .tooltipster-arrow {
+            bottom: -1px;
+        }
+        .tooltipster-arrow-background {
+            border-top-color: #f3ffd3;
+            top: -1px;
+        }
+    }
+    &.tooltipster-arrow-border {
+        border-top-color: #778c3d;
+    }
+}
 
-
+#lzy.lzy-small-screen .lzy-form.lzy-login-form {
+    .lzy-form-field-type-buttons {
+        display: block;
+    }
+    .lzy-form-button-submit {
+        width: 100%;
+    }
+}
 

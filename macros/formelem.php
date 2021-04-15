@@ -44,9 +44,14 @@ $this->addMacro($macroName, function () {
         $this->getArg($macroName, 'layout', 'For radio and checkbox: If true, options will be dispayed in one row, '.
             'rather than below each other.', '');
 
-        $this->getArg($macroName, 'info', '[string] If defined, an info-icon will appear next to the field label. Clickiing on that icon will show given text in a tooltip.', '');
+        $this->getArg($macroName, 'info', '[string] If defined, an info-icon will appear next to the field label. '.
+            'Clicking on that icon will show given text in a tooltip.', '');
 
-        $this->getArg($macroName, 'comment', 'Text that will be rendered below the form element.', '');
+        $this->getArg($macroName, 'comment', 'Text that will be rendered below the form element. (class: "lzy-form-elem-comment")', '');
+
+        $this->getArg($macroName, 'description', 'Similar to "comment", but adds the "aria-describedby=" attribute to '.
+            'the input element. The description appears below the input element (class:"lzy-form-field-description"). '.
+            '(see HTML reps. WAI-ARIA).', '');
 
         $this->getArg($macroName, 'translateLabel', 'If true, label will be translated. E.g. "First name".'.
             '<br>Note: labels will be translated in any case if they start with \'-\'. (Default: false)', false);
@@ -62,10 +67,6 @@ $this->addMacro($macroName, function () {
         $this->getArg($macroName, 'autocomplete', 'If true, adds the "autocomplete" attribute to the '.
             'input element (see HTML).', '');
 
-        $this->getArg($macroName, 'description', 'If defined, adds the "aria-describedby=" attribute to '.
-            'the input element. Then adds a div below the input element containing the description itself. '.
-            '(see HTML reps. WAI-ARIA).', '');
-
         $this->getArg($macroName, 'pattern', 'If defined, adds a "pattern" attribute to the input field, '.
             'e.g. pattern="[A-Za-z]{3}" (see HTML). ', '');
 
@@ -78,6 +79,9 @@ $this->addMacro($macroName, function () {
         $this->getArg($macroName, 'path', 'For upload type', '');
 
         $this->getArg($macroName, 'target', '[selector] For type "reveal": specifies the DOM element that shall be manipulated.', '');
+
+        $this->getArg($macroName, 'inputAttr', '[string] If supplied, injects given string into the form element -> '.
+            'for rarely used attributes, e.g. "inputAttr:disabled" or "inputAttr:\'minlength=3\'".', '');
 
 //        $this->getArg($macroName, 'prefill', '', '');
 

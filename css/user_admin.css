@@ -123,7 +123,10 @@ body {
 .lzy-account-form-message {
     margin-bottom: 1em;
 }
-
+.lzy-form .lzy-formelem-show-info {
+    padding: 0 0 0 5px;
+    min-width: initial;
+}
 .lzy-form-username-label > span,
 .lzy-form-password-label > span {
 	display: inline-block;
