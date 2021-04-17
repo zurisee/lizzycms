@@ -154,6 +154,7 @@ class Ticketing
 
     public function consumeTicket($ticketHash, $type = false)
     {
+        $ticketHash = preg_replace('/:.*/', '', $ticketHash);
         $ticketRec = $this->ds->readRecord($ticketHash);
 
         if (!$ticketRec) {
