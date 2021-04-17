@@ -13,7 +13,7 @@ define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,ma
     'legend,customResponseEvaluation,next,file,confirmationText,formDataCaching,'.
     'encapsulate,formTimeout,avoidDuplicates,export,exportKey,confirmationEmail,'.
     'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,'.
-    'validate,showData,showDataMinRows,options,encapsulate,disableCaching,'.
+    'validate,showData,showDataMinRows,options,encapsulate,disableCaching,labelWidth,'.
     'translateLabel,labelPosition,formName,formHeader,formHint,formFooter,showSource,');
 
 define('ELEM_ATTRIBUTES', 	    ',label,type,id,class,wrapperClass,name,required,value,'.
@@ -77,6 +77,7 @@ class Forms
         if ($userDataEval !== false) {
             if (isset($_POST['_lizzy-form'])) {    // we received data:
                 $this->evaluateUserSuppliedData();
+                $_POST['__lizzy-form'] = $_POST['_lizzy-form'];
                 unset( $_POST['_lizzy-form'] );
             }
             // $userDataEval===true means client just wants to eval data, not instantiate an object:
@@ -196,7 +197,8 @@ class Forms
         $currForm->cancelButtonCallback = (isset($args['cancelButtonCallback'])) ? $args['cancelButtonCallback'] : 'auto';
         $currForm->confirmationEmail = (isset($args['confirmationEmail'])) ? $args['confirmationEmail'] : false;
         $currForm->confirmationEmailTemplate = (isset($args['confirmationEmailTemplate'])) ? $args['confirmationEmailTemplate'] : false;
-        $currForm->labelColons = (isset($args['labelColons'])) ? $args['labelColons'] : true;
+        $currForm->labelColons = (isset($args['labelColons'])) ? $args['labelColons'] : false;
+//        $currForm->labelColons = (isset($args['labelColons'])) ? $args['labelColons'] : true;
         $currForm->labelWidth = (isset($args['labelWidth'])) ? $args['labelWidth'] : false;
         if ($currForm->export === true) {
             $currForm->export = DEFAULT_EXPORT_FILE;
@@ -1563,7 +1565,8 @@ EOT;
         } elseif ($this->currRec->translateLabel) {
             $label = $this->trans->translateVariable($label, true);
         }
-        if ($this->currForm->labelColons || $hasColon) {
+        if ($this->currForm->labelColons || ($hasColon && (strpos($label,':') !== false))) {
+//        if ($this->currForm->labelColons || $hasColon) {
             $label .= ':';
         }
         if ($requiredMarker) {
@@ -1625,6 +1628,7 @@ EOT;
 
     private function renderElemDescription()
     {
+        $descrBy = '';
         if ($this->currRec->description) {
             $descrId = "{$this->currRec->fldPrefix}{$this->currRec->elemId}-descr";
             $descrBy = " aria-describedby='$descrId'";
@@ -1747,7 +1751,8 @@ EOT;
 		}
         $this->formId = $formId = $userSuppliedData['_lizzy-form-id'];
 
-        $formHash = $this->formHash = $userSuppliedData['_lizzy-form'];
+        $formHash = $this->formHash = isset($userSuppliedData['_lizzy-form'])? $userSuppliedData['_lizzy-form']: $userSuppliedData['__lizzy-form'];
+//        $formHash = $this->formHash = $userSuppliedData['_lizzy-form'];
         $formHash = preg_replace('/:.*/', '', $formHash);
         $this->currForm = $this->restoreFormDescr( $formHash, $formId );
         $currForm = $this->currForm;
