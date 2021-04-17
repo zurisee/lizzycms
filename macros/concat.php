@@ -29,6 +29,6 @@ $this->addMacro($macroName, function () {
         }
         $out .= $arg;
     }
-
+    $this->optionAddNoComment = true;
 	return $out;
 });
