@@ -421,7 +421,7 @@ class Transvar
                 return (strpos($v, '@info') !== false);
             }, ARRAY_FILTER_USE_BOTH);
             if ($l) {
-                $info = preg_replace('/^[^\:]*\s*:\s*/', '', array_pop($l));
+                $info = preg_replace('/^[^:]*\s*:\s*/', '', array_pop($l));
             }
 
             $macros[$moduleName] = $info;
@@ -870,7 +870,7 @@ EOT;
         $out = '';
         foreach ($lines as $i => $l) {
             $l1 = isset($lines[$i+1]) ? $lines[$i+1] : '';
-            if (preg_match('/^[^\#]*:\s*$/', $l) && (strpos($l1, 'uu: true') === false)) {
+            if (preg_match('/^[^#]*:\s*$/', $l) && (strpos($l1, 'uu: true') === false)) {
                 $out .= "$l    uu: true\n";
             } else {
                 $out .= $l;
@@ -915,7 +915,7 @@ EOT;
                 $end = true;
             }
 
-            if (preg_match('/^([^\#]*):\s*$/m', $line, $m)) {   // beginning of var
+            if (preg_match('/^([^#]*):\s*$/m', $line, $m)) {   // beginning of var
                 if ($unused) {      // append previous rec:
                     $note .= "<p>$var</p>\n";
                     $outInactive .= $rec;
@@ -970,7 +970,7 @@ EOT;
             if (strpos($line, '__END__') === 0) {
                 $end = true;
             }
-            if (preg_match('/^([^\#]*):\s*$/m', $line, $m)) {
+            if (preg_match('/^([^#]*):\s*$/m', $line, $m)) {
                 $var = $m[1];
             }
             if ((isset($line[0]) && ($line[0] !== '/')) && (!$end && strpos($line, 'uu: true') !== false)) {
