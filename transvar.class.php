@@ -148,12 +148,14 @@ class Transvar
                         'args' => trim( $m1[2] ),
                     ];
                 }
+
+                // remove newlines:
                 if (strpos($var, "\n")) {
-                    $var = str_replace("\n", '', $var);    // remove newlines
+                    $var = str_replace("\n", '', $var);
                 }
 
                 // ----------------------------------------------------------------------- translate now:
-                if (preg_match('/^([\w\-]+)\((.*)\)/', $var, $m)) {    // macro
+                if (preg_match('/^([\w\-]+) \( (.*) \)/x', $var, $m)) {    // macro
                     $macro = $m[1];
                     $macro = str_replace('-', '', $macro);
                     $argStr = $m[2];
