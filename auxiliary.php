@@ -17,7 +17,9 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
     if (!($str = trim($str))) {
         return false;
     }
-    if (preg_match('/^\s*\{\{ .* \}\} \s* $/x', $str)) {    // skip '{{ ... }}' to avoid conflict with '{ ... }'
+
+    // skip '{{ ... }}' to avoid conflict with '{ ... }':
+    if (preg_match('/^\s* {{ .* }} \s* $/x', $str)) {
         return [ $str ];
     }
 
@@ -25,7 +27,7 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
 
     if ($yamlCompatibility) {
         // for compatibility with Yaml, the argument list may come enclosed in { }
-        if (preg_match('/^\s* \{  (.*)  \} \s* $/x', $str, $m)) {
+        if (preg_match('/^\s* {  (.*)  } \s* $/x', $str, $m)) {
             $str = $m[1];
         }
     }
@@ -40,6 +42,8 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
         '[' => ']',
         '<' => '>',
     ];
+    // alternatives to ' and " -> doubles of following characters:
+    $extendedBracketChars = '!@#$%&:?';
 
     $assoc = false;
     while ($str || $assoc) {
@@ -53,7 +57,16 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
         } else {
             $supportedBrackets = &$supportedBrackets1;
         }
-        if (array_key_exists($c, $supportedBrackets)) {
+        // extended brackets to enclose args: e.g. ## ... ##
+        $cc = false;
+        if (strpos($extendedBracketChars, $c) !== false) {
+            $cc = preg_quote("$c$c");
+        }
+        if ($cc && preg_match("/^ $cc ([^$c]+) $cc (.*) $/x", $str, $m)) {
+            $val = $m[1];
+            $str = $m[2];
+
+        } elseif (array_key_exists($c, $supportedBrackets)) {
             $cEnd = $supportedBrackets[$c];
             $p = findNextPattern($str, $cEnd, 1);
             if ($p) {
@@ -194,7 +207,7 @@ function parseInlineBlockArguments($str, $returnElements = false)
     }
 
     // style instructions:  key:value
-    if (preg_match_all('/([\w-]+\:\s*[^\s,]+)/x', $str, $m)) {  // style:arg
+    if (preg_match_all('/([\w-]+:\s*[^\s,]+)/x', $str, $m)) {  // style:arg
         foreach ($m[1] as $elem) {
             $s = str_replace([';', '"', "'"], '', $elem);
             $style .= " $s;";
@@ -206,15 +219,15 @@ function parseInlineBlockArguments($str, $returnElements = false)
     }
 
     // attribute instructions:  key=value
-    if (preg_match_all('/( [\w-]+ \=\s* " .*? " ) /x', $str, $m)) {  // attr="arg "
+    if (preg_match_all('/( [\w-]+ =\s* " .*? " ) /x', $str, $m)) {  // attr="arg "
         $elems = $m[1];
         $str = str_replace($m[1], '', $str);
     }
-    if (preg_match_all("/( [\w-]+ \=\s* ' .*? ' ) /x", $str, $m)) {  // attr='arg '
+    if (preg_match_all("/( [\w-]+ =\s* ' .*? ' ) /x", $str, $m)) {  // attr='arg '
         $elems = array_merge($elems, $m[1]);
         $str = str_replace($m[1], '', $str);
     }
-    if (preg_match_all("/( [\w-]+ \=\s* [^\s,]+ ) /x", $str, $m)) {  // attr=arg
+    if (preg_match_all("/( [\w-]+ =\s* [^\s,]+ ) /x", $str, $m)) {  // attr=arg
         $elems = array_merge($elems, $m[1]);
         $str = str_replace($m[1], '', $str);
     }
@@ -291,7 +304,7 @@ function parseInlineBlockArguments($str, $returnElements = false)
 
 function csv_to_array($str, $delim = ',') {
     $str = trim($str);
-    if (preg_match('/^(\{.*\})[\s,]*$/', $str, $m)) {   // {}
+    if (preg_match('/^({.*})[\s,]*$/', $str, $m)) {   // {}
         $str = preg_replace('/,*$/', '', $str);
         $a = array($str, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '');
         return $a;
@@ -748,9 +761,9 @@ function base_name($file, $incl_ext = true, $incl_args = false) {
 	if (!$incl_args && ($pos = strpos($file, '?'))) {
 		$file = substr($file, 0, $pos);
 	}
-	if (preg_match('/\&\#\d+\;/',  $file)) {
+	if (preg_match('/&#\d+;/',  $file)) {
 		$file = htmlspecialchars_decode($file);
-		$file = preg_replace('/\&\#\d+\;/', '', $file);
+		$file = preg_replace('/&#\d+;/', '', $file);
 	}
 	if (!$incl_args && ($pos = strpos($file, '#'))) {
 		$file = substr($file, 0, $pos);
@@ -778,7 +791,7 @@ function dir_name($path)
     if ($path[strlen($path)-1] === '/') {  // ends in '/'
         return $path;
     }
-    $path = preg_replace('/[\#\?\*].*/', '', $path);
+    $path = preg_replace('/[#?*].*/', '', $path);
     if (strpos(basename($path), '.') !== false) {  // if it contains a '.' we assume it's a file
         return dirname($path).'/';
     } else {
@@ -870,7 +883,7 @@ function resolvePathSecured($path, $relativeToCurrPage = false, $httpAccess = fa
     $path1 = resolvePath($path, $relativeToCurrPage, $httpAccess, $absolutePath, $isResource);
 
     $adminPermit = $GLOBALS['globalParams']['isLocalhost'] || $GLOBALS['globalParams']['isAdmin'];
-    if ($adminPermit || !preg_match('/\b(code|config|.cache|\.\#tickets|_lizzy)\b/', $path1)) {
+    if ($adminPermit || !preg_match('/\b(code|config|.cache|\.#tickets|_lizzy)\b/', $path1)) {
         return [$path1, false]; // path is ok
     }
 
@@ -1040,7 +1053,7 @@ function normalizePath($path)
         $hdr = $m[1];
         $path = $m[3];
     }
-    while ($path && preg_match('|(.*?) ([^/\.]+/\.\./) (.*)|x', $path, $m)) {
+    while ($path && preg_match('|(.*?) ([^/.]+/\.\./) (.*)|x', $path, $m)) {
         $path = $m[1] . $m[3];
     }
     if (strpos($path, '//')) {
@@ -1081,7 +1094,7 @@ function resolveHrefs( &$html )
     $p = strpos($html, '~/');
     while ($p !== false) {
         if (substr($html, $p-6, 5) === 'href=') {
-            if (preg_match('|^([\w-/\.]*)|', substr($html, $p + 2, 30), $m)) {
+            if (preg_match('|^([\w-/.]*)|', substr($html, $p + 2, 30), $m)) {
                 $s = $m[1];
                 if (!file_exists($s)) {
                     $html = substr($html, 0, $p) . $prefix . substr($html, $p + 2);
@@ -1153,7 +1166,7 @@ function parseNumbersetDescriptor($descr, $minValue = 1, $maxValue = 9, $headers
 
 	$out = [];
 	foreach ($set as $i => $elem) {
-	    if ((strpos($elem, ':') === false) && preg_match('/(\S*)\s*\-\s*(\S*)/', $elem, $m)) {
+	    if ((strpos($elem, ':') === false) && preg_match('/(\S*)\s*-\s*(\S*)/', $elem, $m)) {
 			$from = ($m[1]) ? alphaIndexToInt($m[1], $headers) : $minValue;
 			$to = ($m[2]) ? alphaIndexToInt($m[2], $headers) : $maxValue;
 			$out = array_merge($out, range($from, $to));
@@ -1618,7 +1631,7 @@ function translateToFilename($str, $appendExt = true)
 	$str = strip_tags($str);						// strip any html tags
 	$str = str_replace([' ', '-'], '_', $str);				// replace blanks with _
 	$str = str_replace('/', '_', $str);				// replace '/' with _
-	$str = preg_replace("/[^[:alnum:]\._-`]/m", '', $str);	// remove any non-printables
+	$str = preg_replace("/[^[:alnum:]._-`]/m", '', $str);	// remove any non-printables
 	$str = preg_replace("/\.+/", '.', $str);		// reduce multiple ... to one .
 	if ($appendExt && !preg_match('/\.html?$/', $str)) {	// append file extension '.html'
 		if ($appendExt === true) {
@@ -2094,7 +2107,7 @@ function compileMarkdownStr($mdStr, $removeWrappingPTags = false)
     $md = new LizzyMarkdown();
     $str = $md->compileStr($mdStr);
     if ($removeWrappingPTags) {
-        $str = preg_replace('/^\<p>(.*)\<\/p>(\s*)$/ms', "$1$2", $str);
+        $str = preg_replace('/^<p>(.*)<\/p>(\s*)$/ms', "$1$2", $str);
     }
     return $str;
 } // compileMarkdownStr
@@ -2135,7 +2148,7 @@ function checkPermission($str0, $lzy = false, $and = false) {
     foreach ($strs as $str) {
         $neg = false;
         $res = false;
-        if (preg_match('/^((non|not|\!)\-?)/i', $str, $m)) {
+        if (preg_match('/^((non|not|!)-?)/i', $str, $m)) {
             $neg = true;
             $str = substr($str, strlen($m[1]));
         }
@@ -2241,7 +2254,7 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
     }
 
     $name = '';
-    if (preg_match('/(.*?) \< ([\w\d\'-.@]+) \>/x', $to, $m)) {
+    if (preg_match('/(.*?) < ([\w\d\'-.@]+) >/x', $to, $m)) {
         $to = $m[2];
         $name = $m[1];
     }
@@ -2261,7 +2274,7 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
 
     if ($from) {
         $name = '';
-        if (preg_match('/(.*?) \< ([\w\d\'-.@]+) \>/x', $from, $m)) {
+        if (preg_match('/(.*?) < ([\w\d\'-.@]+) >/x', $from, $m)) {
             $from = $m[2];
             $name = $m[1];
         }
@@ -2301,7 +2314,7 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
     $message = str_replace('~~NL~~', "\n", $message);
 
     // check for HTML:
-    if (($html === null) && preg_match('/^\<(html|!DOCTYPE)/i', $message)) {
+    if (($html === null) && preg_match('/^<(html|!DOCTYPE)/i', $message)) {
         $html = true;
     }
     if ($wrap && !$html) {
