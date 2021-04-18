@@ -42,7 +42,20 @@
 }
 
 [class*=' lzy-icon-']:empty:before {
-    transform: translate(-0.1em, -1em);
+    transform: translate(-0.1em, -0.9em);
+    //transform: translate(-0.1em, -1em);
+}
+
+.lzy-table-control-btn {
+    .lzy-icon:before {
+        transform: translate(-0.12em, -0.57em);
+    }
+    .lzy-icon.lzy-icon-send:before {
+        transform: translate(-0.3em, -0.6em);
+    }
+    .lzy-icon.lzy-icon-edit:before {
+        transform: translate(0.15em, -0.5em);
+    }
 }
 
 .lzy-emoji[data-icon] {
