@@ -1751,8 +1751,10 @@ EOT;
 		}
         $this->formId = $formId = $userSuppliedData['_lizzy-form-id'];
 
-        $formHash = $this->formHash = isset($userSuppliedData['_lizzy-form'])? $userSuppliedData['_lizzy-form']: $userSuppliedData['__lizzy-form'];
-//        $formHash = $this->formHash = $userSuppliedData['_lizzy-form'];
+        if (!isset($userSuppliedData['_lizzy-form'])) { // already evaluated, nothing to do
+            return false;
+        }
+        $formHash = $this->formHash = $userSuppliedData['_lizzy-form'];
         $formHash = preg_replace('/:.*/', '', $formHash);
         $this->currForm = $this->restoreFormDescr( $formHash, $formId );
         $currForm = $this->currForm;
