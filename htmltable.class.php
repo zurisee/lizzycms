@@ -27,7 +27,7 @@ class HtmlTable
         $this->options      = $options;
         $this->lzy 		    = $lzy;
         $this->page 		= $lzy->page;
-        $this->tableCounter = &$GLOBALS["globalParams"]['tableCounter'][ $GLOBALS["globalParams"]["pagePath"] ];
+        $this->tableCounter = &$GLOBALS['globalParams']['tableCounter'][ $GLOBALS['globalParams']['pagePath'] ];
         $this->tableCounter++;
         $this->helpText     = false;
         $this->tickHash     = false;
@@ -337,6 +337,13 @@ EOT;
         }
 
         $data = &$this->data;
+
+        // automatically translate headers beginning with '-':
+        foreach ($this->headerElems as $i => $hdr) {
+            if (@$hdr[0] === '-') {
+                $this->headerElems[$i] = $this->lzy->trans->translateVariable(substr($hdr,1), true);
+            }
+        }
 
         if ($this->headers === true) {
             $data = array_merge(['hdr' => $this->headerElems], $data);
@@ -1438,6 +1445,9 @@ EOT;
 
         if ($this->editableBy) {
             $this->includeCellRefs = true;
+        }
+        if (!$this->headers) {
+            $this->headers = true;
         }
     } // checkArguments
 
