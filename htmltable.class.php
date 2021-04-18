@@ -11,7 +11,7 @@ define('SCALAR_TYPES',
     ',url,date,time,datetime,month,number,range,tel,');
 
 define('DEFAULT_EDIT_FORM_TEMPLATE_FILE', '~page/-table_edit_form_template.md');
-define('LZY_TABLE_SHOW_REC_ICON', "<span class='lzy-icon lzy-icon-show'></span>");
+define('LZY_TABLE_SHOW_REC_ICON', "<span class='lzy-icon lzy-icon-show2'></span>");
 
 
 
@@ -21,6 +21,7 @@ class HtmlTable
     private $dataTableObj = null;
     private $strToAppend = '';
     private $liveDataSrcRef = '';
+    private $ticketHash;
     public function __construct($lzy, $options)
     {
         $this->options      = $options;
@@ -144,9 +145,7 @@ class HtmlTable
         // for "active tables": create ticket and set data-field:
         if ($this->editingActive || $this->editableActive || $this->activityButtons || $this->recViewButtonsActive) {
             $this->page->addModules('MD5');
-            $tck = new Ticketing(['defaultMaxConsumptionCount' => false]);
-            $this->tickHash = $tck->createHash( 'lzy-form' );
-            $this->tableDataAttr .= " data-table-hash='{$this->tickHash}' data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
+            $this->tableDataAttr .= " data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
 
             // utility feature to export form template based on data structure:
             if ($this->lzy->localCall && (getUrlArg('exportForm'))) {
@@ -178,6 +177,19 @@ class HtmlTable
         if ($this->editingActive || $this->editableActive ||
             $this->activityButtons || $this->recViewButtonsActive || @$this->showRecViewButton) {
             $this->renderTextResources();
+
+            if (!$this->liveDataSrcRef) {
+                $setId = "set$this->tableCounter";
+                $tickRec[ $setId ]['_dataSource'] = $this->dataSource;
+                $tck = new Ticketing(['defaultMaxConsumptionCount' => false]);
+                if ($this->ticketHash && $tck->ticketExists($this->ticketHash)) {
+                    $tck->createHash(true);
+                    $tck->updateTicket($this->ticketHash, $tickRec);
+                } else {
+                    $this->ticketHash = $tck->createTicket($tickRec, false, 86400);
+                }
+                $this->liveDataSrcRef = " data-datasrc-ref='$this->ticketHash:$setId'";
+            }
         }
 
         $this->convertLinks();
@@ -188,7 +200,6 @@ class HtmlTable
 $out
   </div>
 EOT;
-
         return $out;
     } // render
 
@@ -318,7 +329,7 @@ EOT;
 
 
 
-    
+
     private function applyHeaders()
     {
         if (!$this->headers && !$this->headersLeft) {
@@ -365,7 +376,6 @@ EOT;
                 }
             }
         }
-        return;
     } // applyHeaders
 
 
@@ -445,14 +455,9 @@ EOT;
             $r++;
         }
 
-        // data-ref:
-        $tck = new Ticketing(['defaultMaxConsumptionCount' => false]);
-        $tickHash = $tck->createTicket( ['_dataSource' => $this->dataSource],false,null,'lzy-table' );
-        $dataSource = " data-ref='$tickHash'";
-
         $out .= <<<EOT
 
-  <table id='{$this->id}' class='$tableClass'$dataSource{$this->tableDataAttr} data-inx="$this->tableCounter">
+  <table id='{$this->id}' class='$tableClass'{$this->tableDataAttr} data-inx="$this->tableCounter">
 {$this->caption}
 $thead	<tbody>
 $tbody	</tbody>
@@ -698,6 +703,7 @@ EOT;
 
 
 
+
     private function applyClassToColumn($column, $class, $inclHead = false)
     {
         $c = $column;
@@ -777,7 +783,7 @@ EOT;
         $headers = reset( $data );
 
         $phpExpr = str_replace(['ʺ', 'ʹ'], ['"', "'"], $phpExpr);
-        if (preg_match_all('/( (?<!\\\) \[\[ [^\]]* \]\] )/x', $phpExpr, $m)) {
+        if (preg_match_all('/( (?<!\\\) \[\[ [^]]* ]] )/x', $phpExpr, $m)) {
             foreach ($m[1] as $cellRef) {
                 $cellRef0 = $cellRef;
                 $cellRef = trim(str_replace(['[[', ']]'], '', $cellRef));
@@ -1386,7 +1392,7 @@ EOT;
             if (strpos($name, '<') !== false) {
                 $cellContent .= $name;
             } else {
-                $cellContent .= "\n\t\t\t\t<button class='lzy-table-control-btn lzy-table-$name-btn' title='{{ lzy-table-$name-btn }}'>$icon</span></button>";
+                $cellContent .= "\n\t\t\t\t<button class='lzy-table-control-btn lzy-table-$name-btn' title='{{ lzy-table-$name-btn-title }}'>$icon</span></button>";
             }
         }
 
@@ -1782,68 +1788,38 @@ EOT;
         $this->data = $data;
     } // loadDataFromFile
 
-    
-    
-    
+
+
+
     private function renderTableActionButtons()
     {
-        $buttons = $jq = '';
+        $buttons = $class = '';
+        $this->jq = '';
 
-        if ($this->editingActive && (($this->activityButtons === true) ||
-                (strpos(',edit,', $this->activityButtons) !== false))) {
-            $buttons .= <<<EOT
-    <button id='{$this->id}-add-rec' class='lzy-button lzy-table-add-rec-btn' title="{{ lzy-edit-form-new-rec }}">{{ lzy-table-add-rec-btn }}</button>
-EOT;
-            $jq .= <<<EOT
-
-$('#{$this->id}-add-rec').click(function() {
-    mylog('add rec');
-    const \$tableWrapper = $(this).closest('.lzy-table-wrapper');
-    const \$table = $('.lzy-table', \$tableWrapper);
-    const tableInx = \$table.data('inx');
-    lzyActiveTables[tableInx].openFormPopup( \$table );
-    return;
-});
-EOT;
-        }
         if ($this->activityButtons) {
-            $buttonArray = explodeTrim(',', $this->activityButtons);
+            $buttonArray = explodeTrim(',|', $this->activityButtons);
             foreach ($buttonArray as $button) {
+                if (!$button) { continue; }
+
+                // extract optinal attributes:
                 $attributes = '';
                 if (preg_match('/(.*?) \s* \{ (.*) \}/x', $button, $m)) {
                     $button = $m[1];
                     $attributes = str_replace(['&#34;','&#39;'], ['"',"'"], $m[2]);
                 }
 
-                // Handle special button name "Delete":
-                if (strcasecmp($button, 'delete') === 0) {
-                    $this->injectSelectionCol = true;
-                    $button = ':trash:';
-                    $jq .= <<<'EOT'
-$('.lzy-table-trash-btn, .lzy-table-delete-btn').click(function() {
-    const $table = $('.lzy-table', $(this).closest('.lzy-table-wrapper '));
-    const ds = $table.attr('data-ref');
-    var recs = '';
-    $('.lzy-table-row-selector:checked', $table).each(function() {
-        const recKey = $(this).closest('tr').attr('data-reckey');
-        mylog('Delete: ' + recKey, false);
-        recs += recKey + ',';
-    });
-    recs = recs.slice(0, -1);
-    lzyConfirm('Delete selected records?'). then(function() {
-        execAjaxPromise('del-rec', {ds: ds, recKeys: recs})
-        .then(function() {
-            lzyReload();
-        });
-    });
-});
+                // Handle special button names "new-rec" and "delete-rec":
+                if (strcasecmp($button, 'new-rec') === 0) {
+                    list($button, $class, $attributes) = $this->appendNewRecButton($attributes);
 
-EOT;
+                } elseif (strcasecmp($button, 'delete-rec') === 0) {
+                    list($button, $class, $attributes) = $this->appendDeleteButton($attributes);
+
+                } else {
+                    $class = translateToClassName($button);
                 }
-
-                $cls = translateToClassName($button);
                 $buttons .= <<<EOT
-    <button id='$cls-{$this->id}' class='lzy-button lzy-button-lean lzy-table-$cls-btn' $attributes>{{ $button }}</button>
+    <button id='$class-{$this->id}' class='lzy-button lzy-button-lean $class' $attributes><span class="lzy-table-activity-btn">{{ $button }}</span></button>
 EOT;
             }
         }
@@ -1854,7 +1830,7 @@ EOT;
 $buttons  </div>
 
 EOT;
-            $this->page->addJq($jq);
+            $this->page->addJq($this->jq);
             return $out;
     } // renderTableActionButtons
 
@@ -1871,7 +1847,6 @@ EOT;
         <div id="lzy-edit-form-new-rec">{{ lzy-edit-form-new-rec }}</div>
         <div id="lzy-edit-form-submit">{{ lzy-edit-form-submit }}</div>
         <div id="lzy-edit-form-close">{{ lzy-edit-form-close }}</div>
-        <div id="lzy-edit-rec-delete-btn">{{ lzy-edit-rec-delete-btn }}</div>
         <div id="lzy-recview-header">{{ lzy-recview-header }}</div>
     </div>
 
@@ -1879,5 +1854,60 @@ EOT;
             $this->textResourcesRendered = true;
         }
     } // renderTextResources
+
+
+
+
+    private function appendNewRecButton($attributes)
+    {
+        $this->injectSelectionCol = true;
+        $button = 'lzy-table-new-rec-btn';
+        $this->jq .= <<<EOT
+
+$('.lzy-table-new-rec-btn').click(function() {
+    mylog('add rec');
+    const \$tableWrapper = $(this).closest('.lzy-table-wrapper');
+    const \$table = $('.lzy-table', \$tableWrapper);
+    const tableInx = \$table.data('inx');
+    lzyActiveTables[tableInx].openFormPopup( \$table );
+    return;
+});
+EOT;
+        $class = 'lzy-table-new-rec-btn';
+        $attributes = " title='{{ lzy-table-new-rec-title }}'";
+        return [$button, $class, $attributes];
+    } // appendNewRecButton
+
+
+
+
+    private function appendDeleteButton($attributes)
+    {
+        $this->injectSelectionCol = true;
+        $button = 'lzy-table-delete-rec-btn';
+        $this->jq .= <<<'EOT'
+$('.lzy-table-trash-btn, .lzy-table-delete-rec-btn').click(function() {
+    const $table = $('.lzy-table', $(this).closest('.lzy-table-wrapper '));
+    const ds = $table.closest('[data-datasrc-ref]').attr('data-datasrc-ref');
+    var recs = '';
+    $('.lzy-table-row-selector:checked', $table).each(function() {
+        const recKey = $(this).closest('tr').attr('data-reckey');
+        mylog('Delete: ' + recKey, false);
+        recs += recKey + ',';
+    });
+    recs = recs.slice(0, -1);
+    lzyConfirm('{{ lzy-table-delete-recs-popup }}'). then(function() {
+        execAjaxPromise('del-rec', {ds: ds, recKeys: recs})
+        .then(function() {
+            lzyReload();
+        });
+    });
+});
+
+EOT;
+        $class = 'lzy-table-delete-rec-btn';
+        $attributes = " title='{{ lzy-table-delete-rec-title }}'";
+        return [$button, $class, $attributes];
+    } // appendDeleteButton
 
 } // HtmlTable

@@ -28,7 +28,8 @@ function HTMLtable( tableObj ) {
 		this.$table = $( tableObj );
 	}
 	this.tableInx = this.$table.data('inx');
-	this.formHash = this.$table.data('tableHash');
+	this.formHash = this.$table.closest('[data-datasrc-ref]').data('datasrc-ref');
+	// this.formHash = this.$table.data('tableHash');
 	this.formHtml = null;
 	this.lzyTableNewRec = false;
 	this.formInx = false;
@@ -48,6 +49,9 @@ function HTMLtable( tableObj ) {
 
 	this.init = function () {
 		var formId = this.$table.attr('data-form-id');
+		if (typeof formId === 'undefined') {
+			return;
+		}
 		this.formInx = formId.replace(/\D/g, '');
 		this.$form = $( formId ).closest('.lzy-edit-rec-form');
 		this.recViewPopupId = 'lzy-recview-popup-' + this.formInx;
@@ -175,8 +179,7 @@ function HTMLtable( tableObj ) {
 		}
 
 		var formTitle = '';
-
-		this.formHash = $table.data('tableHash');
+		this.formHash = $table.closest('[data-datasrc-ref]').data('datasrc-ref');
 		const popupId = '#lzy-recedit-popup-' + this.formInx;
 		const $popup = $( popupId );
 
@@ -213,9 +216,7 @@ function HTMLtable( tableObj ) {
 		// reset input fields, insert hourglass where possible:
 		$('.lzy-form-field-wrapper input', $form).each(function() {
 			const type = $(this).attr('type');
-			const scalarTypes = ',string,text,password,email,textarea,' +
-				',url,date,time,datetime,month,number,range,tel,';
-			if (scalarTypes.match(','+type+',')) {
+			if ((type === 'string') || (type === 'text') || (type === 'textarea')) {
 				$(this).val( fldPreset );
 
 			} else if ((type === 'radio') || (type === 'checkbox')) {
@@ -335,8 +336,13 @@ function HTMLtable( tableObj ) {
 		} catch (e) {
 			console.log('Error condition detected');
 			console.log(json);
+			let msg = '{{ lzy-table-record-locked }}';
+			if (msg.match(/^\{\{/)) {
+				msg = 'Table is locked or not available';
+			}
 			lzyPopupClose();
-			lzyPopup('{{ lzy-table-record-locked }}');
+			lzyPopup(msg);
+			// lzyPopup('{{ lzy-table-record-locked }}');
 			return false;
 		}
 		var i, val;
