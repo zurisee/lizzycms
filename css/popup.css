@@ -137,3 +137,6 @@ body {
 	justify-content: flex-end;
 }
 
+.lzy-popup-confirm button {
+	width: 50%;
+}

@@ -96,9 +96,9 @@ function LzyPopup( options, index ) {
         }
 
         if (typeof options.onConfirm !== 'undefined') {
-            let label = unTransvar('{{ lzy-Cancel }}');
+            let label = unTransvar('{{ lzy-cancel }}');
             buttonHtml = '<button class="lzy-button lzy-popup-btn-cancel">' + label + '</button> ';
-            label = unTransvar('{{ lzy-Confirm }}');
+            label = unTransvar('{{ lzy-confirm }}');
             buttonHtml += '<button class="lzy-button lzy-popup-btn-confirm">' + label + '</button> ';
             this.buttonHtml = '<div class="lzy-popup-buttons">' + buttonHtml + '</div>';
             return;
