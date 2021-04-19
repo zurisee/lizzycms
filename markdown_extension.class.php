@@ -14,10 +14,11 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
             'scroll', 'tab', 'table', 'text', 'top', 'transform', 'transition', 'unicode', 'user',
             'vertical', 'visibility', 'white', 'widows', 'width', 'word', 'writing', 'z-index'];
 
-    public function __construct($mymd, $page = false)
+    public function __construct($mymd, $page = false, $lzy = null)
     {
         $this->mymd = $mymd;
         $this->page = $page;
+        $this->lzy = $lzy;
     } // __construct
     
     protected function identifyAuthorsDirective($line, $lines, $current)
@@ -1046,7 +1047,7 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
             return ['', '', '', '', false, true];
         }
 
-        return parseInlineBlockArguments($line, $returnElements);
+        return parseInlineBlockArguments($line, $returnElements, $this->lzy);
     } // parseInlineStyling
 
 

@@ -153,7 +153,7 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
 
 
 
-function parseInlineBlockArguments($str, $returnElements = false)
+function parseInlineBlockArguments($str, $returnElements = false, $lzy = null)
 {
     // Example: span  #my-id  .my-class  color:orange .class2 aria-expanded=false line-height: '1.5em;' !off .class3 aria-hidden= 'true' lang=de-CH literal=true md-compile=false "some text"
     // Usage:
@@ -192,15 +192,20 @@ function parseInlineBlockArguments($str, $returnElements = false)
         } elseif ($meta === 'md-compile') {                                      // md-compile
             $mdCompile = $v? (stripos($v, 'true') !== false): true;
 
-        } elseif (($meta === 'showtill')) {                                      // showTill
+        } elseif ($meta === 'showtill') {                                      // showTill
             $t = strtotime($v);
             if ($t < time()) {
                 $lang = 'none';
             }
 
-        } elseif (($meta === 'showfrom')) {                                      // showFrom
+        } elseif ($meta === 'showfrom') {                                      // showFrom
             $t = strtotime($v);
             if ($t > time()) {
+                $lang = 'none';
+            }
+
+        } elseif (($meta === 'visible') || ($meta === 'visibility')) {         // visible
+            if (!$v || ($v === 'false') || !$lzy->auth->checkPrivilege($v)) {
                 $lang = 'none';
             }
         }

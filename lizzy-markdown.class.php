@@ -49,9 +49,10 @@ class LizzyMarkdown
             'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'noscript', 'ol', 'output',
             'p', 'pre', 'section', 'table', 'tfoot', 'ul'];
 
-	public function __construct($trans = false)
+	public function __construct($lzy = null)
     {
-        $this->trans = $trans;
+        $this->lzy = $lzy;
+        $this->trans = isset($this->lzy->trans) ? $this->lzy->trans: null;
     }  // __construct
 
 
@@ -87,7 +88,7 @@ class LizzyMarkdown
 				return $this->page;
 			}
 
-            $this->md = new LizzyExtendedMarkdown($this, $page);
+            $this->md = new LizzyExtendedMarkdown($this, $page, $this->lzy);
             $str = $this->md->parse($str);
 			$str = $this->postprocess($str);
 			
@@ -106,7 +107,7 @@ class LizzyMarkdown
     {
         $str = $this->preprocess($str);
 
-        $this->md = new LizzyExtendedMarkdown($this, $page);
+        $this->md = new LizzyExtendedMarkdown($this, $page, $this->lzy);
         $str = $this->md->parse($str);
         $str = $this->postprocess($str);
 

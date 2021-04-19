@@ -1171,7 +1171,7 @@ EOT;
             $handleEditions = true;
         }
 
-        $md = new LizzyMarkdown($this->trans);
+        $md = new LizzyMarkdown( $this );
 		$md->html5 = true;
 		$langPatt = '.'.$this->config->lang.'.';
 
