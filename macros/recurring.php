@@ -14,17 +14,35 @@ $this->addMacro($macroName, function () {
 
     if ($every === 'help') {
         $this->getArg($macroName, 'start', '[ISO Date] Defines the initial date from which to count.', false);
+        $this->getArg($macroName, 'offset', '[integer, string] If set, defines an offset from "start". E.g. "3600" (sec),'.
+            ' "-1 day" or "12:00".', false);
         $this->getArg($macroName, 'format', '[strftime] Defines the format in which to return the result. Default is ISO Date.', '%F');
         $this->getArg($macroName, 'from', '[file] Alternative to specifying "every" and "start": specifies the file '.
             'from which to pull dates. Supported file types: txt, yaml, json, csv. Optionally, you can append a data-key '.
-            'in like "file.yaml:data-key"', false);
-        $this->getArg($macroName, 'id', '[unique string] If defined, found date is stored unter that name. Further calls '.
-            'to recurring() can skip above arguments and the last returned date will be re-used instead.', "lzy-recurring-$inx");
-        return '';
+            'in like "file.yaml:data-key".', false);
+        $this->getArg($macroName, 'id', '[unique string] If defined, found date is stored under that name. Further calls '.
+            'to recurring() can skip arguments  "every" and "start" -> the last returned date will be re-used instead.', "lzy-recurring-$inx");
+        $str = <<<'EOT'
+### Format Codes (strftime):
+
+%a      >> day of week (Mon .. Sun)
+%A      >> day of week (Monday .. Sunday)
+%d      >> Day (01 .. 31)
+%b      >> month (Jan .. Dec)
+%B      >> month (January .. December)
+%m      >> month (01 .. 12)
+%Y      >> Year (2000)
+%H      >> Hour (00 .. 23)
+%M      >> Hour (00 .. 59)
+
+EOT;
+        $this->compileMd = true;
+        return $str;
     }
 
     $args = $this->getArgsArray($macroName);
     $rc = new Recurring($args);
+    $this->optionAddNoComment = true;
     return $rc->render();
 });
 
@@ -37,6 +55,7 @@ class Recurring
         $this->every = isset($args['every']) ? $args['every'] : false;
         $this->start = isset($args['starting']) ? $args['starting'] : false;
         $this->start = isset($args['start']) ? $args['start'] : $this->start;
+        $this->offset = isset($args['offset']) ? $args['offset'] : false;
         $this->format = isset($args['format']) ? $args['format'] : '%F';
         $this->from = isset($args['from']) ? $args['from'] : false;
         $this->id = isset($args['id']) ? $args['id'] : false;
@@ -62,6 +81,7 @@ class Recurring
 
         } elseif (isset($_SESSION['lizzy']['recurring'][$this->id])) {
             $next = $_SESSION['lizzy']['recurring'][$this->id];
+            $next = $this->handleOffset($next);
 
         } elseif (!$this->start) {
             die('Error in recurring macro: argument \'start\' not specified');
@@ -109,9 +129,10 @@ class Recurring
                 $i++;
                 $incr = ($n * $i)." $unit";
                 $next = strtotime("+$incr", $startT);
-                $s = date('Y-m-d', $next);
             }
         }
+
+        $next = $this->handleOffset($next);
 
         return $next;
     } // determineNext
@@ -182,6 +203,35 @@ class Recurring
         }
         return false;
     } // getFromSource
+
+
+
+
+    private function handleOffset($next)
+    {
+        if (!$this->offset) {
+            return $next;
+        }
+
+        if (is_numeric($this->offset)) {
+            $offset = intval($this->offset);
+
+        } elseif (is_string($this->offset)) {
+            $c1 = $this->offset[0];
+            if (($c1 === '-') || ($c1 === '+')) {
+                return strtotime($this->offset, $next);
+
+            } elseif (preg_match('/^\d\d:\d\d$/', $this->offset)) {
+                $offset = strtotime("1970-01-01 $this->offset UTC");
+            } else {
+                $offset = intval($this->offset);
+            }
+        } else {
+            $offset = 0;
+        }
+        $next += $offset;
+        return $next;
+    } // handleOffset
 
 } // Recurring
 
