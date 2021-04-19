@@ -58,7 +58,6 @@ class LizzyMarkdown
 
 
 
-    //....................................................
 	public function compile($str, $page)
 	{
 		$this->page = $page;
@@ -102,7 +101,7 @@ class LizzyMarkdown
 
 
 
-    //....................................................
+
     public function compileStr($str, $page = false)
     {
         $str = $this->preprocess($str);
@@ -118,7 +117,7 @@ class LizzyMarkdown
 
 
 
-	//....................................................
+
 	private function doMDincludes($str)
 	{
 		while (preg_match('/(.*) (?<!\\\\)\{\{ \s* include\( ([^)]*\.md) [\'"]? \) \s* \}\}(.*)/xms', $str, $m)) {
@@ -141,7 +140,7 @@ class LizzyMarkdown
 
 
 
-	//....................................................
+
 	private function setDefaults()
 	{
 		if (!isset($this->page->mdVariant)) {		// 'mdVariant' or 'markdown' -> true, false, 'extended'
@@ -168,7 +167,7 @@ class LizzyMarkdown
 
 
 
-	//....................................................
+
 	private function doReplaces($str)
 	{
 	    // prepare modified patterns if it contains look-behind:
@@ -194,7 +193,7 @@ class LizzyMarkdown
 
 
 
-	//....................................................
+
 	private function handeCodeBlocks($str)
 	{
 		$lines = explode(PHP_EOL, $str);
@@ -209,7 +208,7 @@ class LizzyMarkdown
 
 
 
-	//....................................................
+
 	private function preprocess($str)
 	{
 		if (preg_match("/\n\>\s/", $str, $m)) {	// is there a blockquote? ('> ' at beginning of line)
@@ -249,7 +248,7 @@ class LizzyMarkdown
 
 
 
-	//....................................................
+
 	private function prepareTabulators($str)
     {   // need to handle lists explicitly to avoid corruption in MD-parser
         // -> shield '-' and '1.' (and '1!.')
@@ -278,41 +277,11 @@ class LizzyMarkdown
         return $str;
     } // prepareTabulators
 
+    
 
 
 
 
-	//....................................................
-//	private function handleInTextVariableDefinitions($str)
-//	{
-//	    list($p1, $p2) = strPosMatching($str, '{{{', '}}}');
-//	    if ($p1) {
-//            $md = new MarkdownExtra;
-//        }
-//	    while ($p1) {
-//            $before = substr($str, 0, $p1);
-//            $val = substr($str, $p1+3, $p2-$p1-3);
-//            if (preg_match('/^(.*)\b([\w\-]+)\s*$/ms', $before, $m)) {
-//                $before = $m[1];
-//                $var = $m[2];
-//                if ($val[0] === '&') {   // option to send variable content through the md-parser
-//                    $val = $md->parse($val);
-//                    $val = preg_replace('/^\<p>(.*)\<\/p>\n$/', "$1", $val);
-//                } else {
-//                    $val = substr($val, 1);
-//                }
-//                $this->trans->addVariable($var, $val);
-//            }
-//            $str = $before.substr($str, $p2+3);
-//            list($p1, $p2) = strPosMatching($str, '{{{', '}}}', $p1+1);
-//        }
-//	    return $str;
-//    } // handleInTextVariableDefinitions
-
-
-
-
-	//....................................................
 	private function handleEOF($lines)
 	{
 		$out = array();
@@ -330,7 +299,7 @@ class LizzyMarkdown
 
 
 
-	//....................................................
+
 	private function handleMdVariables($str)
 	{
 		$out = '';
@@ -369,7 +338,7 @@ class LizzyMarkdown
 
 
 
-	//....................................................
+
 	private function replaceMdVariables($l, $p = false)
 	{
 	    // replaces $var or ${var} with its content, unless shielded as \$var
@@ -390,6 +359,10 @@ class LizzyMarkdown
                     $rest = $m[2];
                     if (isset($this->mdVariables[$varName])) {
                         $val = $this->mdVariables[$varName];
+
+                        if (strpos($val, '{{') !== false) {
+                            $val = $this->lzy->trans->translate($val);
+                        }
 
                         // ++ or -- in front of var:
                         if (($p > 2) && (substr($l, $p-2, 2) === '++')) {
@@ -422,21 +395,29 @@ class LizzyMarkdown
                     }
 
                 // format variant ${}:
-                } elseif (preg_match('/^\$ \{ (.*?) \} (.*)/x', $str, $mm)) {
-                    $t = $mm[1];
+                } elseif (preg_match('/^\$ { (.*?) } (.*)/x', $str, $mm)) {
+                    $varName = $mm[1];
 
-                    if ((strpos($t, '++') === false) && (strpos($t, '--') === false) && (strpos($t, '=') === false)) {
-                        $val = $this->mdVariables[$t];
+                    if ((strpos($varName, '++') === false) && (strpos($varName, '--') === false) && (strpos($varName, '=') === false)) {
+                        if (isset($this->mdVariables[$varName])) {
+                            $val = $this->mdVariables[$varName];
+
+                            if (strpos($val, '{{') !== false) {
+                                $val = $this->lzy->trans->translate($val);
+                            }
+                        } else {
+                            $val = '';
+                        }
                         $rest = $mm[2];
 
                     // on the spot assignment:
-                    } elseif (preg_match('/^ (\w+?) \s* = \s* (.*)/x', $t, $mmm)) {
+                    } elseif (preg_match('/^ (\w+?) \s* = \s* (.*)/x', $varName, $mmm)) {
                         $varName = $mmm[1];
                         $this->mdVariables[$varName] = $val = $mmm[2];
                         $rest = $mm[2];
 
                     // increment/decrement:
-                    } elseif (preg_match('/^\$ \{ (\+\+|--)? (\w+) (\+\+|--)? \} (.*)/x', $str, $mm)) {
+                    } elseif (preg_match('/^\$ { (\+\+|--)? (\w+) (\+\+|--)? } (.*)/x', $str, $mm)) {
                         $varName = $mm[2];
                         if (isset($this->mdVariables[$varName])) {
                             $val = intval($this->mdVariables[$varName]);
@@ -472,7 +453,7 @@ class LizzyMarkdown
 
 
 
-    //....................................................
+
     private function convertMdImagesToMacroCalls($str)
     {
         // extracts MD style images and transforms it into macro calls {{ img() }}
@@ -500,7 +481,7 @@ class LizzyMarkdown
 
 
 
-    //....................................................
+
     private function convertMdLinksToMacroCalls($str)
     {
         $enabled = false;
@@ -542,7 +523,7 @@ class LizzyMarkdown
 
 
 
-	//....................................................
+
 	private function postprocess($str)
 	{
 		$out = '';
@@ -607,7 +588,7 @@ class LizzyMarkdown
 
 
 
-	//....................................................
+
 	public function postprocessInlineStylings($line, $returnElements = false)    // [[ xy ]]
 	{
 	    $id = $class = '';
@@ -670,7 +651,7 @@ class LizzyMarkdown
 
 
 
-	//....................................................
+
 	private function postprocessShieldedTags($l, $preCode)
 	{
 		if ($l) {   // reverse HTML-Tag shields:
@@ -685,7 +666,7 @@ class LizzyMarkdown
 
 
 
-    //....................................................
+
     private function postprocessLiteralBlock($str)    // <div data-lzy-literal-block="true">...</div>
     {
         $p1 = strpos($str, 'data-lzy-literal-block');
