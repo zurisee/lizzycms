@@ -128,12 +128,19 @@ class ServiceTasks
                      $functionToCall = 'executeService';
                  }
 
-                 if (isset($_GET[ $urlArg ]) && $_GET[ $urlArg ]) {
-                     $file = $_GET[$urlArg];
-                     if (isset($_GET[ $urlArg ])) {
-                         unset($_GET[$urlArg]);
+                 if (isset($_GET[ $urlArg ])) { // urlArg present:
+                     $value = $_GET[$urlArg];
+                     // check whether script with name of urlArg exists:
+                     $baseName = fileExt($urlArg, true);
+                     $taskFile = USER_CODE_PATH . "-$baseName.php";
+                     if (file_exists( $taskFile )) {
+                         require_once $taskFile;
+                         return;
                      }
-                     $this->executeServiceTask($file, $functionToCall);
+
+                     unset($_GET[$urlArg]);
+                     // check whether script with name of value of urlArg exists:
+                     $this->executeServiceTask($value, $functionToCall);
                  }
              }
          }
