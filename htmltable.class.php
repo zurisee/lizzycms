@@ -1405,7 +1405,7 @@ EOT;
 
         $cellInstructions = [
             'column' => 1,
-            'header' => '&nbsp;',
+            'header' => '{{^ lzy-table-custom-row-header }}&nbsp;',
             'content' => $cellContent,
         ];
         $this->addCol($cellInstructions);
