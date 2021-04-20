@@ -1659,7 +1659,7 @@ EOT;
                 $mdVariables[$key] = $value;
             }
             unset($hdr['mdVariables']);
-            $this->mdVariables = $mdVariables;
+            $this->mdVariables = array_merge($this->mdVariables, $mdVariables);
 
         } else {
             foreach ($hdr as $key => $value) {
@@ -1669,7 +1669,7 @@ EOT;
                 $mdVariables[substr($key, 1)] = $value;
                 unset($hdr[$key]);
             }
-            $this->mdVariables = $mdVariables;
+            $this->mdVariables = array_merge($this->mdVariables, $mdVariables);
         }
 
         if (isset($hdr['locales'])) {

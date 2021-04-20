@@ -53,6 +53,9 @@ class LizzyMarkdown
     {
         $this->lzy = $lzy;
         $this->trans = isset($this->lzy->trans) ? $this->lzy->trans: null;
+        if ($lzy) {
+            $this->mdVariables = &$lzy->page->mdVariables; // take over mdVariables from Page class
+        }
     }  // __construct
 
 
