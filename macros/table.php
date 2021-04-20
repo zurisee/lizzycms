@@ -14,7 +14,6 @@ $macroName = basename(__FILE__, '.php');
 $this->addMacro($macroName, function () {
 	$macroName = basename(__FILE__, '.php');
 	$this->invocationCounter[$macroName] = (!isset($this->invocationCounter[$macroName])) ? 0 : ($this->invocationCounter[$macroName]+1);
-	$inx = $this->invocationCounter[$macroName] + 1;
 
     $dataSource = $this->getArg($macroName, 'dataSource', '(optional if nCols is set) Name of file containing data. Format may be .cvs or .yaml and is expected be local to page folder.', '');
     if ($dataSource === 'help') {
@@ -39,6 +38,9 @@ $this->addMacro($macroName, function () {
         unset($options['disableCaching']);
     }
     $options['dataSource'] = $file;
+    if (!isset($options['tableClass'])) {
+        $options['tableClass'] = 'lzy-table-default';
+    }
 
     $dataTable = new HtmlTable($this->lzy, $options);
 	$table = $dataTable->render();
