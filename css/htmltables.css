@@ -54,3 +54,6 @@
 .inner-rec-edit-form {
 	overflow-x: auto;
 }
+.lzy-table-action-btns {
+	margin-bottom: 0.5em;
+}
