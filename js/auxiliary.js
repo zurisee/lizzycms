@@ -116,7 +116,7 @@ function execAjax(payload, cmd, doneFun, url) {
         url: url,
         data: payload
     })
-        .done(function ( json ) {
+    .done(function ( json ) {
         if (typeof doneFun === 'function') {
             doneFun( json );
         }

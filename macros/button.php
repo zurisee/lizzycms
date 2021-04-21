@@ -28,22 +28,32 @@ $this->addMacro($macroName, function () {
     if (!$id) {
         $id = "lzy-button-$inx";
     } else {
-        $id = str_replace(['&#34;', '&#39;', '"', "'"], '', $callbackCode);
+//        $id = str_replace(['&#34;', '&#39;', '"', "'"], '', $callbackCode); //???
     }
     if (!$class) {
         $class = 'lzy-button';
     }
     if ($type === 'toggle') {
+        $textActive = $text;
+        if (strpos($text, '|') !== false) {
+            list($text, $textActive) = explodeTrim('|', $text);
+        }
         $class .= ' lzy-toggle-button';
         $jq = <<<EOT
 
 $('#$id').click(function() {
-    $(this).toggleClass('lzy-button-active');
+    let \$this = $(this);
+    if (\$this.hasClass('lzy-button-active')) {
+        \$this.removeClass('lzy-button-active').text('$text');
+    } else {
+        \$this.addClass('lzy-button-active').text('$textActive');
+    }  
 });
 
 EOT;
         $this->page->addJq($jq);
     }
+
     if ($class) {
         $class = " class='$class'";
     } elseif ($class !== false) {
