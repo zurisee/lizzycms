@@ -831,7 +831,10 @@ EOT;
             $r = (isset($this->headers) && $this->headers) ? 1 : 0;
             if (strpos($phpExpr, 'sum()') !== false) {
                 $sum = 0;
-                for (; $r<sizeof($data); $r++) {
+                for ($r=0; $r<sizeof($data); $r++) {
+                    if (!isset($data[$r])) {
+                        continue;
+                    }
                     $val = @$data[$r][$_col];
                     if (preg_match('/^([\d.]+)/', $val, $m)) {
                         $val = floatval($m[1]);
@@ -843,7 +846,10 @@ EOT;
             }
             if (strpos($phpExpr, 'count()') !== false) {
                 $count = 0;
-                for (; $r<sizeof($data); $r++) {
+                for ($r=0; $r<sizeof($data); $r++) {
+                    if (!isset($data[$r])) {
+                        continue;
+                    }
                     $val = $data[$r][$_col];
                     if (preg_match('/\S/', $val)) {
                         $count++;
