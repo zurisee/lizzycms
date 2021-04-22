@@ -71,7 +71,7 @@ class HtmlTable
         $this->autoConvertTimestamps= $this->getOption('autoConvertTimestamps', '(optional) If true, integer values that could be timestamps (= min. 10 digits) are converted to time strings.');
         $this->caption	            = $this->getOption('caption', '(optional) If set, a caption tag is added to the table. The caption text may contain the pattern "##" which will be replaced by a number.');
         $this->captionIndex         = $this->getOption('captionIndex', '(optional) If set, will override the automatically applied table counter');
-        $this->headers	            = $this->getOption('headers', '(optional) Column headers may be supplied in the form [A|B|C...]');
+        $this->headers	            = $this->getOption('headers', '(optional) Column headers may be supplied in the form [A|B|C...]', true);
         if (!$this->headers) {
             $this->headers          = $this->getOption('headersTop');   // synonyme for 'headers'
         }
@@ -80,9 +80,10 @@ class HtmlTable
         $this->showRowNumbers       = $this->getOption('showRowNumbers', '(optional) Adds a left most column showing row numbers.');
         $this->injectSelectionCol   = $this->getOption('injectSelectionCol', '(optional) Adds a column showing row selection checkboxes.');
         $this->hideMetaFields       = $this->getOption('hideMetaFields', '(optional) If true, system (or "meta") fields are not rendered (default: true).', true);
-        $this->renderAsDiv	        = $this->getOption('renderAsDiv', '(optional) If set, the table is rendered as &lt;div> tags rather than &lt;table>');
+ //        $this->renderAsDiv	        = $this->getOption('renderAsDiv', '(optional) If set, the table is rendered as &lt;div> tags rather than &lt;table>');
+        $this->renderAsDiv = false; // disabled for the time being...
         $this->tableDataAttr	    = $this->getOption('tableDataAttr', '(optional) ');
-        $this->renderDivRows        = $this->getOption('renderDivRows', '(optional) If set, each row is wrapped in an additional &lt;div> tag. Omitting this may be useful in conjunction with CSS grid.');
+ //        $this->renderDivRows        = $this->getOption('renderDivRows', '(optional) If set, each row is wrapped in an additional &lt;div> tag. Omitting this may be useful in conjunction with CSS grid.');
         $this->includeCellRefs	    = $this->getOption('includeCellRefs', '(optional) If set, data-source and cell-coordinates are added as \'data-xy\' attributes');
         //        $this->cellMask 	        = $this->getOption('cellMask', '(optional) Lets you define regions that a masked and thus will not get the cellClass. Selection code: rY -> row, cX -> column, eX,Y -> cell element.');
         //        $this->cellMaskedClass      = $this->getOption('cellMaskedClass', '(optional) Class that will be applied to masked cells');
@@ -140,58 +141,8 @@ class HtmlTable
 
  //        $this->applyMiscOptions();
 
-        $out = '';
-
-        // for "active tables": create ticket and set data-field:
-        if ($this->editingActive || $this->editableActive || $this->activityButtons || $this->recViewButtonsActive) {
-            $this->page->addModules('MD5');
-            $this->tableDataAttr .= " data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
-
-            // utility feature to export form template based on data structure:
-            if ($this->lzy->localCall && (getUrlArg('exportForm'))) {
-                $this->exportForm();
-            }
-        }
-
-        // option editable:
-        if ($this->id) {
-            $this->targetSelector = "#$this->id $this->targetSelector";
-        } else {
-            $this->targetSelector = ".lzy-table-{$this->tableCounter} $this->targetSelector";
-        }
-
-        if ($this->editingActive) {
-            $out .= $this->activateEditingForm();
-        } elseif ($this->editableActive) {
-            $this->liveDataSrcRef = $this->activateEditable();
-        } else {
-            if ($this->liveData) {            // option liveData:
-                $out .= $this->activateLiveData();
-            }
-            $this->editableBy = false;
-        }
-
-        if ($this->recViewButtonsActive) {
-            $out .= $this->renderForm();
-        }
-        if ($this->editingActive || $this->editableActive ||
-            $this->activityButtons || $this->recViewButtonsActive || @$this->showRecViewButton) {
-            $this->renderTextResources();
-
-            if (!$this->liveDataSrcRef) {
-                $setId = "set$this->tableCounter";
-                $tickRec[ $setId ]['_dataSource'] = $this->dataSource;
-                $tck = new Ticketing(['defaultMaxConsumptionCount' => false]);
-                if ($this->ticketHash && $tck->ticketExists($this->ticketHash)) {
-                    $tck->createHash(true);
-                    $tck->updateTicket($this->ticketHash, $tickRec);
-                } else {
-                    $this->ticketHash = $tck->createTicket($tickRec, false, 86400);
-                }
-                $this->liveDataSrcRef = " data-datasrc-ref='$this->ticketHash:$setId'";
-            }
-        }
-
+        $this->injectEditFormRef();
+        $out = $this->injectEditingFeatures();
         $this->convertLinks();
         $this->convertTimestamps();
         $out .= $this->renderHtmlTable() . $this->strToAppend;
@@ -828,14 +779,15 @@ EOT;
         $phpExpr = preg_replace('/^ \\\ \[ \[/x', '[[', $phpExpr);
 
         if ($_col !== false) {
-            $r = (isset($this->headers) && $this->headers) ? 1 : 0;
+            $skipHdr = (isset($this->headers) && $this->headers);
             if (strpos($phpExpr, 'sum()') !== false) {
                 $sum = 0;
-                for ($r=0; $r<sizeof($data); $r++) {
-                    if (!isset($data[$r])) {
+                foreach ($data as $r => $rec) {
+                    if ($skipHdr) {
+                        $skipHdr = false;
                         continue;
                     }
-                    $val = @$data[$r][$_col];
+                    $val = @$rec[$_col];
                     if (preg_match('/^([\d.]+)/', $val, $m)) {
                         $val = floatval($m[1]);
                         $sum += $val;
@@ -846,11 +798,12 @@ EOT;
             }
             if (strpos($phpExpr, 'count()') !== false) {
                 $count = 0;
-                for ($r=0; $r<sizeof($data); $r++) {
-                    if (!isset($data[$r])) {
+                foreach ($data as $r => $rec) {
+                    if ($skipHdr) {
+                        $skipHdr = false;
                         continue;
                     }
-                    $val = $data[$r][$_col];
+                    $val = @$rec[$_col];
                     if (preg_match('/\S/', $val)) {
                         $count++;
                     }
@@ -920,10 +873,6 @@ EOT;
 
     private function getDataElem($row, $col, $tag = 'td', $hdrElem = false)
     {
-        if ($this->hideMetaFields && $this->data['hdr'][$col] && ($this->data['hdr'][$col][0] === '_')) {
-            return null;
-        }
-
         $cell = @$this->data[$row][$col];
 
         $col1 = $col + 1;
@@ -1069,17 +1018,6 @@ EOT;
 
         }
 
-        if ($this->data) {
-            if ($this->headers === true) {
-                $this->headerElems = array_shift($this->data);
-            } else {
-                $this->headerElems = explodeTrim(',|', $this->headers );
-            }
-            $this->nCols = isset($this->data)? sizeof( reset($this->data) ): 0;
-            $this->nRows = sizeof($this->data);
-            return;
-        }
-
         if ($this->dataSource) {
                 if (!file_exists($this->dataSource)) {
                     $this->dataSource = false;
@@ -1087,6 +1025,8 @@ EOT;
         }
 
         $this->loadDataFromFile();
+
+        $this->determineHeaders();
 
         $this->sortData();
 
@@ -1452,9 +1392,6 @@ EOT;
         if ($this->editableBy) {
             $this->includeCellRefs = true;
         }
-        if (!$this->headers) {
-            $this->headers = true;
-        }
     } // checkArguments
 
 
@@ -1586,29 +1523,47 @@ EOT;
 
     private function excludeColumns()
     {
-        if ($this->excludeColumns) {
-            $data = &$this->data;
-            $exclColumns = explode(',', $this->excludeColumns);
-            $totalExcluded = 0;
+        if (!$this->excludeColumns && !$this->hideMetaFields) {
+            return;
+        }
+        $data = &$this->data;
+
+        // parse excludeColumns directive, e.g. '1,3-5':
+        $exclColumns = explodeTrim(',', $this->excludeColumns);
+        $colsToExclude = [];
+        if ($exclColumns) {
             foreach ($exclColumns as $descr) {
                 $descr = str_replace(' ', '', $descr);
-                if (preg_match('/(.*)\-(.*)/', $descr, $m)) {
+                if (preg_match('/(.*)-(.*)/', $descr, $m)) {
                     $c = $m[1] ? intval($m[1]) - 1 : 0;
                     $to = $m[2] ? intval($m[2]) : 9999;
-                    $len = $to - $c;
+                    for ($i = $c; $i < $to; $i++) {
+                        $colsToExclude[] = $i;
+                    }
                 } else {
                     $c = intval($descr) - 1;
-                    $len = 1;
+                    $colsToExclude[] = $c;
                 }
-                $c -= $totalExcluded;
-                $nCols = sizeof( reset($data) );
-                $c = max(0, min($c, $nCols));
-                $len = max(0, min($len, $nCols - $c));
-                $totalExcluded += $len;
+            }
+        }
 
-                foreach ($data as $r => $row) {
-                    array_splice($data[$r], $c, $len);
-                }
+        // add meta-fields to excludes if requested:
+        if ($this->hideMetaFields) {
+            $keyInx = array_search('_key', $this->headerElems);
+            if (!in_array($keyInx, $colsToExclude)) {
+                $colsToExclude[] = $keyInx;
+            }
+            $tsInx = array_search('_timestamp', $this->headerElems);
+            if (!in_array($tsInx, $colsToExclude)) {
+                $colsToExclude[] = $tsInx;
+            }
+        }
+        // delete columns in reverse order:
+        rsort($colsToExclude);
+        foreach ($colsToExclude as $c) {
+            array_splice($this->headerElems, $c, 1);
+            foreach ($data as $r => $row) {
+                array_splice($data[$r], $c, 1);
             }
         }
     } // excludeColumns
@@ -1732,13 +1687,15 @@ EOT;
         $this->structure = $structure = $ds->getStructure();
 
         $fields = $structure['elements'];
-        if ($this->headers === true) {
-            if (isset($structure['elemKeys'][0]) && is_int($structure['elemKeys'][0])) {
-                $this->headerElems = array_shift($data);
-            } else {
-                $this->headerElems = $structure['elemKeys'];
+        if ($this->headers) {
+            if ($this->headers === true) {
+                if (isset($structure['elemKeys'][0]) && is_int($structure['elemKeys'][0])) {
+                    $this->headerElems = array_shift($data0);
+                } else {
+                    $this->headerElems = $structure['elemKeys'];
+                }
             }
-            if ($this->includeKeys && !isset($this->headerElems['_key'])) {
+            if ($this->includeKeys && !in_array('_key', $this->headerElems)) {
                 $this->headerElems[] = '_key';
             }
         }
@@ -1925,5 +1882,85 @@ EOT;
         $attributes = " title='{{ lzy-table-delete-rec-title }}'";
         return [$button, $class, $attributes];
     } // appendDeleteButton
+
+
+
+
+    private function determineHeaders(): void
+    {
+        if (!$this->headerElems) {
+            $this->headerElems = null;
+            if ($this->data && ($this->headers === true)) {
+                $this->headerElems = array_shift($this->data);
+            } elseif (is_string($this->headers) && $this->headers) {
+                $this->headerElems = explodeTrim(',|', $this->headers);
+            }
+        }
+        $this->nCols = isset($this->data) ? sizeof(reset($this->data)) : 0;
+        $this->nRows = sizeof($this->data);
+    } // determineHeaders
+
+
+
+
+    private function injectEditFormRef(): void
+    {
+        // for "active tables": create ticket and set data-field:
+        if ($this->editingActive || $this->editableActive || $this->activityButtons || $this->recViewButtonsActive) {
+            $this->page->addModules('MD5');
+            $this->tableDataAttr .= " data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
+
+            // utility feature to export form template based on data structure:
+            if ($this->lzy->localCall && (getUrlArg('exportForm'))) {
+                $this->exportForm();
+            }
+        }
+    } // injectEditFormRef
+
+
+
+    private function injectEditingFeatures(): string
+    {
+        // option editable:
+        $out = '';
+        if ($this->id) {
+            $this->targetSelector = "#$this->id $this->targetSelector";
+        } else {
+            $this->targetSelector = ".lzy-table-{$this->tableCounter} $this->targetSelector";
+        }
+
+        if ($this->editingActive) {
+            $out .= $this->activateEditingForm();
+        } elseif ($this->editableActive) {
+            $this->liveDataSrcRef = $this->activateEditable();
+        } else {
+            if ($this->liveData) {            // option liveData:
+                $out .= $this->activateLiveData();
+            }
+            $this->editableBy = false;
+        }
+
+        if ($this->recViewButtonsActive) {
+            $out .= $this->renderForm();
+        }
+        if ($this->editingActive || $this->editableActive ||
+            $this->activityButtons || $this->recViewButtonsActive || @$this->showRecViewButton) {
+            $this->renderTextResources();
+
+            if (!$this->liveDataSrcRef) {
+                $setId = "set$this->tableCounter";
+                $tickRec[$setId]['_dataSource'] = $this->dataSource;
+                $tck = new Ticketing(['defaultMaxConsumptionCount' => false]);
+                if ($this->ticketHash && $tck->ticketExists($this->ticketHash)) {
+                    $tck->createHash(true);
+                    $tck->updateTicket($this->ticketHash, $tickRec);
+                } else {
+                    $this->ticketHash = $tck->createTicket($tickRec, false, 86400);
+                }
+                $this->liveDataSrcRef = " data-datasrc-ref='$this->ticketHash:$setId'";
+            }
+        }
+        return $out;
+    } // injectEditingFeatures
 
 } // HtmlTable
