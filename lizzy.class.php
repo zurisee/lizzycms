@@ -7,6 +7,7 @@
 
 define('CONFIG_PATH',           'config/');
 define('USER_CODE_PATH',        'code/');
+define('SERVICE_CODE_PATH',     USER_CODE_PATH.'service/');
 define('PATH_TO_APP_ROOT',      '');
 define('SYSTEM_PATH',           basename(dirname(__FILE__)).'/'); // _lizzy/
 define('DEFAULT_CONFIG_FILE',   CONFIG_PATH.'config.yaml');

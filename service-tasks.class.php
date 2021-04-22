@@ -132,7 +132,10 @@ class ServiceTasks
                      $value = $_GET[$urlArg];
                      // check whether script with name of urlArg exists:
                      $baseName = fileExt($urlArg, true);
-                     $taskFile = USER_CODE_PATH . "-$baseName.php";
+                     $taskFile = SERVICE_CODE_PATH . "$baseName.php";
+                     if (!file_exists( $taskFile )) {
+                         die("file not found: '$baseName.php'");
+                     }
                      if (file_exists( $taskFile )) {
                          require_once $taskFile;
                          return;
@@ -289,7 +292,7 @@ class ServiceTasks
             return false;
         }
         $codeFile = fileExt($codeFile, true);
-        $taskFile = USER_CODE_PATH . "-$codeFile.php";
+        $taskFile = SERVICE_CODE_PATH . "$codeFile.php";
         if (file_exists( $taskFile )) {
             require_once $taskFile;
 
@@ -387,7 +390,7 @@ class ServiceTasks
             // check whether execution time was between last run and this one:
             if ($forceRun || (($scheduledTime > $lastRun) && ($scheduledTime <= $now))) {  // fire now:
                 $do = str_replace('@', '', base_name($scheduleRec['do'], false));
-                $do = USER_CODE_PATH . "@$do.php";
+                $do = SERVICE_CODE_PATH . "@$do.php";
                 if (file_exists($do)) {
                     require_once $do;
                     if (function_exists('executeScheduledTask')) {
