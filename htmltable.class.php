@@ -49,7 +49,7 @@ class HtmlTable
         $this->cellIds 	            = $this->getOption('cellIds', '(optional) If true, each cell gets an ID which is derived from the cellClass');
         $this->nRows 		        = $this->getOption('nRows', '(optional) Number of rows: if set the table is forced to this number of rows');
         $this->nCols 		        = $this->getOption('nCols', '(optional) Number of columns: if set the table is forced to this number of columns');
-        $this->includeKeys          = $this->getOption('includeKeys', '[true|false] If true and not a .csv source: key elements will be included in data.');
+        $this->includeKeys          = $this->getOption('includeKeys', '[true|false] If true and not a .csv source: key elements will be included in data.', true);
         $this->interactive          = $this->getOption('interactive', '[true|false] If true, module "Datatables" is activated, providing for interactive features such as sorting, searching etc.');
         $this->liveData             = $this->getOption('liveData', '[true|false] If true, Lizzy\'s "liveData" mechanism is activated. If the dataSource is modified on the server, changes are immediately mirrored in the webpage.');
         $this->dataSelector         = $this->getOption('dataSelector', '(optional string) If defined and "liveData" is activated, this option defines how to access data elements from the DB. (Default: \'*,*\')', '*,*');
@@ -804,6 +804,7 @@ EOT;
                         continue;
                     }
                     $val = @$rec[$_col];
+                    $val = preg_replace('/(<{<([^>]*)>}>)/', '', $val); // ignore data-ref
                     if (preg_match('/\S/', $val)) {
                         $count++;
                     }
@@ -1677,10 +1678,12 @@ EOT;
             return;
         }
 
+        $this->options['includeKeys'] = $this->includeKeys;
         if ($this->editableBy) {
             $this->options['includeTimestamp'] = true;
             $this->options['includeKeys'] = true;
         }
+        $this->options['includeTimestamp'] = $this->options['includeKeys'];
         $ds = new DataStorage2($this->options);
         $this->ds = $ds;
         $data0 = $ds->read();
