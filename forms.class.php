@@ -2113,7 +2113,7 @@ EOT;
         if ((@$this->currForm->dataKey !== null) && (@$this->currForm->dataKey !== '')) {
             $this->recKey = $currForm->dataKey;
         } elseif ($this->recKey === null) {
-            $this->recKey = 'unknown';
+            $this->recKey = createHash();
         }
 
         $userSuppliedData = &$this->userSuppliedData;

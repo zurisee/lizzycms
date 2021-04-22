@@ -139,7 +139,6 @@ class DataStorage2
         $this->structureFile = isset($args['structureFile']) ? $args['structureFile'] : false;
         $this->structureDef = isset($args['structureDef']) ? $args['structureDef'] : false;
         $this->exportInternalFields = isset($args['exportInternalFields']) ? $args['exportInternalFields'] : false;
-        return;
     } // parseArguments
 
 
