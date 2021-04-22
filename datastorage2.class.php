@@ -2223,7 +2223,9 @@ EOT;
         $lines = file($this->dataFile);
         $rawData = '';
         foreach ($lines as $line) {
-            if ($line && ($line[0] !== '#') && ($line[0] !== "\n")) { // skip commented and empty lines
+            if (strpos($line, '__END__') === 0) {
+                break;
+            } elseif ($line && ($line[0] !== '#') && ($line[0] !== "\n")) { // skip commented and empty lines
                 $rawData .= $line;
             }
         }
