@@ -991,6 +991,9 @@ EOT;
             if ($this->config->isPrivileged) {
                 $this->page->addBodyClasses("lzy-privileged");
             }
+            if ($this->auth->isLoggedIn()) {
+                $this->page->addBodyClasses("lzy-loggedin");
+            }
             if ($this->auth->isAdmin()) {
                 $this->page->addBodyClasses("lzy-admin");
             }
