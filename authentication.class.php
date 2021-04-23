@@ -187,7 +187,7 @@ EOT;
 
 
     //....................................................
-    public function validateOnetimeAccessCode($code, $forceDefinePW)
+    public function validateOnetimeAccessCode($code, $forceDefinePW = false)
     {
         // invoked in 2 possible ways:
         //  1) from analyzeHttpRequest() -> code = last part of url
