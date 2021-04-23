@@ -121,7 +121,11 @@ class Authentication
                 writeLogStr("logged in: $requestingUser [{$rec['groups']}] (" . getClientIP(true) . ')', LOGIN_LOG_FILENAME);
                 $res = $requestingUser;
 
-            } else {                                        // login failed: pw wrong
+            } else {
+                // login by un&pw failed: pw wrong -> check whether it was a one-time code:
+                $res = $this->validateOnetimeAccessCode($providedPW);    // reloads on success, returns on failure
+
+                // login failed for good:
                 $rep = '';
                 if ($this->handleFailedLogins()) {
                     $rep = ' REPEATED';
@@ -302,7 +306,8 @@ EOT;
                     $this->setUserAsLoggedIn($user, $rec);
                     writeLogStr("user '$user' successfully logged in via access link ($codeCandidate). [".getClientIP().']', LOGIN_LOG_FILENAME);
                     if ($keepAccessCode) {
-                        $this->lzy->page->addMessage('{{ lzy-login-successful }}');
+                        $msg = $this->lzy->trans->translate('{{ lzy-login-successful-as }}');
+                        $this->lzy->page->addMessage("$msg: $user");
                         return true;
                     } else {
                         $requestedUrl = $GLOBALS['globalParams']['requestedUrl'];
@@ -803,8 +808,8 @@ EOT;
 
     public function isAdmin($thorough = false)
     {
-        if (!$thorough && getStaticVariable('isAdmin')) {
-            return true; //??? secure?
+        if (!$thorough && $GLOBALS['globalParams']['isAdmin']) {
+            return true;
         }
         return $this->checkAdmission('admins');
     } // isAdmin
