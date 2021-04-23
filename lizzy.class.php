@@ -516,13 +516,7 @@ private function loadRequired()
     private function checkAdmissionToCurrentPage()
     {
         if ($reqGroups = $this->isRestrictedPage()) {     // handle case of restricted page
-            if ($reqGroups === 'privileged') {
-                $ok = $this->auth->isPrivileged();
-            } elseif ($reqGroups === 'loggedin') {
-                $ok = $this->auth->isLoggedIn();
-            } else {
-                $ok = $this->auth->checkGroupMembership( $reqGroups );
-            }
+            $ok = !checkPermission($reqGroups, $this );
             if (!$ok) {
                 $this->loginFormRequired = true; // login form rendered later in appendLoginForm()
                 return false;
