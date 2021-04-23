@@ -65,6 +65,14 @@ class Authentication
             if ($user && ($msg = getNotificationMsg())) {
                 $msg = $this->lzy->trans->translateVariable($msg, true);
                 $res = [$user, "<p>{{ $msg }}</p>", 'Message' ];   //
+
+                // check forceDefinePW:
+                if (@$_SESSION['lizzy']['forceDefinePW']) {
+                    $ac = new UserAccountForm($this->lzy);
+                    $form = $ac->renderNewPwForm($user);
+                    $this->lzy->page->addOverlay($form);
+                    $_SESSION['lizzy']['forceDefinePW'] = false;
+                }
             }
         }
 
@@ -123,7 +131,7 @@ class Authentication
 
             } else {
                 // login by un&pw failed: pw wrong -> check whether it was a one-time code:
-                $res = $this->validateOnetimeAccessCode($providedPW);    // reloads on success, returns on failure
+                $res = $this->validateOnetimeAccessCode( $providedPW, true );    // reloads on success, returns on failure
 
                 // login failed for good:
                 $rep = '';
@@ -179,7 +187,7 @@ EOT;
 
 
     //....................................................
-    public function validateOnetimeAccessCode($code)
+    public function validateOnetimeAccessCode($code, $forceDefinePW)
     {
         // invoked in 2 possible ways:
         //  1) from analyzeHttpRequest() -> code = last part of url
@@ -203,7 +211,11 @@ EOT;
             writeLogStr("one time link accepted: $user [".getClientIP().']', LOGIN_LOG_FILENAME);
 
             if (!$this->lzy->keepAccessCode) {
-                // access granted, remove hash-code from url, if there is one:
+                // access granted
+                if ($forceDefinePW) {
+                    setStaticVariable('forceDefinePW', true);
+                }
+                // remove hash-code from url, if there is one:
                 $requestedUrl = $GLOBALS['globalParams']['requestedUrl'];
                 $requestedUrl = preg_replace('|/[A-Z][A-Z0-9]{4,}/?$|', '', $requestedUrl);
                 $requestedUrl = preg_replace('|/\?.*$|', '', $requestedUrl);

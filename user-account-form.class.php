@@ -238,7 +238,18 @@ EOT;
         $this->page->addOverride($str);
 
         return $this->page;
-    }
+    } // renderChangePwForm
+
+
+    public function renderNewPwForm($user, $notification = '', $message = '')
+    {
+        $str = "<h2>{{ lzy-define-new-password }}</h2>";
+        $str .= "<p>{{ lzy-define-new-password-text }}</p>";
+        $this->page = new Page;
+        $str .= $this->createChangePwForm($user, $notification, $message);
+
+        return $str;
+    } // renderNewPwForm
 
 
     public function renderOnetimeLinkEntryForm($user, $validUntilStr, $prefix)

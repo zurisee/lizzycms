@@ -599,6 +599,14 @@ Err empty email:
     en: You need to enter an e-mail address
 
 
+lzy-define-new-password:
+    de: 'Neues Kennwort festlegen'
+    _:  'Define New Password'
+
+lzy-define-new-password-text:
+    de: '<strong>Achtung</strong>:<br>Sie haben sich eben mit einem "Einmal-Code" angemeldet. Dieser wird künftig nicht mehr funktionieren. Sie können hier Ihr neues persönliches Kennwort festlegen:'
+    _:  '<strong>Note</strong>:<br>You just logged in by means of a "one-time code", which will not work in the future. Here you can define your own password which will continue to work in the future:'
+
 
     
 #Email Access-Link Subject:
