@@ -543,17 +543,14 @@ private function loadRequired()
             return;
         }
 
-        if ($presetUser !== null) {
+        if ($presetUser !== null) { // explicit url-arg request to present login form
+            mylog('rendering login form as popup triggered by url-arg', false);
             $this->renderLoginForm( true, $presetUser );
 
-        } else {
-            $loginForm = $this->renderLoginForm( false );
-            $this->page->addOverride($loginForm);
-        }
-
-        if ($this->auth->isLoggedIn()) {   // signal in body tag class whether user is logged in
-            $this->page->addBodyClasses('lzy-user-logged-in');  // if user is logged in, there's no need for login form
-            return;
+        } else {    // login form required (user tries to access restricted area)
+            if ($loginForm = $this->renderLoginForm( false )) {
+                $this->page->addOverride($loginForm);
+            }
         }
     } // appendLoginForm
 
@@ -2006,13 +2003,16 @@ EOT;
 
     private function renderLoginForm($asPopup = true, $presetUser = false)
     {
-        if ($this->loginFormRendered) {
+        if ($this->loginFormRendered) { // already done, don't repeat
             return '';
         }
         $this->loginFormRendered = true;
+
         $accForm = new UserAccountForm($this);
         $preOpenPanel = $presetUser? 2:1;
         $html = $accForm->renderLoginForm($this->auth->message, false, true, $preOpenPanel);
+
+        // inject preset user name:
         if ($presetUser) {    // preset username if known
             $jq = <<<EOT
 $('#fld_lzy-login-username-1').val('$presetUser')
@@ -2053,7 +2053,6 @@ EOT;
 $html
     </div>
 EOT;
-
             return $html;
         }
     } // renderLoginForm
