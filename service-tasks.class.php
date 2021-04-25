@@ -36,11 +36,14 @@ class ServiceTasks
             $this->handleEditSaveRequests();
             $this->restoreEdition();  // if user chose to activate a previous edition of a page
 
+            $this->runDailyHousekeepingTask();
+
             $this->runScheduledTasks();
 
             $this->runPgRequestTriggeredServiceTask();
 
-            $this->runDailyHousekeepingTask();
+            // reset housekeeping flag:
+            touch(HOUSEKEEPING_FILE);
         }
     } // runServiceTasks
 
@@ -116,34 +119,14 @@ class ServiceTasks
 
              // service task trigged every request:
              if (isset($serviceTasksDef['onPageRequest']) && $serviceTasksDef['onPageRequest']) {
-                 $this->executeServiceTask($serviceTasksDef['onPageRequest']);
+                 $this->executeServiceTask( 'onPageRequest' );
              }
 
              // service task triggered by configurable request GET arg:
              if (isset($serviceTasksDef['onRequestGetArg']) ) {
-                 $urlArg = $serviceTasksDef['onRequestGetArg'];
-                 if (strpos($urlArg, ':') !== false) {
-                     list($urlArg, $functionToCall) = explodeTrim(':', $urlArg);
-                 } else {
-                     $functionToCall = 'executeService';
-                 }
-
-                 if (isset($_GET[ $urlArg ])) { // urlArg present:
-                     $value = $_GET[$urlArg];
-                     // check whether script with name of urlArg exists:
-                     $baseName = fileExt($urlArg, true);
-                     $taskFile = SERVICE_CODE_PATH . "$baseName.php";
-                     if (!file_exists( $taskFile )) {
-                         die("file not found: '$baseName.php'");
-                     }
-                     if (file_exists( $taskFile )) {
-                         require_once $taskFile;
-                         return;
-                     }
-
-                     unset($_GET[$urlArg]);
-                     // check whether script with name of value of urlArg exists:
-                     $this->executeServiceTask($value, $functionToCall);
+                 $urlArgName = $serviceTasksDef['onRequestGetArg'];
+                 if (isset($_GET[ $urlArgName ])) {
+                     $this->executeServiceTask( 'onRequestGetArg' );
                  }
              }
          }
@@ -169,10 +152,9 @@ class ServiceTasks
 
         $this->checkInstallation2();   // check pages/ -> writable if editing is enabled
 
-        $this->runDailyTask();
-
-        // reset housekeeping flag:
-        touch(HOUSEKEEPING_FILE);
+        if (@$this->config->admin_serviceTasks['daily']) {
+            $this->executeServiceTask( 'daily');
+        }
     } // runDailyHousekeepingTask
 
 
@@ -285,19 +267,21 @@ class ServiceTasks
 
 
 
-    private function executeServiceTask($codeFile, $functionToCall = false)
+    private function executeServiceTask( $taskType )
     {
-        $codeFile = ltrim(base_name($codeFile, true), '-');
-        if (!$codeFile) {
-            return false;
-        }
-        $codeFile = fileExt($codeFile, true);
-        $taskFile = SERVICE_CODE_PATH . "$codeFile.php";
+        $argName = $this->config->admin_serviceTasks[ $taskType ];
+        $baseName = fileExt($argName, true);
+        $taskFile = SERVICE_CODE_PATH . "$baseName.php";
         if (file_exists( $taskFile )) {
+            mylog("ServiceTask[$taskType] executed: $taskFile", false);
             require_once $taskFile;
 
-            if ($functionToCall && function_exists($functionToCall)) {
-                return $functionToCall( $this->lzy );   // may exit sending json data to agent
+            $urlArgValue = @$_GET[ $argName ];
+            if ($urlArgValue && function_exists( $urlArgValue )) {
+                return $urlArgValue( $this->lzy );   // may exit sending json data to agent
+
+            } elseif (function_exists( 'executeService' )) {
+                return executeService( $this->lzy );   // may exit sending json data to agent
             }
             return true;
         } else {
@@ -305,19 +289,6 @@ class ServiceTasks
         }
         return false;
     } // executeServiceTask
-
-
-
-
-    private function runDailyTask()
-    {
-        if (isset($this->config->admin_serviceTasks['daily'])) {
-            $dailyTask = $this->config->admin_serviceTasks['daily'];
-            if ($dailyTask) {
-                $this->executeServiceTask($dailyTask);
-            }
-        }
-    } // runDailyTask
 
 
 
@@ -548,19 +519,13 @@ class ServiceTasks
         }
         $purgeDefFile = CONFIG_PATH . $this->config->admin_serviceTasks['dailyFilePurge'];
         if (file_exists($purgeDefFile)) {
-            $files0 = file($purgeDefFile);
-            $files = [];
+            $str = getFile($purgeDefFile,'emptyLines');
+            $files0 = explode("\n", $str);
             // parse lines, omit blank lines and comments, resolve wildcards
             foreach ($files0 as $i => $file) {
                 $file = trim($file);
-                if (!$file || ($file[0] === '#')) {
-                    continue;
-                }
-                if ($file === '__END__') {
-                    break;
-                }
                 if (strpos($file, '*') !== false) {
-                    $f = glob($file);
+                    $f = findFileDeep( $file );
                     $files = array_merge($files, $f);
                 } else {
                     $files[] = $file;
