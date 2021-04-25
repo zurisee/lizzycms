@@ -92,7 +92,7 @@ class Lizzy
 	private $systemPath = SYSTEM_PATH;
 	public  $pathToRoot;
 	public  $pagePath;
-    public $reqPagePath;
+    public  $reqPagePath;
 	public  $siteStructure;
 	public  $trans;
 	public  $page;

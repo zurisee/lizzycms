@@ -289,7 +289,7 @@ class AjaxServer
             lzyExit('failed#del-rec');
         }
         $recKeyStr = get_post_data('recKeys');
-        mylog("deleteDataRec: $recKeyStr from $this->dataFile", false);
+        mylog("deleteDataRec: $recKeyStr from $this->dataFile");
         $recKeys = explodeTrim(',', $recKeyStr);
 
         if (!$this->db->lockDB()) {

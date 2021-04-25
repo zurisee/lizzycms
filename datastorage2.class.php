@@ -419,7 +419,7 @@ class DataStorage2
             $this->lowLevelWrite();
             $res = true;
         } else {
-            mylog("### Datastorage:deleteRecord: '$recId' not found", false);
+            mylog("### Datastorage:deleteRecord: '$recId' not found");
         }
 
         if ($locking) {

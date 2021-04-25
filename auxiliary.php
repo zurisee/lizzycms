@@ -457,6 +457,16 @@ function findFile($pat)
 
 
 
+function findFileDeep($pattern, $flags = 0) {
+    $files = glob($pattern, $flags);
+    foreach (glob(dirname($pattern).'/*', GLOB_ONLYDIR|GLOB_NOSORT) as $dir) {
+        $files = array_merge($files, findFileDeep($dir.'/'.basename($pattern), $flags));
+    }
+    return $files;
+} // findFileDeep
+
+
+
 
 function getFile($pat, $removeComments = false)
 {
@@ -1692,9 +1702,13 @@ function translateToClassName($str)
 
 
 
-function mylog($str, $destination = false)
+function mylog($str, $notDebugOnly = true)
 {
-	writeLogStr($str, $destination);
+    if ($notDebugOnly) {
+        writeLogStr($str);
+    } elseif (@$_SESSION['lizzy']['debug']) {
+        writeLogStr('### '.$str);
+    }
 } // mylog
 
 

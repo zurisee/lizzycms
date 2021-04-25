@@ -348,9 +348,11 @@ function resolvePath($path)
 
 
 
-function mylog($str, $user = false)
+function mylog($str, $notDebugOnly = true)
 {
-    writeLog($str, $user);
+    if ($notDebugOnly || @$_SESSION['lizzy']['debug']) {
+        writeLog( $str );
+    }
 } // mylog
 
 
