@@ -60,8 +60,8 @@ class OutputList
         $emptyListPlaceholder = @$args['emptyListPlaceholder']? $args['emptyListPlaceholder']: '-- empty list --';
         $out = '';
 
-
-        if (preg_match_all('|<em>(.*?)</em>|', $source, $m)) {
+        $source = preg_replace('|</?em>|', '_', $source); // '_' may have been translated to '<em>' by MD compiler
+        if (preg_match_all('|_(.*?)_|', $source, $m)) {
             foreach ($m[1] as $i => $group) {
                 if ($group === 'all') {
                     $group = '';
