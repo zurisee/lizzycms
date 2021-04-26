@@ -109,7 +109,7 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
             $val = false;
         } elseif (is_string($val)) {
             if (preg_match('/^ (!?) (isLoggedin|isPrivileged|isAdmin) $/x', $val, $m)) {
-                $GLOBALS["globalParams"]["cachingActive"] = false;
+                $GLOBALS['globalParams']['cachingActive'] = false;
                 $val = false;
                 if ($m[2] === 'isAdmin') {
                     $val = $GLOBALS['globalParams']['isAdmin'];
@@ -1104,7 +1104,7 @@ function makePathRelativeToPage($path, $resolvePath = false)
 
 function resolveHrefs( &$html )
 {
-    $appRoot = $GLOBALS["globalParams"]["appRoot"];
+    $appRoot = $GLOBALS['globalParams']['appRoot'];
     $prefix = $appRoot.'?lzy=';
     $p = strpos($html, '~/');
     while ($p !== false) {
@@ -2144,11 +2144,11 @@ function shieldMD($md)
 
 
 
-function isLocalCall()
+function islocalHost()
 {
     $serverName = (isset($_SERVER['SERVER_NAME'])) ? $_SERVER['SERVER_NAME'] : 'localhost';
     $remoteAddress = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : '';
-    if (($state = getStaticVariable('localcall')) !== null) {
+    if (($state = getStaticVariable('localHost')) !== null) {
         return $state;
     }
     if (($serverName === 'localhost') || ($remoteAddress === '::1')) {
@@ -2156,7 +2156,7 @@ function isLocalCall()
     } else {
         return false;
     }
-} // isLocalCall
+} // islocalHost
 
 
 
@@ -2249,7 +2249,7 @@ function fatalError($msg, $origin = '', $offendingFile = '')
         reloadAgent();
     }
 
-    if (isLocalCall()) {
+    if (islocalHost()) {
         exit($msg);
     } else {
         exit;

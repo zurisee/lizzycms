@@ -584,7 +584,7 @@ class ServiceTasks
     {
         $pageFolder = PAGES_PATH;
         $recycleBinFolderName = rtrim(RECYCLE_BIN,'/');
-        $isLocalhost = isLocalCall();
+        $isLocalhost = islocalHost();
 
         // purge in page folders:
         $pageFolders = getDirDeep($pageFolder, true, false, true);

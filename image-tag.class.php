@@ -114,7 +114,7 @@ EOT;
 
         $basename = '_/'.base_name($srcFile, false);
         $ext = '.'.fileExt($srcFile);
-        $path = $GLOBALS["globalParams"]["appRoot"].$GLOBALS["globalParams"]["pageFilePath"]; // absolute path from app root
+        $path = $GLOBALS['globalParams']['appRoot'].$GLOBALS['globalParams']['pageFilePath']; // absolute path from app root
 
         if ($this->srcset) {   // activate only if source file is largen than 50kb
             $w1 = ($this->w && ($this->w < $this->imgFullsizeWidth)) ? $this->w : $this->feature_SrcsetDefaultStepSize;

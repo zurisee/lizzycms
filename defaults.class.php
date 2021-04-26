@@ -318,18 +318,18 @@ private $userConfigurableSettingsAndDefaults      = [
             }
         }
 
-        if (isLocalCall()) {
-            if (($lc = getUrlArgStatic('localcall')) !== null) {
-                $localCall = $lc;
+        if (islocalHost()) {
+            if (($lc = getUrlArgStatic('localHost')) !== null) {
+                $localHost = $lc;
             } else {
-                $localCall = true;
+                $localHost = true;
             }
         } else {
-            $localCall = false;
-            setStaticVariable('localcall', false);
+            $localHost = false;
+            setStaticVariable('localHost', false);
         }
 
-        $this->isLocalhost = $this->localCall = $localCall;
+        $this->isLocalhost = $this->localHost = $localHost;
 
     } // getConfigValues
 
@@ -465,7 +465,7 @@ EOT;
             case 2: $level2Class = ' class="lzy-config-viewer-hl"'; break;
             case 3: $level3Class = ' class="lzy-config-viewer-hl"'; break;
         }
-        $url = $GLOBALS["globalParams"]["pageUrl"];
+        $url = $GLOBALS['globalParams']['pageUrl'];
 
         if (isset($_POST) && $_POST) {
             $this->updateConfigValues( $_POST, $this->configFile );

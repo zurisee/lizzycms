@@ -97,3 +97,16 @@
 .lzy-overlay-background-frozen {
   overflow: hidden;
 }
+
+
+.lzy-default-layout {
+  .lzy-inactive {
+    color: #888;
+  }
+}
+#lzy .lzy-login-menu .lzy-popup-container {
+  padding: 1.5em 1em;
+  li::before {
+    content: "→ ";
+  }
+}

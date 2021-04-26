@@ -39,7 +39,7 @@ $this->addMacro($macroName, function () {
         $res = false;
 
     } elseif ($state === 'islocalhost') {
-        $res = isLocalCall();
+        $res = islocalHost();
 
     } elseif ($state === 'loggedin') {
         $res = $this->lzy->auth->getLoggedInUser();
@@ -74,7 +74,7 @@ $this->addMacro($macroName, function () {
         }
 
     } elseif ($path) {
-        $currPath = getcwd().'/'.$GLOBALS["globalParams"]["pathToPage"];
+        $currPath = getcwd().'/'.$GLOBALS['globalParams']['pathToPage'];
         $res = (strpos($currPath, $path) !== false);
 
     } elseif ($urlArg) {

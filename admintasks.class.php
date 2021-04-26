@@ -102,7 +102,7 @@ class AdminTasks
                     <h1 style="margin: 2em 0 1em;">Sending invitations:</h1>
                     <pre>\n$result</pre>
                     <div style="margin: 2em 0">
-                        <a href='{$GLOBALS["globalParams"]["pageUrl"]}'>Continue...</a>
+                        <a href='{$GLOBALS[localHost]["pageUrl"]}'>Continue...</a>
                     </div>
 EOT;
             } else {
@@ -119,10 +119,10 @@ EOT;
             $userRec = $this->auth->getLoggedInUser( true );
             if (!(isset($userRec['locked']) && $userRec['locked'])) {
                 if (isset($userRec['groupAccount']) && $userRec['groupAccount'] &&
-                    isset($_SESSION["lizzy"]["loginEmail"])) {
+                    isset($_SESSION['lizzy']['loginEmail'])) {
                     // if a member of a group account wants to change profile -> create new sub-account
-                    $email = $_SESSION["lizzy"]["loginEmail"];
-                    $key = $_SESSION["lizzy"]["loginEmail"];
+                    $email = $_SESSION['lizzy']['loginEmail'];
+                    $key = $_SESSION['lizzy']['loginEmail'];
                     $newRec[$key] = [
                         'email' => $email,
                         'groups' => $userRec["groups"],
@@ -353,7 +353,7 @@ EOT;
         $acStr = $acAnnouncement = '';
         if (isset($rec['accessCode'])) {
             $userRec['accessCode'] = $rec['accessCode'];
-            $href = $GLOBALS["globalParams"]["absAppRootUrl"].$rec['accessCode'];
+            $href = $GLOBALS[localHost]["absAppRootUrl"].$rec['accessCode'];
             $link = "<a class='lzy-user-self-signup-access-link' href='$href.'>$href</a>";  // trailing dot -> skip reload agend so user can see access link
             $acStr = "\t\t\t\t<div><span>{{ lzy-user-self-signup-access-link }}:</span><span>$link</span></div>\n";
             $acExplanation = "\t\t\t\t{{ lzy-user-self-signup-access-code1 }}\n";
@@ -370,7 +370,7 @@ EOT;
 $acStr
 $acExplanation
             </div>
-            <p><a href="{$GLOBALS["globalParams"]["absAppRootUrl"]}">{{ lzy-form-continue }}</a> </p>
+            <p><a href="{$GLOBALS['globalParams']['absAppRootUrl']}">{{ lzy-form-continue }}</a> </p>
 EOT;
 
         } else {
@@ -800,7 +800,7 @@ EOT;
             $subject = $this->trans->translate( $pM['subject'] );
             $message = $this->trans->translate( $pM['message'] );
 
-            if ($this->localCall) {
+            if ($this->localHost) {
                 $this->page->addOverlay("<pre class='debug-mail'><div>Subject: $subject</div>\n<div>$message</div></pre>");
                 $this->page->addJq("$( 'body' ).keydown( function (e) {if (e.which === 27) { $('.overlay').hide(); } });");
             } else {

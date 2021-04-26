@@ -14,10 +14,10 @@ $this->addMacro($macroName, function () {
     $noDataResponse = $this->getArg($macroName, 'noDataResponse', '(optional) Response if no data was found.', "<div class='lzy-get-data-none-found'>{{ lzy-get-data-none-found }}</div>\n");
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(false) Enables page caching (which is disabled for this macro by default). Note: only active if system-wide caching is enabled.', true);
 
-    if (!isset($GLOBALS["globalParams"]['get-data'][ $GLOBALS["globalParams"]["pagePath"] ])) {
-        $GLOBALS["globalParams"]['get-data'][ $GLOBALS["globalParams"]["pagePath"]] = 0;
+    if (!isset($GLOBALS['globalParams']['get-data'][ $GLOBALS['globalParams']['pagePath'] ])) {
+        $GLOBALS['globalParams']['get-data'][ $GLOBALS['globalParams']['pagePath']] = 0;
     }
-    $inx = $GLOBALS["globalParams"]['get-data'][$GLOBALS["globalParams"]["pagePath"]];
+    $inx = $GLOBALS['globalParams']['get-data'][$GLOBALS['globalParams']['pagePath']];
 
     if ($dataSrc === 'help') {
         return;
@@ -30,21 +30,21 @@ $this->addMacro($macroName, function () {
         $n = $db->getNoOfRecords();
         if ($inx < $n - 1) {
             $inx = $inx + 1;
-            $GLOBALS["globalParams"]['get-data'][$GLOBALS["globalParams"]["pagePath"]]++;
+            $GLOBALS['globalParams']['get-data'][$GLOBALS['globalParams']['pagePath']]++;
         }
         $value = $db->readElement($inx);
 
     } elseif ($dataSelector === 'prev') {
         if ($inx > 0) {
             $inx = $inx - 1;
-            $GLOBALS["globalParams"]['get-data'][$GLOBALS["globalParams"]["pagePath"]]--;
+            $GLOBALS['globalParams']['get-data'][$GLOBALS['globalParams']['pagePath']]--;
         }
         $value = $db->readElement($inx);
 
     } elseif (($dataSelector === 'this') || !$dataSelector) {
         $value = $db->readElement($inx);
         if (!$dataSelector) {
-            $GLOBALS["globalParams"]['get-data'][$GLOBALS["globalParams"]["pagePath"]]++;
+            $GLOBALS['globalParams']['get-data'][$GLOBALS['globalParams']['pagePath']]++;
         }
 
     } else {

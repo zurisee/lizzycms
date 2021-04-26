@@ -1410,7 +1410,7 @@ EOT;
         if (!$allowOrigin) {
             return;
         }
-        if ($this->lzy->localCall && !isset($_SERVER['HTTP_ORIGIN'])) {
+        if ($this->lzy->localHost && !isset($_SERVER['HTTP_ORIGIN'])) {
             header('Access-Control-Allow-Origin: *');
             return;
         }
@@ -1561,7 +1561,7 @@ EOT;
 
     private function renderRelLinks()
     {
-        $home = rtrim($GLOBALS["globalParams"]["host"], '/') . $GLOBALS["globalParams"]["appRoot"];
+        $home = rtrim($GLOBALS['globalParams']['host'], '/') . $GLOBALS['globalParams']['appRoot'];
         $headInjections = "\t<link rel='home' title='Home' href='$home' >\n";
         if ($this->lzy->siteStructure->prevPage) {
             $headInjections .= "\t<link rel='prev' title='Previous' href='~/{$this->lzy->siteStructure->prevPage}' >\n";

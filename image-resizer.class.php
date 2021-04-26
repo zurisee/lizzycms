@@ -320,8 +320,8 @@ EOT;
         if (!file_exists($manifestFilename)) {
             $manifest = <<<EOT
 {
-    "name": "{$GLOBALS["globalParams"]["site_title"]}",
-    "short_name": "{$GLOBALS["globalParams"]["site_title"]}",
+    "name": "{$GLOBALS['globalParams']['site_title']}",
+    "short_name": "{$GLOBALS['globalParams']['site_title']}",
     "icons": [
 $manifestStr
     ],
@@ -333,7 +333,7 @@ $manifestStr
 EOT;
             file_put_contents($manifestFilename, $manifest);
         }
-        $manifestFilename = $GLOBALS["globalParams"]["appRootUrl"] . $manifestFilename;
+        $manifestFilename = $GLOBALS['globalParams']['appRootUrl'] . $manifestFilename;
         $out = rtrim($out) . "\n\t<link rel='manifest' href='$manifestFilename'>";
         return $out;
     } // createFavicons

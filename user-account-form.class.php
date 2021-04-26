@@ -391,8 +391,8 @@ EOT;
     {
         $user = isset($userRec['username']) ? $userRec['username'] : '';
         if (isset($userRec['groupAccount']) && $userRec['groupAccount'] &&
-            isset($_SESSION["lizzy"]["loginEmail"])) {
-            $user = $_SESSION["lizzy"]["loginEmail"];
+            isset($_SESSION['lizzy']['loginEmail'])) {
+            $user = $_SESSION['lizzy']['loginEmail'];
         }
         $email = isset($userRec['email']) ? $userRec['email'] : '';
         $form1 = $this->createChangePwForm($user, $notification, $message);
@@ -778,13 +778,13 @@ EOT;
     private function createCreateUserForm($rec, $hash)
     {
         $this->inx++;
-        $path = $GLOBALS["globalParams"]["pagePath"];
+        $path = $GLOBALS['globalParams']['pagePath'];
         if ($path) {
             $path = trunkPath($path, 1, false);
         } else {
             $path = '';
         }
-        $url = $GLOBALS["globalParams"]["appRoot"].$path.$hash.'/';
+        $url = $GLOBALS['globalParams']['appRoot'].$path.$hash.'/';
         $email = $rec['email'];
 
         $username = $this->renderTextlineInput('lzy-self-signup-user-', 'username', true);
@@ -1310,8 +1310,8 @@ EOT;
     private function renderLoginAccountLink( $userRec )
     {
         $displayName = $this->loggedInUser;
-        if (isset($userRec['groupAccount']) && $userRec['groupAccount'] && isset($_SESSION["lizzy"]["loginEmail"])) {
-            $displayName = $_SESSION["lizzy"]["loginEmail"];
+        if (isset($userRec['groupAccount']) && $userRec['groupAccount'] && isset($_SESSION['lizzy']['loginEmail'])) {
+            $displayName = $_SESSION['lizzy']['loginEmail'];
         }
 
         $logInVar = <<<EOT
@@ -1331,18 +1331,22 @@ EOT;
         $locked = isset($userRec['locked']) && $userRec['locked'];
         $groups = $userRec['groups'];
         $option = '';
+
+        // user self admin / edit profile option:
         if ($this->config->admin_userAllowSelfAdmin && !$locked) {
             $option = "\t\t\t<li><a href='$pageUrl?admin=edit-profile'>{{ Your Profile }}</a></li>\n";
         }
-        if ($GLOBALS["globalParams"]["isAdmin"]) {
+
+        // for admins: invite-new-user option:
+        if ($GLOBALS['globalParams']['isAdmin']) {
             if ($this->config->admin_enableSelfSignUp) {
                 $option .= "\t\t\t<li><a href='$pageUrl?admin=invite-new-user'>{{ lzy-adm-invite-new-user }}</a></li>\n";
-            } elseif ($GLOBALS["globalParams"]["localCall"]) {
-                $option .= "\t\t\t<li>(<span title='-> admin_enableSelfSignUp'>Option \"{{ lzy-adm-invite-new-user }}\" not enabled</span>)</li>\n";
+            } elseif ($GLOBALS['globalParams']['localHost']) {
+                $option .= "\t\t\t<li><span class='lzy-inactive tooltipster' title='Modify config option \"admin_enableSelfSignUp\" to enable'>{{ lzy-adm-invite-new-user }}</span></li>\n";
             }
         }
-        if (isset($userRec['groupAccount']) && $userRec['groupAccount'] && isset($_SESSION["lizzy"]["loginEmail"])) {
-            $username = $_SESSION["lizzy"]["loginEmail"];
+        if (isset($userRec['groupAccount']) && $userRec['groupAccount'] && isset($_SESSION['lizzy']['loginEmail'])) {
+            $username = $_SESSION['lizzy']['loginEmail'];
         }
 
         $header = "{{ lzy-user-account }} <strong>$username</strong> [$groups]";

@@ -22,7 +22,7 @@ class SCssCompiler
         $this->fromFiles = $lzy->config->path_stylesPath;
         $this->sysCssPath = $lzy->config->systemPath.'css/';
         $this->isPrivileged = $lzy->config->isPrivileged;
-        $this->localCall = $lzy->localCall;
+        $this->localHost = $lzy->localHost;
         $this->compiledStylesFilename = $lzy->config->site_compiledStylesFilename;
         $this->compiledSysStylesFilename = '__lizzy.css';
         $this->compiledSysStylesFilenameV2 = '__lizzy-core.css';
@@ -193,7 +193,7 @@ class SCssCompiler
         
     private function getFile($file)
     {
-        if ($this->localCall && $this->config->debug_compileScssWithLineNumbers) {
+        if ($this->localHost && $this->config->debug_compileScssWithLineNumbers) {
             $out = getFile($file);
             $fname = basename($file);
             $lines = explode(PHP_EOL, $out);

@@ -34,9 +34,9 @@ define('PSEUDO_TYPES', ',form-head,form-tail,reveal,literal,fieldset,fieldset-en
 mb_internal_encoding("utf-8");
 
 
-$GLOBALS["globalParams"]['lzyFormsCount'] = 0;
-$GLOBALS["globalParams"]['formDataCachingInitialized'] = false;
-$GLOBALS["globalParams"]['formTooltipsInitialized'] = false;
+$GLOBALS['globalParams']['lzyFormsCount'] = 0;
+$GLOBALS['globalParams']['formDataCachingInitialized'] = false;
+$GLOBALS['globalParams']['formTooltipsInitialized'] = false;
 
 class Forms
 {
@@ -62,10 +62,10 @@ class Forms
 		$this->trans = $lzy->trans;
 		$this->page = $lzy->page;
 		$this->inx = -1;    // = elemInx
-        $GLOBALS["globalParams"]['lzyFormsCount']++;
-		$this->formInx = $GLOBALS["globalParams"]['lzyFormsCount'];
+        $GLOBALS['globalParams']['lzyFormsCount']++;
+		$this->formInx = $GLOBALS['globalParams']['lzyFormsCount'];
         $this->currForm = new FormDescriptor; // object as will be saved in DB
-        $this->infoInitialized = &$GLOBALS["globalParams"]['formTooltipsInitialized'];
+        $this->infoInitialized = &$GLOBALS['globalParams']['formTooltipsInitialized'];
 
         $this->tck = new Ticketing([
             'defaultType' => 'lzy-form',
@@ -82,7 +82,7 @@ class Forms
             }
             // $userDataEval===true means client just wants to eval data, not instantiate an object:
             if ($userDataEval === true) {
-                $GLOBALS["globalParams"]['lzyFormsCount']--;
+                $GLOBALS['globalParams']['lzyFormsCount']--;
             }
         }
 	} // __construct
@@ -231,11 +231,11 @@ class Forms
 
         // activate 'prevent multiple submits':
         $currForm->preventMultipleSubmit = isset($args['preventMultipleSubmit'])? $args['preventMultipleSubmit'] : false;
-        $GLOBALS["globalParams"]['preventMultipleSubmit'] = $currForm->preventMultipleSubmit;
+        $GLOBALS['globalParams']['preventMultipleSubmit'] = $currForm->preventMultipleSubmit;
 
         $currForm->replaceQuotes = (isset($args['replaceQuotes'])) ? $args['replaceQuotes'] : true;
         $currForm->antiSpam = (isset($args['antiSpam'])) ? $args['antiSpam'] : false;
-        if ($currForm->antiSpam && $this->lzy->localCall && !@$_SESSION["lizzy"]["debug"]) {    // disable antiSpam on localhost for convenient testing of forms
+        if ($currForm->antiSpam && $this->lzy->localHost && !@$_SESSION["lizzy"]["debug"]) {    // disable antiSpam on localhost for convenient testing of forms
             $currForm->antiSpam = false;
             $this->page->addDebugMsg('"antiSpam" disabled on localhost');
         }
@@ -1719,7 +1719,7 @@ EOT;
 
 	private function cacheUserSuppliedData($formId, $userSuppliedData)
 	{
-        $pathToPage = $GLOBALS["globalParams"]["pathToPage"];
+        $pathToPage = $GLOBALS['globalParams']['pathToPage'];
         $_SESSION['lizzy']['formData'][ $pathToPage ][$formId] = serialize($userSuppliedData);
 	} // cacheUserSuppliedData
 
@@ -1728,7 +1728,7 @@ EOT;
 
 	private function getUserSuppliedDataFromCache($formId)
 	{
-        $pathToPage = $GLOBALS["globalParams"]["pathToPage"];
+        $pathToPage = $GLOBALS['globalParams']['pathToPage'];
 		return (isset($_SESSION['lizzy']['formData'][ $pathToPage ][$formId])) ?
             unserialize($_SESSION['lizzy']['formData'][ $pathToPage ][$formId]) : null;
 	} // getUserSuppliedDataFromCache
@@ -1951,10 +1951,10 @@ EOT;
             $out = var_export($this->userSuppliedData, true);
             $out = str_replace("\n", ' ', $out);
             $out .= "\n[{$_SERVER['REMOTE_ADDR']}] {$_SERVER['HTTP_USER_AGENT']}\n";
-            $logState = $GLOBALS["globalParams"]["errorLoggingEnabled"];
-            $GLOBALS["globalParams"]["errorLoggingEnabled"] = true;
+            $logState = $GLOBALS['globalParams']['errorLoggingEnabled'];
+            $GLOBALS['globalParams']['errorLoggingEnabled'] = true;
             writeLog($out, SPAM_LOG_FILE);
-            $GLOBALS["globalParams"]["errorLoggingEnabled"] = $logState;
+            $GLOBALS['globalParams']['errorLoggingEnabled'] = $logState;
             return true;
         }
         return false;
@@ -2396,7 +2396,7 @@ EOT;
 	public function clearCache()
 	{
 	    $formId = @$this->currForm->formId;
-        $pathToPage = $GLOBALS["globalParams"]["pathToPage"];
+        $pathToPage = $GLOBALS['globalParams']['pathToPage'];
 	    if ($formId) {
             unset($_SESSION['lizzy']['formData'][ $pathToPage ][$formId]);
             unset($_SESSION['lizzy']['formErrDescr'][$formId]);
@@ -2725,7 +2725,7 @@ EOT;
                     break;
 
                 case 'localhost':
-                    $continue = $globalParams["localCall"];
+                    $continue = $globalParams["localHost"];
                     break;
 
                 default:
@@ -2871,7 +2871,7 @@ EOT;
             $file = resolvePath($this->currForm->confirmationEmailTemplate, true);
             if (!file_exists($file)) {
                 $this->responseToClient = '';
-                if ($this->lzy->localCall || $GLOBALS['globalParams']['isLoggedin']) {
+                if ($this->lzy->localHost || $GLOBALS['globalParams']['isLoggedin']) {
                     $this->lzy->page->addPopup("{{ lzy-form-response-email-template-not-found }}:<br>$file");
                 }
                 return;

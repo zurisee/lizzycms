@@ -200,7 +200,7 @@ private function loadRequired()
 
         $this->setLocale();
 
-        $this->localCall = $this->config->localCall;
+        $this->localHost = $this->config->localHost;
 
         register_shutdown_function('handleFatalPhpError');
 
@@ -466,7 +466,7 @@ private function loadRequired()
     {
         global $globalParams;
         $globalParams['errorLogFile'] = '';
-        if ($this->auth->checkGroupMembership('editors') || $this->localCall) {     // set displaying errors on screen:
+        if ($this->auth->checkGroupMembership('editors') || $this->localHost) {     // set displaying errors on screen:
             $old = ini_set('display_errors', '1');  // on
             error_reporting(E_ALL);
 
@@ -516,7 +516,7 @@ private function loadRequired()
     private function checkAdmissionToCurrentPage()
     {
         if ($reqGroups = $this->isRestrictedPage()) {     // handle case of restricted page
-            $ok = !checkPermission($reqGroups, $this );
+            $ok = checkPermission($reqGroups, $this );
             if (!$ok) {
                 $this->loginFormRequired = true; // login form rendered later in appendLoginForm()
                 return false;
@@ -658,8 +658,8 @@ EOT;
 
         $globalParams['filepathToDocroot'] = preg_replace('|[^/]+|', '..', $appRoot);;
 
-        $globalParams['localCall'] = $this->localCall;
-        $globalParams['isLocalhost'] = $this->localCall;
+        $globalParams['localHost'] = $this->localHost;
+        $globalParams['isLocalhost'] = $this->localHost;
         $globalParams['pagePath'] = $pagePath;   // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
         $globalParams['urlArgs'] = $urlArgs;     // all url-args received
 
@@ -872,7 +872,14 @@ EOT;
                 $rec = $this->auth->getLoggedInUser(true);
                 $login = $userAcc->renderLoginLink($rec);
                 $loginMenu = $userAcc->renderLoginMenu($rec);
-                $userName = @$rec['username']? $rec['username'] : '{{ lzy-anon }}';
+//                $userName = @$rec['username']? $rec['username'] : '{{ lzy-anon }}';
+//                if (isset($rec['username']) && $rec['username']) {
+//                    $userName = $rec['username'];
+//                } elseif ($this->localHost && $this->config->admin_autoAdminOnLocalhost) {
+//                    $userName = 'autoadmin';
+//                } else {
+//                    $userName = '{{ lzy-anon }}';
+//                }
                 $groups = @$rec['groups'];
             } else {
 	            // login icon when not logged in:
@@ -880,18 +887,30 @@ EOT;
 <div class='lzy-login-link'><a href='{$GLOBALS['globalParams']['pageUrl']}?login' class='lzy-login-link'>{{ lzy-login-icon }}</a></div>
 
 EOT;
-
             }
+        }
+        if ($GLOBALS['globalParams']['user']) {
+            $userName = $GLOBALS['globalParams']['user'];
+            // Note: 'lzy-logged-in-as' defined in sys_vars.yaml
+
+        } elseif ($this->localHost && $this->config->admin_autoAdminOnLocalhost) {
+            $userName = 'autoadmin';
+            // Note: 'lzy-logged-in-as' defined in sys_vars.yaml
+
+        } else {
+            $userName = '{{ lzy-anon }}';
+            // override 'lzy-logged-in-as' from sys_vars.yaml:
+            $this->trans->addVariable('lzy-logged-in-as', $this->trans->getVariable('lzy-not-logged-in'));
         }
 
         $this->trans->addVariable('lzy-login-menu', $loginMenu);
         $this->trans->addVariable('lzy-login-button', $login);
-        $this->trans->addVariable('user', $userName, false);
-        $this->trans->addVariable('groups', $groups, false);
+        $this->trans->addVariable('user', $userName);
+        $this->trans->addVariable('groups', $groups);
 
         $configBtn = '';
         if ($this->auth->isAdmin()) {
-            $url = $GLOBALS["globalParams"]["pageUrl"];
+            $url = $GLOBALS['globalParams']['pageUrl'];
             $configBtn = "<a class='lzy-config-button' href='$url?config'>{{ lzy-config-button }}</a>";
         }
         $this->trans->addVariable('lzy-config--open-button', $configBtn, false);
@@ -915,7 +934,7 @@ EOT;
         }
 
 		if  (getUrlArgStatic('debug')) {
-            if  (!$this->localCall) {   // log only on non-local host
+            if  (!$this->localHost) {   // log only on non-local host
                 writeLog('starting debug mode');
             }
         	$this->page->addBodyClasses('debug');
@@ -1391,7 +1410,7 @@ EOT;
 
         $this->timer = getUrlArgStatic('timer');				// timer
 
-        if (($this->config->localCall) && getUrlArg('purge')) {     // empty recycleBins and caches
+        if (($this->config->localHost) && getUrlArg('purge')) {     // empty recycleBins and caches
             purgeAll( $this );
         }
 
@@ -1725,7 +1744,7 @@ EOT;
             }
             $tick = new Ticketing();
             $code = $tick->createTicket($userRec, 100);
-            $msg = "# Access Link\n\n{$GLOBALS["globalParams"]["pageUrl"]}$code";
+            $msg = "# Access Link\n\n{$GLOBALS['globalParams']['pageUrl']}$code";
         }
         $this->page->addOverlay(['text' => $msg, 'closable' => 'reload', 'mdCompile' => true]);
     } // createAccessLink
@@ -1796,7 +1815,7 @@ EOT;
             $from = $this->trans->getVariable('webmaster_email');
         }
 
-        if ($this->localCall) {
+        if ($this->localHost) {
             writeLog("sendMail to:[$to], from:[$from], subject:[$subject],\nmessage:[$message]");
 
             $str = <<<EOT
@@ -1898,8 +1917,8 @@ EOT;
         $onairDataPath = $this->config->site_dataPath;
         $devDataPath = $this->config->site_devDataPath;
         if (!$devDataPath) {
-            $GLOBALS["globalParams"]["dataPath"] = $onairDataPath;
-            $_SESSION["lizzy"]["dataPath"] = $onairDataPath;
+            $GLOBALS['globalParams']['dataPath'] = $onairDataPath;
+            $_SESSION['lizzy']['dataPath'] = $onairDataPath;
             $this->trans->addVariable('dataPath', $onairDataPath);
             return;
 
@@ -1918,18 +1937,18 @@ EOT;
                 $this->page->addDebugMsg("\"&#126;data/\" points to \"$devDataPath\" for debugging.");
             }
             $this->config->site_dataPath = $devDataPath;
-            $GLOBALS["globalParams"]["dataPath"] = $devDataPath;
+            $GLOBALS['globalParams']['dataPath'] = $devDataPath;
             $_SESSION["lizzy"]["dataPath"] = $devDataPath;
             $this->trans->addVariable('dataPath', $devDataPath);
             return;
 
         } else {
-            if ($this->config->localCall) {
+            if ($this->config->localHost) {
                 $this->page->addDebugMsg("\"&#126;data/\" points to productive path \"$onairDataPath\"!.");
             }
             $this->config->site_dataPath = $onairDataPath;
-            $GLOBALS["globalParams"]["dataPath"] = $onairDataPath;
-            $_SESSION["lizzy"]["dataPath"] = $onairDataPath;
+            $GLOBALS['globalParams']['dataPath'] = $onairDataPath;
+            $_SESSION['lizzy']['dataPath'] = $onairDataPath;
             $this->trans->addVariable('dataPath', $onairDataPath);
         }
     } // setDataPath
@@ -2078,9 +2097,9 @@ EOT;
             $this->page->addJq($jq);
 
             if (isset($_GET['iframe'])) {
-                $pgUrl = $GLOBALS["globalParams"]["pageUrl"];
-                $host = $GLOBALS["globalParams"]["host"];
-                $jsUrl = $host . $GLOBALS["globalParams"]["appRoot"];
+                $pgUrl = $GLOBALS['globalParams']['pageUrl'];
+                $host = $GLOBALS['globalParams']['host'];
+                $jsUrl = $host . $GLOBALS['globalParams']['appRoot'];
                 $html = <<<EOT
 
 <div id="iframe-info">

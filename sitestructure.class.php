@@ -669,7 +669,7 @@ class SiteStructure
     public function getListOfPages( $asLink = false)
     {
         $pages = [];
-        $appRootUrl = $GLOBALS["globalParams"]["appRootUrl"];
+        $appRootUrl = $GLOBALS['globalParams']['appRootUrl'];
         foreach ($this->list as $rec) {
             if ($asLink) {
                 $path = ($rec['urlpath'] !== false) ? $rec['urlpath']: $rec['folder'];

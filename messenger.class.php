@@ -68,7 +68,7 @@ EOT;
         } else {
             $from = 'unknown'; //ToDo
         }
-        if (!isLocalCall()) {
+        if (!islocalHost()) {
             sendMail($to, $from, $subject, $msg);
         } else {
             if (isset($this->lzy->page)) {

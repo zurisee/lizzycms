@@ -1,6 +1,6 @@
 <?php
 
-$GLOBALS["globalParams"]['tableCounter'][ $GLOBALS["globalParams"]["pagePath"] ] = 0;
+$GLOBALS['globalParams']['tableCounter'][ $GLOBALS['globalParams']['pagePath'] ] = 0;
 
 define('FORM_TYPES',
     ',string,text,password,email,textarea,radio,checkbox,'.
@@ -1914,7 +1914,7 @@ EOT;
             $this->tableDataAttr .= " data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
 
             // utility feature to export form template based on data structure:
-            if ($this->lzy->localCall && (getUrlArg('exportForm'))) {
+            if ($this->lzy->localHost && (getUrlArg('exportForm'))) {
                 $this->exportForm();
             }
         }

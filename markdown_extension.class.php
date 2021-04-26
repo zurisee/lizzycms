@@ -437,7 +437,7 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
         $comment = $block['comment'];
 
         // exclude blocks with lang option set but is not current language:
-        if ($block["lang"] && ($block["lang"] !== $GLOBALS["globalParams"]["lang"])) {
+        if ($block['lang'] && ($block['lang'] !== $GLOBALS['globalParams']['lang'])) {
             return '';
         }
 

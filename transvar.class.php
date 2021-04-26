@@ -257,7 +257,7 @@ class Transvar
         } else {                            // macro not defined, raise error
             $msg ="Error: undefined macro: '$macro()'";
             logError($msg);
-            if ($this->config->localCall || $this->config->isPrivileged) {
+            if ($this->config->localHost || $this->config->isPrivileged) {
                 $val = "<div class='error-msg'>$msg</div>";
             } else {
                 $val = '';
