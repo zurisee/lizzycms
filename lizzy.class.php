@@ -900,13 +900,13 @@ EOT;
         } else {
             $userName = '{{ lzy-anon }}';
             // override 'lzy-logged-in-as' from sys_vars.yaml:
-            $this->trans->addVariable('lzy-logged-in-as', $this->trans->getVariable('lzy-not-logged-in'));
+            $this->trans->addVariable('lzy-logged-in-as-user', $this->trans->getVariable('lzy-not-logged-in'), false);
         }
 
-        $this->trans->addVariable('lzy-login-menu', $loginMenu);
-        $this->trans->addVariable('lzy-login-button', $login);
-        $this->trans->addVariable('user', $userName);
-        $this->trans->addVariable('groups', $groups);
+        $this->trans->addVariable('lzy-login-menu', $loginMenu, false);
+        $this->trans->addVariable('lzy-login-button', $login, false);
+        $this->trans->addVariable('user', $userName, false);
+        $this->trans->addVariable('groups', $groups, false);
 
         $configBtn = '';
         if ($this->auth->isAdmin()) {

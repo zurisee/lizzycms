@@ -458,6 +458,10 @@ LoginLink:
     en: Login
 
 lzy-logged-in-as:
+    de: Angemeldet als
+    _: Logged in as
+
+lzy-logged-in-as-user:
     de: Angemeldet als {{ user }}
     _: Logged in as {{ user }}
 
