@@ -13,7 +13,7 @@ class Authentication
     {
         $this->lzy = $lzy;
         $this->config = $this->lzy->config;
-        $this->localCall = $lzy->config->isLocalhost;
+        $this->localHost = $lzy->config->isLocalhost;
         $this->loadKnownUsers();
         $this->loginTimes = (isset($_SESSION['lizzy']['loginTimes'])) ? unserialize($_SESSION['lizzy']['loginTimes']) : array();
 		if (!isset($_SESSION['lizzy']['user'])) {
@@ -21,6 +21,7 @@ class Authentication
 		}
         setStaticVariable('lastLoginMsg', '');
 
+        $this->userInitialized = false;
         $GLOBALS['globalParams']['isLoggedin'] = false;
         $GLOBALS['globalParams']['isPrivileged'] = false;
         $GLOBALS['globalParams']['isAdmin'] = false;
@@ -33,7 +34,6 @@ class Authentication
         // checks and verifies login attempts, if post-variables are received:
         // - credentials [lzy-login-username, lzy-login-password-password]
         // - oneTimeCode [lzy-onetime-code]
-
 
         $res = null;
         if (isset($_POST['lzy-login-username']) && isset($_POST['lzy-login-password'])) {    // user sent un & pw
@@ -59,7 +59,9 @@ class Authentication
                 $this->logout();
                 reloadAgent();
             }
-            $user = $this->setUserAsLoggedIn();
+
+            $user = $this->getLoggedInUser();
+            $user = $this->setUserAsLoggedIn( $user );
             $res = true;
 
             if ($user && ($msg = getNotificationMsg())) {
@@ -74,16 +76,6 @@ class Authentication
                     $_SESSION['lizzy']['forceDefinePW'] = false;
                 }
             }
-        }
-
-        if (!$res || (isset($res[0]) && ($res[0] === false)) ) { // logout
-            $this->logout();
-
-        } elseif (is_string($res)) {    // string contains username of user to be logged in
-            $this->setUserAsLoggedIn($res);
-
-        } elseif (isset($res[0]) && is_string($res[0])) { // or username in res[0]
-            $this->setUserAsLoggedIn($res[0]);
         }
 
         $this->handleLoginUserNotification($res);   // inform user about login/logout etc.
@@ -172,7 +164,7 @@ class Authentication
         writeLogStr($this->lastLogMsg, LOGIN_LOG_FILENAME);
         $this->handleFailedLoginAttempts($codeCandidate);
 
-        $path = $GLOBALS["globalParams"]["host"].$_SERVER["REQUEST_URI"];
+        $path = $GLOBALS['globalParams']['host'].$_SERVER['REQUEST_URI'];
         $html = <<<EOT
         <h1>{{ lzy-link-expired }}</h1>
         <p>{{ lzy-link-expired-explanation }}</p>
@@ -206,7 +198,9 @@ EOT;
         $getArg = false;
         if ($userRec) {
             $user = $username = $userRec['username'];
-            $this->setUserAsLoggedIn( $user, null, $oneTimeRec["email"] );
+            $this->setUserAsLoggedIn( $user );
+            $_SESSION['lizzy']['loginEmail'] = $oneTimeRec['email'];
+
             $user .= " ({$oneTimeRec['email']})";
             writeLogStr("one time link accepted: $user [".getClientIP().']', LOGIN_LOG_FILENAME);
 
@@ -365,31 +359,17 @@ EOT;
 
 
 
-    public function setUserAsLoggedIn($user = false, $rec = null, $loginEmail = '')
+    public function setUserAsLoggedIn($user)
 	{
-        if ($loggedIn = $this->getLoggedInUser()) {
-            if (!$user) {
-                return $loggedIn;
-            } elseif ($user === $loggedIn) {
-                return $loggedIn;
-            } else {    // new login while still logged in as other user:
-                $this->logout();
-            }
-        } elseif (!$user) {
-            return false;
+	    if ($this->userInitialized) {
+	        return;
         }
+        $this->userInitialized = true;
 
-	    if (isset($rec['inactive']) && $rec['inactive']) {  // account is inactive, no login allowed
+        // check whether account is inactive -> no login allowed:
+        $rec = $this->getUserRec($user);
+	    if (!$rec || (isset($rec['inactive']) && $rec['inactive'])) {
 	        return false;
-        }
-	    if (($rec === null) && ($key = $this->findUserRecKey($user))) {
-	        if (!$rec = $this->knownUsers[$key]) {
-	            return false;
-            }
-        }
-	    if (!$rec) {
-            $this->logout();
-            return false;
         }
 
         $this->userRec = $rec;
@@ -405,8 +385,8 @@ EOT;
         $_SESSION['lizzy']['isAdmin'] = $isAdmin;
         $_SESSION['lizzy']['isPrivileged'] = $isPrivileged;
         $_SESSION['lizzy']['loginTimes'] = serialize($this->loginTimes);
-        $_SESSION['lizzy']['loginEmail'] = $loginEmail;
 
+        $GLOBALS['globalParams']['user'] = $user;
         $GLOBALS['globalParams']['isLoggedin'] = boolval( $user );
         $GLOBALS['globalParams']['isPrivileged'] = $isPrivileged;
         $GLOBALS['globalParams']['isAdmin'] = $isAdmin;
@@ -463,7 +443,7 @@ EOT;
                 }
             }
 		} elseif ($this->config->admin_autoAdminOnLocalhost && $this->config->isLocalhost) {
-		    $res = 'admin';
+		    $res = 'autoadmin';
             $GLOBALS['globalParams']['isAdmin'] = true;
             $rec = false;
         }
@@ -603,7 +583,7 @@ EOT;
 
     public function checkGroupMembership($requiredGroup)
     {
-        if ($this->localCall && $this->config->admin_autoAdminOnLocalhost) {	// no restriction
+        if ($this->localHost && $this->config->admin_autoAdminOnLocalhost) {	// no restriction
 	        return true;
         }
 
@@ -626,7 +606,7 @@ EOT;
 
     public function checkAdmission($lockProfile)
 	{
-		if ((!$lockProfile) || ($this->localCall && $this->config->admin_autoAdminOnLocalhost)) {	// no restriction
+		if ((!$lockProfile) || ($this->localHost && $this->config->admin_autoAdminOnLocalhost)) {	// no restriction
 			return true;
 		}
 		
@@ -695,7 +675,7 @@ EOT;
         $this->userRec = null;
         $_SESSION['lizzy']['user'] = false;
         $_SESSION['lizzy']['userDisplayName'] = false;
-        $isAdmin = ($this->localCall && $this->config->admin_autoAdminOnLocalhost);
+        $isAdmin = ($this->localHost && $this->config->admin_autoAdminOnLocalhost);
         $_SESSION['lizzy']['isAdmin'] = $isAdmin ;
         $GLOBALS['globalParams']['isAdmin'] = $isAdmin;
         $GLOBALS['globalParams']['isLoggedin'] = false;
@@ -881,7 +861,7 @@ EOT;
                         $res = $name;
                         break;
                     }
-                } elseif ($name === $username) {
+                } elseif (strtolower($name) === $username) {
                     $res = $name;
                     break;
 
