@@ -350,6 +350,9 @@ function resolvePath($path)
 
 function mylog($str, $notDebugOnly = true)
 {
+    if (is_array($str)) {
+        $str = var_r($str, 'mylog', true);
+    }
     if ($notDebugOnly || @$_SESSION['lizzy']['debug']) {
         writeLog( $str );
     }

@@ -1704,6 +1704,9 @@ function translateToClassName($str)
 
 function mylog($str, $notDebugOnly = true)
 {
+    if (is_array($str)) {
+        $str = var_r($str, 'mylog', true);
+    }
     if ($notDebugOnly) {
         writeLogStr($str);
     } elseif (@$_SESSION['lizzy']['debug']) {
