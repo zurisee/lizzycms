@@ -328,7 +328,11 @@ class LizzyMarkdown
                     $textBlock = '';
 				    continue;
                 }
-				$this->mdVariables[$var] = $this->replaceMdVariables($val);
+				// translate transvar/macro if there is any:
+                if (strpos($val, '{{') !== false) {
+                    $val = $this->lzy->trans->translate($val);
+                }
+                $this->mdVariables[$var] = $this->replaceMdVariables($val);
 				continue;
 			}
             if ($l && (($p = strpos($l, '$')) !== false)) {
