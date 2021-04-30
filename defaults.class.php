@@ -318,7 +318,7 @@ private $userConfigurableSettingsAndDefaults      = [
             }
         }
 
-        if (islocalHost()) {
+        if ($this->determineIsLocalhost()) {
             if (($lc = getUrlArgStatic('localHost')) !== null) {
                 $localHost = $lc;
             } else {
@@ -332,6 +332,24 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->isLocalhost = $this->localHost = $localHost;
 
     } // getConfigValues
+
+
+
+    private function determineIsLocalhost()
+    {
+        $serverName = (isset($_SERVER['SERVER_NAME'])) ? $_SERVER['SERVER_NAME'] : 'localhost';
+        $remoteAddress = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : '';
+        if (($state = getStaticVariable('localHost')) !== null) {
+            return $state;
+        }
+        if (($serverName === 'localhost') || ($remoteAddress === '::1')) {
+            return true;
+        } else {
+            return false;
+        }
+    } // determineIsLocalhost
+
+
 
 
     public function getConfigInfo()

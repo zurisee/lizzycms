@@ -2147,23 +2147,6 @@ function shieldMD($md)
 
 
 
-function islocalHost()
-{
-    $serverName = (isset($_SERVER['SERVER_NAME'])) ? $_SERVER['SERVER_NAME'] : 'localhost';
-    $remoteAddress = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : '';
-    if (($state = getStaticVariable('localHost')) !== null) {
-        return $state;
-    }
-    if (($serverName === 'localhost') || ($remoteAddress === '::1')) {
-        return true;
-    } else {
-        return false;
-    }
-} // islocalHost
-
-
-
-
 function isAdmin()
 {
     return $GLOBALS['globalParams']['isAdmin'];
@@ -2268,7 +2251,7 @@ function fatalError($msg, $origin = '', $offendingFile = '')
         reloadAgent();
     }
 
-    if (islocalHost()) {
+    if (isLocalhost()) {
         exit($msg);
     } else {
         exit;
