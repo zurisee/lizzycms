@@ -468,7 +468,7 @@ function findFileDeep($pattern, $flags = 0) {
 
 
 
-function getFile($pat, $removeComments = false)
+function getFile($pat, $removeComments = false, $removeEmptyLines = false)
 {
     global $globalParams;
 	$pat = str_replace('~/', '', $pat);
@@ -494,7 +494,7 @@ function getFile($pat, $removeComments = false)
     } elseif ($removeComments) {
         $file = removeHashTypeComments($file);
     }
-    if (strpos($removeComments, 'emptyLines')) {
+    if ($removeEmptyLines || strpos($removeComments, 'emptyLines')) {
         $file = removeEmptyLines($file);
     }
     return $file;
@@ -2160,6 +2160,22 @@ function islocalHost()
         return false;
     }
 } // islocalHost
+
+
+
+
+function isAdmin()
+{
+    return $GLOBALS['globalParams']['isAdmin'];
+} // isAdmin
+
+
+
+
+function isLocalhost()
+{
+    return $GLOBALS['globalParams']['isLocalhost'];
+} // isLocalhost
 
 
 
