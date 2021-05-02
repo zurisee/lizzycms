@@ -1265,11 +1265,11 @@ EOT;
         ];
         $jsModules = [];
         foreach ($modules as $mod) {
-            if (preg_match('/\.css(\@\w+)?$/i', $mod)) {    // split between css and js files
+            if (preg_match('/\.css$/i', $mod)) {    // split between css and js files
                 if (!in_array($mod, $cssModules)) {         // avoid doublets
                     $cssModules[] = $mod;
                 }
-            } else {
+            } elseif (preg_match('/\.js$/i', $mod)) {
                 if (!in_array($mod, $jsModules)) {         // avoid doublets
                     $jsModules[] = $mod;
                 }
@@ -1672,8 +1672,22 @@ EOT;
             $this->mdVariables = array_merge($this->mdVariables, $mdVariables);
         }
 
+        // extract "locales" directive:
         if (isset($hdr['locales'])) {
             $this->trans->readTransvarsFromFiles( $hdr['locales'] );
+        }
+
+        // check whether there is a 'yaml' file in modules containing locales/transvars:
+        if (isset($hdr['modules'])) {
+            $modules = $hdr['modules'];
+            if (strpos($modules, '.yaml') !== false) {
+                $modules = explodeTrim(',', $modules);
+                foreach ($modules as $module) {
+                    if (strpos($module, '.yaml') !== false) {
+                        $this->trans->readTransvarsFromFile( $module );
+                    }
+                }
+            }
         }
     } // extractSettings
 
