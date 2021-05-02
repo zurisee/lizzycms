@@ -514,6 +514,10 @@ lzy-login-failed:
     de: 'Die Anmeldung ist fehlgeschlagen.'
     _: 'Login failed.'
 
+lzy-insufficient-privilege:
+    de: 'Sie haben keine Berechtigung für die Option'
+    _: 'Insufficient privilege for option'
+ 
 
 #login with password:
 #    de: Anmeldung mit <br>Kennwort

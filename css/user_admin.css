@@ -380,6 +380,13 @@ input.lzy-login-email[type=email]:valid {
     --lzy-form-width: 36em;
     --lzy-label-width: 8em;
 }
+.lzy-create-ticket-form label {
+    width: 8em;
+}
+.lzy-create-ticket-form .lzy-form-radio-elem label {
+    margin-right: 1.5em !important;
+}
 .lzy-create-ticket-form select {
     width: calc(100% - var(--lzy-label-width) - 10px);
+    height: 2.5em;
 }

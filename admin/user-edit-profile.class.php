@@ -271,7 +271,7 @@ return;
         $this->page->addModules('PANELS');
         $jq = "initLzyPanel('.lzy-panels-widget', 1);";
         $this->page->addJq( $jq );
-        $this->page->addOverlay($html, true, false);
+        $this->page->addOverlay($html, true, false, 'reload');
         return '';
     } // render
 

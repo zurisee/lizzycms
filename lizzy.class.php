@@ -1395,11 +1395,11 @@ EOT;
             $hash = createHash();
             $html = <<<EOT
     <div class='lzy-create-hash-wrapper'>
-        <h1>New Hash Value</h1>
+        <h2>New Hash Value</h2>
         <p>$hash</p>
     </div>
 EOT;
-            $this->page->addOverride($html);
+            $this->page->addOverlay($html, true, false, true);
         }
 
         $this->timer = getUrlArgStatic('timer');				// timer
@@ -1588,23 +1588,11 @@ EOT;
             $cmds = ['help','unused','reset-unused','remove-unused','log','info','list','mobile','touch','notouch','auto','config'];
             foreach ($cmds as $cmd) {
                 if (isset($_GET[$cmd])) {
-                    $this->page->addMessage("Insufficient privilege for option '?$cmd'");
+                    $this->page->addMessage("{{ lzy-insufficient-privilege }} '?$cmd'");
                     break;
                 }
             }
             return;
-        }
-
-        if (getUrlArg('iframe')) {                                          // iframe
-            if (!$this->config->feature_enableIFrameResizing) {
-                $msg = "Warning: to use ?iframe request you need to enable 'feature_enableIFrameResizing'";
-                $this->page->addMessage($msg);
-            }
-        }
-
-        if (getUrlArg('access-link')) {                                    // access-link
-            $user = getUrlArg('access-link', true);
-            $this->createAccessLink($user);
         }
 
         if ($filename = getUrlArg('reorg-css', true)) {         // reorg-css
@@ -1722,32 +1710,17 @@ EOT;
         }
 
         if (getUrlArg('ticket')) {
-            die("admintasks depricated ".__FILE__.':'>__LINE__);
-//            require_once SYSTEM_PATH.'admintasks.class.php';
-//            $adm = new AdminTasks($this);
-//            $adm->handleAdminRequests( 'createTicket' );
+            $uadm = new UserAdminBase( $this );
+            $uadm->handleCreateTicketRequest();
         }
+
+        if (getUrlArg('accesscode')) {                                    // access-code
+            $user = getUrlArg('accesscode', true);
+            $uadm = new UserAdminBase( $this );
+            $uadm->createAccessCodeForUser($user);
+        }
+
     } // handleUrlArgs2
-
-
-
-
-    private function createAccessLink($user)
-    {
-        if (!$user) {
-            $msg = "# Access Link\n\nPlease supply a user-name.\n\nE.g. ?access-code=user1";
-        } else {
-            $userRec = $this->auth->getUserRec($user);
-            if (!$this->auth->getUserRec($user)) {
-                die("Create Access Link: user unknown: '$user");
-            }
-            $tick = new Ticketing();
-            $code = $tick->createTicket($userRec, 100);
-            $msg = "# Access Link\n\n{$GLOBALS['globalParams']['pageUrl']}$code";
-        }
-        $this->page->addOverlay(['text' => $msg, 'closable' => 'reload', 'mdCompile' => true]);
-    } // createAccessLink
-
 
 
 
@@ -2095,7 +2068,7 @@ EOT;
 EOT;
             $this->page->addJq($jq);
 
-            if (isset($_GET['iframe'])) {
+            if (getUrlArg('iframe')) {
                 $pgUrl = $GLOBALS['globalParams']['pageUrl'];
                 $host = $GLOBALS['globalParams']['host'];
                 $jsUrl = $host . $GLOBALS['globalParams']['appRoot'];
@@ -2115,8 +2088,11 @@ EOT;
 </div>
 
 EOT;
-                $this->page->addOverride($html, false, false);
+                $this->page->addOverlay($html, false, false, 'reload');
             }
+        } elseif (getUrlArg('iframe')) {    // iframe
+            $msg = "#iframe\nWarning:\n\nto use a ``?iframe`` request  \nyou need to enable 'feature_enableIFrameResizing'";
+            $this->page->addOverlay($msg, false, true, 'reload');
         }
     } // handleConfigFeatures
 
@@ -2184,6 +2160,7 @@ Available URL-commands:
 <a href='?debug'>?debug</a>		    adds 'debug' class to page on non-local host *)
 <a href='?gitstat'>?gitstat</a>		displays the Lizzy-s GIT-status
 <a href='?hash'>?hash</a>		    create a hash value e.g. for accessCodes
+<a href='?accesscode'>?accesscode=user</a> create an accessCode forgiven user
 <a href='?ticket'>?ticket</a>		    create a user-access-ticket
 <a href='?notranslate'>?notranslate</a>    show untranslated variables
 <a href='?edit'>?edit</a>		    start editing mode *)

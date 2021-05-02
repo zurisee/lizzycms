@@ -560,6 +560,16 @@ lzy-create-accesslink-delete-failed-response:
     _:  'Deleting access-link failed'
 
 
+
+
+# === create access code =================================
+lzy-access-code-changed-response:
+    de: 'Neues "accessCode" Attribut konfiguriert für Benutzer'
+    _:  'New "accessCode" attribute configured for user'
+
+
+
+
 # === Invite Users ========================================
 lzy-invite-user-request-header:
     de: 'Neuen Benutzer einladen'
