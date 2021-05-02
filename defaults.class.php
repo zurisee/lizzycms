@@ -134,8 +134,6 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->jQueryWeight = 200;
         $this->loadModules['JQUERY']                = array('module' => 'third-party/jquery/jquery-3.6.0.min.js', 'weight' => $this->jQueryWeight);
         $this->loadModules['JQUERY3']               = array('module' => 'third-party/jquery/jquery-3.6.0.min.js', 'weight' => $this->jQueryWeight);
-//        $this->loadModules['JQUERY']                = array('module' => 'third-party/jquery/jquery-3.5.1.min.js', 'weight' => $this->jQueryWeight);
-//        $this->loadModules['JQUERY3']               = array('module' => 'third-party/jquery/jquery-3.5.1.min.js', 'weight' => $this->jQueryWeight);
         $this->loadModules['JQUERY1']               = array('module' => 'third-party/jquery/jquery-1.12.4.min.js', 'weight' => $this->jQueryWeight);
 
         $this->loadModules['JQUERYUI']              = array('module' => 'third-party/jqueryui/jquery-ui.min.js, '.

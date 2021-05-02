@@ -26,20 +26,29 @@ function setGenericEventHandlers() {
             $('.lzy-form-show-password span').removeClass('lzy-icon-show').addClass('lzy-icon-hide');
         }
     });
-
-    $('.lzy-admin-show-info').click(function(e) {
-        e.preventDefault();
-        $('.lzy-admin-info', $(this).parent()).toggle();
-    });
 } // setGenericEventHandlers
 
-
-
-
-$('.lzy-show-un-pw-login-info').click(function(e) {
-    e.preventDefault();
-    $('.lzy-un-pw-login-info').toggle();
+$('.lzy-form-password').keydown(function () {
+    let pwIsSet = true;
+    $('.lzy-form-password').each(function (){
+        pwIsSet = pwIsSet && ($(this).val() !== '');
+    });
+    if (pwIsSet) {
+        $('#btn_profile-change-pw-submit').prop('disabled', false).removeClass('lzy-disabled');
+    } else {
+        $('#btn_profile-change-pw-submit').prop('disabled', true).addClass('lzy-disabled');
+    }
 });
+
+$('#btn_profile-change-pw-submit').click(function (e) {
+    let pw1 = $('#fld_lzy-change-password-prompt_1').val();
+    let pw2 = $('#fld_lzy-change-password2-prompt_1').val();
+    if (pw1 !== pw2) {
+        e.preventDefault();
+        lzyPopup('{{ lzy-change-password-not-equal-response }}');
+    }
+});
+
 
 
 $('.lzy-show-password-login-info').click(function(e) {
@@ -51,34 +60,6 @@ $('.lzy-show-password-login-info').click(function(e) {
         $show.css('display', 'block');
     }
 });
-
-/* SignUp Form: */
-$('.lzy-show-signup-login-info').click(function(e) {
-    e.preventDefault();
-    $('.lzy-signup-login-info').toggle();
-});
-
-$('.lzy-show-signup-password-info').click(function(e) {
-    e.preventDefault();
-    $('.lzy-signup-password-info').toggle();
-});
-
-$('.lzy-show-signup-password-again-info').click(function(e) {
-    e.preventDefault();
-    $('.lzy-signup-password-again-info').toggle();
-});
-
-$('.lzy-show-signup-info').click(function(e) {
-    e.preventDefault();
-    $('.lzy-signup-info').toggle();
-});
-
-$('.lzy-show-add-user-login-info').click(function(e) {
-    e.preventDefault();
-    $('.lzy-add-user-info').toggle();
-});
-
-
 
 
 

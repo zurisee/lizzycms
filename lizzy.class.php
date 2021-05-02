@@ -10,6 +10,7 @@ define('USER_CODE_PATH',        'code/');
 define('SERVICE_CODE_PATH',     USER_CODE_PATH.'service/');
 define('PATH_TO_APP_ROOT',      '');
 define('SYSTEM_PATH',           basename(dirname(__FILE__)).'/'); // _lizzy/
+define('ADMIN_PATH',            SYSTEM_PATH.'admin/');
 define('DEFAULT_CONFIG_FILE',   CONFIG_PATH.'config.yaml');
 define('DEV_MODE_CONFIG_FILE',  CONFIG_PATH.'dev-mode-config.yaml');
 
@@ -174,7 +175,8 @@ private function loadRequired()
     require_once SYSTEM_PATH.'image-resizer.class.php';
     require_once SYSTEM_PATH.'datastorage2.class.php';
     require_once SYSTEM_PATH.'uadetector.class.php';
-    require_once SYSTEM_PATH.'user-account-form.class.php';
+    require_once ADMIN_PATH.'user-admin-base.class.php';
+    require_once ADMIN_PATH.'user-login.class.php';
     require_once SYSTEM_PATH.'ticketing.class.php';
     require_once SYSTEM_PATH.'service-tasks.class.php';
     require_once SYSTEM_PATH.'tree.class.php';
@@ -227,7 +229,7 @@ private function loadRequired()
 
         $this->auth->authenticate();
 
-        $this->handleAdminRequests(); // form-responses e.g. change profile etc.
+//        $this->handleAdminRequests(); // form-responses e.g. change profile etc.
 
         $GLOBALS['globalParams']['auth-message'] = $this->auth->message;
 
@@ -271,7 +273,7 @@ private function loadRequired()
 
         $this->injectAdminCss();
         $this->setTransvars1();
-        $this->addStandardModules();
+        // $this->addStandardModules();
 
         if ($accessGranted) {
 
@@ -352,6 +354,7 @@ private function loadRequired()
 
     private function handleAdminRequests()
     {
+        //??? protect from attacks:
         if ($un = getUrlArg('lzy-check-username', true)) {
             $exists = $this->auth->findUserRecKey( $un );
             if ($exists) {
@@ -363,24 +366,31 @@ private function loadRequired()
             exit( $msg );
         }
 
-        if (isset($_REQUEST['lzy-user-admin'])) {
-            require_once SYSTEM_PATH.'admintasks.class.php';
-            $adm = new AdminTasks($this);
-            $adm->handleAdminRequests( $_REQUEST['lzy-user-admin'] );
-        }
+//        if (isset($_REQUEST['lzy-user-admin'])) {
+//            require_once SYSTEM_PATH.'admintasks.class.php';
+//            $adm = new AdminTasks($this);
+//            $adm->handleAdminRequests( $_REQUEST['lzy-user-admin'] );
+//        }
     } // handleAdminRequests
 
 
 
     private function handleAdminRequests2()
     {
-        if ($adminTask = getUrlArg('admin', true)) {
-            require_once SYSTEM_PATH.'admintasks.class.php';
-            $admTsk = new AdminTasks($this);
-            $overridePage = $admTsk->handleAdminRequests2($adminTask);
-            $this->page->merge($overridePage, 'override');
-            $this->page->setOverrideMdCompile(false);
+        if (!getUrlArg('edit-profile')) {
+            return;
         }
+        if (isset($_REQUEST['login']) ||
+            isset($_REQUEST['lzy-change-email-request']) ||
+            isset($_REQUEST['lzy-change-email-confirm']) ||
+            isset($_REQUEST['lzy-create-accesslink']) ||
+            isset($_REQUEST['lzy-delete-account']) ||
+            isset($_REQUEST['lzy-onetimelogin-request-email'])) { // skip if change-email-request pending
+            return;
+        }
+        require_once ADMIN_PATH.'user-edit-profile.class.php';
+        $ed = new UserEditProfileBase( $this );
+        $ed->render();
     } // handleAdminRequests2
 
 
@@ -833,14 +843,6 @@ EOT;
 
 
 
-
-    private function addStandardModules()
-    {
-    } // addStandardModules
-
-
-
-
 	private function setTransvars0()
 	{
         $requestScheme  = ((isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'])) ? $_SERVER['REQUEST_SCHEME'].'://' : 'HTTP://';
@@ -868,18 +870,10 @@ EOT;
             $this->page->addJq('$(\'.lzy-tooltip\').tooltipster({contentAsHTML: true});');
         } else {
 	        if ($this->auth->isLoggedIn()) {
-                $userAcc = new UserAccountForm($this);
+                $accForm = new UserLoginBase($this);
                 $rec = $this->auth->getLoggedInUser(true);
-                $login = $userAcc->renderLoginLink($rec);
-                $loginMenu = $userAcc->renderLoginMenu($rec);
-//                $userName = @$rec['username']? $rec['username'] : '{{ lzy-anon }}';
-//                if (isset($rec['username']) && $rec['username']) {
-//                    $userName = $rec['username'];
-//                } elseif ($this->localHost && $this->config->admin_autoAdminOnLocalhost) {
-//                    $userName = 'autoadmin';
-//                } else {
-//                    $userName = '{{ lzy-anon }}';
-//                }
+                $login = $accForm->renderLoginLink($rec);
+                $loginMenu = $accForm->renderLoginMenu($rec);
                 $groups = @$rec['groups'];
             } else {
 	            // login icon when not logged in:
@@ -1414,7 +1408,12 @@ EOT;
             purgeAll( $this );
         }
 
-        //====================== the following is restricted to editors and admins:
+        if (isset($_REQUEST) && $_REQUEST && $this->auth->isLoggedIn()) {
+            $uadm = new UserAdminBase( $this );
+            $res = $uadm->handleRequests();
+        }
+
+            //====================== the following is restricted to editors and admins:
         $userAdminInitialized = file_exists(CONFIG_PATH.$this->config->admin_usersFile);
         $editingPermitted = $this->auth->checkGroupMembership('editors');
         if ($editingPermitted || !$userAdminInitialized) {
@@ -1723,11 +1722,11 @@ EOT;
         }
 
         if (getUrlArg('ticket')) {
-            require_once SYSTEM_PATH.'admintasks.class.php';
-            $adm = new AdminTasks($this);
-            $adm->handleAdminRequests( 'createTicket' );
+            die("admintasks depricated ".__FILE__.':'>__LINE__);
+//            require_once SYSTEM_PATH.'admintasks.class.php';
+//            $adm = new AdminTasks($this);
+//            $adm->handleAdminRequests( 'createTicket' );
         }
-
     } // handleUrlArgs2
 
 
@@ -2027,9 +2026,9 @@ EOT;
         }
         $this->loginFormRendered = true;
 
-        $accForm = new UserAccountForm($this);
+        $accForm = new UserLoginBase($this);
         $preOpenPanel = $presetUser? 2:1;
-        $html = $accForm->renderLoginForm($this->auth->message, false, true, $preOpenPanel);
+        $html = $accForm->render(true, $preOpenPanel);
 
         // inject preset user name:
         if ($presetUser) {    // preset username if known

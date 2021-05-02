@@ -118,7 +118,7 @@ body {
 .lzy-login-form-button {
     min-width: 6em;
     padding: 5px 1.5em;
-    margin-top: 10px;
+    margin: 1em 0;
 }
 .lzy-account-form-message {
     margin-bottom: 1em;

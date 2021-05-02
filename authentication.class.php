@@ -47,7 +47,8 @@ class Authentication
             }
 
         } elseif (isset($_POST['lzy-onetimelogin-request-email'])) {     // user sent email for logging in
-            $res = $this->handleOnetimeLoginRequest();
+            $accForm = new UserLoginBase($this->lzy);
+            $res = $accForm->handleOnetimeLoginRequest();
 
         } elseif (isset($_POST['lzy-onetime-code']) && isset($_POST['lzy-login-user'])) {    // user sent accessCode
             $str = $this->handleAccessCodeInUrl( $_POST['lzy-onetime-code'], true ); // reloads & never returns if login successful
@@ -92,6 +93,7 @@ class Authentication
             return @$_SESSION['lizzy']['user'];
         }
     } // getUsername
+
 
 
     public function getUsersGroups()
@@ -144,8 +146,6 @@ class Authentication
 
 
 
-
-    //....................................................
     public function handleAccessCodeInUrl($codeCandidate, $oneTimeOnly = false)
     {
         $res = $this->validateOnetimeAccessCode($codeCandidate);    // reloads on success, returns on failure
@@ -177,8 +177,6 @@ EOT;
 
 
 
-
-    //....................................................
     public function validateOnetimeAccessCode($code, $forceDefinePW = false)
     {
         // invoked in 2 possible ways:
@@ -259,36 +257,33 @@ EOT;
         $mode = isset($oneTimeRec['mode']) ? $oneTimeRec['mode'] : false;
 
         if (($mode === 'email-signup') && isset($oneTimeRec['user'])) {
-            require_once SYSTEM_PATH.'admintasks.class.php';
-            $adm = new AdminTasks($this->lzy);
-            if (!$adm->createGuestUserAccount($oneTimeRec['user'])) {
-                $this->lzy->page->addMessage('lzy-user-account-creation-failed');
-            }
-
-        } elseif (($mode === 'email-change-mail') && isset($oneTimeRec['email'])) {
-            require_once SYSTEM_PATH.'admintasks.class.php';
-            $adm = new AdminTasks($this->lzy);
-            $adm->changeEMail($oneTimeRec['email']);
-            reloadAgent(false, 'lzy-email-change-successful');
+            die("admintasks depricated ".__FILE__.':'>__LINE__);
+//            require_once SYSTEM_PATH.'admintasks.class.php';
+//            $adm = new AdminTasks($this->lzy);
+//            if (!$adm->createGuestUserAccount($oneTimeRec['user'])) {
+//                $this->lzy->page->addMessage('lzy-user-account-creation-failed');
+//            }
+//
 
         } elseif (($mode === 'user-signup-invitation') && isset($oneTimeRec['email'])) {
-            require_once SYSTEM_PATH.'admintasks.class.php';
-            $adm = new AdminTasks($this->lzy);
-            $html = $adm->renderCreateUserForm( $oneTimeRec );
-            $this->lzy->page->addOverride($html);
-            return 'ok';
+            die("admintasks depricated ".__FILE__.':'>__LINE__);
+//            require_once SYSTEM_PATH.'admintasks.class.php';
+//            $adm = new AdminTasks($this->lzy);
+//            $html = $adm->renderCreateUserForm( $oneTimeRec );
+//            $this->lzy->page->addOverride($html);
+//            return 'ok';
 
         } elseif ($mode === 'sign-up-invited-user') {
             $signUp = true;
-            require_once SYSTEM_PATH.'admintasks.class.php';
-            $adm = new AdminTasks($this->lzy);
-            $html = $adm->signupUser( $oneTimeRec );
-            $this->lzy->page->addOverride($html);
-            return 'ok';
+            die("admintasks depricated ".__FILE__.':'>__LINE__);
+//            require_once SYSTEM_PATH.'admintasks.class.php';
+//            $adm = new AdminTasks($this->lzy);
+//            $html = $adm->signupUser( $oneTimeRec );
+//            $this->lzy->page->addOverride($html);
+//            return 'ok';
         }
         return $getArg;
     } // handleOneTimeCodeActions
-
 
 
 
@@ -346,7 +341,6 @@ EOT;
 
 
 
-
     public function getDisplayName()
     {
         if (isset($this->userRec["displayName"])) {
@@ -358,10 +352,9 @@ EOT;
 
 
 
-
-    public function setUserAsLoggedIn($user)
+    public function setUserAsLoggedIn($user, $force = false)
 	{
-	    if ($this->userInitialized) {
+	    if ($this->userInitialized && !$force) {
 	        return;
         }
         $this->userInitialized = true;
@@ -400,7 +393,6 @@ EOT;
         }
         return $user;
     } // setUserAsLoggedIn
-
 
 
 
@@ -501,31 +493,6 @@ EOT;
         }
         return '';
     } // getAccessCode
-
-
-
-
-    public function deleteAccessCode( $username = false )
-    {
-        if (!$this->config->admin_userAllowSelfAccessLink) {
-            return null;    // only allowed if admin_userAllowSelfAccessLink is active
-        }
-        if (!$username) {
-            $rec = $this->userRec;
-        } elseif (isset($this->knownUsers[$username])) {
-            $rec = $this->knownUsers[$username];
-        } else {
-            return '';
-        }
-        if (isset($rec['accessCode'])) {
-            unset($rec['accessCode']);
-            $atsk = new AdminTasks($this->lzy);
-            $user = $this->getUsername();
-            $atsk->updateDbUserRec($user, $rec, true);
-            return 'deleted';
-        }
-        return '';
-    } // deleteAccessCode
 
 
 
@@ -760,7 +727,7 @@ EOT;
 
     public function isValidPassword($password, $password2 = false)
     {
-        if ($password2 && ($password !== $password2)) {
+        if (($password2 !== false) && ($password !== $password2)) {
             return '{{ lzy-change-password-not-equal-response }}';
         }
         if ($this->config->admin_enforcePasswordQuality) {
@@ -885,7 +852,7 @@ EOT;
 
 
 
-    private function findEmailMatchingUserRec($searchKey, $checkInEmailList = false)
+    public function findEmailMatchingUserRec($searchKey, $checkInEmailList = false)
     {
         if (!$searchKey) {
             return false;
@@ -923,21 +890,6 @@ EOT;
         }
         return [$email, $rec];
     } // findEmailMatchingUserRec
-
-
-
-
-    private function sendOneTimeCode($submittedEmail, $rec)
-    {
-        $accessCodeValidyTime = isset($rec['accessCodeValidyTime']) ? $rec['accessCodeValidyTime'] : $this->config->admin_defaultAccessLinkValidyTime;
-
-        require_once SYSTEM_PATH.'admintasks.class.php';
-        $adm = new AdminTasks($this->lzy);
-        $message = $adm->sendCodeByMail($submittedEmail, 'email-login', $accessCodeValidyTime, $rec);
-
-        return $message;
-    } // sendOneTimeCode
-
 
 
 
@@ -988,34 +940,6 @@ EOT;
         }
         return implode(',', $users);
     } // getListOfUsers
-
-
-
-
-
-    private function handleOnetimeLoginRequest()
-    {
-        $emailRequest = $_POST['lzy-onetimelogin-request-email'];
-
-        list($emailRequest, $rec) = $this->findEmailMatchingUserRec($emailRequest, true);
-        if ($emailRequest) {
-            if (isset($rec['inactive']) && $rec['inactive']) {  // account set to inactive?
-                writeLogStr("Account '{$rec['username']}' is inactive: $emailRequest", LOGIN_LOG_FILENAME);
-                $res = [false, "<p>{{ lzy-login-user-unknown }}</p>", 'Message'];
-
-            } elseif (!is_legal_email_address($emailRequest)) { // valid email address?
-                writeLogStr("invalid email address in rec '{$rec['username']}': $emailRequest", LOGIN_LOG_FILENAME);
-                $res = [false, "<p>{{ lzy-login-user-unknown }}</p>", 'Message'];   //
-            } else {
-                list($message, $displayName) = $this->sendOneTimeCode($emailRequest, $rec);
-                $res = [false, $message, 'Override'];   // if successful, a mail with a link has been sent and user will be authenticated on using that link
-                $this->lzy->loginFormRequiredOverride = false;
-            }
-        } else {
-            $res = [false, "<p>{{ lzy-login-user-unknown }}</p>", 'Message'];   //
-        }
-        return $res;
-    } // handleOnetimeLoginRequest
 
 
 

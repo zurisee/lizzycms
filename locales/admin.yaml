@@ -433,8 +433,8 @@ lzy-accound-form-old-email:
 
 
 lzy-username-changed-response:
-    de: "Ihr neuer Benutzername wurde gespeichert."
-    _:  "Your new username has been registered."
+    de: "Ihr neuer Benutzername wurde gespeichert"
+    _:  "Your new username has been registered"
 
 
 # Change E-Mail Address:

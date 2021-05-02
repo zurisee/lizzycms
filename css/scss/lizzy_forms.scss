@@ -21,8 +21,9 @@ $formBorderStyle: 1px solid #ddd; // --lzy-form-border-style
 $formElemCommentColor: gray;      // --form-elem-comment-color
 
 
+
 /* === Mixin's ===================================== */
-@mixin lzy-form-label-above {
+@mixin lzy-form-labels-above {
     .lzy-label-wrapper {
         display: block;
         --lzy-label-width: 100%;
@@ -30,7 +31,7 @@ $formElemCommentColor: gray;      // --form-elem-comment-color
     .lzy-form-input-elem.lzy-form-input-elem {
         display: block;
         width: 100%;
-        margin-top: 0.3em;
+        margin-top: 0.4em;
     }
 }
 
@@ -136,8 +137,8 @@ $formElemCommentColor: gray;      // --form-elem-comment-color
 
 
     /* === Layout ================================== */
-    &.lzy-form-label-above {
-        @include lzy-form-label-above;
+    &.lzy-form-labels-above {
+        @include lzy-form-labels-above;
     }
 
 
@@ -639,20 +640,7 @@ $formElemCommentColor: gray;      // --form-elem-comment-color
 .lzy-small-screen .lzy-form {
     .lzy-form-field-wrapper {
         font-size: 14pt;
-        @include lzy-form-label-above;
-        //label {
-        //    margin: 0 0 0.2em;
-        //}
-        //
-        //label.lzy-form-pw-toggle {
-        //    margin: 0;
-        //}
-        //
-        //textarea,
-        //input {
-        //    display: block;
-        //    width: 100%;
-        //}
+        @include lzy-form-labels-above;
     }
 
 
