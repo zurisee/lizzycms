@@ -214,9 +214,9 @@ EOT;
     public function createAccessCodeForUser($user)
     {
         if (!$user) {
-            $msg = "# Access Code\n\nPlease supply a user-name.\n\nE.g. ?access-code=user1";
+            $msg = "{{ lzy-create-accesscode-needs-username }}";
         } elseif (!$this->auth->isKnownUser($user)) {
-            $msg = "# Access Code\n\nuser-name '$user' unknown";
+            $msg = "{{ lzy-create-accesscode-user-unknown }} $user";
         } else {
             $tick = new Ticketing();
             $code = $tick->createHash();

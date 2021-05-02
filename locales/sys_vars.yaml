@@ -518,6 +518,14 @@ lzy-insufficient-privilege:
     de: 'Sie haben keine Berechtigung für die Option'
     _: 'Insufficient privilege for option'
  
+lzy-create-accesscode-needs-username:
+    de: '<h3>Zugangs-Code</h3><p>Bitte Benutzername angeben.</p><p>Z.B. ?accesscode=gast</p>'
+    _: '<h3>Access Code</h3><p>Please supply a user-name.</p><p>E.g. ?accesscode=guest</p>'
+
+lzy-create-accesscode-user-unknown:
+    de: '<h3>Zugangs-Code</h3>Benutzername nicht bekannt:'
+    _: '<h3>Access Code</h3>User unknown:'
+
 
 #login with password:
 #    de: Anmeldung mit <br>Kennwort
