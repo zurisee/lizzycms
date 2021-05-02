@@ -286,7 +286,7 @@ function isServerErrMsg(json) {
 
 
 
-function lzyReload( arg, url ) {
+function lzyReload( arg, url, confirmMsg ) {
     let call = window.location.pathname.replace(/\?.*/, '');
     if (typeof url !== 'undefined') {
         call = url.trim();
@@ -294,8 +294,15 @@ function lzyReload( arg, url ) {
     if (typeof arg !== 'undefined') {
         call = appendToUrl(call, arg);
     }
-    console.log('initiating page reload: "' + call + '"');
-    window.location.replace(call);
+    if (typeof confirmMsg !== 'undefined') {
+        lzyConfirm(confirmMsg).then(function() {
+            console.log('initiating page reload: "' + call + '"');
+            window.location.replace(call);
+        });
+    } else {
+        console.log('initiating page reload: "' + call + '"');
+        window.location.replace(call);
+    }
 } // lzyReload
 
 
