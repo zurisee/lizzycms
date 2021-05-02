@@ -1295,6 +1295,35 @@ function getCliArg($argname, $stringMode = true)
 
 
 
+function getPostData($varName, $permitNL = false, $unsetAfterRead = false)
+{
+    $out = false;
+    if (isset($_POST) && isset($_POST[$varName])) {
+        $out = $_POST[$varName];
+        $out = safeStr($out, $permitNL, false);
+        if ($unsetAfterRead) {
+            unset( $_POST[$varName] );
+        }
+    }
+    return $out;
+} // get_post_data
+
+
+
+
+function get_post_data($varName, $permitNL = false)
+{
+    $out = false;
+    if (isset($_POST) && isset($_POST[$varName])) {
+        $out = $_POST[$varName];
+        $out = safeStr($out, $permitNL, false);
+    }
+    return $out;
+} // get_post_data
+
+
+
+
 function getUrlArg($tag, $stringMode = false, $unset = false)
 {
  // in case of arg that is present but empty:
@@ -1442,19 +1471,6 @@ function reloadAgent($target = false, $getArg = false)
     header("Location: $target");
     exit;
 } // reloadAgent
-
-
-
-
-function get_post_data($varName, $permitNL = false)
-{
-	$out = false;
-	if (isset($_POST) && isset($_POST[$varName])) {
-		$out = $_POST[$varName];
-		$out = safeStr($out, $permitNL, false);
-	}
-	return $out;
-} // get_post_data
 
 
 
