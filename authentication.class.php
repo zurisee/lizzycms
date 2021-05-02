@@ -84,7 +84,6 @@ class Authentication
 
 
 
-
     public function getUsername()
     {
         if (isset($this->loggedInUser)) {
@@ -101,6 +100,20 @@ class Authentication
         return $this->loggedInUser;
     } // getUsersGroups
 
+
+
+    public function getKnownGroups()
+    {
+        $knownUsers = $this->getKnownUsers();
+        $groups = [];
+        foreach ($knownUsers as $user) {
+            $grps = explodeTrim(' ,', $user['groups']);
+            foreach ($grps as $group) {
+                $groups[$group] = $group;
+            }
+        }
+        return array_keys($groups);
+    } // getKnownGroups
 
 
 	private function validateCredentials($credentials)
