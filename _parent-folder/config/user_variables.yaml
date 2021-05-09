@@ -39,6 +39,40 @@ Skip to Sitemap:
 #    _: '<span style="display: inline-block;">Large Screen Footer</span>'
 
 
+
+__END__
+
+### Individualize text of access-code mails:
+lzy-email-access-link0:
+    de: "Guten Tag "
+    _:  "Hello "
+    
+lzy-email-access-link1:
+    de: |
+        \n\nFür Ihre E-Mail Adresse wurde ein Zugangscode angefordert.
+        Falls Sie nichts davon wissen, können Sie diese Nachricht ignorieren – es wird nichts passieren.\n
+        Hier ist der Zugangs-Link, mit dem Sie die Webseite ansprechen können: \n\t
+    _:  |
+        \n\nWe received a requested for an access code using your e-mail address.
+        If you know nothing about it, you may ignore this message – nothing will happen.\n\n
+        Here is the link with which you can access the webpage: \n
+
+lzy-email-access-link2:
+    de: "\n\n\n(Als Alternative können Sie auch den folgenden Code ins Eingabefeld in der Website eintragen: "
+    _:  "\n\n\n(Alternatively, you can enter the following code into the entry field in the webpage: "
+
+lzy-email-access-link3:
+    de: |
+        \n\nBitte beachten Sie, dass der Link (bzw. der Code) nur einmal innerhalb der nächsten 15 Minuten funktioniert.\n\n
+    _:  |
+        \n\nPlease note that this link and this code only works once within the next 15 minutes.\n\n
+
+lzy-email-access-greeting:
+    de: "Beste Grüsse, das {{ site_title }} Team"
+    _:  "Best Regards, your {{ site_title }} Team"
+
+
+
 __END__
 
 Explanations:

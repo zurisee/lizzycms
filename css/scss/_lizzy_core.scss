@@ -725,6 +725,20 @@ dd {
 
 
 /* === Login ============================== */
+/* login window for pages requiring login: */
+#lzy.lzy-page-override .lzy-required-login-wrapper {
+	font-size: 12pt;
+	max-width: 30em;
+	margin: 5% auto 0 auto;
+	padding: 1em;
+	border: 1px solid #aaa;
+	.lzy-comment {
+		margin: 1em;
+		//padding-left: 1em;
+		font-style: italic;
+	}
+}
+
 .lzy-small-screen {
 	#lzy-login-form_wrapper * {
 		font-size: 14pt;

@@ -548,6 +548,10 @@ html:not(.lzy-responsive-fontsize) .lzy-default-layout {
     margin-bottom:-5px;  /* ??? bug workaround? */
 }
 
+.lzy-warning:empty,
+.lzy-warning-box:empty {
+    display: none;
+}
 
 .lzy-msgbox,
 .lzy-warning-box {
@@ -578,6 +582,12 @@ html:not(.lzy-responsive-fontsize) .lzy-default-layout {
 .lzy-msgbox.lzy-msg-show {
     transform:  translateX(-100%);
     transition: transform var(--lzy-msg-transition-time, 0.6s);
+}
+.lzy-admin {
+    .lzy-msgbox,
+    .lzy-warning-box {
+        border: 1px solid red;
+    }
 }
 #lzy.lzy-large-screen {
     .lzy-msgbox,

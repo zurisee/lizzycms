@@ -1300,7 +1300,13 @@ function getPostData($varName, $permitNL = false, $unsetAfterRead = false)
     $out = false;
     if (isset($_POST) && isset($_POST[$varName])) {
         $out = $_POST[$varName];
-        $out = safeStr($out, $permitNL, false);
+        if (is_string($out)) {
+            $out = safeStr($out, $permitNL, false);
+        } elseif (is_array($out)) {
+            foreach ($out as $i => $item) {
+                $out[$i] = safeStr($item, $permitNL, false);
+            }
+        }
         if ($unsetAfterRead) {
             unset( $_POST[$varName] );
         }

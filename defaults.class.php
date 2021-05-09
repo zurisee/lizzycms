@@ -13,6 +13,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'admin_activityLogging'             => [true, 'If true, logs activities to file '.LOG_FILE.'.', 3 ],
     'admin_allowDisplaynameForLogin'    => [false, 'If true, users may log in using their "DisplayName" rather than their "UserName".', 3 ],
     'admin_autoAdminOnLocalhost'        => [false, 'If true, on local host user automatically has admin privileges without login.', 1 ],
+    'admin_defaultUserCommChannel'      => ['email', '[email,signal] Defines the communication channel, e.g. for one-time access links.', 1 ],
     'admin_enableAccessLink'            => [true, 'Activates one-time-access-link login mechanism.', 3 ],
     'admin_defaultAccessLinkValidyTime' => [900,    'Default Time in seconds during whith an access-link is valid.', 3 ],
     'admin_defaultGuestGroup'           => ['guest', 'Name of default group for self-registration.', 3 ],
@@ -29,7 +30,8 @@ private $userConfigurableSettingsAndDefaults      = [
     'admin_enableSelfSignUp'            => [false, 'If true, visitors can create a guest account on their own.', 3 ],
     'admin_enforcePasswordQuality'      => [false, 'If true, a minimum password quality is enforced when users create/change their password.', 3 ],
     'admin_useRequestRewrite'           => [true, 'If true, assumes web-server supports request-rewrite (i.e. .htaccess).', 3 ],
-    'admin_userAllowSelfAdmin'          => [false, 'If true, user can modify their account after they logged in', 3 ],
+    'admin_userAllowSelfAdmin'          => ['', '[false,true,group] If true, user can modify their account after they logged in. '.
+                                            'If a group is specified, members of that group can modify.', 3 ],
     'admin_userAllowSelfAccessLink'     => [false, 'If true, user can create an "access-link"', 3 ],
     'admin_enableFileManager'           => [false, 'If true, the file-manager (upload, rename, delete) is enabled for privileged users.', 2 ],
     'admin_minPasswordLength'           => [10, '[integer] Minimum length of passwords if "admin_enforcePasswordQuality" is enabled.', 3 ],
@@ -222,7 +224,7 @@ private $userConfigurableSettingsAndDefaults      = [
     } // __construct
 
 
-    //....................................................
+
     private function getConfigValues($append = false)
     {
         global $globalParams;
@@ -297,7 +299,8 @@ private $userConfigurableSettingsAndDefaults      = [
             fatalError('Error: no value(s) defined for config item "site_supportedLanguages".');
         }
         $this->site_multiLanguageSupport = true;
-        $supportedLanguages = explode(',', str_replace(' ', '', $this->site_supportedLanguages ));
+        $this->site_supportedLanguages = str_replace(' ', '', $this->site_supportedLanguages );
+        $supportedLanguages = explode(',', $this->site_supportedLanguages);
         $n = ($supportedLanguages) ? sizeof($supportedLanguages) : 0;
         if ($n === 1) {
             $this->site_multiLanguageSupport = false;
@@ -590,8 +593,5 @@ EOT;
         $this->lzy->page->addJq("$('#raw-config-text').selText();");
         return "<pre id='raw-config-text'>$out\n\n</pre>";
     }
-
-
-
 
 } // Defaults

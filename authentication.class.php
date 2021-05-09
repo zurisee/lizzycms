@@ -39,21 +39,19 @@ class Authentication
         if (isset($_POST['lzy-login-username']) && isset($_POST['lzy-login-password'])) {    // user sent un & pw
             $credentials = array('username' => $_POST['lzy-login-username'], 'password' => $_POST['lzy-login-password']);
             if (($user = $this->validateCredentials($credentials))) {
-                $user = $this->setUserAsLoggedIn($user);
-                $msg = $this->lzy->trans->translate('{{ lzy-login-successful-as }}');
-                reloadAgent(false, "$msg: $user");
+                if (is_string($user)) {
+                    $user = $this->setUserAsLoggedIn($user, true);
+                    $msg = $this->lzy->trans->translate('{{ lzy-login-successful-as }}');
+                    reloadAgent(false, "$msg: $user");
+                } elseif (is_array($user)) {
+                    $res = $user;
+                }
             } else {
+                $this->validateAccessCode( $credentials );
                 $res = [null, "{{ lzy-login-failed }}", 'Message'];
             }
-
-        } elseif (isset($_POST['lzy-onetimelogin-request-email'])) {     // user sent email for logging in
-            $accForm = new UserLoginBase($this->lzy);
-            $res = $accForm->handleOnetimeLoginRequest();
-
-        } elseif (isset($_POST['lzy-onetime-code']) && isset($_POST['lzy-login-user'])) {    // user sent accessCode
-            $str = $this->handleAccessCodeInUrl( $_POST['lzy-onetime-code'], true ); // reloads & never returns if login successful
-            $res = [false, $str, 'Message'];
         }
+        // note: if user sent an accessCode, it will be handled by lzy->handleReceivedHashes()
 
         if ($res === null) {        // no login attempt detected -> check whether already logged in:
             if (isset($_GET['logout'])) {
@@ -67,19 +65,14 @@ class Authentication
 
             if ($user && ($msg = getNotificationMsg())) {
                 $msg = $this->lzy->trans->translateVariable($msg, true);
-                $res = [$user, "<p>{{ $msg }}</p>", 'Message' ];   //
+                $res = [$user, "<p>{{ $msg }}</p>", 'Message' ];
 
-                // check forceDefinePW:
-                if (@$_SESSION['lizzy']['forceDefinePW']) {
-                    $ac = new UserAccountForm($this->lzy);
-                    $form = $ac->renderNewPwForm($user);
-                    $this->lzy->page->addOverlay($form);
-                    $_SESSION['lizzy']['forceDefinePW'] = false;
-                }
+                // in case user used ot-code in place of password, nudge setting a propre PW:
+                $this->renderForceDefinePWIfRequired();
             }
         }
 
-        $this->handleLoginUserNotification($res);   // inform user about login/logout etc.
+        $this->lzy->initiateInBrowserUserNotification($res);   // inform user about login/logout etc.
     } // authenticate
 
 
@@ -109,17 +102,20 @@ class Authentication
         foreach ($knownUsers as $user) {
             $grps = explodeTrim(' ,', $user['groups']);
             foreach ($grps as $group) {
-                $groups[$group] = $group;
+                if ($group) {
+                    $groups[$group] = $group;
+                }
             }
         }
         return array_keys($groups);
     } // getKnownGroups
 
 
+
 	private function validateCredentials($credentials)
 	{
 	    // returns username or false, if no valid match was found
-        $requestingUser = strtolower($credentials['username']);
+        $requestingUser = $credentials['username'];
 
         $res = false;
 		if (!isset($this->knownUsers[$requestingUser])) {    // user found in user-DB:
@@ -127,6 +123,14 @@ class Authentication
         }
 		if (isset($this->knownUsers[$requestingUser])) {
             $rec = $this->knownUsers[$requestingUser];
+
+            // handle case where user just enters username (or email) and leaves pw empty:
+            if (!trim($credentials['password']) && isset($rec['email'])) {
+                $accForm = new UserLoginBase($this->lzy);
+                $res = $accForm->handleOnetimeLoginRequest( $rec['email'], $rec );
+                return $res;
+            }
+
             $rec['username'] = $requestingUser;
             $correctPW = (isset($rec['password'])) ? $rec['password'] : '';
             $providedPW = isset($credentials['password']) ? trim($credentials['password']) : '####';
@@ -138,20 +142,24 @@ class Authentication
 
             } else {
                 // login by un&pw failed: pw wrong -> check whether it was a one-time code:
-                $res = $this->validateOnetimeAccessCode( $providedPW, true );    // reloads on success, returns on failure
-
-                // login failed for good:
-                $rep = '';
-                if ($this->handleFailedLogins()) {
-                    $rep = ' REPEATED';
+                $res = $this->validateOnetimeAccessCode( $providedPW, true );
+                if (!$res) {
+                    $res = $this->validateAccessCode(['username' => $requestingUser, 'password' => $providedPW]);    // reloads on success, returns on failure
                 }
-                $this->monitorFailedLoginAttempts();
-                writeLogStr("*** Login failed$rep (wrong pw): $requestingUser [" . getClientIP(true) . ']', LOGIN_LOG_FILENAME);
-                $this->message = '{{ Login failed }}';
-                setStaticVariable('lastLoginMsg', '{{ Login failed }}');
-                $this->unsetLoggedInUser();
-                $jq = "$('#lzy-login-form').lzyPopup('show')";
-                $this->lzy->page->addJq($jq, 'append');
+                if (!$res) {
+                    // login failed for good:
+                    $rep = '';
+                    if ($this->handleFailedLogins()) {
+                        $rep = ' REPEATED';
+                    }
+                    $this->monitorFailedLoginAttempts();
+                    writeLogStr("*** Login failed$rep (wrong pw): $requestingUser [" . getClientIP(true) . ']', LOGIN_LOG_FILENAME);
+                    $this->message = '{{ Login failed }}';
+                    setStaticVariable('lastLoginMsg', '{{ Login failed }}');
+                    $this->unsetLoggedInUser();
+                    $jq = "$('#lzy-login-form').lzyPopup('show')";
+                    $this->lzy->page->addJq($jq, 'append');
+                }
             }
         }
         return $res;
@@ -159,85 +167,61 @@ class Authentication
 
 
 
-    public function handleAccessCodeInUrl($codeCandidate, $oneTimeOnly = false)
-    {
-        $res = $this->validateOnetimeAccessCode($codeCandidate);    // reloads on success, returns on failure
-        if ($res === 'ok') {
-            return '';
-        }
-        if ($oneTimeOnly) {
-            $this->handleFailedLoginAttempts($codeCandidate);
-            return $res;
-        }
-
-        if ($this->validateAccessCode($codeCandidate)) {   // check access code in user records and log in if found
-            return '';
-        }
-
-        writeLogStr($this->lastLogMsg, LOGIN_LOG_FILENAME);
-        $this->handleFailedLoginAttempts($codeCandidate);
-
-        $path = $GLOBALS['globalParams']['host'].$_SERVER['REQUEST_URI'];
-        $html = <<<EOT
-        <h1>{{ lzy-link-expired }}</h1>
-        <p>{{ lzy-link-expired-explanation }}</p>
-        <p style="padding: 1em 2em;">$path</p>
-
-EOT;
-        $this->lzy->page->addOverride($html);
-        return '';
-    } // handleAccessCodeInUrl
+//??? obsolete? delete?
+//    public function handleAccessCodeInUrl($codeCandidate, $oneTimeOnly = false)
+//    {
+//        $res = $this->validateOnetimeAccessCode($codeCandidate);    // reloads on success, returns on failure
+//        if ($res === 'ok') {
+//            return '';
+//        }
+//        if ($oneTimeOnly) {
+//            $this->handleFailedLoginAttempts($codeCandidate);
+//            return $res;
+//        }
+//
+//        if ($this->validateAccessCode($codeCandidate)) {   // check access code in user records and log in if found
+//            return '';
+//        }
+//
+//        writeLogStr($this->lastLogMsg, LOGIN_LOG_FILENAME);
+//        $this->handleFailedLoginAttempts($codeCandidate);
+//
+//        $path = $GLOBALS['globalParams']['host'].$_SERVER['REQUEST_URI'];
+//        $html = <<<EOT
+//        <h1>{{ lzy-link-expired }}</h1>
+//        <p>{{ lzy-link-expired-explanation }}</p>
+//        <p style="padding: 1em 2em;">$path</p>
+//
+//EOT;
+//        $this->lzy->page->addOverride($html);
+//        return '';
+//    } // handleAccessCodeInUrl
 
 
 
     public function validateOnetimeAccessCode($code, $forceDefinePW = false)
     {
-        // invoked in 2 possible ways:
-        //  1) from analyzeHttpRequest() -> code = last part of url
-        //  2) from authenticate() -> code from post variable
-
-        $res = $this->readOneTimeAccessCode($code);
-        if (!is_array($res)) {
-            return $res;
+        $user = $this->readOneTimeAccessCode($code);
+        if (!$user) {
+            return false;
         }
-        list($userRec, $oneTimeRec) = $res;
-        $res = $this->handleOneTimeCodeActions($oneTimeRec); // reloads if login successful
-        if ($res === 'ok') {
-            return 'ok';
+        if ($forceDefinePW) {
+            setStaticVariable('forceDefinePW', true);
         }
 
-        $getArg = false;
-        if ($userRec) {
-            $user = $username = $userRec['username'];
-            $this->setUserAsLoggedIn( $user );
-            $_SESSION['lizzy']['loginEmail'] = $oneTimeRec['email'];
-
-            $user .= " ({$oneTimeRec['email']})";
-            writeLogStr("one time link accepted: $user [".getClientIP().']', LOGIN_LOG_FILENAME);
-
-            if (!$this->lzy->keepAccessCode) {
-                // access granted
-                if ($forceDefinePW) {
-                    setStaticVariable('forceDefinePW', true);
-                }
-                // remove hash-code from url, if there is one:
-                $requestedUrl = $GLOBALS['globalParams']['requestedUrl'];
-                $requestedUrl = preg_replace('|/[A-Z][A-Z0-9]{4,}/?$|', '', $requestedUrl);
-                $requestedUrl = preg_replace('|/\?.*$|', '', $requestedUrl);
-                $msg = $this->lzy->trans->translate('{{ lzy-login-successful-as }}');
-                reloadAgent($requestedUrl, "$msg: $username");
-            }
-        }
-        return $getArg;
+        $this->setUserAsLoggedIn( $user, true );
+        writeLogStr("user '$user' successfully logged in via access link ($code). [".getClientIP().']', LOGIN_LOG_FILENAME);
+        $msg = $this->lzy->trans->translate('{{ lzy-login-successful-as }}');
+        $msg = "$msg: $user";
+        reloadAgent(false, $msg);
     } // validateOnetimeAccessCode
 
 
 
-    private function readOneTimeAccessCode($code)
+    public function readOneTimeAccessCode($code)
     {
         // checks whether there is a pending oneTimeAccessCode, purges old entries
         $tick = new Ticketing();
-        $code = strtoupper($code);
         $ticket = $tick->consumeTicket($code, true); // type=true keeps '_ticketType' from being suppressed $ticket
         if (!$ticket) {
             $errMsg = $tick->getLastError();
@@ -245,16 +229,8 @@ EOT;
             return false;
         }
 
-        if ($ticket['_ticketType'] === 'user-ticket') {
-            $user = $ticket['user'];
-            $this->lzy->reqPagePath = $ticket['link'];
-            $this->setUserAsLoggedIn($user);
-            return 'ok';
-
-        } elseif ($ticket['_ticketType'] === 'ot-access-ticket') { // reponse from login-by-email
-            $username = $ticket ['username'];
-            $userRec = $this->getUserRec($username);
-            return [$userRec, $ticket];
+        if ($ticket['_ticketType'] === 'lzy-ot-access') { // reponse from login-by-email
+            return $ticket ['username'];
 
         } else {
             $this->lastLogMsg = "*** one-time link rejected: $code (wrong ticket-type) [".getClientIP().']';
@@ -264,47 +240,58 @@ EOT;
 
 
 
-    private function handleOneTimeCodeActions($oneTimeRec)
-    {
-        $getArg = false;
-        $mode = isset($oneTimeRec['mode']) ? $oneTimeRec['mode'] : false;
-
-        if (($mode === 'email-signup') && isset($oneTimeRec['user'])) {
-            die("admintasks depricated ".__FILE__.':'>__LINE__);
-//            require_once SYSTEM_PATH.'admintasks.class.php';
-//            $adm = new AdminTasks($this->lzy);
-//            if (!$adm->createGuestUserAccount($oneTimeRec['user'])) {
-//                $this->lzy->page->addMessage('lzy-user-account-creation-failed');
-//            }
+//??? obsolete? delete?
+//    private function handleOneTimeCodeActions($oneTimeRec)
+//    {
+//        $getArg = false;
+//        $mode = isset($oneTimeRec['mode']) ? $oneTimeRec['mode'] : false;
 //
+//        if (($mode === 'email-signup') && isset($oneTimeRec['user'])) {
+//            die("admintasks depricated ".__FILE__.':'>__LINE__);
+////            require_once SYSTEM_PATH.'admintasks.class.php';
+////            $adm = new AdminTasks($this->lzy);
+////            if (!$adm->createGuestUserAccount($oneTimeRec['user'])) {
+////                $this->lzy->page->addMessage('lzy-user-account-creation-failed');
+////            }
+////
+//
+//        } elseif (($mode === 'user-signup-invitation') && isset($oneTimeRec['email'])) {
+//            die("admintasks depricated ".__FILE__.':'>__LINE__);
+////            require_once SYSTEM_PATH.'admintasks.class.php';
+////            $adm = new AdminTasks($this->lzy);
+////            $html = $adm->renderCreateUserForm( $oneTimeRec );
+////            $this->lzy->page->addOverride($html);
+////            return 'ok';
+//
+//        } elseif ($mode === 'sign-up-invited-user') {
+//            $signUp = true;
+//            die("admintasks depricated ".__FILE__.':'>__LINE__);
+////            require_once SYSTEM_PATH.'admintasks.class.php';
+////            $adm = new AdminTasks($this->lzy);
+////            $html = $adm->signupUser( $oneTimeRec );
+////            $this->lzy->page->addOverride($html);
+////            return 'ok';
+//        }
+//        return $getArg;
+//    } // handleOneTimeCodeActions
 
-        } elseif (($mode === 'user-signup-invitation') && isset($oneTimeRec['email'])) {
-            die("admintasks depricated ".__FILE__.':'>__LINE__);
-//            require_once SYSTEM_PATH.'admintasks.class.php';
-//            $adm = new AdminTasks($this->lzy);
-//            $html = $adm->renderCreateUserForm( $oneTimeRec );
-//            $this->lzy->page->addOverride($html);
-//            return 'ok';
-
-        } elseif ($mode === 'sign-up-invited-user') {
-            $signUp = true;
-            die("admintasks depricated ".__FILE__.':'>__LINE__);
-//            require_once SYSTEM_PATH.'admintasks.class.php';
-//            $adm = new AdminTasks($this->lzy);
-//            $html = $adm->signupUser( $oneTimeRec );
-//            $this->lzy->page->addOverride($html);
-//            return 'ok';
-        }
-        return $getArg;
-    } // handleOneTimeCodeActions
 
 
-
-    private function validateAccessCode($codeCandidate)
+    public function validateAccessCode( $codeCandidate )
     {
         // this is an access code stored in a user's record
         if (!$this->knownUsers) {
             return false;
+        }
+        $requestingUser = false;
+        if (is_array($codeCandidate)) {
+            // this is the rare case that user used login-form to submit accessCode:
+            $requestingUser = $codeCandidate['username'];
+            if (!$requestingUser) {
+                //ToDo: hack-prevention
+                reloadAgent(false, "{{ lzy-login-failed }}");
+            }
+            $codeCandidate = $codeCandidate['password'];
         }
         foreach ($this->knownUsers as $user => $rec) {
             if (isset($rec['accessCode'])) {
@@ -316,17 +303,30 @@ EOT;
                             return false;
                         }
                     }
+                    // if user sent username, make sure the accessCode belongs to him:
+                    if ($requestingUser && ($requestingUser !== $user)) {
+                        //ToDo: hack-prevention
+                        reloadAgent(false, "{{ lzy-login-failed }}");
+                    }
+
+                    // mechanism to leave accessCode in URL for one more call:
                     $keepAccessCode = $this->lzy->keepAccessCode || !$_SESSION['lizzy']['user'];
-                    $this->setUserAsLoggedIn($user, $rec);
+                    $this->setUserAsLoggedIn($user, true);
                     writeLogStr("user '$user' successfully logged in via access link ($codeCandidate). [".getClientIP().']', LOGIN_LOG_FILENAME);
-                    if ($keepAccessCode) {
+
+                    if ($keepAccessCode && !isset($_GET['login'])) {
                         $msg = $this->lzy->trans->translate('{{ lzy-login-successful-as }}');
                         $this->lzy->page->addMessage("$msg: $user");
-                        return true;
+                        return $user;
                     } else {
+                        $msg = '';
                         $requestedUrl = $GLOBALS['globalParams']['requestedUrl'];
                         $requestedUrl = preg_replace('|/[A-Z][A-Z0-9]{4,}/?|', '/', $requestedUrl);
-                        reloadAgent($requestedUrl);
+                        if (isset($_GET['login'])) {
+                            $msg = $this->lzy->trans->translate('{{ lzy-login-successful-as }}') . ": $user";
+                            $requestedUrl = preg_replace('/[?&]login/', '', $requestedUrl);
+                        }
+                        reloadAgent($requestedUrl, $msg);
                     }
                 }
             }
@@ -368,7 +368,7 @@ EOT;
     public function setUserAsLoggedIn($user, $force = false)
 	{
 	    if ($this->userInitialized && !$force) {
-	        return;
+	        return '';
         }
         $this->userInitialized = true;
 
@@ -404,6 +404,26 @@ EOT;
         } else {
             $_SESSION['lizzy']['userDisplayName'] = $user;
         }
+
+        // check user's preferred language (unless ?lang override request is present):
+        if (isset($rec['lang']) && !isset($_GET['lang'])) {
+            $subLang = $lang = $rec['lang'];
+            if (preg_match('/(\w+)\d/', $lang, $m)) {
+                $lang = $m[1];
+            }
+            setStaticVariable('lang', $lang);
+            setStaticVariable('subLang', $subLang);
+        }
+
+        // check self-admin permission:
+        $selfadmin = $this->config->admin_userAllowSelfAdmin;
+        if ($selfadmin === '1') {
+            $this->config->admin_userAllowSelfAdmin = true;
+        } elseif ($selfadmin) {
+            $permitted = $this->checkGroupMembership($this->config->admin_userAllowSelfAdmin);
+            $this->config->admin_userAllowSelfAdmin = $permitted;
+        }
+
         return $user;
     } // setUserAsLoggedIn
 
@@ -467,7 +487,6 @@ EOT;
 
 
 
-
     public function getUserRec( $username = false )
     {
         if (!$username) {
@@ -485,7 +504,6 @@ EOT;
         }
         return $rec;
     } // getUserRec
-
 
 
 
@@ -509,7 +527,6 @@ EOT;
 
 
 
-
     public function getKnownUsers()
     {
         if (is_array($this->knownUsers)) {
@@ -518,7 +535,6 @@ EOT;
             return [];
         }
     } // getKnownUsers
-
 
 
 
@@ -533,7 +549,6 @@ EOT;
             return (is_array($this->knownUsers) && in_array($user, array_keys($this->knownUsers)));
         }
     } // isKnownUser
-
 
 
 
@@ -583,7 +598,6 @@ EOT;
 
 
 
-
     public function checkAdmission($lockProfile)
 	{
 		if ((!$lockProfile) || ($this->localHost && $this->config->admin_autoAdminOnLocalhost)) {	// no restriction
@@ -616,7 +630,6 @@ EOT;
 
 
 
-
     private function isGroupMember($usersGroups, $groupToCheckAgainst)
     {
         if (!$usersGroups) {
@@ -626,8 +639,6 @@ EOT;
         $res = (strpos($usersGroups, ",$groupToCheckAgainst,") !== false);
         return $res;
     } // isGroupMember
-
-
 
 
 
@@ -643,7 +654,6 @@ EOT;
 
         $this->unsetLoggedInUser();
     } // logout
-
 
 
 
@@ -665,7 +675,6 @@ EOT;
 
 
 
-
     private function handleFailedLoginAttempts($code = '')
     {
         $rep = '';
@@ -677,7 +686,6 @@ EOT;
             writeLogStr("*** one time link rejected$rep: $code [" . getClientIP() . ']', LOGIN_LOG_FILENAME);
         }
     } // handleFailedLoginAttempts
-
 
 
 
@@ -700,7 +708,6 @@ EOT;
         writeToYamlFile(FAILED_LOGIN_FILE, $failedLogins);
         return $repeated;
     } // handleFailedLogins
-
 
 
 
@@ -737,7 +744,6 @@ EOT;
 
 
 
-
     public function isValidPassword($password, $password2 = false)
     {
         if (($password2 !== false) && ($password !== $password2)) {
@@ -758,14 +764,10 @@ EOT;
 
 
 
-
-
     public function isPrivileged()
     {
         return $this->checkAdmission('admins,editors');
     } // isPrivileged
-
-
 
 
 
@@ -776,8 +778,6 @@ EOT;
 
 
 
-
-
     public function isAdmin($thorough = false)
     {
         if (!$thorough && $GLOBALS['globalParams']['isAdmin']) {
@@ -785,7 +785,6 @@ EOT;
         }
         return $this->checkAdmission('admins');
     } // isAdmin
-
 
 
 
@@ -864,7 +863,6 @@ EOT;
 
 
 
-
     public function findEmailMatchingUserRec($searchKey, $checkInEmailList = false)
     {
         if (!$searchKey) {
@@ -906,7 +904,6 @@ EOT;
 
 
 
-
     public function findEmailInEmailList($submittedEmail)
     {
         $found = false;
@@ -937,7 +934,6 @@ EOT;
 
 
 
-
     public function getListOfUsers( $group = false )
     {
         if ($group) {
@@ -956,27 +952,16 @@ EOT;
 
 
 
-
-    private function handleLoginUserNotification($res)
+    private function renderForceDefinePWIfRequired(): void
     {
-        if (is_array($res) && isset($res[2])) { // [login/false, message, communication-channel]
-            if ($res[2] === 'Overlay') {
-                $this->lzy->page->addOverlay($res[1], false, false);
-
-            } elseif ($res[2] === 'Override') {
-                $this->lzy->page->addOverride($res[1], false, false);
-
-            } elseif ($res[2] === 'LoginForm') {
-                $accForm = new UserAccountForm($this);
-                $form = $accForm->renderLoginForm($this->message, $res[1], true);
-                $this->lzy->page->addOverlay($form, true, false);
-
-            } else {
-                $this->lzy->page->addMessage($res[1], false, false);
-            }
+        // in case user used ot-code in place of password, nudge setting a propre PW:
+        if (@$_SESSION['lizzy']['forceDefinePW']) {
+            require_once ADMIN_PATH . 'user-admin.class.php';
+            $ua = new UserAdmin($this->lzy);
+            $form = $ua->renderNewPwForm();
+            $this->lzy->page->addOverlay($form);
+            $_SESSION['lizzy']['forceDefinePW'] = false;
         }
-    } // handleLoginUserNotification
-
-
+    } // renderForceDefinePWIfRequired
 
 } // class Authentication

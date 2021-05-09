@@ -28,7 +28,8 @@ function setGenericEventHandlers() {
     });
 } // setGenericEventHandlers
 
-$('.lzy-form-password').keydown(function () {
+
+$('.lzy-form-password').on('input', function () {
     let pwIsSet = true;
     $('.lzy-form-password').each(function (){
         pwIsSet = pwIsSet && ($(this).val() !== '');

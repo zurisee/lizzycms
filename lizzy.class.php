@@ -89,7 +89,7 @@ class Lizzy
 {
     private $lzyDb = null;  // -> SQL DB for caching DataStorage data-files
 	private $currPage = false;
-	private $configPath = CONFIG_PATH;
+//	private $configPath = CONFIG_PATH;
 	private $systemPath = SYSTEM_PATH;
 	public  $pathToRoot;
 	public  $pagePath;
@@ -104,6 +104,7 @@ class Lizzy
 	private $loginFormRendered = false;
 	private $loginFormRequired = false;
 	public  $loginFormRequiredOverride = true; // to suppress login form in case of onetime code sent
+    public  $ticketHash = [];
 
 
 
@@ -148,12 +149,7 @@ class Lizzy
 		$this->init();
 		$this->setupErrorHandling();
 
-        if ($this->config->site_sitemapFile || $this->config->feature_sitemapFromFolders) {
-            $this->initializeSiteInfrastructure();
-
-        } else {
-            $this->initializeAsOnePager();
-        }
+        $this->initializeSiteInfrastructure();
         $this->keepAccessCode = false;
 
         $this->trans->addVariable('debug_class', '');   // just for compatibility
@@ -162,26 +158,26 @@ class Lizzy
     } // __construct
 
 
-private function loadRequired()
-{
-    require_once SYSTEM_PATH.'vendor/autoload.php';
-    require_once SYSTEM_PATH.'page.class.php';
-    require_once SYSTEM_PATH.'transvar.class.php';
-    require_once SYSTEM_PATH.'lizzy-markdown.class.php';
-    require_once SYSTEM_PATH.'scss.class.php';
-    require_once SYSTEM_PATH.'defaults.class.php';
-    require_once SYSTEM_PATH.'sitestructure.class.php';
-    require_once SYSTEM_PATH.'authentication.class.php';
-    require_once SYSTEM_PATH.'image-resizer.class.php';
-    require_once SYSTEM_PATH.'datastorage2.class.php';
-    require_once SYSTEM_PATH.'uadetector.class.php';
-    require_once ADMIN_PATH.'user-admin-base.class.php';
-    require_once ADMIN_PATH.'user-login.class.php';
-    require_once SYSTEM_PATH.'ticketing.class.php';
-    require_once SYSTEM_PATH.'service-tasks.class.php';
-    require_once SYSTEM_PATH.'tree.class.php';
-} // loadRequired
 
+    private function loadRequired()
+    {
+        require_once SYSTEM_PATH.'vendor/autoload.php';
+        require_once SYSTEM_PATH.'page.class.php';
+        require_once SYSTEM_PATH.'transvar.class.php';
+        require_once SYSTEM_PATH.'lizzy-markdown.class.php';
+        require_once SYSTEM_PATH.'scss.class.php';
+        require_once SYSTEM_PATH.'defaults.class.php';
+        require_once SYSTEM_PATH.'sitestructure.class.php';
+        require_once SYSTEM_PATH.'authentication.class.php';
+        require_once SYSTEM_PATH.'image-resizer.class.php';
+        require_once SYSTEM_PATH.'datastorage2.class.php';
+        require_once SYSTEM_PATH.'uadetector.class.php';
+        require_once ADMIN_PATH. 'user-admin-base.class.php';
+        require_once ADMIN_PATH. 'user-login.class.php';
+        require_once SYSTEM_PATH.'ticketing.class.php';
+        require_once SYSTEM_PATH.'service-tasks.class.php';
+        require_once SYSTEM_PATH.'tree.class.php';
+    } // loadRequired
 
 
 
@@ -229,7 +225,7 @@ private function loadRequired()
 
         $this->auth->authenticate();
 
-//        $this->handleAdminRequests(); // form-responses e.g. change profile etc.
+        $this->handleTransactionalRequests(); // Entry point for requests from users
 
         $GLOBALS['globalParams']['auth-message'] = $this->auth->message;
 
@@ -258,8 +254,6 @@ private function loadRequired()
         $GLOBALS['globalParams']['cachingActive'] = $this->config->site_enableCaching;
         $GLOBALS['globalParams']['site_title'] = $this->trans->translateVariable('site_title');
     } // init
-
-
 
 
 
@@ -315,7 +309,7 @@ private function loadRequired()
         }
 
         $this->appendLoginForm();
-        $this->handleAdminRequests2();
+
         $this->handleUrlArgs2();
 
         $this->handleConfigFeatures();
@@ -351,48 +345,161 @@ private function loadRequired()
 
 
 
-
-    private function handleAdminRequests()
+    private function handleTransactionalRequests()
     {
-        //??? protect from attacks:
-        if ($un = getUrlArg('lzy-check-username', true)) {
-            $exists = $this->auth->findUserRecKey( $un );
-            if ($exists) {
-                $msg = 'lzy-signup-username-not-available';
-                $msg = $this->trans->translateVariable($msg, true);
-            } else {
-                $msg = 'ok';
+        // requests in hashes:
+        if ($this->ticketHash) {
+            $this->handleHashes();
+        }
+
+        // requests in POST / GET:
+        $transactionalRequests = [
+            'lzy-onetimelogin-request-email',
+            'lzy-change-password',
+        ];
+        $reqs = array_intersect($transactionalRequests, array_keys($_REQUEST));
+        if ($reqs) {
+            $this->handleGetAndPostRequests( $reqs );
+        }
+
+    //        //??? protect from attacks:
+    //        if ($un = getUrlArg('lzy-check-username', true)) {
+    //            $exists = $this->auth->findUserRecKey( $un );
+    //            if ($exists) {
+    //                $msg = 'lzy-signup-username-not-available';
+    //                $msg = $this->trans->translateVariable($msg, true);
+    //            } else {
+    //                $msg = 'ok';
+    //            }
+    //            exit( $msg );
+    //        }
+
+    //ToDo: 
+    //        if (!getUrlArg('edit-profile')) {
+    //            return;
+    //        }
+    //        if (isset($_REQUEST['login']) ||
+    //            isset($_REQUEST['lzy-change-email-request']) ||
+    //            isset($_REQUEST['lzy-change-email-confirm']) ||
+    //            isset($_REQUEST['lzy-create-accesslink']) ||
+    //            isset($_REQUEST['lzy-delete-account']) ||
+    //            isset($_REQUEST['lzy-onetimelogin-request-email'])) { // skip if change-email-request pending
+    //            return;
+    //        }
+    //        require_once ADMIN_PATH.'user-edit-profile.class.php';
+    //        $ed = new UserEditProfileBase( $this );
+    //        $ed->render();
+
+    } // handleTransactionalRequests
+
+
+
+    private function handleGetAndPostRequests( $reqs )
+    {
+        foreach ($reqs as $key) {
+            switch ($key) {
+                case 'lzy-onetimelogin-request-email':
+                    $accForm = new UserLoginBase($this);
+                    $res = $accForm->handleOnetimeLoginRequest( getPostData('lzy-onetimelogin-request-email'));
+                    break;
+
+                case 'lzy-change-password':
+                    require_once ADMIN_PATH.'user-edit-profile.class.php';
+                    new UserEditProfileBase($this);
+                    break;
+
+                default:
+                    die("Error in handleTransactionalRequests(): unknown type '$key'");
             }
-            exit( $msg );
+            $this->initiateInBrowserUserNotification($res);   // inform user about login/logout etc.
         }
 
-//        if (isset($_REQUEST['lzy-user-admin'])) {
-//            require_once SYSTEM_PATH.'admintasks.class.php';
-//            $adm = new AdminTasks($this);
-//            $adm->handleAdminRequests( $_REQUEST['lzy-user-admin'] );
-//        }
-    } // handleAdminRequests
+    } // handleGetAndPostRequests
 
 
 
-    private function handleAdminRequests2()
+    private function handleHashes()
     {
-        if (!getUrlArg('edit-profile')) {
+        if (!$this->ticketHash) {
             return;
         }
-        if (isset($_REQUEST['login']) ||
-            isset($_REQUEST['lzy-change-email-request']) ||
-            isset($_REQUEST['lzy-change-email-confirm']) ||
-            isset($_REQUEST['lzy-create-accesslink']) ||
-            isset($_REQUEST['lzy-delete-account']) ||
-            isset($_REQUEST['lzy-onetimelogin-request-email'])) { // skip if change-email-request pending
-            return;
-        }
-        require_once ADMIN_PATH.'user-edit-profile.class.php';
-        $ed = new UserEditProfileBase( $this );
-        $ed->render();
-    } // handleAdminRequests2
+        $tck = new Ticketing();
+        foreach ($this->ticketHash as $category => $hash) {
+            $tickRec = $tck->previewTicket( $hash );
+            if ($tickRec) {
+                $tickType = @$tickRec['_ticketType'];
+                switch ($tickType) {
+                    case 'lzy-ot-access':
+                        $res = $this->auth->validateOnetimeAccessCode( $hash ); // reloads & never returns if login successful
+                        break;
 
+                    case 'lzy-change-email-request':
+                        require_once ADMIN_PATH.'user-edit-profile.class.php';
+                        new UserEditProfileBase($this, $hash);
+                        break;
+
+                    case 'landing-page':
+                        $this->activateLandingPage( $hash );
+                        break;
+
+                    case 'invite-user':
+                    case 'user-self-signup':
+                    case 'lzy-confirm-email':
+                        require_once ADMIN_PATH.'user-admin.class.php';
+                        new UserAdmin($this, $hash);
+                        break;
+
+                    default:
+                        die("Error in handleHashes(): unknown tickType '$tickType'");
+                }
+                $this->initiateInBrowserUserNotification($res);   // inform user about login/logout etc.
+
+            } else {
+                // if it wasn't a ticketHash, check whether it's a user's accessCode
+                if ($this->auth->validateAccessCode( $hash )) {
+                    if (strpos('lzy-onetimelogin-request-email,lzy-login-username,lzy-login-password', $category) !== false) {
+                        // user must have entered accessCode in one of the login fields, so unset POST var:
+                        unset($_REQUEST[$category]);
+                    }
+                }
+            }
+        }
+    } // handleTransactionalRequests
+
+
+
+    private function activateLandingPage( $hash )
+    {
+        $tck = new Ticketing();
+        $tickRec = $tck->consumeTicket( $hash );
+        $reqPage = $tickRec['landingPage'];
+        $this->reqPagePath = $reqPage;
+        $user = $tickRec['user'];
+        $this->auth->setUserAsLoggedIn($user, true);
+        $this->landingPageTickRec = $tickRec;
+    } // activateLandingPage
+
+
+
+    public function initiateInBrowserUserNotification($res)
+    {
+        if (is_array($res) && isset($res[2])) { // [login/false, message, communication-channel]
+            if ($res[2] === 'Overlay') {
+                $this->page->addOverlay($res[1], false, false);
+
+            } elseif ($res[2] === 'Override') {
+                $this->page->addOverride($res[1], false, false);
+
+            } elseif ($res[2] === 'LoginForm') {
+                $accForm = new UserAccountForm($this);
+                $form = $accForm->renderLoginForm($this->message, $res[1], true);
+                $this->page->addOverlay($form, true, false);
+
+            } else {
+                $this->page->addMessage($res[1], false, false);
+            }
+        }
+    } // initiateInBrowserUserNotification
 
 
 
@@ -441,8 +548,6 @@ private function loadRequired()
 
 
 
-
-
     private function applyForcedBrowserCacheUpdate( &$html )
     {
         // forceUpdate adds some url-arg to css and js files to force browsers to reload them
@@ -467,8 +572,6 @@ private function loadRequired()
             $html = preg_replace("/(\<script\s+src=(['])[^']+)'/m", "$1$forceUpdate'", $html);
         }
     } // applyForcedBrowserCacheUpdate
-
-
 
 
 
@@ -521,6 +624,15 @@ private function loadRequired()
 
 
 
+    private function isRestrictedPage()
+    {
+        if (isset($this->siteStructure->currPageRec['restricted!'])) {
+            $lockProfile = $this->siteStructure->currPageRec['restricted!'];
+            return $lockProfile;
+        }
+        return false;
+    } // isRestrictedPage
+
 
 
     private function checkAdmissionToCurrentPage()
@@ -537,8 +649,6 @@ private function loadRequired()
         }
         return true;
     } // checkAdmissionToCurrentPage
-
-
 
 
 
@@ -566,7 +676,6 @@ private function loadRequired()
 
 
 
-
     private function analyzeHttpRequest()
     {
         global $globalParams;
@@ -579,20 +688,15 @@ private function loadRequired()
             $urlArgs = $m[2];
         }
 
-        // extract access code, e.g. folder/ABCDEF/ (i.e. at least 4 letters/digits all uppercase)
-        $accessCode         = '';
-        if (preg_match('|(.*)/([A-Z][A-Z0-9]{4,})(\.?)/?$|', $requestedPath, $m)) {
-            $requestedPath = $m[1].'/';
-            $accessCode = $m[2];
-            $this->keepAccessCode = ($m[3] !== '');
-        }
+        // extract ticketHash from URL:
+        $requestedPath = $this->extractTicketHashes( $requestedPath );
 
         $requestScheme      = $_SERVER['REQUEST_SCHEME'];               // https
         $domainName         = $_SERVER['HTTP_HOST'];                    // domain.net
         $docRootUrl         = "$requestScheme://$domainName/";          // https://domain.net/
         $absAppRootPath     = dirname($_SERVER['SCRIPT_FILENAME']).'/'; // /home/httpdocs/approot/
         $appRoot            = dirname($_SERVER['SCRIPT_NAME']).'/';     // /approot/
-        $absDocRootPath     = substr($absAppRootPath, 0, -strlen($appRoot)+1); // /home/httpdocs/
+        //$absDocRootPath     = substr($absAppRootPath, 0, -strlen($appRoot)+1); // /home/httpdocs/
         $appRootUrl         = fixPath(commonSubstr( $appRoot, $requestUri, '/'));
         $redirectedAppRootUrl = substr($appRoot, strlen($appRootUrl));
 
@@ -722,15 +826,7 @@ EOT;
             }
         }
         $globalParams['legacyBrowser'] = $this->config->isLegacyBrowser;
-
-        if ($accessCode) {
-            $this->auth->handleAccessCodeInUrl($accessCode);
-        }
-
     } // analyzeHttpRequest
-
-
-
 
 
 
@@ -752,8 +848,6 @@ EOT;
 
 
 
-
-
     private function loadTemplate()
     {
         $template = $this->getTemplate();
@@ -771,21 +865,6 @@ EOT;
 
         $this->page->addTemplate($template);
     } // loadTemplate
-
-
-
-
-
-	private function isRestrictedPage()
-	{
-		if (isset($this->siteStructure->currPageRec['restricted!'])) {
-			$lockProfile = $this->siteStructure->currPageRec['restricted!'];
-			return $lockProfile;
-		}
-		return false;
-	} // isRestrictedPage
-
-
 
 
 
@@ -812,7 +891,6 @@ EOT;
 
 
 
-
 	private function injectPageSwitcher()
 	{
         if ($this->config->feature_pageSwitcher) {
@@ -829,8 +907,6 @@ EOT;
 
 
 
-
-
     private function injectAdminCss()
     {
         if ($this->auth->checkGroupMembership('admins') ||
@@ -838,7 +914,6 @@ EOT;
             $this->auth->checkGroupMembership('fileadmins')) {
                 $this->page->addCssFiles('~sys/css/_admin.css');
         }
-
     } // injectAdminCss
 
 
@@ -911,7 +986,6 @@ EOT;
 
         if ($this->config->admin_enableFileManager && $this->auth->checkGroupMembership('fileadmins')) {
             $this->trans->addVariable('lzy-fileadmin-button', "<button class='lzy-fileadmin-button' title='{{ lzy-fileadmin-button-tooltip }}'><span class='lzy-icon lzy-icon-docs'></span>{{^ lzy-fileadmin-button-text }}</button>", false);
-//ToDo: injectUploader creates Hash -> avoid?
             $uploader = $this->injectUploader($this->pagePath);
             $this->page->addBodyEndInjections($uploader);
         } else {
@@ -920,6 +994,7 @@ EOT;
 
         $this->trans->addVariable('pageUrl', $this->pageUrl);
         $this->trans->addVariable('appRoot', $this->pathToRoot);			// e.g. '../'
+        $this->trans->addVariable('absAppRoot', $GLOBALS['globalParams']['appRoot']);
         $this->trans->addVariable('systemPath', $this->systemPath);		// -> file access path
         $this->trans->addVariable('lang', $this->config->lang);
 
@@ -944,6 +1019,9 @@ EOT;
             $supportedLanguages = explode(',', str_replace(' ', '', $this->config->site_supportedLanguages ));
             $out = '';
             foreach ($supportedLanguages as $lang) {
+                if (preg_match('/\w+\d/', $lang)) {
+                    continue;
+                }
                 if ($lang === $this->config->lang) {
                     $out .= "<span class='lzy-lang-elem lzy-active-lang $lang'>{{ lzy-lang-select $lang }}</span>";
                 } else {
@@ -962,15 +1040,12 @@ EOT;
 		if ($this->config->feature_pageSwitcher) {
             $this->definePageSwitchLinks();
         }
-
     } // setTransvars1
-
 
 
 
 	private function setTransvars2()
 	{
-        global $globalParams;
         $page = &$this->page;
 		if (isset($page->title)) {                                  // page_title
 			$this->trans->addVariable('page_title', $page->title, false);
@@ -1009,13 +1084,13 @@ EOT;
             }
 		}
         setStaticVariable('pageName', $pageName);
-
     }// setTransvars2
 
 
 
     private function injectUploader($filePath)
     {
+        //ToDo: injectUploader creates Hash -> avoid?
         require_once SYSTEM_PATH.'file_upload.class.php';
 
         $rec = [
@@ -1032,7 +1107,6 @@ EOT;
         $uploaderStr = $uploader->render($filePath);
         return $uploaderStr;
     }
-
 
 
 
@@ -1054,8 +1128,6 @@ EOT;
 
 
 
-
-
 	private function runUserRenderingStartCode()
 	{
         $codeFile = $this->config->admin_serviceTasks['onPageRenderingStart'];
@@ -1065,7 +1137,7 @@ EOT;
 
         $codeFile = ltrim(base_name($codeFile, true), '-');
         $codeFile = fileExt($codeFile, true);
-        $codeFile = USER_CODE_PATH . "-$codeFile.php";
+        $codeFile = SERVICE_CODE_PATH . "$codeFile.php";
         if ($codeFile && file_exists($codeFile)) {
             require_once $codeFile;
             if (function_exists('renderingStartOperation')) {
@@ -1074,8 +1146,6 @@ EOT;
         }
 	} // runUserRenderingStartCode
 	
-
-
 
 
     private function runUserFinalCode( &$html )
@@ -1087,7 +1157,7 @@ EOT;
 
         $codeFile = ltrim(base_name($codeFile, true), '-');
         $codeFile = fileExt($codeFile, true);
-        $codeFile = USER_CODE_PATH . "-$codeFile.php";
+        $codeFile = SERVICE_CODE_PATH . "$codeFile.php";
         if ($codeFile && file_exists($codeFile)) {
             require_once $codeFile;
             if (function_exists('finalRenderingOperation')) {
@@ -1095,8 +1165,6 @@ EOT;
             }
         }
     } // runUserFinalCode
-
-
 
 
 
@@ -1119,7 +1187,6 @@ EOT;
 	
 
 
-
     private function loadHtmlFile($folder, $file)
 	{
 		$page = &$this->page;
@@ -1137,7 +1204,6 @@ EOT;
 		}
 		return $page;
 	} // loadHtmlFile
-
 
 
 
@@ -1311,8 +1377,6 @@ EOT;
 
 
 
-
-
     private function compileLocalCss($newPage, $id, $class)
     {
         $scssStr = $newPage->get('scss');
@@ -1343,8 +1407,6 @@ EOT;
 
 
 
-
-
     private function handleMissingFolder($folder)
 	{
         if (file_exists($folder)) {
@@ -1355,7 +1417,6 @@ EOT;
         $name = $this->siteStructure->currPageRec['name'];
         file_put_contents($mdFile, "---\n// Frontmatter:\ncss: |\n---\n\n# $name\n");
     } // handleMissingFolder
-
 
 
 
@@ -1372,8 +1433,6 @@ EOT;
         $this->config->site_enableCaching = false;
         $GLOBALS['globalParams']['cachingActive'] = false;
     } // disableCaching
-
-
 
 
 
@@ -1413,7 +1472,7 @@ EOT;
             $res = $uadm->handleRequests();
         }
 
-            //====================== the following is restricted to editors and admins:
+        //====================== the following is restricted to editors and admins:
         $userAdminInitialized = file_exists(CONFIG_PATH.$this->config->admin_usersFile);
         $editingPermitted = $this->auth->checkGroupMembership('editors');
         if ($editingPermitted || !$userAdminInitialized) {
@@ -1449,8 +1508,6 @@ EOT;
 		}
 
 	} // handleUrlArgs
-
-
 
 
 
@@ -1526,7 +1583,6 @@ EOT;
         $this->page->setOverlayMdCompile( false );
 
     } // renderPasswordConverter
-
 
 
 
@@ -1724,7 +1780,6 @@ EOT;
 
 
 
-
     private function reorganizeCss($filename)
     {
         require_once SYSTEM_PATH.'reorg_css.class.php';
@@ -1734,50 +1789,49 @@ EOT;
 
 
 
-
-
     private function determineLanguage()
     {
         global $globalParams;
+        $lang = getStaticVariable('lang');
+
         // check sitemap for language option:
         if (isset($this->siteStructure->currPageRec['lang'])) {
             $lang = $this->siteStructure->currPageRec['lang'];
+        }
 
-            if (($l = getUrlArg('lang', true)) !== null) { // override if explicitly supplied
-                if ($l) {
-                    $lang = $l;
-                    setStaticVariable('lang', $lang);
-                } else {
-                    setStaticVariable('lang', null);
-                }
-            }
-
-        // no preference in sitemap -> use previously activated lang or default, unless overriden by url-arg:
-        } else {
-            $lang = getUrlArgStatic('lang', true);
-            if (!$lang) {   // no url-arg found
-                if ($lang !== null) {   // special case: empty lang -> remove static value
-                    setStaticVariable('lang', null);
-                }
-                $lang = $this->config->site_defaultLanguage;
+        // next check '?lang' override from URL:
+        $lang1 = getUrlArgStatic('lang', true);
+        if ($lang1) {
+            $p = strpos($this->config->site_supportedLanguages, $lang1);
+            if ($p !== false) {
+                $lang = substr($this->config->site_supportedLanguages, $p);
+                $lang = preg_replace('/,.*/', '', $lang);
             }
         }
 
-        $this->config->site_supportedLanguages = str_replace(' ', '', $this->config->site_supportedLanguages);
+        // if still not defined, fall back on default language setting:
+        if (!$lang) {
+            $lang = $this->config->site_defaultLanguage;
+        }
 
-        // check that selected language is among supported ones:
+        // make sure that selected language is among supported ones, fall back on default if not:
         if (strpos(",{$this->config->site_supportedLanguages},", ",$lang,") === false) {
             $lang = $this->config->site_defaultLanguage;
         }
 
+        // subLang: permits to define variants of a language, e.g. polite/informal forms (e.g. German "du" vs. "Sie"):
+        $subLang = $lang;
+        if (preg_match('/(\w+)\d/', $lang, $m)) {
+            $lang = $m[1];
+        }
+
+        // publish resulting lang to rest of system:
         $this->config->lang = $lang;
         $globalParams['lang'] = $lang;
-        $_SESSION['lizzy']['lang'] = $lang;
+        setStaticVariable('lang', $lang);
+        setStaticVariable('subLang', $subLang);
         return $lang;
     } // determineLanguage
-
-
-
 
 
 
@@ -1810,12 +1864,10 @@ EOT;
 
 
 
-
 	private function printall($maxN = true)
 	{
         die('Not implemented yet');
 	} // printall
-
 
 
 
@@ -1831,8 +1883,6 @@ EOT;
 
         return  $globalParams['userAgent'];
     } // browserDetection
-
-
 
 
 
@@ -1859,19 +1909,16 @@ EOT;
 
 
 
-
-
-    public function postprocess($html)
-    {
-        $note = $this->trans->postprocess();
-        if ($note) {
-            $p = strpos($html, '</body>');
-            $html = substr($html, 0, $p).createWarning($note).substr($html,$p);
-        }
-        return $html;
-    } // postprocess
-
-
+//??? obsolete? delete?
+//    public function postprocess($html)
+//    {
+//        $note = $this->trans->postprocess();
+//        if ($note) {
+//            $p = strpos($html, '</body>');
+//            $html = substr($html, 0, $p).createWarning($note).substr($html,$p);
+//        }
+//        return $html;
+//    } // postprocess
 
 
 
@@ -1879,8 +1926,6 @@ EOT;
     {
         return $this->editingMode;
     } // getEditingMode
-
-
 
 
 
@@ -1927,8 +1972,6 @@ EOT;
 
 
 
-
-
     private function setLocale()
     {
         $lang = $this->config->lang;
@@ -1944,7 +1987,6 @@ EOT;
         }
         $this->config->currLocale = setlocale(LC_TIME, "$locale.utf-8");
     } // setLocale
-
 
 
 
@@ -2001,7 +2043,7 @@ EOT;
 
         $accForm = new UserLoginBase($this);
         $preOpenPanel = $presetUser? 2:1;
-        $html = $accForm->render(true, $preOpenPanel);
+        $html = $accForm->render(true, '', $preOpenPanel);
 
         // inject preset user name:
         if ($presetUser) {    // preset username if known
@@ -2014,6 +2056,7 @@ EOT;
             $this->page->addJq( $jq );
         }
 
+        $this->page->addModules('AUXILIARY');
         if ($asPopup) {
             $this->page->addModules('POPUPS');
             $this->page->addJq("lzyPopup({ 
@@ -2040,7 +2083,8 @@ EOT;
         } else {
             $html = <<<EOT
     <div class='lzy-required-login-wrapper'>
-        <h2>{{ lzy-login-with-choice }}</h2>
+        <div class="lzy-comment">{{ lzy-insufficient-privilege-for-page }}</div>
+<!--        <h2>{{ lzy-login-with-choice }}</h2>-->
 $html
     </div>
 EOT;
@@ -2098,7 +2142,6 @@ EOT;
 
 
 
-
     private function definePageSwitchLinks()
     {
         $nextLabel = $this->trans->getVariable('lzy-next-page-link-label');
@@ -2138,12 +2181,11 @@ EOT;
 
 
 
-
-    public function getLzyDb()
-    {
-        return $this->lzyDb;
-    }
-
+//??? obsolete? delete?
+//    public function getLzyDb()
+//    {
+//        return $this->lzyDb;
+//    }
 
 
 
@@ -2223,7 +2265,7 @@ EOT;
 
         print("<pre>$status</pre>");
         exit;
-    }
+    } // renderGitStatus
 
 
 
@@ -2257,32 +2299,10 @@ EOT;
 
 
 
-
-    private function initializeAsOnePager()
-    {
-        global $globalParams;
-        $this->siteStructure = new SiteStructure($this, ''); //->list = false;
-        $this->currPage = '';
-        $globalParams['pageFolder'] = '';
-        $globalParams['pagePath'] = '';
-        $globalParams['filepathToRoot'] = '';
-
-        $this->pathToPage = PAGES_PATH;
-        $globalParams['pathToPage'] = $this->pathToPage;
-        $this->pageRelativePath = '';
-        $this->pagePath = '';
-        $this->trans->addVariable('next_page', "");
-        $this->trans->addVariable('prev_page', "");
-    } // initializeAsOnePager
-
-
-
-
     public function setCspHeader( $cspStr )
     {
         $this->cspHeader = $cspStr;
     } // setCspHeader
-
 
 
 
@@ -2312,8 +2332,6 @@ EOT;
 
 
 
-
-
     public function unCachePage()
     {
         $requestedPage = $this->getCacheFilename( false );
@@ -2321,7 +2339,6 @@ EOT;
             unlink( $requestedPage );
         }
     } // unCachePage
-
 
 
 
@@ -2385,7 +2402,6 @@ EOT;
             exit ($html);
         }
     } // checkAndRenderCachePage
-
 
 
 
@@ -2463,6 +2479,27 @@ EOT;
         purgePageCache();
         return true;
     } // dailyPageCacheReset
+
+
+
+    private function extractTicketHashes( $requestedPath )
+    {
+        // extract ticketHash from URL:
+        if (preg_match('|(.*)/([A-Z][A-Z0-9]{4,})(\.?)/?$|', $requestedPath, $m)) {
+            $requestedPath = $m[1] . '/';
+            $this->ticketHash['url'] = $m[2];
+            $this->keepAccessCode = ($m[3] !== ''); // -> true if trailing dot is set
+        }
+        // extract ticketHash from GET or POST arguments:
+        if ($_REQUEST) {
+            foreach ($_REQUEST as $key => $value) {
+                if (is_string($value) && preg_match('/^ ([A-Z][A-Z0-9]{4,}) $/x', $value, $m)) {
+                    $this->ticketHash[$key] = $m[1];
+                }
+            }
+        }
+        return $requestedPath;
+    } // extractTicketHashes
 
 } // class WebPage
 

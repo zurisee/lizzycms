@@ -4,12 +4,30 @@ body {
     --lzy-login-txt-color: black;
 }
 
-/* login window for pages requiring login: */
-#lzy.lzy-page-override .lzy-required-login-wrapper {
-    font-size: 12pt;
-    max-width: 30em;
-    margin: 0 auto;
+.lzy-popup-with-header .lzy-login h1 {
+	display: none;
 }
+.lzy-login-alternative-actions ul {
+    /*margin: 0;*/
+    padding: 0;
+}
+.lzy-login-alternative-actions li {
+    list-style: none;
+}
+.lzy-login-alternative-actions a {
+    font-style: italic;
+    color: #444;
+    font-size: 90%;
+}
+.lzy-login-sign-up {
+    display: none;
+}
+/*!* login window for pages requiring login: *!*/
+/*#lzy.lzy-page-override .lzy-required-login-wrapper {*/
+/*    font-size: 12pt;*/
+/*    max-width: 30em;*/
+/*    margin: 0 auto;*/
+/*}*/
 
 .lzy-popup-wrapper.lzy-login-menu.lzy-login strong {
     font-weight: normal;
@@ -67,7 +85,7 @@ body {
     background: #fee;
 }
 
-.lzy-login-form,
+.lzy-panels-widget .lzy-login-form,
 .lzy-invite-user-form,
 .lzy-signup-form {
     margin: 1em 0;
@@ -75,6 +93,15 @@ body {
     padding: 20px;
     max-width: 28em;
 }
+.lzy-invite-user-wrapper .lzy-reveal-controller {
+    margin-top: 2em;
+    border: 1px solid orange;
+}
+.lzy-email-login .lzy-login-form,
+.lzy-simple-login .lzy-login-form {
+    margin: 2em 1em 1em 1em;
+}
+
 .lzy-login .lzy-popup-container {
     padding: 0 10px;
 }
@@ -120,8 +147,16 @@ body {
     padding: 5px 1.5em;
     margin: 1em 0;
 }
+.lzy-popup-container .lzy-login-form-wrapper {
+    margin-top: 1em;
+}
+.lzy-account-form-message:empty {
+    display: none;
+}
 .lzy-account-form-message {
-    margin-bottom: 1em;
+    margin: 1em 0;
+    padding: 1em;
+    border: 1px solid red;
 }
 .lzy-form .lzy-formelem-show-info {
     padding: 0 0 0 5px;
@@ -131,6 +166,19 @@ body {
 .lzy-form-password-label > span {
 	display: inline-block;
     margin-right: 1em;
+}
+.lzy-define-new-password-text {
+    margin: 1em 0 1.5em;
+}
+
+.lzy-form-top-error-msg:empty {
+    display: none;
+}
+.lzy-form-top-error-msg {
+    margin: 1em 0;
+    padding: 1em;
+    color: red;
+    border: 1px solid red;
 }
 
 .lzy-form-password-label.lzy-form-password-label {
@@ -389,4 +437,10 @@ input.lzy-login-email[type=email]:valid {
 .lzy-create-ticket-form select {
     width: calc(100% - var(--lzy-label-width) - 10px);
     height: 2.5em;
+}
+
+.lzy-create-ticket-comment {
+    margin: 2em 0 0 0;
+    padding: 1em;
+    border: 1px solid green;
 }

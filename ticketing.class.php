@@ -188,9 +188,6 @@ class Ticketing
             if ($_ticketType === 'sessionVar') {     // type 'sessionVar': make ticket available in session variable
                 $_SESSION['lizzy']['ticket'] = $ticketRec;
             }
-            if ($type !== true) {
-                unset($ticketRec['_ticketType']);
-            }
         }
         if (isset( $GLOBALS['globalParams']['isBackend'])) {
             $GLOBALS['globalParams']['pageFolder'] = $ticketRec['_currPage'];
@@ -215,7 +212,21 @@ class Ticketing
     {
         $ticketRec = $this->ds->readRecord($ticketHash);
         return (bool) $ticketRec;
-    }
+    } // ticketExists
+
+
+
+    public function previewTicket( $ticketHash, $wantedType = false )
+    {
+        $ticketRec = $this->ds->readRecord($ticketHash);
+        if ($wantedType) {
+            $ticketType = @$ticketRec['_ticketType'];
+            if ($wantedType !== $ticketType) {
+                return false;
+            }
+        }
+        return $ticketRec;
+    } // previewTicket
 
 
 

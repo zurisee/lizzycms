@@ -666,7 +666,7 @@ class SiteStructure
 
 
 
-    public function getListOfPages( $asLink = false)
+    public function getListOfPages( $asLink = false, $inclFolder = false)
     {
         $pages = [];
         $appRootUrl = $GLOBALS['globalParams']['appRootUrl'];
@@ -674,6 +674,8 @@ class SiteStructure
             if ($asLink) {
                 $path = ($rec['urlpath'] !== false) ? $rec['urlpath']: $rec['folder'];
                 $pages[] = "<a href='$appRootUrl$path'>{$rec['name']}</a>";
+            } elseif ($inclFolder) {
+                $pages[] = [$rec['name'], $rec['folder']];
             } else {
                 $pages[] = $rec['name'];
             }

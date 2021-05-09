@@ -10,7 +10,7 @@ define('FORM_LOG_FILE', 	    LOG_PATH.'form-log.txt');
 define('SPAM_LOG_FILE', 	    LOG_PATH.'spam-log.txt');
 
 define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,'.
-    'legend,customResponseEvaluation,next,file,confirmationText,formDataCaching,'.
+    'legend,customResponseEvaluation,customResponseEvaluationFunction,next,file,confirmationText,formDataCaching,'.
     'encapsulate,formTimeout,avoidDuplicates,export,exportKey,confirmationEmail,'.
     'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,'.
     'validate,showData,showDataMinRows,options,encapsulate,disableCaching,labelWidth,'.
@@ -23,7 +23,7 @@ define('ELEM_ATTRIBUTES', 	    ',label,type,id,class,wrapperClass,name,required,
 
 define('UNARY_ELEM_ATTRIBUTES', ',required,translateLabel,splitOutput,autocomplete,');
 
-define('SUPPORTED_TYPES', 	    ',text,password,email,textarea,radio,checkbox,'.
+define('SUPPORTED_TYPES', 	    ',text,readonly,password,email,textarea,radio,checkbox,'.
     'dropdown,button,url,date,time,datetime,month,number,range,tel,file,'.
     'fieldset,fieldset-end,reveal,hidden,literal,bypassed,');
 
@@ -181,6 +181,7 @@ class Forms
         $currForm->formFooter = (isset($args['formFooter'])) ? $args['formFooter'] : '';
 
         $currForm->customResponseEvaluation = (isset($args['customResponseEvaluation'])) ? $args['customResponseEvaluation'] : '';
+        $currForm->customResponseEvaluationFunction = (isset($args['customResponseEvaluationFunction'])) ? $args['customResponseEvaluationFunction'] : '';
         $currForm->next = (isset($args['next'])) ? $args['next'] : './';
         $currForm->file = (isset($args['file'])) ? $args['file'] : '';
         $currForm->useRecycleBin = (isset($args['useRecycleBin'])) ? $args['useRecycleBin'] : false;
@@ -198,7 +199,6 @@ class Forms
         $currForm->confirmationEmail = (isset($args['confirmationEmail'])) ? $args['confirmationEmail'] : false;
         $currForm->confirmationEmailTemplate = (isset($args['confirmationEmailTemplate'])) ? $args['confirmationEmailTemplate'] : false;
         $currForm->labelColons = (isset($args['labelColons'])) ? $args['labelColons'] : false;
-//        $currForm->labelColons = (isset($args['labelColons'])) ? $args['labelColons'] : true;
         $currForm->labelWidth = (isset($args['labelWidth'])) ? $args['labelWidth'] : false;
         if ($currForm->export === true) {
             $currForm->export = DEFAULT_EXPORT_FILE;
@@ -272,8 +272,6 @@ EOT;
 
         return 'form-head';
     } // parseHeadElemArgs
-
-
 
 
 
@@ -510,8 +508,6 @@ EOT;
 
 
 
-
-
     public function renderForm( $args )
     {
         $headArgs = ['type' => 'form-head'];
@@ -530,7 +526,6 @@ EOT;
 
         return $out;
     } // renderForm
-
 
 
 
@@ -558,10 +553,14 @@ EOT;
                 $elem = $this->renderText();
                 break;
             
+            case 'readonly':
+                $elem = $this->renderReadonly();
+                break;
+            
             case 'password':
                 $elem = $this->renderPassword();
                 break;
-            
+
             case 'email':
                 $elem = $this->renderEMail();
                 break;
@@ -641,10 +640,6 @@ EOT;
                 $elem = $this->renderLiteral();
                 break;
 
-            //case 'render-data':
-            //    $elem = $this->renderData();
-            //    break;
-
             case 'bypassed':
                 $elem = '';
                 $this->bypassedValues[ $this->currRec->name ] = $this->currRec->value;
@@ -721,7 +716,6 @@ EOT;
 
 
 
-
     private function parseArgs()
     {
         if ($this->inx === 0) {    // first pass -> must be type 'form-head' -> defines formId
@@ -731,7 +725,6 @@ EOT;
             return $this->parseElemArgs();
         }
     } // parseArgs
-
 
 
 
@@ -819,7 +812,7 @@ EOT;
 		$out .= "\t\t<input type='hidden' name='_lizzy-form-id' value='{$this->formInx}' />\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form-label' value='{$currForm->formName}' />\n";
 		$out .= "\t\t<input type='hidden' name='_lizzy-form' value='{$this->formHash}:form{$this->formInx}' class='lzy-form-hash' />\n";
-		$out .= "\t\t<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-cmd' value='{$currForm->next}' />\n";
+		$out .= "\t\t<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-next' value='{$currForm->next}' />\n";
 
 		if ($currForm->antiSpam) {
             $out .= "\t\t<div class='fld-ch' aria-hidden='true'>\n";
@@ -829,6 +822,24 @@ EOT;
 		return $out;
 	} // renderFormHead
 
+
+
+    private function renderReadonly()
+    {
+        $out = '';
+        if ($this->currRec->errorMsg) {
+            $out .= "\t\t\t<div class='lzy-form-field-errorMsg' aria-hidden='true'>{$this->currRec->errorMsg}</div>\n";
+        }
+        $out .= $this->getLabel(); // includes infoIcon
+        $cls = " class='{$this->currRec->class}lzy-form-input-elem lzy-form-readonly-elem'";
+        $value = $this->getValueAttr();
+        list($descrBy, $description) = $this->renderElemDescription();
+
+        $out .= "\t\t\t<div id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'$cls>{$this->currRec->value}</div>\n";
+        $out .= "\t\t\t<input type='hidden' {$this->currRec->inpAttr}$value />\n";
+        $out .= $description;
+        return $out;
+    } // renderText
 
 
 
@@ -848,7 +859,6 @@ EOT;
         $out .= $description;
         return $out;
     } // renderText
-
 
 
 
@@ -878,7 +888,6 @@ $out
 
 EOT;
 
-
         } else {
             $out .= <<<EOT
             <div class='lzy-form-input-elem'>
@@ -891,7 +900,6 @@ EOT;
         $out .= $description;
         return $out;
     } // renderPassword
-
 
 
 
@@ -917,7 +925,6 @@ EOT;
 
 
 
-
     private function renderEMail()
     {
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
@@ -928,7 +935,6 @@ EOT;
         $out .= $description;
         return $out;
     } // renderEMail
-
 
 
 
@@ -983,7 +989,6 @@ EOT;
 
 
 
-
     private function renderCheckbox()
     {
         $rec = $this->currRec;
@@ -1034,7 +1039,6 @@ EOT;
 
 
 
-
     private function renderDropdown()
     {
         $rec = $this->currRec;
@@ -1082,7 +1086,6 @@ EOT;
 
 
 
-
     private function renderUrl()
     {
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
@@ -1093,7 +1096,6 @@ EOT;
         $out .= $description;
         return $out;
     } // renderUrl
-
 
 
 
@@ -1110,7 +1112,6 @@ EOT;
 
 
 
-
     private function renderTime()
     {
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
@@ -1121,7 +1122,6 @@ EOT;
         $out .= $description;
         return $out;
     } // renderTime
-
 
 
 
@@ -1138,7 +1138,6 @@ EOT;
 
 
 
-
     private function renderMonth()
     {
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
@@ -1149,7 +1148,6 @@ EOT;
         $out .= $description;
         return $out;
     } // renderMonth
-
 
 
 
@@ -1166,7 +1164,6 @@ EOT;
 
 
 
-
     private function renderRange()
     {
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
@@ -1180,7 +1177,6 @@ EOT;
 
 
 
-
     private function renderTel()
     {
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
@@ -1191,7 +1187,6 @@ EOT;
         $out .= $description;
         return $out;
     } // renderTel
-
 
 
 
@@ -1215,7 +1210,6 @@ EOT;
         $out = "\t\t\t<fieldset$class>\n$legend";
         return $out;
     } // renderTel
-
 
 
 
@@ -1359,7 +1353,6 @@ EOT;
 
 
 
-
     private function renderHidden()
     {
         $name = " name='{$this->currRec->name}'";
@@ -1369,7 +1362,6 @@ EOT;
         $out = "<input type='hidden' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'$cls$name$value />\n";
         return $out;
     } // renderHidden
-
 
 
 
@@ -1386,7 +1378,6 @@ EOT;
         }
         return $out;
     } // renderLiteral
-
 
 
 
@@ -1408,12 +1399,11 @@ EOT;
     } // renderReveal
 
 
+
     private function addRevealJs()
     {
         $this->page->addModules('REVEAL');
     } // addRevealJs
-
-
 
 
 
@@ -1466,8 +1456,6 @@ EOT;
 
 
 
-
-
 	private function renderFormTail()
     {
         $formId = $this->currForm->formId;
@@ -1506,8 +1494,12 @@ EOT;
         if ($msgToClient) {
             // append 'continue...' if form was omitted:
             if ($this->skipRenderingForm) {
-                $next = @$this->currForm->next ? $this->currForm->next : './';
-                $msgToClient .= "<div class='lzy-form-continue'><a href='{$next}'>{{ lzy-form-continue }}</a></div>\n";
+                if (!$this->errorDescr[ 'generic' ]['_override_']) {
+                    $next = @$this->currForm->next ? $this->currForm->next : './';
+                    $msgToClient .= "<div class='lzy-form-continue'><a href='{$next}'>{{ lzy-form-continue }}</a></div>\n";
+                } else {
+                    $msgToClient = "<div class='lzy-form-override-msg'>{$this->errorDescr[ 'generic' ]['_override_']}</div>\n";
+                }
             }
             $out .= "\t<div class='lzy-form-response'>$msgToClient</div>\n";
         } else {
@@ -1548,7 +1540,6 @@ EOT;
 
 
 
-
     private function getLabel($id = false, $wrapOutput = true)
     {
 		$id = ($id) ? $id : "{$this->currRec->fldPrefix}{$this->currRec->elemId}";
@@ -1566,7 +1557,6 @@ EOT;
             $label = $this->trans->translateVariable($label, true);
         }
         if ($this->currForm->labelColons || ($hasColon && (strpos($label,':') !== false))) {
-//        if ($this->currForm->labelColons || $hasColon) {
             $label .= ':';
         }
         if ($requiredMarker) {
@@ -1587,7 +1577,6 @@ EOT;
             return "$label$infoIcon";
         }
     } // getLabel
-
 
 
 
@@ -1654,7 +1643,6 @@ EOT;
     
 
 
-
 	private function saveFormDescr()
 	{
 	    $form = $this->currForm;
@@ -1695,7 +1683,6 @@ EOT;
 
 
 
-
     public function restoreFormDescr($formHash = false, $formInx = false)
 	{
 	    if (!$formHash) {
@@ -1716,13 +1703,11 @@ EOT;
 
 
 
-
 	private function cacheUserSuppliedData($formId, $userSuppliedData)
 	{
         $pathToPage = $GLOBALS['globalParams']['pathToPage'];
         $_SESSION['lizzy']['formData'][ $pathToPage ][$formId] = serialize($userSuppliedData);
 	} // cacheUserSuppliedData
-
 
 
 
@@ -1732,7 +1717,6 @@ EOT;
 		return (isset($_SESSION['lizzy']['formData'][ $pathToPage ][$formId])) ?
             unserialize($_SESSION['lizzy']['formData'][ $pathToPage ][$formId]) : null;
 	} // getUserSuppliedDataFromCache
-
 
 
 
@@ -1771,7 +1755,7 @@ EOT;
             return false;
         }
 
-        $cmd = @$userSuppliedData['_lizzy-form-cmd'];
+        $cmd = @$userSuppliedData['_lizzy-form-next'];
         if ($cmd === '_ignore_') {     // _ignore_
             $this->cacheUserSuppliedData($formId, $userSuppliedData);
             return;
@@ -1823,7 +1807,7 @@ EOT;
 
         $customResponseEvaluation = @$currForm->customResponseEvaluation;
         if ($customResponseEvaluation) {
-			$result = $this->trans->doUserCode('-'.$customResponseEvaluation, null, true);
+			$result = $this->trans->doUserCode($customResponseEvaluation, null, true);
 			if (is_array($result)) {
 			    if (!$result[0]) {
                     fatalError($result[1]);
@@ -1852,7 +1836,28 @@ EOT;
 			}
         }
 
-        $noError = !@$this->errorDescr[ $this->formId ];
+        $customResponseEvaluationFunction = @$currForm->customResponseEvaluationFunction;
+        if ($customResponseEvaluationFunction && function_exists( $customResponseEvaluationFunction )) {
+            $res = $customResponseEvaluationFunction($this->lzy, $this, $userSuppliedData);
+            if (is_string($res)) {
+                $this->clearCache();
+                $this->skipRenderingForm = true;
+                $this->responseToClient = $res;
+                return '';
+            } elseif(is_array($res)) {
+                // second elem of $res set => means skip rendering form and override output:
+                if (isset($res[1])) {
+                    $this->errorDescr[ 'generic' ]['_override_'] = $res[1];
+                    $this->skipRenderingForm = true;
+
+                } else {
+                    $this->errorDescr[$currForm->formId]['_announcement_'] = $res[0];
+                }
+            }
+        }
+
+        $noError = !@$this->errorDescr[ $currForm->formId ] && !isset($this->errorDescr[ 'generic' ]);
+        $cont = false;
         if ($noError ) {
             $cont = $this->saveAndWrapUp($msgToOwner);
         }
@@ -1869,7 +1874,6 @@ EOT;
             $this->skipRenderingForm = true;
         }
     } // evaluateUserSuppliedData
-
 
 
 
@@ -1890,7 +1894,6 @@ EOT;
         }
         return true;
     } // saveAndWrapUp
-
 
 
 
@@ -1940,7 +1943,6 @@ EOT;
 
 
 
-
     private function checkHoneyPot()
     {
         if (!$this->currForm->antiSpam) {
@@ -1959,7 +1961,6 @@ EOT;
         }
         return false;
     } // checkHoneyPot
-
 
 
 
@@ -2025,7 +2026,7 @@ EOT;
                         }
                     }
                     if (!$usrDataFldName) {
-                        die("Error in saveUserSuppliedDataToDB(): inconsistancy in rec structure");
+                        die("Error in saveUserSuppliedDataToDB(): inconsistancy in rec structure -> 'name' missing in \$formDescr:".var_r($formDescr));
                     }
                     if (is_array($userSuppliedData[$usrDataFldName])) {
                         $v1 = @strtolower(str_replace(' ', '', $userSuppliedData[$usrDataFldName][0]));
@@ -2088,7 +2089,6 @@ EOT;
 
 
 
-
     private function deleteDataRecord()
     {
         if (!@$this->userSuppliedData0['_rec-key']) {
@@ -2099,7 +2099,6 @@ EOT;
         $res = $ds->deleteRecord($recKey);
         return $res;
     } // deleteDataRecord
-
 
 
 
@@ -2120,7 +2119,6 @@ EOT;
 
         $userSuppliedData = $this->prepareDataRec($currForm->formElements, $userSuppliedData);
     } // prepareUserSuppliedData
-
 
 
 
@@ -2184,7 +2182,6 @@ EOT;
         }
         return $rec;
     } // prepareDataRec
-
 
 
 
@@ -2331,7 +2328,6 @@ EOT;
 
 
 
-
     private function exportHeaderRow()
     {
         $row = [];
@@ -2376,7 +2372,6 @@ EOT;
 
 
 
-
     private function restoreErrorDescr()
     {
         return isset($_SESSION['lizzy']['formErrDescr']) ? $_SESSION['lizzy']['formErrDescr'] : [];
@@ -2384,12 +2379,10 @@ EOT;
 
 
 
-
     private function saveErrorDescr($errDescr)
     {
         $_SESSION['lizzy']['formErrDescr'] = $errDescr;
     } // saveErrorDescr
-
 
 
 
@@ -2411,7 +2404,6 @@ EOT;
             $this->tck->deleteTicket($this->formHash);
         }
 	} // clearCache
-
 
 
 
@@ -2507,7 +2499,6 @@ EOT;
 
 
 
-
     private function initButtonHandlers()
     {
         $id = "fld_ch{$this->inx}";
@@ -2595,21 +2586,21 @@ EOT;
        
 $('$formId .lzy-form-pw-toggle').click(function(e) {
     e.preventDefault();
-    var \$form = $('$formId');
-    var \$pw = $('.lzy-form-password', \$form);
+    let \$form = $('$formId');
+    let \$pw = $('.lzy-form-password', \$form);
+    let rcsPath = systemPath + 'rsc/';
     if (\$pw.attr('type') === 'text') {
         \$pw.attr('type', 'password');
-        $('.lzy-form-show-pw-icon', \$form).attr('src', systemPath+'rsc/show.png');
+        $('.lzy-form-show-pw-icon', \$form).attr('src', rcsPath + 'show.png');
     } else {
         \$pw.attr('type', 'text');
-        $('.lzy-form-show-pw-icon', \$form).attr('src', systemPath+'rsc/hide.png');
+        $('.lzy-form-show-pw-icon', \$form).attr('src', rcsPath +'hide.png');
     }
 });
 
 EOT;
         $this->page->addJq($jq);
     } // initButtonHandlers
-
 
 
 
@@ -2652,7 +2643,7 @@ EOT;
                 $value = preg_replace('/[^\d.\-+()]/', '', $value);
             }
         } elseif ($type === 'number') {
-            $value = preg_replace('/[^\d\.\-+]/', '', $value);
+            $value = preg_replace('/[^\d.\-+]/', '', $value);
         } elseif ($type === 'url') {
             if (!preg_match('/[^@]+ @ [^@]+ \. [^@]{2,10}/x', $value)) {
                 $value = '';
@@ -2688,7 +2679,7 @@ EOT;
             return false;
         }
         return (strpos(HEAD_ATTRIBUTES, ",$attr,") !== false);
-    }
+    } // isHeadAttribute
 
 
 
@@ -2698,7 +2689,7 @@ EOT;
             return false;
         }
         return (strpos(ELEM_ATTRIBUTES, ",$attr,") !== false);
-    }
+    } // isElementAttribute
 
 
 
@@ -3004,7 +2995,7 @@ EOT;
 
 
 
-    private function openDB( $args = [])
+    private function openDB()
     {
         if ($this->db) {
             return $this->db;
@@ -3022,7 +3013,6 @@ EOT;
         ]);
         return $this->db;
     } // openDB
-
 
 
 
@@ -3075,7 +3065,6 @@ EOT;
         ]);
         return $this->dbExport;
     } // openExportDB
-
 
 
 

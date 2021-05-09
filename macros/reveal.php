@@ -25,9 +25,10 @@ $this->addMacro($macroName, function () {
 
     $class = $class? " $class": '';
     $out = '';
-    $out .= "\t\t\t\t<input id='$id' class='lzy-reveal-controller-elem lzy-reveal-icon' type='checkbox' data-reveal-target='$target' /><label for='$id'>$label</label>\n";
+    $out .= "\n\t\t\t\t<input id='$id' class='lzy-reveal-controller-elem lzy-reveal-icon' type='checkbox' data-reveal-target='$target' />".
+        "\n\t\t\t\t<label for='$id'>$label</label>\n";
 
-    $out = "\t\t\t<div class='lzy-reveal-controller$class'>$out</div>\n";
+    $out = "\t\t\t<div class='lzy-reveal-controller$class'>$out\t\t\t</div>\n";
 
     $this->page->addModules('REVEAL');
 

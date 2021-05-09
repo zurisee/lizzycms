@@ -78,9 +78,6 @@ body {
 	top: 0;
 	right: 0;
 }
-.lzy-popup-with-header .lzy-login h1 {
-	display: none;
-}
 .lzy-popup-header > div {
 	width: calc(100% - 1.4em);
 }

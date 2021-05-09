@@ -89,10 +89,12 @@ $formElemCommentColor: gray;      // --form-elem-comment-color
 
     /* === Generic =================================== */
     textarea,
+    .lzy-form-readonly-elem,
     input {
         border: 1px solid #ddd;
         border: var(--lzy-form-border-style, $formBorderStyle);
     }
+    .lzy-form-readonly-elem,
     input {
         line-height: 2em;
     }
@@ -109,6 +111,7 @@ $formElemCommentColor: gray;      // --form-elem-comment-color
         display: inline-block;
         text-align: left;
     }
+    .lzy-form-readonly-elem,
     input {
         width: 16em;
         width: calc(100% - var(--lzy-label-width, #{$label-width}) - 6px);

@@ -14,13 +14,19 @@ class UserLoginBase extends UserAdminBase
 
 
 
-    public function render($returnRaw = false, $preOpenPanel = 1, $notification = '', $message = '')
+    public function render($returnRaw = false, $message = '', $preOpenPanel = 1)
     {
         $this->un_preset = '{{^ lzy-username-preset }}';
-        if ($this->config->admin_enableAccessLink) {
-            $str = $this->createMultimodeLoginForm($notification, $message, $preOpenPanel);
+        $mode = getUrlArg('byemail')? 'byemail': (getUrlArg('multimode')? 'multimode': '');
+        if ($mode === 'byemail') {
+            $html = $this->createEmailLoginForm($message);
+        } elseif (($mode === 'multimode') && ($this->config->admin_enableAccessLink)) {
+            $html = $this->createMultimodeLoginForm($message, $preOpenPanel);
         } else {
-            $str = $this->createPWAccessForm($notification, $message);
+            $html = $this->createPWLoginForm($message);
+        }
+        if (!$this->config->admin_enableAccessLink) {
+            $this->page->addCss('.lzy-accesscode-enabled { display:none; }');
         }
 
         // avoid leave-page warning when submitting login
@@ -33,11 +39,11 @@ $('.lzy-login-form').submit(function(e) {
 EOT;
         $this->page->addJq($jq);
         if ($returnRaw) {
-            return $str;
+            return $html;
         }
 
-        $this->page->addModules('PANELS,TOOLTIPSTER');
-        $this->page->addOverride($str);
+        $this->page->addModules('TOOLTIPSTER');
+        $this->page->addOverride($html);
         $this->page->setOverrideMdCompile(false);
 
         return $this->page;
@@ -45,8 +51,10 @@ EOT;
 
 
 
-    public function createMultimodeLoginForm($notification, $message = '', $preOpenPanel = 1)
+    public function createMultimodeLoginForm($message = '', $preOpenPanel = 1)
     {
+        parent::init();
+        $this->page->addModules('PANELS');
         $inx = $this->inx;
         $message = parent::wrapTag(MSG, $message);
 
@@ -92,7 +100,7 @@ $message
                             <button class="lzy-formelem-show-info" aria-hidden="true" data-tooltip-content="#lzy-login-info-text-$inx-2" type="button">
                                 <span class="lzy-icon lzy-icon-info" title="{{ lzy-login-show-info-title }}"></span>
                                 <span  class="lzy-invisible">
-                                    <span id="lzy-login-info-text-$inx-2" class="lzy-formelem-info-text">{{ lzy-login-username-info-text }}</span>
+                                    <span id="lzy-login-info-text-$inx-2" class="lzy-formelem-info-text">{{ lzy-login-mm-username-info-text }}</span>
                                 </span>
                             </button>
                         </span><!-- /lzy-label-wrapper -->
@@ -115,7 +123,7 @@ $message
                             <button class="lzy-formelem-show-info" aria-hidden="true" data-tooltip-content="#lzy-formelem-info-text-$inx-3" type="button">
                                 <span class="lzy-icon lzy-icon-info" title="{{ lzy-login-show-info-title }}"></span>
                                 <span  class="lzy-invisible">
-                                    <span id="lzy-formelem-info-text-$inx-3" class="lzy-formelem-info-text">{{ lzy-login-password-info-text }}</span>
+                                    <span id="lzy-formelem-info-text-$inx-3" class="lzy-formelem-info-text">{{ lzy-login-mm-password-info-text }}</span>
                                 </span>
                             </button>
                         </span><!-- /lzy-label-wrapper -->
@@ -135,49 +143,121 @@ $message
 
 EOT;
 
-
-        $jq = <<<EOT
-
- // Initialize panels:
-initLzyPanel('#lzy-login-panels-widget', $preOpenPanel);
-
- // Password show/hide:
-$('.lzy-form-pw-toggle').click(function(e) {
-    e.preventDefault();
-    var \$form = $('form');
-    var \$pw = $('.lzy-form-password', \$form);
-    if (\$pw.attr('type') === 'text') {
-        \$pw.attr('type', 'password');
-        $('.lzy-form-show-pw-icon', \$form).attr('src', systemPath+'rsc/show.png');
-    } else {
-        \$pw.attr('type', 'text');
-        $('.lzy-form-show-pw-icon', \$form).attr('src', systemPath+'rsc/hide.png');
-    }
-});
-
- // Info tooltip:
-$('.lzy-formelem-show-info').tooltipster({
-    trigger: 'click',
-    contentCloning: true,
-    animation: 'fade',
-    delay: 200,
-    animation: 'grow',
-    maxWidth: 420,
-});
-			
-EOT;
-        $this->page->addJq($jq);
-        $this->page->addModules('EVENT_UE,PANELS,TOOLTIPSTER');
         return $html;
     } // createMultimodeLoginForm
 
 
 
-    private function createPWAccessForm($notification, $message = '')
+    private function createEmailLoginForm($message = '')
     {
+        parent::init();
+        $inx = $this->inx;
+        $message = parent::wrapTag(MSG, $message);
 
-        return 'not implemented yet';
-    } // createPWAccessForm
+        $html = <<<EOT
+$message
+
+        <div  class="lzy-login-wrapper lzy-email-login">
+            <h1>{{ lzy-login-without-password }}</h1>
+            <div class='lzy-form-wrapper lzy-form-colored'>
+              <form id='lzy-login-form-$inx-1' class='lzy-form  lzy-login-form lzy-form-labels-above lzy-encapsulated' method='post' novalidate>
+              
+                <!-- [input] -->
+                <div class='lzy-form-field-wrapper lzy-form-field-type-email'>
+                        <span class='lzy-label-wrapper'>
+                            <label for='fld_lzy-onetimelogin-request-email-$inx'>{{ lzy-onetimelogin-request-prompt }}</label>
+                            <button class="lzy-formelem-show-info" aria-hidden="true" data-tooltip-content="#lzy-login-info-text-$inx-1" type="button">
+                                <span class="lzy-icon lzy-icon-info" title="{{ lzy-login-show-info-title }}"></span>
+                                <span  class="lzy-invisible">
+                                    <span id="lzy-login-info-text-$inx-1" class="lzy-formelem-info-text">{{ lzy-onetimelogin-request-info-text }}</span>
+                                </span>
+                            </button>
+                        </span><!-- /lzy-label-wrapper -->
+                    <input type='email' id='fld_lzy-onetimelogin-request-email-$inx' name='lzy-onetimelogin-request-email' class='lzy-form-input-elem' aria-describedby='lzy-login-info-text-$inx-1' />
+                </div><!-- /field-wrapper -->
+                <!-- [submit] -->
+                <div class='lzy-form-field-type-buttons'>
+                <input type='submit' value='{{ lzy-onetime-link-send }}'  class='lzy-form-button lzy-form-button-submit' />
+                </div><!-- /field-wrapper -->
+        
+              </form>
+            </div><!-- /lzy-form-wrapper -->
+
+        </div><!-- /lzy-login-wrapper -->
+EOT;
+
+        return $html;
+    } // createEmailLoginForm
+
+
+
+    private function createPWLoginForm($message = '')
+    {
+        parent::init();
+        $inx = $this->inx;
+        $message = parent::wrapTag(MSG, $message);
+
+        $html = <<<EOT
+$message
+
+        <div  class="lzy-login-wrapper lzy-simple-login">
+            <div class='lzy-form-wrapper lzy-form-colored'>
+              <form id='lzy-login-form-$inx-2' class='lzy-form lzy-login-form lzy-form-labels-above lzy-encapsulated' method='post'>
+        
+                <h2>{{ lzy-login-with-password }}</h2>
+                <div class='lzy-form-field-wrapper lzy-form-field-type-text'>
+                        <span class='lzy-label-wrapper'>
+                            <label for='fld_lzy-login-username-$inx'>{{ lzy-login-username-prompt }}</label>
+                            <button class="lzy-formelem-show-info" aria-hidden="true" data-tooltip-content="#lzy-login-info-text-$inx-2" type="button">
+                                <span class="lzy-icon lzy-icon-info" title="{{ lzy-login-show-info-title }}"></span>
+                                <span  class="lzy-invisible">
+                                    <span id="lzy-login-info-text-$inx-2" class="lzy-formelem-info-text">{{ lzy-login-username-info-text }}</span>
+                                </span>
+                            </button>
+                        </span><!-- /lzy-label-wrapper -->
+                    <input type='text' id='fld_lzy-login-username-$inx' name='lzy-login-username' class='lzy-form-input-elem' aria-describedby='lzy-login-info-text-$inx-2' />
+                </div><!-- /field-wrapper -->
+        
+        
+                <div class='lzy-form-field-wrapper lzy-form-field-type-password'>
+                    <div class='lzy-form-pw-wrapper'>
+                        <div class='lzy-form-input-elem'>
+                            <input type='password' class='lzy-form-password' id='fld_lzy-login-password-$inx' name='lzy-login-password' aria-invalid='false' aria-describedby='lzy-formelem-info-text-$inx-3' />
+                            <label class='lzy-form-pw-toggle' for="lzy-form-show-pw-$inx">
+                                <input type="checkbox" id="lzy-form-show-pw-$inx" class="lzy-form-show-pw">
+                                <img src="~sys/rsc/show.png" class="lzy-form-show-pw-icon" alt="{{ lzy-login-show-password }}" title="{{ lzy-login-show-password }}" />
+                            </label>
+                        </div><!-- /lzy-form-input-elem -->
+                        <span class='lzy-label-wrapper'>
+                            <label for='fld_lzy-login-password-$inx'>{{ lzy-login-password-prompt }}</label>
+                            <button class="lzy-formelem-show-info" aria-hidden="true" data-tooltip-content="#lzy-formelem-info-text-$inx-3" type="button">
+                                <span class="lzy-icon lzy-icon-info" title="{{ lzy-login-show-info-title }}"></span>
+                                <span  class="lzy-invisible">
+                                    <span id="lzy-formelem-info-text-$inx-3" class="lzy-formelem-info-text">{{ lzy-login-password-info-text }}</span>
+                                </span>
+                            </button>
+                        </span><!-- /lzy-label-wrapper -->
+                    </div><!-- /lzy-form-pw-wrapper -->
+                </div><!-- /field-wrapper -->
+
+                <div class="lzy-login-alternative-actions">
+                    <ul>
+                        <li class="lzy-login-forgot-password"><a href="./?login&byemail">{{ lzy-login-forgot-password }}</a></li>
+                        <li class="lzy-login-sign-up"><a href="">{{ lzy-login-sign-up }}</a></li>
+                    </ul>
+                </div>        
+        
+                <div class='lzy-form-field-type-buttons'>
+                <input type='submit' value='{{ lzy-login-submit }}'  class='lzy-form-button lzy-form-button-submit' />
+                </div><!-- /field-wrapper -->
+        
+              </form>
+            </div><!-- /lzy-form-wrapper -->
+        </div><!-- /lzy-login-wrapper -->
+EOT;
+
+        return $html;
+    } // createPWLoginForm
 
 
 
@@ -290,11 +370,11 @@ EOT;
 
 
 
-    public function handleOnetimeLoginRequest()
+    public function handleOnetimeLoginRequest( $emailRequest, $rec = null )
     {
-        $emailRequest = $_POST['lzy-onetimelogin-request-email'];
-
-        list($emailRequest, $rec) = $this->lzy->auth->findEmailMatchingUserRec($emailRequest, true);
+        if (!$rec) {
+            list($emailRequest, $rec) = $this->lzy->auth->findEmailMatchingUserRec($emailRequest, true);
+        }
         if ($emailRequest) {
             if (isset($rec['inactive']) && $rec['inactive']) {  // account set to inactive?
                 writeLogStr("Account '{$rec['username']}' is inactive: $emailRequest", LOGIN_LOG_FILENAME);
@@ -305,7 +385,7 @@ EOT;
                 $res = [false, "<p>{{ lzy-login-user-unknown }}</p>", 'Message'];   //
 
             } else {
-                list($message, $displayName) = $this->sendOneTimeCode($emailRequest, $rec);
+                list( $message ) = $this->sendOneTimeCode($emailRequest, $rec);
                 $res = [false, $message, 'Override'];   // if successful, a mail with a link has been sent and user will be authenticated on using that link
                 $this->lzy->loginFormRequiredOverride = false;
             }
@@ -321,9 +401,10 @@ EOT;
     {
         $accessCodeValidyTime = isset($rec['accessCodeValidyTime']) ? $rec['accessCodeValidyTime'] : $this->config->admin_defaultAccessLinkValidyTime;
 
-        $message = parent::sendCodeByMail($submittedEmail, 'email-login', $accessCodeValidyTime, $rec);
+        $message = parent::sendCodeByMail($submittedEmail, 'lzy-ot-access', $accessCodeValidyTime, $rec);
 
         return $message;
     } // sendOneTimeCode
+
 
 } // UserLogin

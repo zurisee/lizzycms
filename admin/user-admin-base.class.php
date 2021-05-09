@@ -6,6 +6,7 @@ if (!defined('SHOW_PW_INFO_ICON')) {
     define('NOTI', 'lzy-account-form-notification');
 }
 $GLOBALS['lizzy']['adminFormsCounter'] = 0;
+//$GLOBALS['lizzy']['adminFormsInitialized'] = false;
 
 
 class UserAdminBase
@@ -64,63 +65,37 @@ class UserAdminBase
 
 
 
-    protected function renderOnetimeLinkEntryForm($user, $validUntilStr, $prefix)
+    public function renderOnetimeLinkEntryForm($email, $validUntilStr, $prefix)
     {
         $form = <<<EOT
 
     <div class='lzy-onetime-link-sent'>
-    {{ $prefix sent }}
-
-    <form class="lzy-onetime-code-entry" method="post">
-        <label for="">{{ lzy-enter onetime code }}</label>
-        <input type="hidden" value="$user" name="lzy-login-user" />
-        <input id="lzy-onetime-code" type="text" name="lzy-onetime-code" style="text-transform:uppercase;width:6em;" />
-        <input type="submit" class='lzy-button lzy-admin-submit-button' value="{{ submit }}" />
-    </form>
-
-    <p> {{ $prefix sent2 }} $validUntilStr</p>
-    <p> {{ $prefix sent3 }}</p>
-    {{^ lzy-sign-up further info }}
+        {{ $prefix sent }}
+    
+        <form class="lzy-onetime-code-entry" method="post">
+            <label for="">{{ lzy-enter onetime code }}</label>
+            <input type="hidden" value="$email" name="lzy-login-user" />
+            <input id="lzy-onetime-code" type="text" name="lzy-onetime-code" style="width:8em;" />
+            <input type="submit" class='lzy-button lzy-admin-submit-button' value="{{ Submit }}" />
+        </form>
+    
+        <p>{{ $prefix sent2 }}</p>
+        <p>{{ $prefix sent3 }}</p>
+        {{^ lzy-sign-up further info }}
+        
+        {{ vgap }}
+        <a href="./" class="lzy-button">{{ Cancel }}</a>
     </div>
 
 EOT;
+        $form = $this->trans->translate( $form );
+        $form = str_replace(['%until%','%email%'], [$validUntilStr, $email], $form);
         return $form;
     } // renderOnetimeLinkEntryForm
 
 
 
-    protected function checkInsecureConnection()
-    {
-        global $globalParams;
-        $relaxedHosts = str_replace('*', '', $this->config->site_allowInsecureConnectionsTo);
-
-        if (!$this->config->isLocalhost && !(isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] === 'on')) {
-            $url = str_ireplace('http://', 'https://', $globalParams['pageUrl']);
-            $url1 = preg_replace('|https?://|i', '', $globalParams['pageUrl']);
-            if (strpos($url1, $relaxedHosts) !== 0) {
-                $this->page->addMessage("{{ Warning insecure connection }}<br />{{ Please switch to }}: <a href='$url'>$url</a>");
-            }
-            return false;
-        }
-        return true;
-    } // checkInsecureConnection
-
-
-
-    protected function wrapTag($className, $str)
-    {
-        if (($className === MSG) && isset($GLOBALS['globalParams']['auth-message'])) {
-            $str .= ' '.$GLOBALS['globalParams']['auth-message'];
-        }
-        if ($str) {
-            $str = "\t\t\t<div class='$className'>$str</div>\n";
-        }
-        return $str;
-    } // wrapTag
-
-
-
-    public function sendCodeByMail($submittedEmail, $mode, $accessCodeValidyTime, $userRec = false)
+    public function sendCodeByMail($submittedEmail, $ticketType, $accessCodeValidyTime, $userRec = false)
     {
         global $globalParams;
 
@@ -135,30 +110,38 @@ EOT;
             $displayName = $submittedEmail;
         }
 
-        $tick = new Ticketing(['unambiguous' => true, 'defaultType' => 'ot-access-ticket']);
+        $tick = new Ticketing(['unambiguous' => true, 'defaultType' => $ticketType]);
 
-        $otRec = ['username' => $user, 'email' => $submittedEmail,'mode' => $mode];
+        $otRec = ['username' => $user, 'email' => $submittedEmail];
         $hash = $tick->createTicket($otRec, 1, $accessCodeValidyTime);
 
         $url = $globalParams['pageUrl'] . $hash . '/';
-        if ($mode === 'email-login') {
-            $subject = "[{{ site_title }}] {{ lzy-email-access-link-subject }} {$globalParams['host']}";
-            $message = "{{ lzy-email-access-link0 }}$displayName{{ lzy-email-access-link1 }} $url {{ lzy-email-access-link2 }} $hash {{ lzy-email-access-link3 }} \n";
 
+        // --- lzy-ot-access
+        if ($ticketType === 'lzy-ot-access') {
+            $subject = "[{{ site_title }}] {{ lzy-email-access-link-subject }} {$globalParams['host']}";
+            $message = "{{ lzy-email-access-link0 }}$displayName{{ lzy-email-access-link1 }}    ".
+                "→ $url {{ lzy-email-access-link2 }}{{ lzy-email-access-link3 }}{{ lzy-email-access-greeting }}\n";
+            $message = $this->trans->translate( $message );
+            $message = str_replace(['%hash%', '%email%'], [$hash, $submittedEmail], $message );
             $this->sendMail($submittedEmail, $subject, $message);
 
-            $message = $this->renderOnetimeLinkEntryForm($user, $validUntilStr, 'lzy-onetime access link');
+            $message = $this->renderOnetimeLinkEntryForm($submittedEmail, $validUntilStr, 'lzy-onetime access link');
             $this->lzy->loginFormRequiredOverride = false;
             writeLogStr("one time link sent to: $submittedEmail -> '$hash'", LOGIN_LOG_FILENAME);
 
-        } elseif ($mode === 'email-signup') {
+
+        // --- email-signup
+        } elseif ($ticketType === 'email-signup') {
             $subject = "[{{ site_title }}] {{ lzy-email-sign-up-subject }} {$globalParams['host']}";
-            $message = "{{ lzy-email-sign-up1 }} $url {{ lzy-email-sign-up2 }} $hash {{ lzy-email-sign-up3 }} \n";
+            $message = "{{ lzy-email-sign-up1 }} → $url {{ lzy-email-sign-up2 }}{{ lzy-email-sign-up3 }}$validUntilStr. {{ lzy-email-sign-up-greeting }} \n";
 
             $this->sendMail($submittedEmail, $subject, $message);
             $message = $this->renderOnetimeLinkEntryForm($submittedEmail, $validUntilStr, 'lzy-sign-up-link');
 
-        } elseif ($mode === 'lzy-change-email-request') {
+
+        // --- lzy-change-email-request
+        } elseif ($ticketType === 'lzy-change-email-request') {
             if (isset($userRec['email']) && ($userRec['email'] === $submittedEmail)) {
                 reloadAgent(false,"email-change-mail-unchanged");
             }
@@ -171,6 +154,16 @@ EOT;
 
             $this->sendMail($submittedEmail, $subject, $message);
             $message = $this->renderOnetimeLinkEntryForm($submittedEmail, $validUntilStr, 'lzy-change-mail-link');
+
+
+        // --- request-email-verification
+        } elseif ($ticketType === 'request-email-verification') {
+            $subject = "[{{ site_title }}] {{ lzy-request-email-verification-subject }} {$globalParams['host']}";
+            $message = "{{ lzy-request-email-verification-up1 }} $url {{ lzy-request-email-verification-up2 }} $hash {{ lzy-request-email-verification-up3 }}$validUntilStr. \n";
+
+            $this->sendMail($submittedEmail, $subject, $message);
+            $message = $this->renderOnetimeLinkEntryForm($submittedEmail, $validUntilStr, 'lzy-email-verification-link');
+
         }
         return [$message, $displayName];
     } // sendCodeByMail
@@ -231,6 +224,19 @@ EOT;
 
 
 
+    public function createOneTimeTicket( $user, $landingPage = false, $email = '', $accessCodeValidyTime = false)
+    {
+        $tick = new Ticketing(['unambiguous' => true, 'defaultType' => 'lzy-ot-access']);
+
+        $otRec = ['username' => $user, 'email' => $email];
+        if ($landingPage) {
+            $otRec['landingpage'] = $landingPage;
+        }
+        return $tick->createTicket($otRec, 1, $accessCodeValidyTime);
+    } // createOneTimeTicket
+
+
+
     public function handleCreateTicketRequest()
     {
         if (!$_POST) {
@@ -260,10 +266,10 @@ EOT;
             if (!$group) {
                 $group = 'guests';
             }
-            $page = get_post_data('lzy-selected-page');
+            $page = get_post_data('lzy-landing-page');
             $pgRec = $this->lzy->siteStructure->findSiteElem( $page, true, true );
             $folder = ($pgRec['urlpath'] !== false) ? $pgRec['urlpath']: $pgRec['folder'];
-            $link = $GLOBALS['globalParams']['absAppRootUrl'] . $folder;
+            $link = $GLOBALS['globalParams']['absAppRootUrl'];
             if (@$_POST['util']) {
                 $accessCodeValidyTime = strtotime($_POST['util']) - time();
 
@@ -287,9 +293,9 @@ EOT;
             $payload = [
                 'user' => $user,
                 'group' => $group,
-                'link' => $folder,
+                'landingPage' => $folder,
             ];
-            $tick = new Ticketing(['hashSize' => 12, 'defaultType' => 'user-ticket']);
+            $tick = new Ticketing(['hashSize' => 12, 'defaultType' => 'landing-page']);
             $hash = $tick->createHash();
             $hash = $tick->createTicket($payload, $n, $accessCodeValidyTime, false, $hash);
             $str = <<<EOT
@@ -337,19 +343,22 @@ EOT;
 
 
 
-    protected function addUserToDB($username, $userRec)
+    public function addUserToDB($username, $userRec)
     {
         $knownUsers = $this->auth->getKnownUsers();
-        if (!$username || !is_array($userRec)) {
-            return 'Bad parameters';
+        if (isset($knownUsers[ $username ])) {
+            return 'lzy-adduser-failed-username-already-in-use';
         }
-        if (isset($knownUsers[$username])) {
-            return 'lzy-username-already-taken';
+
+        if ($this->auth->findUserRecKey( $username )) {
+            return 'lzy-adduser-failed-already-exists';
+        } elseif ($this->auth->findUserRecKey($userRec['email'], 'email')) {
+            return 'lzy-adduser-failed-email-already-in-use';
         }
         $knownUsers[$username] = $userRec;
         writeToYamlFile($this->auth->userDB, $knownUsers);
         return true;
-    } // addUserToDB
+    } // addUser
 
 
 
@@ -357,14 +366,13 @@ EOT;
         if (!is_legal_email_address( $email )) {
             return 'email-changed-email-invalid';
         }
-        if ($res = $this->auth->findUserRecKey($email, '*')) {
+        if ($this->auth->findUserRecKey($email, '*')) {
             return 'email-changed-email-in-use';
 
         }
-        if ($res = $this->auth->findEmailInEmailList($email)) {
+        if ($this->auth->findEmailInEmailList($email)) {
             return 'email-changed-email-in-use';
         }
-
         return false;
     } // isInvalidEmailAddress
 
@@ -373,21 +381,21 @@ EOT;
     private function renderCreateTicketForm()
     {
         $pages = $this->lzy->siteStructure->getListOfPages();
-        $select = '';
+        $selectLandingPage = '';
         $currPg = $this->lzy->siteStructure->getPageName();
         foreach ($pages as $page) {
             if ($currPg === $page) {
-                $select .= "\t\t<option value='$page' selected>$page</option>\n";
+                $selectLandingPage .= "\t\t<option value='$page' selected>$page</option>\n";
             } else {
-                $select .= "\t\t<option value='$page'>$page</option>\n";
+                $selectLandingPage .= "\t\t<option value='$page'>$page</option>\n";
             }
         }
-        $select = "\t<select name='lzy-selected-page'>\n$select\n\t</select>\n";
+        $selectLandingPage = "\t<select name='lzy-landing-page'>\n$selectLandingPage\n\t</select>\n";
         $selectUser = $this->renderDropdownOfUsers();
 
         $form = <<<EOT
 
-    <h1>Create Ticket</h1>
+    <h1>Create "LandingPage-Ticket"</h1>
 	<div class='lzy-create-ticket-form lzy-form-wrapper lzy-form-colored'>
 	  <form id='test-form' class='test-form lzy-form lzy-encapsulated' method='post'>
 	  <div class="lzy-fieldset"><fieldset>
@@ -441,8 +449,8 @@ EOT;
 		</div><!-- /field-wrapper -->
 
 		<div class='lzy-form-field-wrapper lzy-form-field-wrapper-7 lzy-form-field-type-text'>
-			<label for='fld_link_1'>Page:</label>
-			$select
+			<label for='fld_link_1'>Landing-Page:</label>
+			$selectLandingPage
 		</div><!-- /field-wrapper -->
 
 		<div class='lzy-form-field-type-buttons'>
@@ -451,6 +459,7 @@ EOT;
 		</div><!-- /field-wrapper -->
       </fieldset></div>
 
+	     <div class="lzy-create-ticket-comment">{{ lzy-create-ticket-comment }}</div>
 	  </form>
 	</div><!-- /lzy-form-wrapper -->
 
@@ -460,7 +469,25 @@ EOT;
 
 
 
-    private function renderDropdownOfUsers( $preselected = 'guest' )
+    protected function renderDropdownOfPages( $preselected )
+    {
+        $out = "\t\t<select id='fld_pages_1' name='lzy-selected-landingpage'>\n";
+        $out .= "\t\t\t<option value=''></option>\n";
+        $pages = $this->lzy->siteStructure->getListOfPages(false, true);
+        foreach ($pages as $rec) {
+            $selected = '';
+            if ($preselected && ($preselected === $rec[1])) {
+                $selected = " selected='true'";
+            }
+            $out .= "\t\t\t<option value='{$rec[1]}'$selected>{$rec[0]}</option>\n";
+        }
+        $out .= "\t\t</select>\n";
+        return $out;
+    } // renderDropdownOfPages
+
+
+
+    protected function renderDropdownOfUsers( $preselected = '' )
     {
         $out = "\t\t<select id='fld_user_1' name='lzy-selected-user'>\n";
         $out .= "\t\t\t<option value=''></option>\n";
@@ -468,14 +495,110 @@ EOT;
         $users = array_keys($users);
         sort($users);
         foreach ($users as $user) {
-            $selected = ''; //selected=''
+            $selected = '';
             if ($preselected && ($preselected === $user)) {
-                $selected = " selected='true' ";
+                $selected = " selected='true'";
             }
-            $out .= "\t\t\t<option value='$user'$selected>$user</option>\n";
+            $out .= "\t\t\t<option value='$user'$selected >$user</option>\n";
         }
         $out .= "\t\t</select>\n";
         return $out;
-    } // getAllUsers
+    } // renderDropdownOfUsers
+
+
+
+    protected function renderCheckboxListOfGroups( $preselected = 'selfadmin' )
+    {
+        $out = "\t\t<div class='lzy-form-field-wrapper lzy-form-field-wrapper-2 lzy-form-field-type-checkbox lzy-form-field-type-choice lzy-horizontal'>";
+
+        $groups = $this->auth->getKnownGroups();
+        sort($groups);
+        foreach ($groups as $i => $group) {
+            $checked = ''; //selected=''
+            if ($preselected && ($preselected === $group)) {
+                $checked = " checked='true' ";
+            }
+            $out .= <<<EOT
+                <div class='lzy-chckb_lzy-usradm-invite-groups-prompt_1-$i lzy-form-checkbox-elem lzy-form-choice-elem'>
+                    <input id='lzy-chckb_lzy-usradm-invite-groups-prompt_1-$i' type='checkbox' name='lzy-usradm-invite-groups[]' value='$group' aria-describedby='lzy-formelem-info-text-1-2_$i'$checked />
+                    <label for='lzy-chckb_lzy-usradm-invite-groups-prompt_1-$i'>$group</label>
+                </div>
+EOT;
+
+        }
+        $out .= "\t\t</div>\n";
+        return $out;
+    } // renderCheckboxListOfGroups
+
+
+
+    protected function init( $preOpenPanel = 1)
+    {
+        $jq = <<<EOT
+
+ // Initialize panels:
+initLzyPanel('#lzy-login-panels-widget', $preOpenPanel);
+
+ // Password show/hide:
+$('.lzy-form-pw-toggle').click(function(e) {
+    e.preventDefault();
+    var \$form = $('form');
+    var \$pw = $('.lzy-form-password', \$form);
+    if (\$pw.attr('type') === 'text') {
+        \$pw.attr('type', 'password');
+        $('.lzy-form-show-pw-icon', \$form).attr('src', systemPath+'rsc/show.png');
+    } else {
+        \$pw.attr('type', 'text');
+        $('.lzy-form-show-pw-icon', \$form).attr('src', systemPath+'rsc/hide.png');
+    }
+});
+
+ // Info tooltip:
+$('.lzy-formelem-show-info').tooltipster({
+    trigger: 'click',
+    contentCloning: true,
+    animation: 'fade',
+    delay: 200,
+    animation: 'grow',
+    maxWidth: 420,
+});
+			
+EOT;
+        $this->page->addJq($jq);
+        $this->page->addModules('EVENT_UE,PANELS,TOOLTIPSTER');
+    } // init
+
+
+
+    protected function checkInsecureConnection()
+    {
+        global $globalParams;
+        $relaxedHosts = str_replace('*', '', $this->config->site_allowInsecureConnectionsTo);
+
+        if (!$this->config->isLocalhost && !(isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] === 'on')) {
+            $url = str_ireplace('http://', 'https://', $globalParams['pageUrl']);
+            $url1 = preg_replace('|https?://|i', '', $globalParams['pageUrl']);
+            if (strpos($url1, $relaxedHosts) !== 0) {
+                $this->page->addMessage("{{ Warning insecure connection }}<br />{{ Please switch to }}: <a href='$url'>$url</a>");
+            }
+            return false;
+        }
+        return true;
+    } // checkInsecureConnection
+
+
+
+    protected function wrapTag($className, $str)
+    {
+        if (($className === MSG) && isset($GLOBALS['globalParams']['auth-message'])) {
+            $str .= ' '.$GLOBALS['globalParams']['auth-message'];
+        }
+        $str = trim($str);
+        if ($str) {
+            $str = "\t\t\t<div class='$className'>$str</div>\n";
+        }
+        return $str;
+    } // wrapTag
+
 
 } // UserAdminBase

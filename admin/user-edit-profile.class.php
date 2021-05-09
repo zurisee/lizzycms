@@ -3,7 +3,8 @@
 
 class UserEditProfileBase extends UserAdminBase
 {
-    public function __construct($lzy)
+    public function __construct($lzy, $hash = false)
+//    public function __construct($lzy)
     {
         parent::__construct($lzy);
 
@@ -12,50 +13,15 @@ class UserEditProfileBase extends UserAdminBase
             return '';
         }
 
-        $res = null;
-        if ($password = getPostData('lzy-change-password', false, true)) {
-            $res = $this->handleChangePasswordRequest( $password );
-
-        } elseif (getPostData('lzy-change-username') !== false) {
-            $this->handleChangeUsernameRequest();
-
-        } elseif ($email = getPostData('lzy-change-email-request', false, true)) {
-            $res = $this->handleChangeEMailRequest( $email );
-
-        } elseif ($email = getPostData('lzy-change-email-confirm', false, true)) {
-            $this->handleChangeEMailConfirm( $email );
-
-        } elseif (getUrlArg('lzy-create-accesslink', false, true)) {
-            $this->handleCreateAccesslinkRequest(); // ajax-request -> exits immediately
-
-        } elseif (getUrlArg('lzy-delete-accesslink', false, true)) {
-            $this->handleDeletelinkRequest(); // ajax-request -> exits immediately
-
-        } elseif (getUrlArg('lzy-delete-account', false, true)) {
-            $str = $this->deleteUserAccount();
-            $this->auth->logout();
-            $res = [false, $str, 'Message'];
-
-        } else {
-            return '';
-        }
-
-        if ($res) {
-            if (isset($res[2]) && ($res[2] === 'Overlay')) {
-                $this->page->addOverlay($res[1], false, false);
-            } elseif ($res[2] === 'Override') {
-                $this->page->addOverride($res[1], false, false);
-            } else {
-                $this->page->addMessage($res[1], false, false);
-            }
-        }
+        return $this->handleUserEditProfileRequests($hash);
     } // __construct
 
 
 
-    private function handleChangePasswordRequest( $password )
+    private function handleChangePasswordRequest()
     {
         $user = $this->auth->loggedInUser;
+        $password = getPostData('lzy-change-password', false, true);
         $password2 = getPostData('lzy-change-password2', false, true);
         $res = $this->auth->isValidPassword($password, $password2);
         if ($res === '') {
@@ -63,7 +29,8 @@ class UserEditProfileBase extends UserAdminBase
             $res = [false, $str, 'Message'];
 
         } else {
-            $res = [false, $res, 'Message'];
+            $res = [false, $res, 'Error', '#lizzy-lzy-profile-edit-1'];
+//            $res = [false, $res, 'Message'];
         }
         return $res;
     } // handleChangePasswordRequest
@@ -72,8 +39,9 @@ class UserEditProfileBase extends UserAdminBase
 
     private function handleChangeUsernameRequest()
     {
-        $str = $this->doChangeUsername();
-        $this->lzy->page->addMessage($str);
+        return $this->doChangeUsername();
+//        $str = $this->doChangeUsername();
+//        $this->lzy->page->addMessage($str); // lzy-profile-edit-2
     } // handleChangeUsernameRequest
 
 
@@ -82,7 +50,7 @@ class UserEditProfileBase extends UserAdminBase
     {
         if ($this->auth->findUserRecKey($email, '*')) {
             $str = "{{ lzy-email-changed-email-in-use }}: $email";
-            $res = [false, $str, 'Message'];
+            $res = [false, $str, 'Error', '#lzy-profile-edit-3'];
         } else {
             $str = $this->sendChangeMailAddress_Mail($email);
             $res = [false, $str, 'Override'];
@@ -92,9 +60,15 @@ class UserEditProfileBase extends UserAdminBase
 
 
 
-    public function handleChangeEMailConfirm( $email )
+    public function handleChangeEMailConfirm( $tickRec )
     {
-return;
+        $email = @$tickRec['email'];
+        $requestingUser = @$tickRec['username'];
+        if ($requestingUser !== $this->loggedInUser) {
+            mylog("Error or hacking attempt...");
+            return false;
+        }
+        return $this->doChangeEMail( $email );
     } // handleChangeEMailConfirm
 
 
@@ -189,6 +163,7 @@ return;
         $this->auth->loadKnownUsers();
         $this->auth->setUserAsLoggedIn($user, true);
         writeLogStr("email for user changed: $email [".getClientIP().']', LOGIN_LOG_FILENAME);
+        return false;
     } // doChangeEMail
 
 
@@ -218,11 +193,13 @@ return;
             $rec['email'] = $user;
         }
         if (!$newUsername && !$displayName) {
-            return "<div class='lzy-admin-task-response'>{{ lzy-username-change-no-change-response }}</div>";
+//            return "<div class='lzy-admin-task-response'>{{ lzy-username-change-no-change-response }}</div>";
+            return [false, '{{ lzy-username-change-no-change-response }}', 'Error', '#lzy-profile-edit-2'];
         }
         if ($user === $newUsername) {
             if (!$displayName) {
-                return "<div class='lzy-admin-task-response'>{{ lzy-username-change-no-change-response }}</div>";
+//                return "<div class='lzy-admin-task-response'>{{ lzy-username-change-no-change-response }}</div>";
+                return [false, '{{ lzy-username-change-no-change-response }}', 'Error', '#lzy-profile-edit-2'];
             }
             $newUsername = '';
         }
@@ -234,8 +211,9 @@ return;
             $err = parent::isInvalidUsername($newUsername);
         }
         if ($err) { // user name already in use or invalid!
-            $str = "<div class='lzy-admin-task-response'>$err</div>";
-            return $str;
+//            $str = "<div class='lzy-admin-task-response'>$err</div>";
+//            return $str;
+            return [false, $err, 'Error', '#lzy-profile-edit-2'];
         }
         if ($user !== $rec['username']) {
             $str = "<div class='lzy-admin-task-response'>{{ lzy-username-change-illegal-name-response }}</div>";
@@ -243,7 +221,8 @@ return;
         } else {
             if ($displayName) {
                 if (($dn = $this->auth->findUserRecKey($displayName, 'displayName')) && ($dn !== $newUsername)) {
-                    return "<div class='lzy-admin-task-response'>{{ lzy-username-change-illegal-displayname-response }}</div>";
+//                    return "<div class='lzy-admin-task-response'>{{ lzy-username-change-illegal-displayname-response }}</div>";
+                    return [false, '{{ lzy-username-change-illegal-displayname-response }}', 'Error', '#lzy-profile-edit-2'];
                 } else {
                     $rec['displayName'] = $displayName;
                 }
@@ -252,10 +231,12 @@ return;
             $rec['username'] = $newUsername;
             parent::addUserToDB($newUsername, $rec);
             $str = "<div class='lzy-admin-task-response'>{{ lzy-username-changed-response }}: $newUsername</div>";
+            $res = [false, $str, 'Message'];
             $this->auth->loadKnownUsers();
             $this->auth->setUserAsLoggedIn($newUsername, true);
         }
-        return $str;
+        return $res;
+//        return $str;
     } // doChangeUsername
 
 
@@ -375,7 +356,7 @@ EOT;
 
 	<div class='lzy-profile-edit-form-wrapper lzy-form-colored'>
 	  <form id='lizzy-lzy-profile-edit-1' class='lzy-form lzy-form-labels-above lzy-encapsulated' method='post' novalidate>
-
+        <div class="lzy-form-top-error-msg"></div>
         <div class='lzy-form-field-wrapper lzy-profile-ed-field-wrapper-1 lzy-form-field-type-password'>
             <span class='lzy-label-wrapper'>
                 <label for='fld_lzy-change-password-prompt_1'>{{ lzy-change-password-prompt }}</label>
@@ -445,7 +426,7 @@ EOT;
 
 	<div class='lzy-profile-edit-form-wrapper lzy-form-colored'>
 	  <form id='lzy-profile-edit-2' class='lzy-form lzy-form-labels-above lzy-encapsulated' method='post' novalidate>
-
+        <div class="lzy-form-top-error-msg"></div>
         <div class='lzy-form-field-wrapper lzy-form-field-wrapper-1 lzy-form-field-type-text'>
             <span class='lzy-label-wrapper'>
                 <label for='lzy-profile-ed-change-user-username-prompt_1'>{{ lzy-change-user-username-prompt }}</label>
@@ -500,6 +481,7 @@ EOT;
 
 	<div class='lzy-profile-edit-form-wrapper lzy-form-colored'>
 	  <form id='lzy-profile-edit-3' class='lzy-form lzy-form-labels-above lzy-encapsulated' method='post' novalidate>
+        <div class="lzy-form-top-error-msg"></div>
 		<div class='lzy-form-field-wrapper lzy-form-field-type-email'>
                 <span class='lzy-label-wrapper'>
                     <label for='lzy-profile-ed-change-user-request-prompt_1'>{{ lzy-change-user-request-prompt }}</label>
@@ -562,7 +544,7 @@ EOT;
         }
 
         $accessCode = $this->lzy->auth->getAccessCode();
-        $delAccessCode = '';
+//        $delAccessCode = '';
         if ($accessCode) {
             $delAccessCode = '<button class="lzy-button lzy-login-form-button lzy-accesslink-delete-button">{{ lzy-accesslink-delete-button }}</button>';
         }  else {
@@ -635,5 +617,69 @@ EOT;
         list($message) = parent::sendCodeByMail($email, 'lzy-change-email-request', $accessCodeValidyTime, $userRec);
         return $message;
     } // sendChangeMailAddress_Mail
+
+
+
+
+    private function handleUserEditProfileRequests($hash): string
+    {
+        if ($hash) {
+            $tck = new Ticketing();
+            $tickRec = $tck->consumeTicket($hash);
+            $tickType = @$tickRec['_ticketType'];
+        }
+
+        $res = null;
+        if (getPostData('lzy-change-password')) {
+            $res = $this->handleChangePasswordRequest();
+
+        } elseif (getPostData('lzy-change-username') !== false) {
+            $res = $this->handleChangeUsernameRequest();
+
+        } elseif ($email = getPostData('lzy-change-email-request', false, true)) {
+            $res = $this->handleChangeEMailRequest($email);
+
+        } elseif ($tickType === 'lzy-change-email-request') {
+//        } elseif ($email = getPostData('lzy-change-email-confirm', false, true)) {
+//            $this->handleChangeEMailConfirm( $email );
+            $err = $this->handleChangeEMailConfirm($tickRec);
+            if ($err) {
+                $res = [false, $err, 'Error', '#lzy-profile-edit-3'];
+            } else {
+                $res = [false, '{{ lzy-email-change-successful }}', 'Message'];
+            }
+
+        } elseif (getUrlArg('lzy-create-accesslink', false, true)) {
+            $this->handleCreateAccesslinkRequest(); // ajax-request -> exits immediately
+
+        } elseif (getUrlArg('lzy-delete-accesslink', false, true)) {
+            $this->handleDeletelinkRequest(); // ajax-request -> exits immediately
+
+        } elseif (getUrlArg('lzy-delete-account', false, true)) {
+            $str = $this->deleteUserAccount();
+            $this->auth->logout();
+            $res = [false, $str, 'Message'];
+
+        } else {
+            return '';
+        }
+
+        if ($res) {
+            if (isset($res[2]) && ($res[2] === 'Overlay')) {
+                $this->page->addOverlay($res[1], false, false);
+
+            } elseif ($res[2] === 'Override') {
+                $this->page->addOverride($res[1], false, false);
+
+            } elseif ($res[2] === 'Error') {
+                $formSel = @$res[3];
+                $this->page->addJq("$('$formSel .lzy-form-top-error-msg').html( '{$res[1]}' );");
+
+            } else {
+                $this->page->addMessage($res[1], false, false);
+            }
+        }
+        return '';
+    } // handleUserEditProfileRequests
 
 } // UserEditProfile

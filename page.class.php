@@ -77,13 +77,13 @@ class Page
             $this->trans = null;
             $this->config = false;
         }
-    }
+    } // __construct
 
 
 
     public function set($varname, $val) {
         $this->$varname = $val;
-    }
+    } // set
 
 
 
@@ -111,7 +111,7 @@ class Page
         } else {
             return '';
         }
-    }
+    } // get
 
 
 
@@ -143,7 +143,6 @@ class Page
             }
         }
     } // updateFromFrontmatter
-
 
 
 
@@ -187,8 +186,6 @@ class Page
     } // appendValue
 
 
-    
-
 
     public function merge($page, $propertiesToReplace = '')
     {
@@ -214,13 +211,12 @@ class Page
 
 
 
-
-    public function getEncoded()
-    {
-        $encoded = serialize($this);
-        return $encoded;
-    } // getEncoded
-
+//??? obsolete? delete?
+//    public function getEncoded()
+//    {
+//        $encoded = serialize($this);
+//        return $encoded;
+//    } // getEncoded
 
 
 
@@ -231,12 +227,10 @@ class Page
 
 
 
-
     public function addBodyClasses($str, $replace = false)
     {
         $this->addToProperty('bodyTagClasses', ' '.$str, $replace);
     } // addBodyClasses
-
 
 
 
@@ -247,12 +241,10 @@ class Page
 
 
 
-
     public function addTemplate($str)
     {
         $this->addToProperty('template', $str, true);
     } // addContent
-
 
 
 
@@ -263,12 +255,10 @@ class Page
 
 
 
-
     public function addHead($str, $replace = false)
     {
         $this->addToProperty('head', $str, $replace);
     } // addHead
-
 
 
 
@@ -279,12 +269,10 @@ class Page
 
 
 
-
     public function addDescription($str, $replace = false)
     {
         $this->addToListProperty($this->description, $str, $replace);
     } // addDescription
-
 
 
 
@@ -295,12 +283,10 @@ class Page
 
 
 
-
     public function addCss($str, $replace = false)
     {
         $this->addToProperty('css', $str, $replace);
     } // addCss
-
 
 
 
@@ -324,8 +310,6 @@ class Page
 
 
 
-
-
     public function addJsFiles($str, $replace = false, $persisent = false)
     {
         $this->addModules($str, $replace);
@@ -336,11 +320,11 @@ class Page
 
 
 
-
-    public function addAutoAttrFiles($str, $replace = false, $persisent = false)
-    {
-        $this->addToListProperty($this->autoAttrFiles, $str, $replace);
-    } // addAutoAttrFiles
+//??? obsolete? delete?
+//    public function addAutoAttrFiles($str, $replace = false, $persisent = false)
+//    {
+//        $this->addToListProperty($this->autoAttrFiles, $str, $replace);
+//    } // addAutoAttrFiles
 
 
 
@@ -357,7 +341,6 @@ class Page
     {
         $this->addModules($str, $replace);
     } // addJQFiles
-
 
 
 
@@ -382,12 +365,10 @@ class Page
 
 
 
-
     public function addBodyLateInjections($str, $replace = false)
     {
         $this->addToProperty('bodyLateInjections', $str, $replace);
     } // addBodyLateInjections
-
 
 
 
@@ -398,13 +379,11 @@ class Page
 
 
 
-
     public function addMessage($str, $replace = false)
     {
         $str = str_replace("\n", '<br>', $str);
         $this->addToProperty('message', $str, $replace);
     } // addMessage
-
 
 
 
@@ -454,12 +433,10 @@ EOT;
 
 
 
-
     public function addPageSubstitution($str)
     {
         $this->pageSubstitution = $str;
     } // addMessage
-
 
 
 
@@ -473,13 +450,10 @@ EOT;
 
 
 
-
-
     public function setOverrideMdCompile($mdCompile)
     {
         $this->mdCompileModifiedContent = $mdCompile;
-    }
-
+    } // setOverrideMdCompile
 
 
 
@@ -507,12 +481,10 @@ EOT;
 
 
 
-
     public function setOverlayMdCompile($mdCompile)
     {
         $this->mdCompileModifiedContent = $mdCompile;
-    }
-
+    } // setOverlayMdCompile
 
 
 
@@ -539,7 +511,6 @@ EOT;
 
 
 
-
     public function addDebugMsg($str, $replace = false)
     {
         $this->addToProperty('debugMsg', $str, $replace);
@@ -547,12 +518,10 @@ EOT;
 
 
 
-
     public function addRedirect($str)
     {
         $this->addToProperty('redirect', $str, true);
     } // addRedirect
-
 
 
 
@@ -577,7 +546,6 @@ EOT;
 
 
 
-
     protected function addToListProperty(&$property, $var, $replace = false)
     {
         if (is_array($var)) {
@@ -599,8 +567,6 @@ EOT;
             }
         }
     } // addToListProperty
-
-
 
 
 
@@ -648,13 +614,10 @@ EOT;
 
 
 
-
-
     public function setOverlayClosable($on = true)
     {
         $this->overlay['closable'] = $on;
     }
-
 
 
 
@@ -735,8 +698,6 @@ EOT;
 
 
 
-
-
     public function applySubstitution()
     {
         $str = $this->pageSubstitution;
@@ -771,7 +732,6 @@ EOT;
 
 
 
-
     public function applyDebugMsg()
     {
         if ($debugMsg = $this->debugMsg) {
@@ -784,8 +744,6 @@ EOT;
         }
         return false;
     } // applyDebugMsg
-
-
 
 
 
@@ -814,48 +772,47 @@ EOT;
             header('Location: ' . $url);
             exit;
         }
-    }
+    } // applyRedirect
 
 
 
-    public function autoInvokeClassBasedModules($content)
-    {
-        $modified = false;
-        $class1 = '';
-        foreach ($this->config->classBasedModules as $class => $modules) {
-            $varname = 'class_'.$class;
-            if (isset($this->config->$varname) && ($class !== $this->config->$varname)) {
-                $class1 = $this->config->$varname;
-            }
-            if (preg_match("/class\=.*['\"\s] $class1 ['\"\s]/x", $content, $m)) {
-                foreach ($modules as $module => $rsc) {
-                    $modified = true;
-                    if ($module === 'cssFiles') {
-                        $this->addCssFiles($rsc);
-
-                    } elseif ($module === 'css') {
-                        $this->addCss($rsc);
-
-                    } elseif ($module === 'jqFiles') {
-                        $this->addJQFiles($rsc);
-
-                    } elseif ($module === 'jq') {
-                        $this->addJq($rsc);
-
-                    } elseif ($module === 'jsFiles') {
-                        $this->addJsFiles($rsc);
-
-                    } elseif ($module === 'jq') {
-                        $this->addJq($rsc);
-                    }
-                }
-                unset($this->config->classBasedModules[$class]); // avoid loading module multiple times
-            }
-        }
-        return $modified;
-    } // autoInvokeClassBasedModules
-
-
+//??? obsolete? delete?
+//    public function autoInvokeClassBasedModules($content)
+//    {
+//        $modified = false;
+//        $class1 = '';
+//        foreach ($this->config->classBasedModules as $class => $modules) {
+//            $varname = 'class_'.$class;
+//            if (isset($this->config->$varname) && ($class !== $this->config->$varname)) {
+//                $class1 = $this->config->$varname;
+//            }
+//            if (preg_match("/class\=.*['\"\s] $class1 ['\"\s]/x", $content, $m)) {
+//                foreach ($modules as $module => $rsc) {
+//                    $modified = true;
+//                    if ($module === 'cssFiles') {
+//                        $this->addCssFiles($rsc);
+//
+//                    } elseif ($module === 'css') {
+//                        $this->addCss($rsc);
+//
+//                    } elseif ($module === 'jqFiles') {
+//                        $this->addJQFiles($rsc);
+//
+//                    } elseif ($module === 'jq') {
+//                        $this->addJq($rsc);
+//
+//                    } elseif ($module === 'jsFiles') {
+//                        $this->addJsFiles($rsc);
+//
+//                    } elseif ($module === 'jq') {
+//                        $this->addJq($rsc);
+//                    }
+//                }
+//                unset($this->config->classBasedModules[$class]); // avoid loading module multiple times
+//            }
+//        }
+//        return $modified;
+//    } // autoInvokeClassBasedModules
 
 
 
@@ -902,7 +859,6 @@ EOT;
 
 
 
-
     public function prepareBodyEndInjections()
     {
         // interatively collects snippets for css, js, jq
@@ -928,7 +884,6 @@ EOT;
 
         return $modified;
     } // prepareBodyEndInjections
-
 
 
 
@@ -961,14 +916,14 @@ EOT;
 
 
 
-
     private function assembleInlineJsAndJq( &$bodyEndInjections )
     {
         $screenSizeBreakpoint = $this->config->feature_screenSizeBreakpoint;
         $pathToRoot = $this->lzy->pathToRoot;
         $rootJs  = <<<EOT
         var appRoot = '$pathToRoot';
-        var systemPath = '$pathToRoot{$this->config->systemPath}';
+        var absAppRoot = '{$GLOBALS['globalParams']['appRoot']}';
+        var systemPath = '{$GLOBALS['globalParams']['appRoot']}{$this->config->systemPath}';
         var screenSizeBreakpoint = $screenSizeBreakpoint
         var pagePath = '{$this->lzy->pagePath}';
 EOT;
@@ -1023,7 +978,6 @@ EOT;
     } // assembleInlineJsAndJq
 
 
-    
 
     public function applyContentSecurityPolicy()
     {
@@ -1099,7 +1053,6 @@ EOT;
 
 
 
-
     private function getModules($type)
     {
         $out = '';
@@ -1141,7 +1094,6 @@ EOT;
 
 
 
-
     private function exportCachedModule( $type )
     {
         $pagePath = $GLOBALS['globalParams']['pagePath'];
@@ -1174,7 +1126,6 @@ EOT;
 
 
 
-
     private function getFile( $filename, $isCss = false )
     {
         $filename = resolvePath($filename);
@@ -1195,7 +1146,6 @@ EOT;
         $out = "/* === File $filename =============== */\n$content\n\n\n\n";
         return $out;
     } // getFile
-
 
 
 
@@ -1283,8 +1233,6 @@ EOT;
 
 
 
-
-
     public function render()
     {
         $n = 0;
@@ -1347,7 +1295,6 @@ EOT;
 
 
 
-
     private function assembleHtml()
     {
         $html = $this->template;
@@ -1382,8 +1329,6 @@ EOT;
 
         return $html;
     } // assembleHtml
-
-
 
 
 
@@ -1425,7 +1370,6 @@ EOT;
 
 
 
-
     private function translateEmojisAndIcons( $html )
     {
         $out = '';
@@ -1463,7 +1407,6 @@ EOT;
 
 
 
-
     public function shieldVariablesForLateTranslation($str, $vars)
     {
         foreach ($vars as $varName) {
@@ -1471,7 +1414,6 @@ EOT;
         }
         return $str;
     } // shieldVariablesForLateTranslation
-
 
 
 
@@ -1518,7 +1460,6 @@ EOT;
 
 
 
-
     public function lateApplyMessage($html, $msg)
     {
         $msg = createWarning($msg);
@@ -1533,7 +1474,6 @@ EOT;
         }
         return $html;
     } // lateApplyMessage
-
 
 
 
@@ -1571,7 +1511,6 @@ EOT;
         }
         return $headInjections;
     } // renderRelLinks
-
 
 
 
@@ -1690,7 +1629,6 @@ EOT;
             }
         }
     } // extractSettings
-
 
 
 
