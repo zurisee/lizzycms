@@ -601,9 +601,17 @@ class Transvar
 
     public function getVariable($key, $lang = '')
     {
-        $lang = ($lang) ? $lang : $_SESSION["lizzy"]["lang"];
-        $out = false;
+        if (!$lang) {
+            $lang = $_SESSION['lizzy']['lang'];
+            $subLang = $_SESSION['lizzy']['subLang'];
+        } else {
+            $subLang = $lang;
+            if (preg_match('/(\w+)\d/', $lang, $m)) {
+                $lang = $m[1];
+            }
+        }
 
+        $out = false;
         if (isset($this->transvars[$key])) {
             $entry = $this->transvars[$key];
 
@@ -620,6 +628,9 @@ class Transvar
 
             } elseif (isset($entry['dontCache']) && $entry['dontCache']) {
                 $out = "{|{| $key |}|}";
+
+            } elseif (isset($entry[$subLang])) { // subLang, i.e. variant of lang
+                $out = $entry[$subLang];
 
             } elseif (isset($entry[$lang])) {
                 $out = $entry[$lang];
@@ -685,7 +696,7 @@ class Transvar
             $execType = $this->config->custom_permitUserCode;
         }
         if ($execType) {
-            $phpFile = $this->config->path_userCodePath.basename($name,'.php').'.php';
+            $phpFile = SERVICE_CODE_PATH.basename($name,'.php').'.php';
             if (file_exists($phpFile)) {
                 $page = &$this->page;
                 if (($execType === 'true') || ($execType === true)) {
@@ -1103,7 +1114,6 @@ EOT;
             }
             $source .= "\t$l\n";
         }
-        $source0 = $source;
         $source = ":::: .lzy-src-wrapper.lzy-src-wrapper{$this->varCount}\n::: .lzy-src-code\n## Code\n\t\{{ " .
             trim($source) .
             "\n\t}}\n::: .lzy-src-output\n## Output\n<div>@#@</div>\n:::\n::::\n";
@@ -1143,7 +1153,6 @@ EOT;
 EOT;
             $source .= compileMarkdownStr($source1);
         }
-
 
         return $source;
     } // injectMacroSource

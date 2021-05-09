@@ -89,11 +89,11 @@ lzy-form-email-notification-subject:
 
 lzy-required-value-missing:
     de: 'Bitte füllen Sie dieses Feld aus:'
+    de2: 'Bitte fülle dieses Feld aus:'
     _:  'Please fill in this entry field:'
 
 lzy-form-required-comment:
     de: '<span class="lzy-form-required-marker">*</span> Erforderliche Eingaben.'
-#    de: 'Mit <span class="lzy-form-required-marker">*</span> bezeichnete Felder sind Pflichtfelder.'
     _:  'Fields marked by <span class="lzy-form-required-marker">*</span> are mandatory.'
 
 lzy-yes:
@@ -109,6 +109,7 @@ lzy-form-data-preview-title:
 
 lzy-form-expired:
     de: 'Dieses Formular war zu lange offen,<br>Ihre Eingaben konnten nicht mehr akzeptiert werden.<br>Bitte versuchen Sie es erneut.'
+    de2: 'Dieses Formular war zu lange offen,<br>Deine Eingaben konnten nicht mehr akzeptiert werden.<br>Bitte versuche es erneut.'
     _:  'Sorry, this form expired.<br>Please try again.'
 
 
@@ -118,6 +119,7 @@ lzy-formelem-info-title:
 
 lzy-form-data-received-ok:
     de: "<p>Ihre Eingaben wurden übermittelt. Besten Dank.</p>"
+    de2: "<p>Deine Eingaben wurden übermittelt. Besten Dank.</p>"
     _: "<p>Your entries have been successfully transmitted. Thank you.</p>"
 
 lzy-form-feedback-local: "<strong>Feedback on localhost only:</strong>"
@@ -128,6 +130,7 @@ lzy-form-continue:
 
 lzy-form-empty-form-warning:
     de: Sie haben noch keine Eingaben gemacht.
+    de2: Du hast noch keine Eingaben gemacht.
     _:  You have not entered any data yet.
 
 lzy-form-empty-rec-received:
@@ -136,6 +139,7 @@ lzy-form-empty-rec-received:
 
 lzy-form-override-honeypot:
     de: '<h3>Vorsichtsmassnahme gegen Spam</h3><p>Bitte geben Sie Ihren Familienname erneut ein, diesmal in GROSSBUCHSTABEN:</p>'
+    de2: '<h3>Vorsichtsmassnahme gegen Spam</h3><p>Bitte gib deinen Familienname erneut ein, diesmal in GROSSBUCHSTABEN:</p>'
     _:  '<h3>As a measure of precaution against spam</h3><p>Please enter your last name again, this time in CAPITAL LETTERS:</p>'
 
 lzy-form-override-honeypot-label:
@@ -144,14 +148,17 @@ lzy-form-override-honeypot-label:
 
 lzy-form-duplicate-data:
     de: '<h2>Hinweis</h2><p>Ihre Eingaben haben wir bereits früher empfangen.<br>Entsprechend wurde jetzt nichts abgespeichert.</p>'
+    de2: '<h2>Hinweis</h2><p>Deine Eingaben haben wir bereits früher empfangen.<br>Entsprechend wurde jetzt nichts abgespeichert.</p>'
     _:  '<h2>Note</h2><p>Your input has been received before.</p><p>Therefore, nothing has been stored this time.</p>'
 
 lzy-form-email-confirmation-info:
     de: 'Wenn Sie Ihre E-Mail Adresse hier eingeben, erhalten Sie eine Bestästigung per E-Mail.'
+    de2: 'Wenn du deine E-Mail Adresse hier eingibst, erhältst du eine Bestästigung per E-Mail.'
     _:  'If you fill in your e-mail address, we will send you confirmation message.'
 
 lzy-form-confirmation-email-sent:
     de: 'Wir haben Ihnen eine Bestätigung per E-Mail geschickt.'
+    de2: 'Wir haben dir eine Bestätigung per E-Mail geschickt.'
     _:  'We have sent a confirmation to your e-mail address.'
 
 lzy-form-response-email-template-not-found:
@@ -367,6 +374,7 @@ lzy-lang-es:
 
 #--- Config Popup ------------------------
 lzy-config-save:
+    de: Änderungen speichern
     _: Save changes
 
 
@@ -407,6 +415,14 @@ lzy-onetimelogin-email-info-text:
         Dieser Code ist nur ein einziges Mal und nur während 15 Minuten gültig.</p>
         <p>Damit dies funktioniert, muss Ihre E-Mail-Adresse bei uns registriert sein.
         Kontaktieren Sie den {{ webmaster_link }}, falls dies nicht der Fall ist.</p>
+    de2: |
+        <p>Gib deine <strong>E-Mail-Adresse</strong> ein. <br>
+        &rarr; Du erhältst dann eine Mail mit einem Zugangs-Link.
+        Klicke auf diesen Link. So bist du automatisch im Browser angemeldet.</p>
+        <p>Der Link enthält einen <strong>Zugangs-Code</strong>.
+        Dieser Code ist nur ein einziges Mal und nur während 15 Minuten gültig.</p>
+        <p>Damit dies funktioniert, muss deine E-Mail-Adresse bei uns registriert sein.
+        Kontaktiere den {{ webmaster_link }}, falls dies nicht der Fall ist.</p>
     en: |
         <p>Enter your <strong>e-mail address</strong>.<br>&rarr;
         You will then get an e-mail containing a link. Click on that link to open the web-page you requested.</p>
@@ -431,6 +447,7 @@ login-email-prompt:
 
 Login comment:
     de: Um diese Seite zu sehen, benötigen Sie gültige Zugangsdaten.
+    de2: Um diese Seite zu sehen, benötist du gültige Zugangsdaten.
     en: To see this page you need valid credentials.
 
 Logout:
@@ -439,18 +456,22 @@ Logout:
 
 Login failed:
     de: Benutzername oder Kennwort passen nicht.<br />Bitte versuchen Sie es erneut.
+    de2: Benutzername oder Kennwort passen nicht.<br />Bitte versuche es erneut.
     en: User unknown or password incorrect.<br />Please try again.
 
 Insufficient privileges:
     de: Ihre Zugangsberechtigung genügt nicht für diese Seite.
+    de2: Deine Zugangsberechtigung genügt nicht für diese Seite.
     en: Your user privileges are insufficient to view this page.
 
 Err empty username:
     de: Bitte geben Sie Ihren Benutzernahmen ein
+    de2: Bitte big deinen Benutzernahmen ein
     en: Please enter your user name
 
 Err empty password:
     de: Bitte geben Sie Ihr Kennwort ein
+    de2: Bitte gib dein Kennwort ein
     en: Please enter your password
 
 LoginLink:
@@ -483,11 +504,13 @@ Open user popup:
 
 page requires login:
     de: "Sie müssen angemeldet sein, um die gesuchte Seite sehen zu können."
+    de2: "Du musst angemeldet sein, um die gesuchte Seite sehen zu können."
     en: "You need to be logged in to see the requested page."
 
 
 validity-period expired:
     de: Bitte melden Sie sich erneut an, da zu viel Zeit verstrichen ist seit Ihrer letzten Anmeldung.
+    de2: Bitte melde dich erneut an, da zu viel Zeit verstrichen ist seit deiner letzten Anmeldung.
     en: Please login again, session time has expired.
 
 Or request one-time-access-link:
@@ -500,14 +523,17 @@ email required for one-time-access-link:
 
 lzy-login-successful:
     de: 'Sie sind jetzt angemeldet.'
+    de2: 'Du bist jetzt angemeldet.'
     _: 'You are successfully logged in now.'
 
 lzy-login-successful-as:
     de: 'Sie sind jetzt angemeldet als'
+    de2: 'Du bist jetzt angemeldet als'
     _: 'You are successfully logged in now as'
 
 lzy-logout-successful:
     de: 'Sie sind jetzt abgemeldet.'
+    de2: 'Du bist jetzt abgemeldet.'
     _: 'You are successfully logged out now.'
 
 lzy-login-failed:
@@ -516,6 +542,7 @@ lzy-login-failed:
 
 lzy-insufficient-privilege:
     de: 'Sie haben keine Berechtigung für die Option'
+    de2: 'Du hast keine Berechtigung für die Option'
     _: 'Insufficient privilege for option'
  
 lzy-create-accesscode-needs-username:
@@ -562,11 +589,13 @@ lzy-create-accesscode-user-unknown:
 
 un-pw-login-info:
     de: "Geben Sie Ihren Benutzernamen ein.<br>Kontaktieren Sie den {{ webmaster_link }}, falls Sie noch keine Zugangsdaten besitzen."
+    de2: "Gib deinen Benutzernamen ein.<br>Kontaktiere den {{ webmaster_link }}, falls du noch keine Zugangsdaten hast."
     en: "Enter your username.<br>Contact the {{ webmaster_link }} if you don&#39;t have credentials for this website."
 
 #login-password-info:
 login-password-login-info:
     de: "Geben Sie Ihr Kennwort ein.Kontaktieren Sie den {{ webmaster_link }}, falls Sie das Kennwort vergessen haben oder ein sonstiges Problem aufgetreten ist."
+    de2: "Gib dein Kennwort ein.Kontaktiere den {{ webmaster_link }}, falls du das Kennwort vergessen hast oder ein sonstiges Problem aufgetreten ist."
     en: "Enter your password.<br>Contact the {{ webmaster_link }} if you forgot your password or some other problem has come up."
 
 info-password-login-title:
@@ -604,6 +633,7 @@ info-password-login-title:
 
 Login-Email:
     de: Ihre E-Mail Adresse
+    de2: Deine E-Mail Adresse
     en: Your e-mail address
 
 onetime-link-send:
@@ -612,10 +642,12 @@ onetime-link-send:
 
 Err empty username or email:
     de: Geben Sie Ihren Benutzernamen oder Ihre E-Mail-Adresse ein.
+    de2: Gib deinen Benutzernamen oder deine E-Mail-Adresse ein.
     en: Enter your username or e-mail address.
 
 Err empty email:
     de: Sie müssen eine E-Mail Adresse eingeben
+    de2: Du musst eine E-Mail Adresse eingeben
     en: You need to enter an e-mail address
 
 
@@ -624,8 +656,15 @@ lzy-define-new-password:
     _:  'Define New Password'
 
 lzy-define-new-password-text:
-    de: '<strong>Achtung</strong>:<br>Sie haben sich eben mit einem "Einmal-Code" angemeldet. Dieser wird künftig nicht mehr funktionieren. Sie können hier Ihr neues persönliches Kennwort festlegen:'
-    _:  '<strong>Note</strong>:<br>You just logged in by means of a "one-time code", which will not work in the future. Here you can define your own password which will continue to work in the future:'
+    de: |
+        <strong>Achtung</strong>:<br>Sie haben sich eben mit einem "Einmal-Code" angemeldet.
+        Dieser wird künftig nicht mehr funktionieren. Sie können hier Ihr neues persönliches Kennwort festlegen:
+    de2: |
+        <strong>Achtung</strong>:<br>Du hast dich eben mit einem "Einmal-Code" angemeldet.
+        Dieser wird künftig nicht mehr funktionieren. Du kannst hier dein neues persönliches Kennwort festlegen:
+    _:  |
+        <strong>Note</strong>:<br>You just logged in by means of a "one-time code", which will not work in the future.
+        Here you can define your own password which will continue to work in the future:
 
 
     
@@ -667,10 +706,12 @@ lzy-add-users-send:
 #--- Insecure Connection ----------------------------
 Warning insecure connection:
     de: "Achtung: die Verbindung zum Webhost ist nicht gesichert (https). Sie können sich deshalb nicht anmelden."
+    de2: "Achtung: die Verbindung zum Webhost ist nicht gesichert (https). Du kannst dich deshalb nicht anmelden."
     en: "Warning: your connection to this webhost is insecure (https). For this reason you cannot login."
 
 Please switch to:
     de: Bitte wechseln Sie auf
+    de2: Bitte wechsle auf
     en: Please switch to
 
 
@@ -680,9 +721,11 @@ Please switch to:
 #--- Edit Data --------------------------------------
 lzy-DB-currently-locked: 
     de: Sie können die Datenbank derzeit nicht bearbeiten. <br> Sie ist von einer anderen Person belegt.
+    de2: Du kannst die Datenbank derzeit nicht bearbeiten. <br> Sie ist von einer anderen Person belegt.
     _: You cannot edit the database at this time. <br> Somebody else is already is already busy.
 lzy-discard-all-changes: 
     de: Möchten Sie alle Änderungen verwerfen?
+    de2: Möchtest du alle Änderungen verwerfen?
     _:  Would you like to discard all changes?
 lzy-data-add-record:
     de: Datensatz bzw. Zeile oberhalb hinzufügen
@@ -804,6 +847,9 @@ lzy-config-button:
     de: |
         Dieses Feld ist momentan gesperrt, weil es gerade von jemand anderem bearbeitet wird.\n\n
         Bitte versuchen Sie es in ein paar Minuten nochmals. (Seite muss dann neu geladen werden!)
+    de2: |
+        Dieses Feld ist momentan gesperrt, weil es gerade von jemand anderem bearbeitet wird.\n\n
+        Bitte versuche es in ein paar Minuten nochmals. (Seite muss dann neu geladen werden!)
     _: |
         This field is currently locked because somebody else is editing it.\n\n
         Please try again in a few minutes. (Remember to reload the page when trying again.)
@@ -827,14 +873,17 @@ lzy-link-expired:
 
 lzy-link-expired-explanation:
     de: 'Der Link, mit dem Sie diese Website aufgerufen haben, ist abgelaufen oder war nie gültig:'
+    de2: 'Der Link, mit dem du diese Website aufgerufen hast, ist abgelaufen oder war nie gültig:'
     _:  'The link you used to access this website has expired or has never been valid:'
 
 lzy-signup-username-not-available:
     de: 'Benutzername bereits vergeben - bitte wählen Sie einen anderen.'
+    de2: 'Benutzername bereits vergeben - bitte wähle einen anderen.'
     _:  'Username already taken - please chose another one.'
 
 lzy-email-change-successful:
     de: 'Ihre neue E-Mail Adresse wurde gespeichert'
+    de2: 'Deine neue E-Mail Adresse wurde gespeichert'
     _:  'Your new e-mail address has been stored successfully'
 
 
