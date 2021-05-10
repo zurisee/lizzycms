@@ -43,7 +43,7 @@ $this->addMacro($macroName, function () {
             $disablePageCaching = true;
         }
 		$str = preg_replace('/\W$/', '', trim($str));
-		if ($dot) {
+		if ($dot && ($n > 3)) {
 			$str .= '.';
 		}
 		$str = strtoupper($str[0]).substr($str, 1);
@@ -53,5 +53,6 @@ $this->addMacro($macroName, function () {
         $str = "<$wrapper class='$class'>" . ucfirst($str) . "</$wrapper>";
     }
     $this->disablePageCaching = $disablePageCaching;
+    $this->optionAddNoComment = true;
 	return$str;
 });
