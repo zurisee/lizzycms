@@ -552,23 +552,27 @@ class LizzyMarkdown
 			}
 			$l = $this->postprocessShieldedTags($l, $preCode);
 
-            if (preg_match('|^<p>({{.*}})</p>$|', $l, $m)) { // remove <p> around variables/macros alone on a line
+            // remove <p> around variables/macros alone on a line:
+            if (preg_match('|^<p>({{.*}})</p>$|', $l, $m)) {
                 $l = $m[1];
-            }
-            if (preg_match('|^<p>(<.*>)</p>$|', $l, $m)) { // remove <p> around pure HTML on a line
-                $l = $m[1];
-            }
-            if (preg_match('|^<p> \s* ( </? ([^>\s]*) .* )|x', $l, $m)) { // remove <p> before pure HTML
-                $tag = $m[2];
-                if (in_array($tag, $this->blockLevelElements)) {
+
+                // remove <p> around pure HTML on a line:
+            } elseif (preg_match('|^<p> (< (.*?) > .* </ \2 > ) </p>$|x', $l, $m)) {
+                if (in_array($m[2], $this->blockLevelElements)) {
                     $l = $m[1];
                 }
-            }
-
-            if (preg_match('|^( .* </? (\w+) [^>]* > ) </p>\s*$|x', $l, $m)) { // remove <p> before pure HTML
-                $tag = $m[2];
-                if (in_array($tag, $this->blockLevelElements)) {
-                    $l = $m[1];
+            } else {
+                if (preg_match('|^<p> \s* ( </? ([^>\s]*) .* )|x', $l, $m)) { // remove <p> before pure HTML
+                    $tag = $m[2];
+                    if (in_array($tag, $this->blockLevelElements)) {
+                        $l = $m[1];
+                    }
+                }
+                if (preg_match('|^( .* </? (\w+) [^>]* > ) </p>\s*$|x', $l, $m)) { // remove <p> before pure HTML
+                    $tag = $m[2];
+                    if (in_array($tag, $this->blockLevelElements)) {
+                        $l = $m[1];
+                    }
                 }
             }
 
