@@ -349,6 +349,7 @@ class SiteStructure
             $currLevel = $currTreeElem['level'];
             $currInx = $listInx;
 
+            $currTreeElem['listInx'] = $listInx;
             $currTreeElem['parentInx'] = $parentInx;
             $currTreeElem['folder'] = $path1;
             if ($currTreeElem['showthis']) {
