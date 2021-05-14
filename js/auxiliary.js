@@ -287,24 +287,43 @@ function isServerErrMsg(json) {
 
 
 function lzyReload( arg, url, confirmMsg ) {
-    let call = window.location.pathname.replace(/\?.*/, '');
+    let newUrl = window.location.pathname.replace(/\?.*/, '');
     if (typeof url !== 'undefined') {
-        call = url.trim();
+        newUrl = url.trim();
     }
     if (typeof arg !== 'undefined') {
-        call = appendToUrl(call, arg);
+        newUrl = appendToUrl(newUrl, arg);
     }
     if (typeof confirmMsg !== 'undefined') {
         lzyConfirm(confirmMsg).then(function() {
-            console.log('initiating page reload: "' + call + '"');
-            window.location.replace(call);
+            console.log('initiating page reload: "' + newUrl + '"');
+            window.location.replace(newUrl);
         });
     } else {
-        console.log('initiating page reload: "' + call + '"');
-        window.location.replace(call);
+        console.log('initiating page reload: "' + newUrl + '"');
+        window.location.replace(newUrl);
     }
 } // lzyReload
 
+
+
+function lzyReloadPost( url, data ) {
+    let form = '';
+    if (typeof data === 'string') {
+        form = '<form id="lzy-tmp-form" method="post" action="' + url + '" style="display:none"><input type="hidden" name="lzy-tmp-value" value="' + data + '"></form>';
+    } else if (typeof data === 'object') {
+        form = '<form id="lzy-tmp-form" method="post" action="' + url + '" style="display:none">';
+
+        for (let key in data) {
+            let val = data[ key ];
+            form += '<input type="hidden" name="' + key + '" value="' + val + '">';
+        }
+
+        form += '</form>';
+    }
+    $( 'body' ).append( form );
+    $('#lzy-tmp-form').submit();
+} // lzyReloadPost
 
 
 
