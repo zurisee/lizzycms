@@ -17,22 +17,15 @@ $this->addMacro($macroName, function ( ) {
         return '';
     }
 
-    $pageNumber = $this->siteStructure->currPageRec['inx'] + 1 + $offset;
-    $out = "<span class='invisible'>{{ Seite }}</span> $pageNumber";
-    if ( $addNumberOfPages ) {
-        $nPages = $this->siteStructure->getNumberOfPages() + $offset;
-        $out .= " {{ of }} $nPages</span><span aria-hidden='true'> $pageNumber / $nPages</span>";
-    } else {
-        $out .= "</span><span aria-hidden='true'> $pageNumber</span>";
-    }
+    $pageNumber = $this->siteStructure->currPageRec['listInx'] + 1 + $offset;
 
     if ( $addNumberOfPages ) {
         $nPages = $this->siteStructure->getNumberOfPages() + $offset;
-        $out = "<span class='invisible'>{{ page }} $pageNumber {{ of }} $nPages</span> <span aria-hidden='true'>$pageNumber / $nPages</span>";
+        $out = "<span class='invisible'>{{ page }} $pageNumber {{ of }} $nPages</span> <span aria-hidden='true'>$pageNumber<span class='lzy-pg-no'></span> / $nPages</span>";
 
     } else {
         $out = "<span class='invisible'>{{ page }}</span> $pageNumber";
     }
-
+    $this->optionAddNoComment = true;
 	return $out; //$pageNumber;
 });
