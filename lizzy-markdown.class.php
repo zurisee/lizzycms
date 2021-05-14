@@ -45,7 +45,7 @@ class LizzyMarkdown
 
     private $blockLevelElements =
         ['address', 'article', 'aside', 'audio', 'video', 'blockquote', 'canvas', 'dd', 'div', 'dl',
-            'fieldset', 'figcaption', 'figure', 'figcaption', 'footer', 'form',
+            'fieldset', 'figcaption', 'figure', 'figcaption', 'footer', 'form', 'iframe',
             'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hgroup', 'hr', 'noscript', 'ol', 'output',
             'p', 'pre', 'section', 'table', 'tfoot', 'ul'];
 
