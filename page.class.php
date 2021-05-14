@@ -331,6 +331,7 @@ class Page
 
     public function addJs($str, $replace = false)
     {
+        $str = "\n".trim($str, "\n");
         $this->addToProperty('js', $str, $replace);
     } // addJs
 
@@ -351,7 +352,7 @@ class Page
             return;
         }
 
-        $str = trim($str, " \t\n");
+        $str = "\n" . trim($str, " \t\n");
         if ($replace === 'append') {
             $this->addToProperty('jqEnd', $str);
 
