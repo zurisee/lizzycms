@@ -1249,7 +1249,7 @@ EOT;
 		$md->html5 = true;
 		$langPatt = '.'.$this->config->lang.'.';
 
-		foreach($mdFiles as $f) {
+		foreach($mdFiles as $inx => $f) {
 			$newPage = new Page($this);
 			if ($this->config->site_multiLanguageSupport) {
 				if (preg_match('/\.\w\w\./', $f) && (strpos($f, $langPatt) === false)) {
@@ -1348,7 +1348,12 @@ EOT;
                 $aside = $m[2];
             }
 
-			$wrapperId = "{$wrapperTag}_$id";
+            if ($inx === 0) {
+                $inx = '';
+            } else {
+                $inx = '-' . ($inx+1);
+            }
+			$wrapperId = "{$wrapperTag}_$id$inx";
 			$wrapperCls = "{$wrapperTag}_$cls";
 			$str = "\n\t\t    <$wrapperTag id='$wrapperId' class='lzy-section $editingClass$wrapperCls'$dataFilename>\n$str\t\t    </$wrapperTag><!-- /lzy-src-wrapper -->\n";
 			if ($aside) {
