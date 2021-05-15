@@ -110,3 +110,14 @@
     content: "→ ";
   }
 }
+
+
+// === Tooltipster
+
+.lzy-tooltip {
+  border-bottom: 1px dashed #ddd;
+}
+.lzy-tooltip:hover {
+  border-bottom: 1px solid black;
+}
+
