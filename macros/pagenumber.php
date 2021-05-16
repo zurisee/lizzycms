@@ -21,11 +21,15 @@ $this->addMacro($macroName, function ( ) {
 
     if ( $addNumberOfPages ) {
         $nPages = $this->siteStructure->getNumberOfPages() + $offset;
-        $out = "<span class='invisible'>{{ page }} $pageNumber {{ of }} $nPages</span> <span aria-hidden='true'>$pageNumber<span class='lzy-pg-no'></span> / $nPages</span>";
+
+        // inject understandable text for screen-readers:
+        $out = "<span class='invisible'>{{ page }} $pageNumber {{ of }} $nPages</span> <span aria-hidden='true'><span class='lzy-page-nr-prefix'>$pageNumber<span class='lzy-page-nr-postfix'></span> / $nPages</span>";
 
     } else {
-        $out = "<span class='invisible'>{{ page }}</span> $pageNumber";
+        $out = "<span class='invisible'>{{ page }}</span> <span class='lzy-page-nr-prefix'>$pageNumber<span class='lzy-page-nr-postfix'>";
     }
+    $out = "<div class='lzy-pagenumber'>$out</div>";
+
     $this->optionAddNoComment = true;
 	return $out; //$pageNumber;
 });
