@@ -2150,14 +2150,14 @@ EOT;
     private function definePageSwitchLinks()
     {
         $nextLabel = $this->trans->getVariable('lzy-next-page-link-label');
-        if (strpos($nextLabel, '$nextLabel') !== false) {
-            $nextLabelChar = $this->config->isLegacyBrowser ? '&gt;' : '&#9002;';
-            $nextLabel = str_replace('$nextLabel', $nextLabelChar, $nextLabel);
+        if (strpos($nextLabel, '%nextLabel%') !== false) {
+            $nextLabelChar = $this->config->isLegacyBrowser ? '&gt;' : '〉';
+            $nextLabel = str_replace('%nextLabel%', $nextLabelChar, $nextLabel);
         }
         $prevLabel = $this->trans->getVariable('lzy-prev-page-link-label');
-        if (strpos($prevLabel, '$prevLabel') !== false) {
-            $prevLabelChar = $this->config->isLegacyBrowser ? '&lt;' : '&#9001;';
-            $prevLabel = str_replace('$prevLabel', $prevLabelChar, $prevLabel);
+        if (strpos($prevLabel, '%prevLabel%') !== false) {
+            $prevLabelChar = $this->config->isLegacyBrowser ? '&lt;' : '〈';
+            $prevLabel = str_replace('%prevLabel%', $prevLabelChar, $prevLabel);
         }
         $nextTitle = $this->trans->getVariable('lzy-next-page-link-title');
         if ($nextTitle) {

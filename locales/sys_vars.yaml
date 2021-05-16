@@ -238,19 +238,16 @@ opens slack app:
     en: Opens your Slack app in a new window
 
 
-lzy-next-page-link-label: "<span class='nextLinkArrow lzy-focus-only' title='{{ lzy-to-next-page-title }}'>{{ lzy-to-next-page-title }}$nextLabel</span>"
-lzy-prev-page-link-label: "<span class='prevLinkArrow lzy-focus-only' title='{{ lzy-to-prev-page-title }}'>$prevLabel{{ lzy-to-prev-page-title }}</span>"
-#lzy-next-page-link-label: "<span class='nextLinkArrow' title='{{ lzy-to-next-page-title }}'>$nextLabel</span><span class='lzy-focus-only'>{{ lzy-to-next-page-title }}</span>"
-#lzy-prev-page-link-label: "<span class='prevLinkArrow' title='{{ lzy-to-prev-page-title }}'>$prevLabel</span><span class='lzy-focus-only'>{{ lzy-to-prev-page-title }}</span>"
-#lzy-next-page-label: "<span class='nextLinkArrow' title='{{ lzy-to-next-page-title }}'></span>"
-#lzy-prev-page-label: "<span class='prevLinkArrow' title='{{ lzy-to-prev-page-title }}'></span>"
+lzy-next-page-link-label: "<span class='lzy-next-link-arrow lzy-focus-only-visible' title='{{ lzy-to-next-page-title }}'>{{ lzy-to-next-page-title }}</span>%nextLabel%"
+lzy-prev-page-link-label: "%prevLabel%<span class='lzy-prev-link-arrow lzy-focus-only-visible' title='{{ lzy-to-prev-page-title }}'>{{ lzy-to-prev-page-title }}</span>"
+
 lzy-to-next-page-title:
-    de: zur nächsten Seite
-    _: to next page
+    de: 'zur nächsten Seite&nbsp;'
+    _: 'to next page&nbsp;'
 
 lzy-to-prev-page-title:
-    de: zur vorherigen Seite
-    _: to previous page
+    de: '&nbsp;zur vorherigen Seite'
+    _: '&nbsp;to previous page'
 
 
 

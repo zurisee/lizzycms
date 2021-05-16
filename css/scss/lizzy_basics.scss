@@ -129,15 +129,15 @@ figure a {
 	right: 0;
 	z-index: 999;
 }
-.lzy-focus-only {
+.lzy-focus-only-visible {
 	display: none;
 	color: transparent;
 	background: transparent;
 	position: absolute;
 	right: -1000vw;
 }
-a:hover > .lzy-focus-only,
-a:focus > .lzy-focus-only {
+a:hover > .lzy-focus-only-visible,
+a:focus > .lzy-focus-only-visible {
 	display: inline-block;
 	color: black;
 	background: beige;
