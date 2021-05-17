@@ -93,6 +93,7 @@ $this->addMacro($macroName, function () {
 
     // link around img
     if ($link) {
+        $link = resolvePath($link, true);
         require_once SYSTEM_PATH . 'link.class.php';
         $cl = new CreateLink($this->lzy);
 
