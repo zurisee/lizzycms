@@ -128,14 +128,23 @@ figure a {
 	opacity: 0.7;
 }
 
-
+.lzy-no-decoration {
+	text-decoration: none;
+	border-bottom: none;    
+}
 
 // === SkipLinks
 .lzy-skiplinks {
-	display: none;
 	position:absolute;
 	left:0;
 	top:0;
+	width: 1px;
+	height: 1px;
+	h1 {
+		position:absolute;
+		top: 0;
+		left: -10000px;
+	}
 	li {
 		list-style: none;
 	}
@@ -242,6 +251,11 @@ a:focus > .lzy-focus-only-visible {
 	z-index: 999;
 }
 
+
+// === Header
+.lzy-header {
+	
+}
 
 
 // === Footer
