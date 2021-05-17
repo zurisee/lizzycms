@@ -696,7 +696,7 @@ class Transvar
             $execType = $this->config->custom_permitUserCode;
         }
         if ($execType) {
-            $phpFile = SERVICE_CODE_PATH.basename($name,'.php').'.php';
+            $phpFile = USER_CODE_PATH.basename($name,'.php').'.php';
             if (file_exists($phpFile)) {
                 $page = &$this->page;
                 if (($execType === 'true') || ($execType === true)) {
