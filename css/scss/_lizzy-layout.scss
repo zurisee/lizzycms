@@ -126,17 +126,21 @@ html:not(.lzy-responsive-fontsize) .lzy-default-layout {
 
 // === Footer
 .lzy-large-only,
-.lzy-small-only {
+.lzy-large-screen-only,
+.lzy-small-only,
+.lzy-small-screen-only {
 	display: inline-block;
 }
 
 // === Large Screen:
 .lzy-large-screen {
+    .lzy-small-screen-only,
     .lzy-small-only {
         display: none;
     }
 }
 .lzy-small-screen {
+    .lzy-large-screen-only,
     .lzy-large-only {
         display: none;
     }
@@ -336,7 +340,10 @@ html:not(.lzy-responsive-fontsize) .lzy-default-layout {
         font-size: var(--lzy-mobile-header-text-size, #{$mobile-header-font-size});
         font-weight: bold;
         margin: 0;
-        //color: var(--lzy-mobile-header-txt-color, $mobile-header-txt-color);
+        color: #{$mobile-header-txt-color};
+        color: var(--lzy-mobile-header-txt-color, #{$mobile-header-txt-color});
+        line-height: #{$mobile-header-height};
+        line-height: var(--lzy-mobile-header-height, #{$mobile-header-height});
     }
     button {
         height: #{$mobile-header-height};
