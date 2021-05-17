@@ -42,8 +42,6 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
         '[' => ']',
         '<' => '>',
     ];
-    // alternatives to ' and " -> doubles of following characters:
-    $extendedBracketChars = '!@#$%&:?';
 
     $assoc = false;
     while ($str || $assoc) {
@@ -58,8 +56,9 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
             $supportedBrackets = &$supportedBrackets1;
         }
         // extended brackets to enclose args: e.g. ## ... ##
+        // Note: special case '!!' -> skips translation to HTML-quotes
         $cc = false;
-        if (strpos($extendedBracketChars, $c) !== false) {
+        if (strpos(TRANSVAR_ARG_QUOTES, $c) !== false) {
             $cc = preg_quote("$c$c");
         }
         if ($cc && preg_match("/^ $cc ([^$c]+) $cc (.*) $/x", $str, $m)) {
@@ -117,13 +116,13 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
                     $val = $GLOBALS['globalParams']['isPrivileged'];
                 } elseif ($m[2] === 'isLoggedin') {
                     $val = $GLOBALS['globalParams']['isLoggedin'];
-                } else {
+                } elseif ($cc !== '\!\!') {
                     $val = str_replace(['"', "'"], ['&#34;', '&#39;'], $val);
                 }
                 if ($m[1]) {
                     $val = !$val;
                 }
-            } else {
+            } elseif ($cc !== '\!\!') {
                 $val = str_replace(['"', "'"], ['&#34;', '&#39;'], $val);
             }
         }
