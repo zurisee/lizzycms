@@ -170,9 +170,10 @@ EOT;
             $w = null;
         }
         list($w0, $h0) = getimagesize($this->srcFile);
+        $aspectRatio = null;
         if ($w && $h) {
             $aspectRatio = $h / $w;
-        } else {
+        } elseif ($h0 && $w0) {
             $aspectRatio = $h0 / $w0;
         }
         if (($w === null) && ($h === null)) {
@@ -190,7 +191,11 @@ EOT;
         $this->imgFullsizeWidth = $w0;
         $this->imgFullsizeHeight = $h0;
         if (!$this->sizesFactor) {
-            $this->sizesFactor = 900 / $w; // default
+            if ($w) {
+                $this->sizesFactor = 900 / $w; // default
+            } else {
+                $this->sizesFactor = 1;
+            }
         }
     } // getFileInfo
 
