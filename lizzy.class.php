@@ -58,6 +58,8 @@ define('MIN_SITEMAP_INDENTATION', 4);
 define('REC_KEY_ID', 	        '_key');
 define('TIMESTAMP_KEY_ID', 	    '_timestamp');
 define('PASSWORD_PLACEHOLDER', 	'●●●●');
+define('TRANSVAR_ARG_QUOTES', 	'!@#$%&:?');    // Special quotes to enclose transvar args: e.g. %% xy %%
+// Note: special case '!!' -> skips translation to HTML-quotes
 
 define('MKDIR_MASK',            0700); // permissions for file access by Lizzy
 define('MKDIR_MASK_WEBACCESS',  0755); // permissions for files cache
@@ -514,7 +516,8 @@ class Lizzy
         }
 
         // Handle resource accesses first: src='~page/...' -> local to page but need full path:
-        $p = $appRoot.$this->pathToRoot;
+//        $p = $appRoot.$this->pathToRoot;
+        $p = $appRoot.$this->pathToPage;
         $html = preg_replace(['|(src=[\'"])(?<!\\\\)~page/|', '|(srcset=[\'"])(?<!\\\\)~page/|'], "$1$p", $html);
 
         // Handle all other special links:
