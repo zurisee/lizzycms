@@ -1003,25 +1003,15 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
     // [link text](https://www.google.com)
     protected function parseLink($markdown)
     {
-        // check whether the marker really represents a strikethrough (i.e. there is a closing `)
-        if (preg_match('/^\[ (["\']) ( .+? ) \1 ]\( ( .+? ) \)/x', $markdown, $matches)) {
+        if (preg_match('/^\[ ( [^]]+ ) ]\( ( [^)]+ ) \)/x', $markdown, $matches)) {
+            if (preg_match('/^ (["\']) .* \1 $/x', $matches[1])) { // remove wrapping quotes
+                $matches[1] = substr($matches[1], 1, -1);
+            }
             return [
-                // return the parsed tag as an element of the abstract syntax tree and call `parseInline()` to allow
-                // other inline markdown elements inside this tag
-                ['link', $matches[2].']('.$matches[3]],
-                // return the offset of the parsed text
-                strlen($matches[0])
-            ];
-        } elseif (preg_match('/^\[ ( .+? ) ]\( ( .+? ) \)/x', $markdown, $matches)) {
-            return [
-                // return the parsed tag as an element of the abstract syntax tree and call `parseInline()` to allow
-                // other inline markdown elements inside this tag
                 ['link', $matches[1].']('.$matches[2]],
-                // return the offset of the parsed text
                 strlen($matches[0])
             ];
         }
-        // in case we did not find a closing ~~ we just return the marker and skip 2 characters
         return [['text', '['], 1];
     }
 
