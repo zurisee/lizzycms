@@ -63,10 +63,10 @@ $this->addMacro($macroName, function () {
 
     // Preset modes:
     if ($mode === 'accordion') {
-        $this->page->addJq("$('$widgetSelector').addClass('lzy-accordion'); setMode();\n");
+        $this->page->addJq("$('$widgetSelector').addClass('lzy-accordion');\n");
 
     } elseif ($mode === 'tabs') {
-        $this->page->addJq("$('$widgetSelector').addClass('lzy-tabs'); setMode();\n");
+        $this->page->addJq("$('$widgetSelector').addClass('lzy-tabs');\n");
     }
 
     if ($class) {
