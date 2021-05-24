@@ -1141,7 +1141,7 @@ EOT;
             $cachePath = MODULES_CACHE_PATH . $GLOBALS['globalParams']['pagePath'];
             $upPath = preg_replace('|.*?/|', '../', $cachePath);
             $corrPath = $upPath . $path;
-            $content = preg_replace('/url\( (["\']) /x', "url($1$corrPath", $content);
+            $content = preg_replace('/url\( (["\']?) /x', "url($1$corrPath", $content);
         }
 
         $out = "/* === File $filename =============== */\n$content\n\n\n\n";
