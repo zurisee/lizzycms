@@ -2225,7 +2225,8 @@ EOT;
         foreach ($lines as $line) {
             if (strpos($line, '__END__') === 0) {
                 break;
-            } elseif ($line && ($line[0] !== '#') && ($line[0] !== "\n")) { // skip commented and empty lines
+            }
+            if ($line && ($line[0] !== '#') && ($line[0] !== "\n")) { // skip commented and empty lines
                 $rawData .= $line;
             }
         }
