@@ -747,6 +747,10 @@ dd {
 	.print-page-break {
 		page-break-after: always;
 	}
+	.lzy-print-page-break-before {
+		page-break-before: always;
+		margin-top: 1.5cm;
+	}
 }
 @media screen {
 	.print-only {
@@ -846,6 +850,7 @@ body {
 		height: 2em;
 		line-height: 2em;
 		vertical-align: middle;
+		padding: 0;
 	}
     input.lzy-reveal-icon.lzy-reveal-icon {
         -webkit-appearance: none;
@@ -862,6 +867,9 @@ body {
         box-shadow: none;
     }
 
+	input.lzy-reveal-icon:focus {
+		outline: 1px solid magenta;
+	}
     input.lzy-reveal-icon::before {
         position: absolute;
         top: 0;
@@ -879,7 +887,8 @@ body {
         content: '\2503';
     }
     .lzy-reveal-controller label {
-        width: calc(100% - 2em);
+        //width: calc(100% - 2em);
+		width: calc(100% - 2.5em);
 		padding-left: 0.4em;
 		cursor: pointer;
     }
