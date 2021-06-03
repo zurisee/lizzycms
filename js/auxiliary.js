@@ -411,3 +411,11 @@ jQuery.fn.selText = function() {
         selection.addRange(range);
     }
 };
+
+// plug-in to select all focusable elements (https://coderwall.com/p/jqsanw/jquery-find-every-focusable-elements)
+// Usage: $('#my-container').find(':focusable')
+jQuery.extend(jQuery.expr[':'], {
+    focusable: function(el, index, selector){
+        return $(el).is('a, button, :input, [tabindex]');
+    }
+});
