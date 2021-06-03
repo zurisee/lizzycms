@@ -211,6 +211,9 @@ private $userConfigurableSettingsAndDefaults      = [
 
         $this->getConfigValues();
 
+        if  (getUrlArgStatic('debug')) {
+            $this->debug_enableDevMode = true;
+        }
         if ($this->debug_enableDevMode && file_exists(DEV_MODE_CONFIG_FILE)) {
             $this->getConfigValues(DEV_MODE_CONFIG_FILE);
         }
