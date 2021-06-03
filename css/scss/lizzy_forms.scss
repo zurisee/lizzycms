@@ -104,6 +104,9 @@ $formElemCommentColor: gray;      // --form-elem-comment-color
         width: 7em;
         width: var(--lzy-label-width, $label-width);
     }
+    .lzy-form-field-type-textarea .lzy-label-wrapper {
+        width: 100%;
+    }
     .lzy-label-wrapper,
     label {
 //        width: 7em;
@@ -537,8 +540,15 @@ $formElemCommentColor: gray;      // --form-elem-comment-color
     .lzy-formelem-show-info .lzy-icon-info::before {
         top: 30%;
     }
+
+
 } // lzy-form
 
+
+/* === info-tooltips =========================== */
+.lzy-formelem-info-text {
+    line-height: 1.15em;
+}
 
 
 /* === misc =========================================== */
@@ -573,9 +583,17 @@ $formElemCommentColor: gray;      // --form-elem-comment-color
     input {
         background-color: $formInputBgColor;
         background-color:var(--lzy-form-input-bg-color, $formInputBgColor);
+//        color: $formInputColor;
+//        color: var(--lzy-form-input-color, $formInputColor);
+        box-shadow: inset 0 0 0 1px #bbb;
+    }
+    textarea,
+    input:not(.lzy-reveal-controller-elem) {
         color: $formInputColor;
         color: var(--lzy-form-input-color, $formInputColor);
-        box-shadow: inset 0 0 0 1px #bbb;
+    }
+    input.lzy-reveal-controller-elem {
+        color: inherit;
     }
     .lzy-form-header {
         padding: 0.5em 0;
