@@ -143,7 +143,7 @@ EOT;
                 }
                 // e.g. $sizes = "(max-width: 600px) 125px, (max-width: 1200px) 250px, 900px"; // for img-width 25% of win width
                 if ($sizes) {
-                    $this->srcset .= " sizes='$sizes' width='{$this->w}' height='{$this->h}'";
+                    $this->srcset .= " sizes='$sizes' style='width: {$this->w}px; height: {$this->h}px;'";
                 }
             }
 
