@@ -11,6 +11,7 @@ $this->addMacro($macroName, function () {
 	$inx = $this->invocationCounter[$macroName] + 1;
 
     $gap_size = $this->getArg($macroName, 'gap_size', 'Height of inserted space. Use any form allowed in CSS, e.g. 3em, 20px or 1cm');
+    $class = $this->getArg($macroName, 'class', 'Class applied to DIV', '');
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
     if (trim($gap_size) === '') {
@@ -20,6 +21,7 @@ $this->addMacro($macroName, function () {
 	} elseif (preg_match('/^([\d\.]+)(.*)$/', $gap_size, $m)) {
 		$gap_size = ($m[1] / 2).$m[2];
 	}
-	$str = "\n<div id='$macroName$inx' class='lzy-vgap' style='margin:$gap_size 0;'>&nbsp;</div>\n";
+    $class = $class ? " $class" : '' ;
+	$str = "\n<div id='$macroName$inx' class='lzy-vgap$class' style='margin:$gap_size 0;'>&nbsp;</div>\n";
 	return $str;
 });
