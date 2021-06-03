@@ -589,7 +589,11 @@ class AjaxServer
         }
 
         if ($this->dataFile && file_exists( $this->dataFile)) {
-            $this->db = new DataStorage2(['dataFile' => $this->dataFile, 'includeKeys' => true]);
+            $this->db = new DataStorage2([
+                'dataFile' => $this->dataFile,
+                'includeKeys' => true,
+                'includeTimestamp' => true,
+                ]);
             return true;
         }
 
