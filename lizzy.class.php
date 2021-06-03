@@ -91,7 +91,6 @@ class Lizzy
 {
     private $lzyDb = null;  // -> SQL DB for caching DataStorage data-files
 	private $currPage = false;
-//	private $configPath = CONFIG_PATH;
 	private $systemPath = SYSTEM_PATH;
 	public  $pathToRoot;
 	public  $pagePath;
@@ -452,7 +451,8 @@ class Lizzy
                         break;
 
                     default:
-                        die("Error in handleHashes(): unknown tickType '$tickType'");
+                        mylog("Warning in handleHashes(): unknown tickType '$tickType'");
+                        return;
                 }
                 $this->initiateInBrowserUserNotification($res);   // inform user about login/logout etc.
 
@@ -516,7 +516,6 @@ class Lizzy
         }
 
         // Handle resource accesses first: src='~page/...' -> local to page but need full path:
-//        $p = $appRoot.$this->pathToRoot;
         $p = $appRoot.$this->pathToPage;
         $html = preg_replace(['|(src=[\'"])(?<!\\\\)~page/|', '|(srcset=[\'"])(?<!\\\\)~page/|'], "$1$p", $html);
 
@@ -1799,7 +1798,6 @@ EOT;
 
     private function determineLanguage()
     {
-        global $globalParams;
         $lang = getStaticVariable('lang');
 
         // check sitemap for language option:
@@ -1834,12 +1832,24 @@ EOT;
         }
 
         // publish resulting lang to rest of system:
-        $this->config->lang = $lang;
-        $globalParams['lang'] = $lang;
-        setStaticVariable('lang', $lang);
-        setStaticVariable('subLang', $subLang);
+        $this->setLanguage( $lang, $subLang );
         return $lang;
     } // determineLanguage
+
+
+
+    public function setLanguage( $lang, $subLang = false )
+    {
+        // publish resulting lang to rest of system:
+        if (!$subLang) {
+            $subLang = $lang;
+        }
+        $lang = preg_replace('/\d+/','', $lang);
+        $this->config->lang = $lang;
+        $GLOBALS['globalParams']['lang'] = $lang;
+        setStaticVariable('lang', $lang);
+        setStaticVariable('subLang', $subLang);
+    } // setLanguage
 
 
 
@@ -2207,7 +2217,7 @@ Available URL-commands:
 <a href='?help'>?help</a>		    this message
 <a href='?config'>?config</a>		    list configuration-items in the config-file
 <a href='?convert'>?convert</a>	    convert password to hash
-<a href='?debug'>?debug</a>		    adds 'debug' class to page on non-local host *)
+<a href='?debug'>?debug</a>		    activates DevMode and adds 'debug' class to page on non-local host *)
 <a href='?gitstat'>?gitstat</a>		displays the Lizzy-s GIT-status
 <a href='?hash'>?hash</a>		    create a hash value e.g. for accessCodes
 <a href='?accesscode'>?accesscode=user</a> create an accessCode forgiven user
@@ -2236,6 +2246,7 @@ Unset individually as ?xy=false or globally as ?reset
 </pre>
 
 EOT;
+        //<a href='?debug'>?debug</a>		    adds 'debug' class to page on non-local host *)
         //<a href='?reorg-css='>?reorg-css={file(s)}</a>take CSS file(s) and convert to SCSS (e.g. "?reorg-css=tmp/*.css")
         // TODO: printall -> add above
         $this->page->addOverlay(['text' => $overlay, 'closable' => 'reload']);
@@ -2303,6 +2314,10 @@ EOT;
         $this->trans->addVariable('prev_page', "<a href='~/{$this->siteStructure->prevPage}'>{{ lzy-prev-page-label }}</a>");
         $this->trans->addVariable('next_page_href', $this->siteStructure->nextPage);
         $this->trans->addVariable('prev_page_href', $this->siteStructure->prevPage);
+
+        if (isset($this->siteStructure->currPageRec['lang'])) {
+            $this->setLanguage( $this->siteStructure->currPageRec['lang'] );
+        }
     } // initializeSiteInfrastructure
 
 
