@@ -504,11 +504,18 @@ function getFile($pat, $removeComments = false, $removeEmptyLines = false)
 
 function zapFileEND($file)
 {
-    if (($p = strpos($file, "\n__END__")) !== false) {	// must be at beginning of line
-        $file = substr($file, 0, $p+1);
+    $p = strpos($file, "__END__");
+    if ($p === false) {
+        return $file;
+    }
+
+    if ($p === 0) {     // on first line?
+        return '';
+    } elseif ($file[ $p - 1] === "\n") {	// must be at beginning of line
+        $file = substr($file, 0, $p);
     }
     return $file;
-}
+} // zapFileEND
 
 
 
@@ -1774,7 +1781,7 @@ function writeLogStr($str, $errlog = false)
         $str = json_encode($str);
     }
     if (!$errlog) {
-        if (($globalParams['activityLoggingEnabled'] !== null) && !$globalParams['activityLoggingEnabled']) {
+        if ((@$globalParams['activityLoggingEnabled'] !== null) && !@$globalParams['activityLoggingEnabled']) {
             return;
         }
         file_put_contents(LOG_FILE, timestamp()."  $str\n\n", FILE_APPEND);
