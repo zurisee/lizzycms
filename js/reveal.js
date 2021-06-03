@@ -1,9 +1,9 @@
 // reveal.js
 
-
+// init:
 $('.lzy-reveal-controller-elem').each(function() {
 	const $this = $( this );
-	var $target = null;
+	let $target = null;
 
 	if ($this.prop('tagName') === 'SELECT') {		// case dropdown:
 		$('[data-reveal-target]', $this).each(function () {
@@ -33,60 +33,105 @@ $('.lzy-reveal-controller-elem').each(function() {
 			$this.attr('aria-expanded', 'false');
 		}
 	}
+
+	let $revealContainer = $target.closest('.lzy-reveal-container');
+	$revealContainer.find(':focusable').each(function (){
+		let $el = $(this);
+		let tabindex = $el.attr('tabindex');
+		if (typeof tabindex === 'undefined') {
+			tabindex = 0;
+		}
+		$el.addClass('lzy-focus-disabled').attr('tabindex', -1).data('tabindex', tabindex);
+	});
+}); // init
+
+
+
+// setup triggers:
+$('body').on('change', '.lzy-reveal-controller-elem', function(e) {
+	lzyOperateRevealPanel( this );
 });
-
-
-
-
-$('body').on('click change', '.lzy-reveal-controller-elem', function(e) {
+$('body').on('click', '.lzy-reveal-controller-elem', function(e) {
+	e.stopImmediatePropagation();
 	e.stopPropagation();
-	const $this = $( this );
-	var type = false;
-	var $target = null;
+});
+//Todo: make operatable by clicking on .lzy-reveal-controller:
+// $('body').on('click', '.lzy-reveal-controller', function(e) {
+// 	e.stopImmediatePropagation();
+// 	e.stopPropagation();
+// 	let $checkbox = $('.lzy-reveal-controller-elem', $( this ));
+// 	mylog('click controller: ' + $checkbox.prop('checked'));
+// 	$checkbox.prop('checked', !$checkbox.prop('checked'));
+// 	mylog('click controller: ' + $checkbox.prop('checked'));
+// 	// return false;
+// });
 
-	if ($this.prop('tagName') === 'SELECT') {				// case dropdown:
+
+
+function lzyOperateRevealPanel( that )
+{
+	const $revealController = $( that );
+	let type = false;
+	let $target = null;
+
+	if ($revealController.prop('tagName') === 'SELECT') {				// case dropdown:
 		type = 'dropdown';
-		$target = $( $( ':selected', $this ).attr('data-reveal-target') );
+		$target = $( $( ':selected', $revealController ).attr('data-reveal-target') );
 
 	} else {											// case radio and checkbox:
-		type = this.type;
-		$target = $( $this.attr('data-reveal-target') );
+		type = $revealController[0].type;
+		$target = $( $revealController.attr('data-reveal-target') );
 	}
 
 	if ( type === 'dropdown') {							// case select:
-		$('[data-reveal-target]', $this).each(function () {
+		$('[data-reveal-target]', $revealController).each(function () {
 			$( $(this).attr('data-reveal-target') ).parent().removeClass('lzy-elem-revealed');
 			$(this).attr('aria-expanded', 'false');
 		});
 
-		// now open selected:
+		// open selected:
 		$target.parent().addClass('lzy-elem-revealed');
-		$this.attr('aria-expanded', 'true');
+		$revealController.attr('aria-expanded', 'true');
 		return;
 
 	} else if (type === 'radio') { 						// case radio: close all others
-		$this.parent().siblings().each(function() {
-			const $this1 = $('.lzy-reveal-controller-elem', $( this ));
-			const $target1 = $( $this1.attr('data-reveal-target') );
+		$revealController.parent().siblings().each(function() {
+			const $revealController1 = $('.lzy-reveal-controller-elem', $( this ));
+			const $target1 = $( $revealController1.attr('data-reveal-target') );
 			const $container1 = $target1.parent();
-			$this1.attr('aria-expanded', 'false');
+			$revealController1.attr('aria-expanded', 'false');
 			$container1.removeClass('lzy-elem-revealed');
 		});
 
 	}
-	if ( $this.prop('checked') ) { // open:
+
+	// now operate:
+	const $revealContainer = $target.closest('.lzy-reveal-container');
+	const boundingBox = $revealContainer[0].getBoundingClientRect();
+	const marginTop = (-10 - Math.round(boundingBox.height)) + 'px';
+	$target.css({ transition: 'margin-top 0', marginTop: marginTop });
+	if ( !$revealContainer.hasClass('lzy-elem-revealed') ) { // open:
 		// set margin-top according to elem height:
-		const boundingBox = $target[0].getBoundingClientRect();
-		const marginTop = (-10 - Math.round(boundingBox.height)) + 'px';
-		$target.css({ marginTop: marginTop, transition: 'margin-top 0'});
+		$target.css({ transition: 'margin-top 0.3s' });
 		setTimeout(function () {
-			$target.css({transition: 'margin-top 0.3s' });
-			$this.attr('aria-expanded', 'true');
+			$revealController.attr('aria-expanded', 'true');
 			$target.parent().addClass('lzy-elem-revealed');
 		}, 20);
 
+		// ensable all focusable elements inside reveal-container:
+		$('.lzy-focus-disabled', $revealContainer).each(function () {
+			let $el = $( this );
+			let tabindex = $el.data('tabindex');
+			$el.attr('tabindex', tabindex);
+		});
+
 	} else { // close:
-		$this.attr('aria-expanded', 'false');
+		$revealController.attr('aria-expanded', 'false');
 		$target.parent().removeClass('lzy-elem-revealed');
+
+		// disable all focusable elements inside reveal-container:
+		$('.lzy-focus-disabled', $revealContainer).each(function () {
+			$( this ).attr('tabindex', -1);
+		});
 	}
-});
+} // lzyOperateRevealPanel
