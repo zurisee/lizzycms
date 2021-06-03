@@ -473,7 +473,7 @@ EOT;
             'jsFiles' => $this->jsFiles,
             'jq' => $this->jq,
             'jqFiles' => $this->jqFiles,
-            'modules' => $this->modules,
+//???            'modules' => $this->modules,
             'jsModules' => $this->jsModules
         ];
         $this->override = $args;
@@ -1547,10 +1547,10 @@ EOT;
                 fatalError("Trying to use 'runPHP' in frontmatter, but config option 'custom_permitUserCode' is not enabled.");
             }
             $phpFile = $hdr['runPHP'];
-            if ($phpFile[0] !== '-') {
-                $phpFile = '-' . $phpFile;
+            if ($phpFile[0] === '-') {
+                $phpFile = substr($phpFile, 1);
             }
-            $phpFile = USER_CODE_PATH . $phpFile;
+            $phpFile = SERVICE_CODE_PATH . $phpFile;
             if (file_exists($phpFile)) {
                 require $phpFile;
             } else {
@@ -1565,12 +1565,12 @@ EOT;
                 fatalError("Trying to use 'runPHPonce' in frontmatter, but config option 'custom_permitUserCode' is not enabled.");
             }
             $phpFile = $hdr['runPHPonce'];
-            if ($phpFile[0] !== '-') {
-                $phpFile = '-' . $phpFile;
+            if ($phpFile[0] === '-') {
+                $phpFile = substr($phpFile, 1);
             }
-            if (!isset($GLOBALS['lizzy']['runPHPonce'][$phpFile])) {
-                $GLOBALS['lizzy']['runPHPonce'][$phpFile] = true;
-                $phpFile = USER_CODE_PATH . $phpFile;
+            if (!isset($GLOBALS['globalParams']['runPHPonce'][$phpFile])) {
+                $GLOBALS['globalParams']['runPHPonce'][$phpFile] = true;
+                $phpFile = SERVICE_CODE_PATH . $phpFile;
                 if (file_exists($phpFile)) {
                     require $phpFile;
                 } else {
