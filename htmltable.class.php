@@ -31,6 +31,7 @@ class HtmlTable
         $this->tableCounter++;
         $this->helpText     = false;
         $this->tickHash     = false;
+        $this->specificRowClasses     = [];
         if ($options === 'help') {
             $this->helpText = [];
             $options = [];
@@ -76,7 +77,8 @@ class HtmlTable
             $this->headers          = $this->getOption('headersTop');   // synonyme for 'headers'
         }
         $this->headersLeft          = $this->getOption('headersLeft', '(optional) Row headers may be supplied in the form [A|B|C...]');
-        $this->headersAsVars        = $this->getOption('headersAsVars', '(optional) If true, header elements will be rendered as variables (i.e. in curly brackets).');
+//        $this->headersAsVars        = $this->getOption('headersAsVars', '(optional) If true, header elements will be rendered as variables (i.e. in curly brackets).');
+        $this->translateHeaders     = $this->getOption('translateHeaders', '(optional) If true, header elements will be translated if definition exists.');
         $this->showRowNumbers       = $this->getOption('showRowNumbers', '(optional) Adds a left most column showing row numbers.');
         $this->injectSelectionCol   = $this->getOption('injectSelectionCol', '(optional) Adds a column showing row selection checkboxes.');
         $this->hideMetaFields       = $this->getOption('hideMetaFields', '(optional) If true, system (or "meta") fields are not rendered (default: true).', true);
@@ -93,6 +95,8 @@ class HtmlTable
         $this->processInstructionsFile	= $this->getOption('processInstructionsFile', 'The same as \'process\' except that instructions are retrieved from a .yaml file');
         $this->suppressError        = $this->getOption('suppressError', '(optional) Suppresses the error message in case dataSource is not available.');
         $this->enableTooltips       = $this->getOption('enableTooltips', '(optional) Enables tooltips, e.g. for cells containing too much text. To use, apply a class-name containing "tooltip" to the targeted cell, e.g. "tooltip1".');
+        $this->export               = $this->getOption('export', '(optional) .');
+        $this->exportMetaElements   = $this->getOption('exportMetaElements', '(optional) .');
 
         $this->checkArguments();
 
@@ -145,6 +149,7 @@ class HtmlTable
         $out = $this->injectEditingFeatures();
         $this->convertLinks();
         $this->convertTimestamps();
+        $this->export();
         $out .= $this->renderHtmlTable() . $this->strToAppend;
         $out = <<<EOT
   <div class='lzy-table-wrapper $this->wrapperClass'{$this->liveDataSrcRef}>
@@ -154,6 +159,33 @@ EOT;
         return $out;
     } // render
 
+
+
+    private function export()
+    {
+        if (!$this->export) {
+            return;
+        }
+
+        // define temporary $structure to control export by datastorage:
+        $structure['key'] = 'index';
+        $structure['elemKeys'] = $this->data['hdr'];
+        foreach ($structure['elemKeys'] as $elemKey) {
+            $structure['elements'][$elemKey] = [ 'type' => 'string', 'name' => $elemKey ];
+        }
+
+        $dbExport = new DataStorage2([
+            'dataSource' => $this->export,
+            'structureDef' => $structure,
+            'includeKeys' => false,
+            'includeTimestamp' => false,
+        ]);
+
+        // remove header row (it's already handled in $structure)
+        $data = $this->data;
+        array_shift($data);
+        $dbExport->write( $data );
+    } // export
 
 
 
@@ -289,10 +321,13 @@ EOT;
 
         $data = &$this->data;
 
-        // automatically translate headers beginning with '-':
-        foreach ($this->headerElems as $i => $hdr) {
-            if (@$hdr[0] === '-') {
-                $this->headerElems[$i] = $this->lzy->trans->translateVariable(substr($hdr,1), true);
+        // translate header elements:
+        if ($this->translateHeaders) {
+            foreach ($this->headerElems as $i => $hdr) {
+                if (@$hdr[0] === '-') {
+                    $hdr = substr($hdr, 1);
+                }
+                $this->headerElems[$i] = $this->lzy->trans->translateVariable($hdr, true);
             }
         }
 
@@ -365,6 +400,9 @@ EOT;
         foreach ($data as $recId => $rec) {
             if ($header && ($r === 0)) {
                 $rowClass = 'lzy-hdr-row';
+                if (isset($this->specificRowClasses[$r])) {
+                    $rowClass .= " {$this->specificRowClasses[$r]}";
+                }
                 $thead = "\t<thead>\n\t\t<tr class='$rowClass'>\n";
                 if ($this->showRowNumbers) {
                     $thead .= "\t\t\t<th class='lzy-table-row-nr'>{{^ lzy-table-row-nr-header }}</th>\n";
@@ -387,6 +425,9 @@ EOT;
                 }
                 $recKey = " data-reckey='$recId'";
                 $rowClass = str_replace('*', $rInx, $rowClass0);
+                if (isset($this->specificRowClasses[$r])) {
+                    $rowClass .= " {$this->specificRowClasses[$r]}";
+                }
                 $tbody .= "\t\t<tr class='$rowClass'$recKey>\n";
                 if ($this->showRowNumbers) {
                     if ($this->headers) {
@@ -526,6 +567,13 @@ EOT;
 
         $content = $this->getArg('content');
         $class = $this->getArg('class');
+
+        $rowClass = $this->getArg('rowClass');
+        if ($rowClass) {
+            $n = sizeof($data);
+            $this->specificRowClasses[$n] = $rowClass;
+        }
+
         $phpExpr = $this->getArg('phpExpr');
 
         $contents = false;
@@ -916,11 +964,11 @@ EOT;
             $tdClass .= " style='display:none;'";
         }
 
-        // translate header elements:
-        if (($hdrElem) && ($this->headersAsVars) ) {
-            $cell = "{{ $cell }}";
-        }
-
+//        // translate header elements:
+//        if (($hdrElem) && ($this->headersAsVars) ) {
+//            $cell = "{{ $cell }}";
+//        }
+//
         if ($this->cellWrapper) {
             if (is_string( $this->cellWrapper)) {
                 $cell = "<$this->cellWrapper>$cell</$this->cellWrapper>";
@@ -1478,9 +1526,8 @@ EOT;
                 if ($this->sortExcludeHeader) {
                     $row0 = array_shift($data);
                 }
-                usort($data, function ($a, $b) use ($s) {
-                    return ($a[$s] > $b[$s]);
-                });
+                $columns = array_column($data, $s);
+                array_multisort($columns, SORT_ASC, $data);
                 if ($this->sortExcludeHeader) {
                     array_unshift($data, $row0);
                 }
@@ -1697,6 +1744,26 @@ EOT;
                 } else {
                     $this->headerElems = $structure['elemKeys'];
                 }
+                $rec0 = reset($data0);
+                $ic = 0;
+                if ($rec0) {
+                    foreach ($rec0 as $item) {
+                        if (is_array($item)) {
+                            // handle splitOutput of composite elements if directive is embedded in field description:
+                            if (isset($item['_splitOutput']) && $item['_splitOutput']) {
+                                foreach ($item as $k => $v) {
+                                    if (($k === 0) || ($k[0] === '_')) { // skip special elems
+                                        unset($item[$k]);
+                                    }
+                                }
+                                $newCols = array_keys($item);
+                                array_splice($this->headerElems, $ic, 1, $newCols);
+                                $ic += sizeof($newCols) - 1;
+                            }
+                        }
+                        $ic++;
+                    }
+                }
             }
             if ($this->includeKeys && !in_array('_key', $this->headerElems)) {
                 $this->headerElems[] = '_key';
@@ -1731,10 +1798,22 @@ EOT;
                 }
                 $item = isset($rec[ $c ])? $rec[ $c ]: (isset($rec[ $ic ])? $rec[ $ic ]: '');
                 if (is_array($item)) {
-                    if (isset($item[0])) {
-                        $item = $item[0];
+                    // handle splitOutput of composite elements if directive is embedded in field description:
+                    if (isset($item['_splitOutput']) && $item['_splitOutput']) {
+                        foreach ($item as $k => $v) {
+                            if (($k === 0) || ($k[0] === '_')) {
+                                continue;
+                            }
+                            $data[$r][$ic++] = $v ? 1 : 0;
+                        }
+                        continue;
+
                     } else {
-                        $item = '<span class="lzy-array-elem">' . implode('</span><span class="lzy-array-elem">', $item) . '</span>';
+                        if (isset($item[0])) {
+                            $item = $item[0];
+                        } else {
+                            $item = '<span class="lzy-array-elem">' . implode('</span><span class="lzy-array-elem">', $item) . '</span>';
+                        }
                     }
                 }
                 if (@$desc['type'] === 'password') {
@@ -1795,7 +1874,7 @@ EOT;
                     $class = translateToClassName($button);
                 }
                 $buttons .= <<<EOT
-    <button id='$class-{$this->id}' class='lzy-button lzy-button-lean $class' $attributes><span class="lzy-table-activity-btn">{{ $button }}</span></button>
+    <button id='$class-{$this->id}' class='lzy-button lzy-button-lean $class' $attributes type="button"><span class="lzy-table-activity-btn">{{ $button }}</span></button>
 EOT;
             }
         }
