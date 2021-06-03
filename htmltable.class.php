@@ -77,7 +77,6 @@ class HtmlTable
             $this->headers          = $this->getOption('headersTop');   // synonyme for 'headers'
         }
         $this->headersLeft          = $this->getOption('headersLeft', '(optional) Row headers may be supplied in the form [A|B|C...]');
-//        $this->headersAsVars        = $this->getOption('headersAsVars', '(optional) If true, header elements will be rendered as variables (i.e. in curly brackets).');
         $this->translateHeaders     = $this->getOption('translateHeaders', '(optional) If true, header elements will be translated if definition exists.');
         $this->showRowNumbers       = $this->getOption('showRowNumbers', '(optional) Adds a left most column showing row numbers.');
         $this->injectSelectionCol   = $this->getOption('injectSelectionCol', '(optional) Adds a column showing row selection checkboxes.');
@@ -964,11 +963,6 @@ EOT;
             $tdClass .= " style='display:none;'";
         }
 
-//        // translate header elements:
-//        if (($hdrElem) && ($this->headersAsVars) ) {
-//            $cell = "{{ $cell }}";
-//        }
-//
         if ($this->cellWrapper) {
             if (is_string( $this->cellWrapper)) {
                 $cell = "<$this->cellWrapper>$cell</$this->cellWrapper>";
