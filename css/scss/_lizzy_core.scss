@@ -19,9 +19,13 @@ html{line-height:1.15;-webkit-text-size-adjust:100%}body{margin:0}main{display: 
 
 
 /* === General =============================== */
+html {
+	height: -webkit-fill-available;
+}
 body {
 	min-width: 100vw;
 	min-height: 100vh;
+	min-height: -webkit-fill-available;
 }
 
 html, body, section {
@@ -791,6 +795,11 @@ dd {
 	}
 	input, button {
 		line-height: 2em;
+	}
+	.lzy-footer {
+		input, button, a.lzy-login-link {
+			line-height: 1em;
+		}
 	}
 	.lzy-panel-page:focus {
 		outline: none;
