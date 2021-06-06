@@ -383,8 +383,8 @@ EOT;
         }
 
         if (@$this->currForm->prefillRec) {
-            if (isset($this->currForm->prefillRec[ $name ])) {
-                $value = $this->currForm->prefillRec[ $name ];
+            if (isset($this->currForm->prefillRec[ $rec->dataKey ])) {
+                $value = $this->currForm->prefillRec[ $rec->dataKey ];
                 if (is_string($value) && strpbrk($value, ',|')) {
                     $rec->prefill = explodeTrim( "|$value");
                 } else {
@@ -644,7 +644,6 @@ EOT;
                 break;
 
             case 'bypassed':
-                $elem = '';
                 $this->bypassedValues[ $this->currRec->name ] = $this->currRec->value;
                 break;
 
