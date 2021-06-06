@@ -13,6 +13,9 @@ define('SCALAR_TYPES',
 define('DEFAULT_EDIT_FORM_TEMPLATE_FILE', '~page/-table_edit_form_template.md');
 define('LZY_TABLE_SHOW_REC_ICON', "<span class='lzy-icon lzy-icon-show2'></span>");
 
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Writer\Ods;
 
 
 class HtmlTable
@@ -48,8 +51,8 @@ class HtmlTable
         $this->cellWrapper 	        = $this->getOption('cellWrapper', '(optional) If true, each cell is wrapped in a DIV element; if it\'s a string, the cell is wrapped in a tag of given name.');
         $this->rowClass 	        = $this->getOption('rowClass', '(optional) Class applied to each table row', 'lzy-row-*');
         $this->cellIds 	            = $this->getOption('cellIds', '(optional) If true, each cell gets an ID which is derived from the cellClass');
-        $this->nRows 		        = $this->getOption('nRows', '(optional) Number of rows: if set the table is forced to this number of rows');
-        $this->nCols 		        = $this->getOption('nCols', '(optional) Number of columns: if set the table is forced to this number of columns');
+        $this->nRowsReq 		    = $this->getOption('nRows', '(optional) Number of rows: if set the table is forced to this number of rows');
+        $this->nColsReq 		    = $this->getOption('nCols', '(optional) Number of columns: if set the table is forced to this number of columns');
         $this->includeKeys          = $this->getOption('includeKeys', '[true|false] If true and not a .csv source: key elements will be included in data.', true);
         $this->interactive          = $this->getOption('interactive', '[true|false] If true, module "Datatables" is activated, providing for interactive features such as sorting, searching etc.');
         $this->liveData             = $this->getOption('liveData', '[true|false] If true, Lizzy\'s "liveData" mechanism is activated. If the dataSource is modified on the server, changes are immediately mirrored in the webpage.');
@@ -139,7 +142,7 @@ class HtmlTable
         $this->applyHeaders();
 
         $this->injectRowButtons();
-        $this->loadProcessingInstructions();
+//        $this->loadProcessingInstructions();
         $this->applyProcessingToData();
 
  //        $this->applyMiscOptions();
@@ -165,7 +168,33 @@ EOT;
         if (!$this->export) {
             return;
         }
+        $file = resolvePath( $this->export );
+        $path = dir_name( $file );
+        $file = basename( $file );
+        $file = str_replace(['.xlsx','.ods','.csv', '.'], '', $file) . '.';
+        $path = (!$path || ($path !== '.')) ? $path : 'download/';
+        preparePath( $path );
+        $file = substr( $file , 0, -1);
+        $file = "$path$file";
 
+        if (strpos($this->export, '.csv') !== false) {
+            $this->exportToCsv( $file );
+
+        } elseif (strpos($this->export, '.xlsx') !== false) {
+            $this->exportToOfficeFormats( $file, '.xlsx' );
+
+        } elseif (strpos($this->export, '.ods') !== false) {
+            $this->exportToOfficeFormats( $file, '.ods' );
+
+        } else {
+            $this->exportToOfficeFormats( $file );
+        }
+    } // export
+
+
+
+    private function exportToCsv( $file )
+    {
         // define temporary $structure to control export by datastorage:
         $structure['key'] = 'index';
         $structure['elemKeys'] = $this->data['hdr'];
@@ -174,7 +203,7 @@ EOT;
         }
 
         $dbExport = new DataStorage2([
-            'dataSource' => $this->export,
+            'dataSource' => $file.'.csv',
             'structureDef' => $structure,
             'includeKeys' => false,
             'includeTimestamp' => false,
@@ -183,8 +212,48 @@ EOT;
         // remove header row (it's already handled in $structure)
         $data = $this->data;
         array_shift($data);
+        foreach ($data as $key => $rec) {
+            foreach ($rec as $k => $v) {
+                $data[$key][$k] = preg_replace('/<{(.*?)}>/', '', $v);
+            }
+        }
         $dbExport->write( $data );
-    } // export
+    } // exportToCsv
+
+
+
+    private function exportToOfficeFormats( $file, $type = '.xlsx.ods' )
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $data = $this->data;
+        $r = 1;
+        foreach ($data as $rec) {
+            $c = 0;
+            foreach ($rec as $k => $v) {
+                $cell = preg_replace('/<{(.*?)}>/', '', $v);
+                $c1 = intval($c / 26);
+                $c1 = $c1 ? chr( 65 + $c1 ) : '';
+                $c2 = chr( 65 + $c % 26 );
+                $cellId = "$c1$c2$r";
+                $c++;
+                $sheet->setCellValue($cellId, $cell);
+            }
+            $r++;
+        }
+
+        if (strpos($type, 'xlsx') !== false) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save($file . '.xlsx');
+        }
+
+        if (strpos($type, 'ods') !== false) {
+            $writer = new Ods($spreadsheet);
+            $writer->save($file . '.ods');
+        }
+    } // exportToOfficeFormats
+
 
 
 
@@ -482,6 +551,7 @@ EOT;
 
     private function applyProcessingToData()
     {
+        $this->loadProcessingInstructions();
         if (!$this->processingInstructions) {
             return;
         }
@@ -1484,18 +1554,21 @@ EOT;
             $data['new-rec'] = [];
         }
 
+        $nColsReq = $this->nColsReq;
         $nCols = sizeof( reset($data));
-        $nRows = $this->nRows ? $this->nRows : sizeof($data);
+        $nRows = $this->nRowsReq ? $this->nRowsReq : sizeof($data);
 
-        if ($this->nCols) {
-            if ($this->nCols > $nCols) { // increase size
-                for ($r = 0; $r < sizeof($data); $r++) {
-                    $data[$r] = array_pad([], $nCols, '');
+        if ($nColsReq) {
+            if ($nColsReq > $nCols) { // increase size
+                foreach ($data as $key => $rec) {
+                    $data[$key] = array_pad($rec, $nColsReq, '');
                 }
-            } elseif ($this->nCols < $nCols) { // reduce size
-                for ($r = 0; $r < sizeof($data); $r++) {
-                    $data[$r] = array_slice($data[$r], 0, $nCols);
+                $this->headerElems = array_pad($this->headerElems, $nColsReq, '');
+            } elseif ($nColsReq < $nCols) { // reduce size
+                foreach ($data as $key => $rec) {
+                    $data[$key] = array_slice($rec, 0, $nColsReq);
                 }
+                $this->headerElems = array_slice($this->headerElems, 0, $nColsReq);
             }
         }
 
