@@ -45,6 +45,12 @@ class UaDetector
 
 
 
+    public function isMobile()
+    {
+        return $this->ua->isMobile();
+    }
+
+
     public function isLegacyBrowser()
     {
         $browserName = $this->browserName;

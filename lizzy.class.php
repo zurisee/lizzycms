@@ -560,6 +560,10 @@ class Lizzy
             $forceUpdate = getVersionCode( true );
             unset($_SESSION['lizzy']['reset']);
 
+//        } elseif ($this->config->debug_forceBrowserCacheUpdate) {
+        } elseif (($this->config->debug_forceBrowserCacheUpdate === 'mobile') && $this->isMobile) {
+            $forceUpdate = getVersionCode( true );
+
         } elseif ($this->config->debug_forceBrowserCacheUpdate) {
             $forceUpdate = getVersionCode( true );
 
@@ -1753,6 +1757,7 @@ EOT;
 		if (getUrlArgStatic('mobile')) {			                    // mobile
 			$this->trans->addVariable('debug_class', ' mobile');
             $this->page->addBodyClasses('mobile');
+            $this->isMobile = true;
 		}
 		if (getUrlArgStatic('touch')) {			                        // touch
 			$this->trans->addVariable('debug_class', ' touch');
@@ -1898,6 +1903,8 @@ EOT;
         $this->isLegacyBrowser = $ua->isLegacyBrowser();
         $_SESSION['lizzy']['userAgent'] = $globalParams['userAgent'];
         $globalParams['HTTP_USER_AGENT'] = $_SERVER['HTTP_USER_AGENT'];
+
+        $this->isMobile = $ua->isMobile();
 
         return  $globalParams['userAgent'];
     } // browserDetection
