@@ -1836,6 +1836,12 @@ EOT;
             $lang = $m[1];
         }
 
+        $supportedLanguages = '';
+        foreach (explodeTrim(',', $this->config->site_supportedLanguages) as $l) {
+            $supportedLanguages .= preg_replace('/\d/', '', $l) . ',';
+        }
+        $this->config->site_supportedLanguages = rtrim($supportedLanguages, ',');
+
         // publish resulting lang to rest of system:
         $this->setLanguage( $lang, $subLang );
         return $lang;
