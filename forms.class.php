@@ -747,7 +747,7 @@ EOT;
             $this->page->addCss("\n#$formId { --lzy-label-width: {$currForm->labelWidth}; };");
         }
 
-        $this->userSuppliedData = $this->getUserSuppliedDataFromCache($formId);
+        $this->userSuppliedData = $this->getUserSuppliedDataFromCache( $currForm->formInx );
         $currForm->creationTime = time();
 
         if (!$currForm->ticketHash || !$this->tck->ticketExists($currForm->ticketHash)) {
@@ -1461,7 +1461,7 @@ EOT;
 
 	private function renderFormTail()
     {
-        $formId = $this->currForm->formId;
+        $formInx = $this->currForm->formInx;
         if (!$this->skipRenderingForm) {
             if ($this->currForm->antiSpam) {
                 $this->initAntiSpam();
@@ -1483,9 +1483,9 @@ EOT;
         $msgToClient = '';
 
         // check _announcement_ and responseToClient, inject msg if present:
-        if (@$this->errorDescr[$formId]['_announcement_']) { // is errMsg, takes precedence over responseToClient
-            $msgToClient = @$this->errorDescr[$formId]['_announcement_'];
-            $this->errorDescr[$formId]['_announcement_'] = false;
+        if (@$this->errorDescr[$formInx]['_announcement_']) { // is errMsg, takes precedence over responseToClient
+            $msgToClient = @$this->errorDescr[$formInx]['_announcement_'];
+            $this->errorDescr[$formInx]['_announcement_'] = false;
 
         } elseif (@$this->errorDescr[ 'generic' ]['_announcement_']) { // is errMsg, takes precedence over responseToClient
             $msgToClient = @$this->errorDescr[ 'generic' ]['_announcement_'];
@@ -1496,8 +1496,8 @@ EOT;
         }
         if ($msgToClient) {
             // append 'continue...' if form was omitted:
-            if ($this->skipRenderingForm && isset($this->errorDescr[ 'generic' ]['_override_'])) {
-                if (!$this->errorDescr[ 'generic' ]['_override_']) {
+            if ($this->skipRenderingForm) {
+                if (!isset($this->errorDescr[ 'generic' ]['_override_']) || !$this->errorDescr[ 'generic' ]['_override_']) {
                     $next = @$this->currForm->next ? $this->currForm->next : './';
                     $msgToClient .= "<div class='lzy-form-continue'><a href='{$next}'>{{ lzy-form-continue }}</a></div>\n";
                 } else {
@@ -1706,20 +1706,21 @@ EOT;
 
 
 
-	private function cacheUserSuppliedData($formId, $userSuppliedData)
+	private function cacheUserSuppliedData($formInx, $userSuppliedData)
 	{
         $pathToPage = $GLOBALS['globalParams']['pathToPage'];
-        $_SESSION['lizzy']['formData'][ $pathToPage ][ $this->formInx ] = serialize($userSuppliedData);
+        $_SESSION['lizzy']['formData'][ $pathToPage ][ $formInx ] = serialize($userSuppliedData);
 	} // cacheUserSuppliedData
 
 
 
-	private function getUserSuppliedDataFromCache($formId)
+	private function getUserSuppliedDataFromCache( $formInx )
 	{
         $pathToPage = $GLOBALS['globalParams']['pathToPage'];
-		return (isset($_SESSION['lizzy']['formData'][ $pathToPage ][ $this->formInx ])) ?
-            unserialize($_SESSION['lizzy']['formData'][ $pathToPage ][ $this->formInx ]) : null;
+		return (isset($_SESSION['lizzy']['formData'][ $pathToPage ][ $formInx ])) ?
+            unserialize($_SESSION['lizzy']['formData'][ $pathToPage ][ $formInx ]) : null;
 	} // getUserSuppliedDataFromCache
+
 
 
 
@@ -1979,7 +1980,7 @@ EOT;
 
         $struc = $ds->getStructure();
 
-        $isNewRec = false;
+//        $isNewRec = false;
         $oldRec = false;
         $origKey = $this->recKey;
         if (@$struc['key'][0] === '=') {
@@ -1990,14 +1991,15 @@ EOT;
             if ($recKey !== $origKey) {
                 $oldRec = $ds->readRecord($origKey);
                 $ds->deleteRecord( $origKey );
-                $isNewRec = true;
+//                $isNewRec = true;
             }
         } else {
             $recKey = $this->recKey;
         }
 
-        if (!$recKey || ($recKey === 'new-rec') || ($recKey === 'unknown')) {
-            $isNewRec = true;
+        if (!$recKey || $this->isNewRec) {
+//        if (!$recKey || ($recKey === 'new-rec') || ($recKey === 'unknown')) {
+//            $isNewRec = true;
             writeLogStr("New data: [{$currForm->formName}:$recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
         } else {
             writeLogStr("Data modified: [{$currForm->formName}:$recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
@@ -2066,7 +2068,8 @@ EOT;
                 continue;
             }
 
-            if (!$isNewRec && ($rec->type === 'password')) {
+            if (!$this->isNewRec && ($rec->type === 'password')) {
+//            if (!$isNewRec && ($rec->type === 'password')) {
                 $newPw = $userSuppliedData[ $usrDataFldName ];
                 if (!$newPw || ($newPw === PASSWORD_PLACEHOLDER)) {
                     if (!$oldRec) {
@@ -2081,7 +2084,8 @@ EOT;
         // add new record:
         $newRec[ TIMESTAMP_KEY_ID ] = date('Y-m-d H:i:s');
         $newRec[ REC_KEY_ID ] = $recKey;
-        if ($isNewRec) {
+        if ($this->isNewRec) {
+//        if ($isNewRec) {
             $ds->addRecord($newRec, $recKey, true, true, true);
 
         } else {
@@ -2114,8 +2118,10 @@ EOT;
         $this->recKey = @$this->userSuppliedData0['_rec-key'];
         if ((@$this->currForm->dataKey !== null) && (@$this->currForm->dataKey !== '')) {
             $this->recKey = $currForm->dataKey;
+            $this->isNewRec = false;
         } elseif ($this->recKey === null) {
             $this->recKey = createHash();
+            $this->isNewRec = true;
         }
 
         $userSuppliedData = &$this->userSuppliedData;
@@ -2278,7 +2284,6 @@ EOT;
             <div class="lzy-ch-input-wrapper">
                 <label for="lzy-popup-as-input">{{ lzy-form-override-honeypot-label }}</label>
                 <input id="lzy-popup-as-input-{$this->formInx}" type="text" name="lzy-ch-name" />
-<!--                <input id="lzy-popup-as-input" type="text" name="lzy-ch-name" />-->
             </div>
         </div>
 
