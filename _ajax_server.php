@@ -564,8 +564,8 @@ class AjaxServer
             if ($ticketRec) {      // corresponding ticket found
                 if ($setId && isset($ticketRec[$setId])) {
                     $ticketRec = $ticketRec[$setId];
-                    $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['_dataSource'];
-                } elseif (isset($ticketRec['_dataSource'])) {
+                }
+                if (isset($ticketRec['_dataSource'])) {
                     $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['_dataSource'];
                 } elseif (isset($ticketRec['dataSrc'])) {
                     $this->dataFile = PATH_TO_APP_ROOT . $ticketRec['dataSrc']; //???
@@ -583,7 +583,9 @@ class AjaxServer
         }
 
         // if primary method didn't work, try default DB in page folder
-        $pagePath = $GLOBALS['globalParams']['pageFolder'];
+        $pagePath = isset($GLOBALS['globalParams']['pageFolder'])? $GLOBALS['globalParams']['pageFolder'] :
+            (isset($_SESSION['lizzy']['pageFolder'])? $_SESSION['lizzy']['pageFolder']: '');
+
         if (!$this->dataFile && $pagePath) {
             $this->dataFile = PATH_TO_APP_ROOT . $pagePath . DEFAULT_EDITABLE_DATA_FILE;
         }
