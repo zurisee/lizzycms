@@ -2152,9 +2152,9 @@ function rrmdir($src)
 
 
 
-function compileMarkdownStr($mdStr, $removeWrappingPTags = false)
+function compileMarkdownStr($mdStr, $removeWrappingPTags = false, $lzy = null)
 {
-    $md = new LizzyMarkdown();
+    $md = new LizzyMarkdown( $lzy );
     $str = $md->compileStr($mdStr);
     if ($removeWrappingPTags) {
         $str = preg_replace('/^<p>(.*)<\/p>(\s*)$/ms', "$1$2", $str);
@@ -2192,6 +2192,9 @@ function isLocalhost()
 
 
 function checkPermission($str0, $lzy = false, $and = false) {
+    if (is_bool($str0)) {
+        return $str0;
+    }
     $resOut = $and;
     $strs = explodeTrim(',', $str0);
     foreach ($strs as $str) {
@@ -2558,3 +2561,17 @@ function replaceQuotesByCodes( $str ) {
 function replaceCodesByQuotes( $str ) {
     return str_replace(['&#34;', '&#39;'], ['"', "'"], $str);
 } // replaceCodesByQuotes
+
+
+
+function findArrayElementByAttribute( $array, $key, $value) {
+    $res = array_filter($array, function ($rec) use($key, $value) {
+        if (isset($rec[$key])) {
+            if (($value === null) || ($rec[$key] === $value)) {
+                return true;
+            }
+        }
+        return false;
+    });
+    return $res;
+} // findArrayElementByAttribute
