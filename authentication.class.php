@@ -381,7 +381,8 @@ class Authentication
         $this->userRec = $rec;
 
         $this->loginTimes[$user] = time();
-        session_regenerate_id();
+// problem of changing sessionId in datastorage/rec-locking:
+//        session_regenerate_id();
         $this->loggedInUser = $user;
         $_SESSION['lizzy']['user'] = $user;
         $_SESSION['lizzy']['userRec'] = $rec;
