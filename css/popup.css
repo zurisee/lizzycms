@@ -24,10 +24,7 @@ body {
 }
 .lzy-popup-wrapper {
 	position: relative;
-/*
-	max-width: 60%;
-	max-width: var(--lzy-popup-default-width, 60%);
-*/
+	max-width: 98%;
 	vertical-align: middle;
 	border-radius: 8px;
 	padding: 1.6rem;
@@ -86,6 +83,7 @@ body {
 	box-shadow: 10px 10px 60px #555;
 	border-radius: 8px;
 	max-height: 90vh;
+	max-width: 100%;
 	overflow-x: hidden;
 	overflow-y: scroll;
 	padding: 1rem;

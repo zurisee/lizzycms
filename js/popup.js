@@ -190,6 +190,11 @@ function LzyPopup( options, index ) {
             this.content = this.content + this.lzyPopupContent;
         } // contentFrom
 
+        var closeCallback = '';
+        if (this.closeCallback) {
+            closeCallback = ' data-closecallback="' + this.closeCallback + '"';
+        }
+
         // content supplied as literal or by contentFrom:
         if (this.content) {
             this.content = unTransvar( this.content );
@@ -213,10 +218,6 @@ function LzyPopup( options, index ) {
                 cls += ' ' + this.wrapperClass;
             }
 
-            var closeCallback = '';
-            if (this.closeCallback) {
-                closeCallback = ' data-closecallback="' + this.closeCallback + '"';
-            }
             var html = '<div id="' + parent.id + '" class="lzy-popup-bg lzy-popup-' +
                 this.inx + this.popupClass + '"' + style + data + closeCallback + '>\n' +
                 '    <div class="' + cls + '" role="dialog"><div role="document">\n'+ header +
@@ -262,10 +263,13 @@ function LzyPopup( options, index ) {
                     cls += ' ' + this.wrapperClass;
                 }
 
-                $popupContent.wrap('<div class="' + cls + '"' + data + '>');
+                $popupContent.wrap('<div class="' + cls + '"' + data + closeCallback + '>');
+                // $popupContent.wrap('<div class="' + cls + '"' + data + '>');
                 $popupContent.parent().prepend( header );
                 $popupContent.wrap('<div class="lzy-popup-container">');
                 $popupContent.append(this.buttonHtml);
+            } else {
+                $popupElem.attr('data-closecallback', this.closeCallback);
             }
             this.$pop = $('.lzy-popup-wrapper', $popupElem);
 
