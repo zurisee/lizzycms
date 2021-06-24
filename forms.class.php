@@ -70,10 +70,6 @@ class Forms
         $this->currForm = new FormDescriptor; // object as will be saved in DB
         $this->infoInitialized = &$GLOBALS['globalParams']['formTooltipsInitialized'];
 
-//        if ($this->inx === -1) {
-//            $this->page->addModules('MOMENT,~sys/js/forms.js');
-//        }
-
         $this->tck = new Ticketing([
             'defaultType' => 'lzy-form',
             'defaultMaxConsumptionCount' => 100,
@@ -2223,7 +2219,6 @@ EOT;
                         $rec[$key] = $expr;
                     }
                 } elseif (@$this->userSuppliedData0['_repeat-event'] && preg_match('/%repeatEvent\( (.*?) \)/x', $elemDef->postProcess, $m)) {
-//                } elseif (preg_match('/%repeatEvent\( (.*?) \)/x', $elemDef->postProcess, $m)) {
                     $this->repeatEventTaskPending = $m[1];
                 }
             }
