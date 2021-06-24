@@ -290,15 +290,15 @@ a:focus > .lzy-focus-only-visible {
 
 
 // === Lizzy's tabulator:
-.tabulator_wrapper span.c1,
-.tabulator_wrapper span.c2,
-.tabulator_wrapper span.c3,
-.tabulator_wrapper span.c4 {
+.lzy-tabulator-wrapper span.c1,
+.lzy-tabulator-wrapper span.c2,
+.lzy-tabulator-wrapper span.c3,
+.lzy-tabulator-wrapper span.c4 {
 	display: inline-block;
-	line-height: 1.4em;
+	line-height: 1.3em;
 	vertical-align: top;
 }
-.tabulator_wrapper span:not(:last-child) {
+.lzy-tabulator-wrapper span:not(:last-child) {
 	width: 6em;
 }
 

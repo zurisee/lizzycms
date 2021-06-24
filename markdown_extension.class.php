@@ -20,7 +20,8 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
         $this->page = $page;
         $this->lzy = $lzy;
     } // __construct
-    
+
+/*
     protected function identifyAuthorsDirective($line, $lines, $current)
     {
         // if a line starts with at least 3 colons it is identified as a fenced code block
@@ -73,7 +74,7 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
         $out = "\t<span class='authors_directive_tag'>(( {$block['directive']} ))</span>\n\t<div$class>\n$out\n\t</div>\n";
         return $out;
     }
-
+*/
 
 
 
@@ -541,7 +542,7 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
         $out = \cebe\markdown\Markdown::parse($out);
         $out = str_replace(['<p>', '</p>'], '', $out);
         $out = str_replace(['@/@ul@\\@', '@/@ol@\\@'], '', $out);
-        return "<$wrapperTag$wrapperAttr class='tabulator_wrapper'>\n$out</$wrapperTag>\n";
+        return "<$wrapperTag$wrapperAttr class='lzy-tabulator-wrapper'>\n$out</$wrapperTag>\n";
     } // renderTabulator
 
 
