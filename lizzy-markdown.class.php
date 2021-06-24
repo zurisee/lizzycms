@@ -214,7 +214,9 @@ class LizzyMarkdown
 
 	private function preprocess($str)
 	{
-		if (preg_match("/\n\>\s/", $str, $m)) {	// is there a blockquote? ('> ' at beginning of line)
+        $str = $this->shieldLiteralTransvar($str);
+
+        if (preg_match("/\n\>\s/", $str, $m)) {	// is there a blockquote? ('> ' at beginning of line)
 			$lines = explode("\n", $str);
 			$lastBlockquoteLine = 0;
 			foreach ($lines as $i => $l) {
@@ -329,7 +331,8 @@ class LizzyMarkdown
 				    continue;
                 }
 				// translate transvar/macro if there is any:
-                if (strpos($val, '{{') !== false) {
+                if ($this->lzy && strpos($val, '{{') !== false) {
+                    $val = $this->replaceMdVariables($val);
                     $val = $this->lzy->trans->translate($val);
                 }
                 $this->mdVariables[$var] = $this->replaceMdVariables($val);
@@ -592,6 +595,8 @@ class LizzyMarkdown
 
         $out = str_replace(['@/@\\lt@\\@', '@/@\\gt@\\@', '@/@:@\\@'], ['&lt;', '&gt;', '\\:'], $out); // shielded < and > (source: \< \>)
 
+        $out = $this->unshieldLiteralTransvar($out);
+
 		return $out;
 	} // postprocess
 
@@ -635,6 +640,9 @@ class LizzyMarkdown
             }
             list($tag, $attr, $lang, $comment, $literal, $mdCompile) = parseInlineBlockArguments($args);
 
+			if ($lang && ($lang !== $this->lzy->config->lang)) {
+                $head = $tail = $span = '';
+            }
 			if ($span) {
                 if (!$tag) {
                     $tag = 'span';
@@ -718,6 +726,34 @@ class LizzyMarkdown
             $this->replaces = array_merge($newReplaces, $this->replaces);
         }
     } // addReplacesFromFrontmatter
+
+
+
+
+    private function shieldLiteralTransvar($str)
+    {
+        if (preg_match_all('/ {{{ (.*?) }}} /xms', $str, $m)) {
+            foreach ($m[1] as $i => $value) {
+                $literal = base64_encode($value);
+                $str = str_replace($value, $literal, $str);
+            }
+        }
+        return $str;
+    } // shieldLiteralTransvar
+
+
+
+
+    private function unshieldLiteralTransvar($str)
+    {
+        if (preg_match_all('/ {{{ (.*?) }}} /xms', $str, $m)) {
+            foreach ($m[1] as $i => $value) {
+                $origStr = base64_decode($value);
+                $str = str_replace($m[0][$i], "{{ $origStr }}", $str);
+            }
+        }
+        return $str;
+    } // unshieldLiteralTransvar
 
 
 } // class MyMarkdown
