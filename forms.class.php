@@ -19,7 +19,8 @@ define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,ma
 define('ELEM_ATTRIBUTES', 	    ',label,type,id,class,wrapperClass,name,required,value,'.
 	'options,optionLabels,layout,info,comment,translateLabel,'.
 	'labelInOutput,splitOutput,placeholder,autocomplete,'.
-	'description,pattern,min,max,path,target,');
+	'description,pattern,min,max,path,target,'.
+    'defaultValue,liveValue,postProcess,');
 
 define('UNARY_ELEM_ATTRIBUTES', ',required,translateLabel,splitOutput,autocomplete,');
 
@@ -50,10 +51,12 @@ class Forms
     private $revealJsAdded = false;
     protected $skipRenderingForm = false;
     protected $formId = false;
-    public  $file = false;
+    public   $file = false;
     private  $db = false;
     private  $dbExport = false;
     private  $exportFileImported = false;
+    private  $recKey = null;
+    private  $isNewRec = null;
 
 
 	public function __construct($lzy, $userDataEval = null)
@@ -66,6 +69,10 @@ class Forms
 		$this->formInx = $GLOBALS['globalParams']['lzyFormsCount'];
         $this->currForm = new FormDescriptor; // object as will be saved in DB
         $this->infoInitialized = &$GLOBALS['globalParams']['formTooltipsInitialized'];
+
+//        if ($this->inx === -1) {
+//            $this->page->addModules('MOMENT,~sys/js/forms.js');
+//        }
 
         $this->tck = new Ticketing([
             'defaultType' => 'lzy-form',
@@ -138,7 +145,6 @@ class Forms
 
 
 
-
     private function parseHeadElemArgs()
     {
         $args = $this->args;
@@ -165,6 +171,9 @@ class Forms
         $currForm = &$this->currForm;
         $currForm->formId = $formId;
         $currForm->formInx = $this->formInx;
+
+        $currForm->dynamicFormSupport = (isset($args['dynamicFormSupport'])) ? $args['dynamicFormSupport'] : false;
+        $currForm->lockRecWhileFormOpen = (isset($args['lockRecWhileFormOpen'])) ? $args['lockRecWhileFormOpen'] : false;
 
         $currForm->formName = $label;
         $currForm->translateLabels = (isset($args['translateLabels'])) ? $args['translateLabels'] : false;
@@ -332,7 +341,11 @@ EOT;
         }
         $rec->name = $name;
         $_name = " name='$name'";
-        $rec->dataKey = @$args['dataKey']? $args['dataKey']: $name;
+        if (isset($args['dataKey'])) {
+            $rec->dataKey = $args['dataKey'];
+        } else {
+            $rec->dataKey = $name;
+        }
 
         // whether to translate a label: form-wide translateLabels or per-element translateLabel or '-' in front of label:
         $rec->translateLabel = false;
@@ -402,6 +415,9 @@ EOT;
         }
 
         $rec->value = @$args['value']? $args['value']: '';
+        $rec->defaultValue = @$args['defaultValue']? $args['defaultValue']: '';
+        $rec->liveValue = @$args['liveValue']? $args['liveValue']: '';
+        $rec->postProcess = (isset($args['postProcess'])) ? $args['postProcess'] : false;
 
         // for radio, checkbox and dropdown: options define the values available
         //  optionLabels are optional and used in the page, e.g. if you need a longish formulation to describe the option
@@ -738,6 +754,8 @@ EOT;
         $formId = $this->formId;
         $currForm = $this->currForm;
 
+        $this->initFormJs();
+
         $this->initButtonHandlers();
 
         if ($currForm->labelWidth) {
@@ -838,7 +856,7 @@ EOT;
         list($descrBy, $description) = $this->renderElemDescription();
 
         $out .= "\t\t\t<div id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'$cls>{$this->currRec->value}</div>\n";
-        $out .= "\t\t\t<input type='hidden' {$this->currRec->inpAttr}$value />\n";
+        $out .= "\t\t\t<input type='hidden' class='lzy-readonly' {$this->currRec->inpAttr}$value />\n";
         $out .= $description;
         return $out;
     } // renderText
@@ -949,6 +967,20 @@ EOT;
             $groupName = $this->currRec->name;
         }
         $checkedElem = isset($this->currRec->prefill)? $this->currRec->prefill: false;
+        if ($rec->defaultValue) {
+            $checkedElem = $rec->defaultValue;
+        }
+        $defaultValueAttr = '';
+        if ($checkedElem) {
+            if (is_array($checkedElem) && isset($checkedElem[0])) {
+                $checkedElem = $checkedElem[0];
+            }
+            $defaultValueAttr = " data-default-value='$checkedElem'";
+        }
+        if ( $rec->liveValue ) {
+            $defaultValueAttr .= " data-live-value='$rec->liveValue'";
+        }
+
         $label = $this->getLabel(false, false);
         list($descrBy, $description) = $this->renderElemDescription();
 
@@ -958,7 +990,7 @@ EOT;
             $target = explodeTrim(',|', "|$target||||||||||||||||");
         }
 
-        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-radio-label'><legend class='lzy-legend'>{$label}</legend>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
+        $out = "\t\t\t<fieldset class='lzy-form-label lzy-form-radio-label'><legend class='lzy-legend'>{$label}</legend>\n\t\t\t  <div class='lzy-fieldset-body'$defaultValueAttr>\n";
         foreach($rec->optionLabels as $i => $optionLabel) {
             if ($i === 0) { continue; } // skip group name
             $preselectedValue = false;
@@ -980,9 +1012,9 @@ EOT;
             }
 
             $checked = ($checkedElem && @$checkedElem[$name]) || $preselectedValue ? ' checked' : '';
-            $out .= "\t\t\t<div class='$id lzy-form-radio-elem lzy-form-choice-elem'>\n";
-            $out .= "\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked$cls$attr$descrBy /><label for='$id'>$optionLabel</label>\n";
-            $out .= "\t\t\t</div>\n";
+            $out .= "\t\t\t\t<div class='$id lzy-form-radio-elem lzy-form-choice-elem'>\n";
+            $out .= "\t\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked$cls$attr$descrBy /><label for='$id'>$optionLabel</label>\n";
+            $out .= "\t\t\t\t</div>\n";
         }
         $out .= "\t\t\t  </div><!--/lzy-fieldset-body -->\n\t\t\t</fieldset>\n";
         $out .= $description;
@@ -1057,9 +1089,20 @@ EOT;
 
         $selectedElem = isset($rec->prefill)? $rec->prefill: [];
         $selectedElem = @$selectedElem[0];
+        if ($rec->defaultValue) {
+            $selectedElem = $rec->defaultValue;
+        }
+        $defaultValueAttr = '';
+        if ($selectedElem) {
+            $defaultValueAttr = " data-default-value='$selectedElem'";
+        }
+        if ( $rec->liveValue ) {
+            $defaultValueAttr .= " data-live-value='$rec->liveValue'";
+        }
+
         $out = $this->getLabel();
         list($descrBy, $description) = $this->renderElemDescription();
-        $out .= "<select id='{$rec->fldPrefix}{$rec->elemId}' name='{$rec->name}'$cls$descrBy>\n";
+        $out .= "\t\t\t<select id='{$rec->fldPrefix}{$rec->elemId}' name='{$rec->name}'$cls$descrBy$defaultValueAttr>\n";
 
         foreach ($rec->optionLabels as $i => $optionLabel) {
             if ($i === 0) { continue; } // skip group name
@@ -1358,10 +1401,10 @@ EOT;
     private function renderHidden()
     {
         $name = " name='{$this->currRec->name}'";
-        $value = " value='{$this->currRec->value}'";
+        $value = $this->getValueAttr();
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
 
-        $out = "<input type='hidden' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'$cls$name$value />\n";
+        $out = "<input type='hidden' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$name$value />\n";
         return $out;
     } // renderHidden
 
@@ -1522,12 +1565,6 @@ $('.lzy-form-error:first').each(function () {
 EOT;
             $this->page->addJq( $jq );
         }
-
-        // Special case: exported file is master -> import first if changed:
-        if ($this->currForm->exportedDataIsMaster) {
-            $this->syncBackExportedData();
-        }
-
 
         // refresh export if necessary:
         if ($this->currForm->export) {
@@ -1972,6 +2009,11 @@ EOT;
 	{
         $currForm = $this->currForm;
         $userSuppliedData = $this->userSuppliedData;
+        $recKey = &$this->recKey;
+        if ($recKey === 'new-rec') {
+            $recKey = '';
+        }
+        $this->isNewRec = true;
 
         $ds = $this->openDB();
 
@@ -1979,29 +2021,24 @@ EOT;
         $this->updateDbStructure();
 
         $struc = $ds->getStructure();
+        if (!@$struc['key']) {
+            $struc['key'] = 'index';
+        }
 
-//        $isNewRec = false;
         $oldRec = false;
-        $origKey = $this->recKey;
-        if (@$struc['key'][0] === '=') {
+
+        // handle special case: structure[key] contains pattern '=xy', if so use that element as key:
+        if ($struc['key'][0] === '=') {
             $useAsKey = substr($struc['key'], 1);
             if (isset($userSuppliedData[ $useAsKey ])) {
                 $recKey = $userSuppliedData[ $useAsKey ];
             }
-            if ($recKey !== $origKey) {
-                $oldRec = $ds->readRecord($origKey);
-                $ds->deleteRecord( $origKey );
-//                $isNewRec = true;
-            }
-        } else {
-            $recKey = $this->recKey;
         }
 
-        if (!$recKey || $this->isNewRec) {
-//        if (!$recKey || ($recKey === 'new-rec') || ($recKey === 'unknown')) {
-//            $isNewRec = true;
+        if (!$recKey) {
             writeLogStr("New data: [{$currForm->formName}:$recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
         } else {
+            $this->isNewRec = false;
             writeLogStr("Data modified: [{$currForm->formName}:$recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
         }
 
@@ -2050,7 +2087,7 @@ EOT;
                 }
                 $doubletFound |= $identical;
             }
-            if ($doubletFound) {
+            if ($doubletFound && !$this->repeatEventTaskPending) {
                 $this->clearCache();
                 $this->errorDescr[$this->formInx]['_announcement_'] = '{{ lzy-form-duplicate-data }}';
                 $this->skipRenderingForm = true;
@@ -2069,7 +2106,6 @@ EOT;
             }
 
             if (!$this->isNewRec && ($rec->type === 'password')) {
-//            if (!$isNewRec && ($rec->type === 'password')) {
                 $newPw = $userSuppliedData[ $usrDataFldName ];
                 if (!$newPw || ($newPw === PASSWORD_PLACEHOLDER)) {
                     if (!$oldRec) {
@@ -2081,15 +2117,23 @@ EOT;
             $newRec[$elementKey] = $userSuppliedData[$usrDataFldName];
         }
 
-        // add new record:
         $newRec[ TIMESTAMP_KEY_ID ] = date('Y-m-d H:i:s');
         $newRec[ REC_KEY_ID ] = $recKey;
+
         if ($this->isNewRec) {
-//        if ($isNewRec) {
-            $ds->addRecord($newRec, $recKey, true, true, true);
+            // add new record:
+            if ($struc['key'] === 'index') {
+                $recKey = false;
+            }
+//ToDo: check and report res:
+            $res = $ds->addRecord($newRec, $recKey, true, true, true);
 
         } else {
-            $ds->writeRecord($recKey, $newRec, true, true, true);
+            $res = $ds->writeRecord($recKey, $newRec, true, true, true);
+        }
+
+        if ($this->repeatEventTaskPending) {
+            $this->executeEventDuplicating($newRec, $ds);
         }
         return true;
 	} // saveUserSuppliedDataToDB
@@ -2113,6 +2157,7 @@ EOT;
     {
         // add missing elements, remove meta-elements, convert radio&checkboxes to internal format:
         $currForm = $this->currForm;
+        $this->repeatEventTaskPending = false;
 
         // determine recKey:
         $this->recKey = @$this->userSuppliedData0['_rec-key'];
@@ -2124,35 +2169,35 @@ EOT;
             $this->isNewRec = true;
         }
 
-        $userSuppliedData = &$this->userSuppliedData;
-
-        $userSuppliedData = $this->prepareDataRec($currForm->formElements, $userSuppliedData);
+        $this->prepareDataRec();
     } // prepareUserSuppliedData
 
 
 
-    private function prepareDataRec($elemDefs, $rec)
+    private function prepareDataRec()
     {
+        $elemDefs = $this->currForm->formElements;
+        $rec = &$this->userSuppliedData;
+
+        // drop elements from userSuppliedData whose keys start with '_':
         foreach ($rec as $key => $label) {
             if ($key[0] === '_') {
                 unset($rec[ $key ]);
             }
         }
 
-        foreach ($elemDefs as $key => $elemDef) {
-            if (!$elemDef || (@$key[0] === '_')) {
-                continue;
-            }
-            // skip system fields starting with _:
+        foreach ($elemDefs as $defInx => $elemDef) {
             $key = $elemDef->name;
-            if ($key[0] === '_') {
-                continue;
-            }
             $type = $elemDef->type;
+
+            // skip elements of pseudo type:
             if (strpos(PSEUDO_TYPES, $type) !== false) {
                 continue;
             }
+
+            // handle missing values:
             if (!isset($rec[ $key ])) {
+                // handle elements of type beypassed, retrieve value from $elemDef:
                 if ($type === 'bypassed') {
                     $rec[$key] = $elemDef->value;
                 } else {
@@ -2160,6 +2205,30 @@ EOT;
                 }
             }
 
+            // execute postProcess instructions:
+            if (isset($elemDef->postProcess) && $elemDef->postProcess) {
+                // skip special case '_repeat-event' -> excute later:
+                if (strpos($elemDef->postProcess, '%repeatEvent') !== 0) {
+                    if (preg_match('/=\(\( (.*?) \)\)/x', $elemDef->postProcess, $m)) {
+                        $expr = $m[1];
+                        if (preg_match_all('/\$(\w+)/', $expr, $mm)) {
+                            foreach ($mm[1] as $i => $elem) {
+                                $varName = $mm[1][$i];
+                                if (isset($this->userSuppliedData0[$varName])) {
+                                    $val = $this->userSuppliedData0[$varName];
+                                    $expr = str_replace($mm[0][$i], $val, $expr);
+                                }
+                            }
+                        }
+                        $rec[$key] = $expr;
+                    }
+                } elseif (@$this->userSuppliedData0['_repeat-event'] && preg_match('/%repeatEvent\( (.*?) \)/x', $elemDef->postProcess, $m)) {
+//                } elseif (preg_match('/%repeatEvent\( (.*?) \)/x', $elemDef->postProcess, $m)) {
+                    $this->repeatEventTaskPending = $m[1];
+                }
+            }
+
+            // handle element types 'radio,checkbox,dropdown':
             if (strpos('radio,checkbox,dropdown', $type) !== false) {
                 $value = $rec[$key];
                 $rec[$key] = [];
@@ -2181,16 +2250,27 @@ EOT;
                 }
                 $rec[$key]['_splitOutput'] = $elemDef->splitOutput;
 
+            // handle element type 'password':
             } elseif ($type === 'password') {
                 if ($rec[$key] && ($rec[$key] !== PASSWORD_PLACEHOLDER)) {
                     $rec[$key] = password_hash($rec[$key], PASSWORD_DEFAULT);
                 }
 
+            // skip buttons
             } elseif ($type === 'button') {
                 unset($rec[ $key ]);
             }
         }
-        return $rec;
+
+        foreach ($elemDefs as $key => $elemDef) {
+            // drop user-defined elements that have dataKey === false or dataKey starts with '_':
+            if (!$elemDef || ($elemDef->dataKey === false) || ($elemDef->dataKey[0] === '_')) {
+                if (isset($rec[ $elemDef->name ])) {
+                    unset( $rec[$elemDef->name ]);
+                }
+                continue;
+            }
+        }
     } // prepareDataRec
 
 
@@ -2246,6 +2326,20 @@ EOT;
             $this->tck->deleteTicket($this->formHash);
         }
 	} // clearCache
+
+
+
+    private function initFormJs()
+    {
+        if (!$this->currForm->dynamicFormSupport) {
+            return;
+        }
+
+        $this->page->addModules('MOMENT,~sys/js/forms.js');
+        $lockRecWhileFormOpen = $this->currForm->lockRecWhileFormOpen ? 'true': 'false';
+        $jq = "lzyForms.init( $lockRecWhileFormOpen );";
+        $this->page->addJq($jq);
+    } // initFormJs
 
 
 
@@ -2479,41 +2573,57 @@ EOT;
     private function getValueAttr($type = false)
     {
         $value = $this->currRec->value;
+        $initialValue = $this->currRec->defaultValue;
+        $liveValue = $this->currRec->liveValue;
+        
         if (($type !== 'radio') && ($type !== 'checkbox') && ($type !== 'dropdown')) {
             if (@$this->currRec->prefill) {
-                $value = $this->currRec->prefill;
+                $initialValue = $this->currRec->prefill;
+            }
+        } else {
+            $initialValue = $this->currRec->prefill;
+        }
+        
+        if ($initialValue && ($initialValue[0] !== '=')) {
+            if ($type === 'tel') {
+                if (preg_match('/\D/', $initialValue)) {
+                    $initialValue = preg_replace('/[^\d.\-+()]/', '', $initialValue);
+                }
+            } elseif ($type === 'number') {
+                $initialValue = preg_replace('/[^\d.\-+]/', '', $initialValue);
+            } elseif ($type === 'url') {
+                if (!preg_match('/[^@]+ @ [^@]+ \. [^@]{2,10}/x', $initialValue)) {
+                    $initialValue = '';
+                }
+            } elseif ($type === 'month') {
+                if (!preg_match('/\d{4}-\d{2}/', $initialValue)) {
+                    $initialValue = '';
+                }
+            } elseif ($type === 'time') {
+                if (!preg_match('/\d{2}:\d{2}(:\d{2})?/', $initialValue)) {
+                    $initialValue = '';
+                }
+            } elseif ($type === 'date') {
+                if (!preg_match('/\d{4}-\d{2}-\d{2}/', $initialValue)) {
+                    $initialValue = '';
+                }
+            } elseif ($type === 'datetime') {
+                if (!preg_match('/\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}(:\d{2})?/', $initialValue)) {
+                    $initialValue = '';
+                }
             }
         }
 
-        if ($type === 'tel') {
-            if (preg_match('/\D/', $value)) {
-                $value = preg_replace('/[^\d.\-+()]/', '', $value);
-            }
-        } elseif ($type === 'number') {
-            $value = preg_replace('/[^\d.\-+]/', '', $value);
-        } elseif ($type === 'url') {
-            if (!preg_match('/[^@]+ @ [^@]+ \. [^@]{2,10}/x', $value)) {
-                $value = '';
-            }
-        } elseif ($type === 'month') {
-            if (!preg_match('/\d{4}-\d{2}/', $value)) {
-                $value = '';
-            }
-        } elseif ($type === 'time') {
-            if (!preg_match('/\d{2}:\d{2}(:\d{2})?/', $value)) {
-                $value = '';
-            }
-        } elseif ($type === 'date') {
-            if (!preg_match('/\d{4}-\d{2}-\d{2}/', $value)) {
-                $value = '';
-            }
-        } elseif ($type === 'datetime') {
-            if (!preg_match('/\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}(:\d{2})?/', $value)) {
-                $value = '';
-            }
-        } if ($value) {
-            $this->currRec->inpAttr .= " data-value='$value'";
+        if ($value) {
             $value = $value ? " value='$value'" : '';
+        }
+        if ($initialValue) {
+            $initialValue = str_replace("'", "´", $initialValue);
+            $this->currRec->inpAttr .= " data-default-value='$initialValue'";
+        }
+        if ($liveValue) {
+            $liveValue = str_replace("'", "´", $liveValue);
+            $this->currRec->inpAttr .= " data-live-value='$liveValue'";
         }
         return $value;
     } // getValueAttr
@@ -2922,73 +3032,6 @@ EOT;
 
 
 
-    private function syncBackExportedData()
-    {
-        $currForm = $this->currForm;
-        if (!$currForm->export) {
-            return;
-        }
-        $exportedFile = $currForm->export;
-        if (!file_exists($exportedFile)) {
-            return;
-        }
-        $internalFormData = $currForm->file;
-        $tExp = @filemtime($exportedFile);
-        $tInt = @filemtime($internalFormData);
-        if ($tExp < ($tInt + 2)) {
-            return;
-        }
-
-        $dbE = $this->openExportDB();
-        $dataMaster = $dbE->read();
-
-        $formElements = $currForm->formElements;
-        if (!$formElements) {
-            return;
-        }
-
-        $data = [];
-        foreach ($dataMaster as $recKey => $dataRec) {
-            foreach ($formElements as $elemDef) {
-                $elemKey = $elemDef->dataKey;
-                $type = $elemDef->type;
-                if ($elemKey === REC_KEY_ID) {
-                    $value = $recKey;
-                } elseif ($elemKey === TIMESTAMP_KEY_ID) {
-                    $value = 0;
-                } elseif (($elemKey[0] === '_') || ($type === 'button')) {
-                    continue;
-                } else {
-                    $value = @$dataRec[ $elemKey ]? $dataRec[ $elemKey ]: '';
-                }
-                if (strpos('radio,checkbox,dropdown', $type) !== false) {
-                    $newValue = [];
-                    if (is_array($value)) {
-                        $newValue[0] = implode(',', $value);
-                    } else {
-                        $newValue[0] = $value;
-                    }
-                    for ($i=1; $i<sizeof($elemDef->optionNames); $i++) {
-                        $option = $elemDef->optionNames[$i];
-                        $label = $elemDef->optionLabels[$i];
-                        $newValue[$label] = (strpos(",$value,", ",$option,") !== false);
-                    }
-                    $value = $newValue;
-                } elseif (($type === 'password') && ($value === PASSWORD_PLACEHOLDER)){
-                    $value = '';
-                }
-                $data[ $recKey ][ $elemKey ] = $value;
-            }
-        }
-
-        $db = $this->openDB();
-        $db->write($data);
-        reloadAgent();
-    } // syncBackExportedData
-
-
-
-
     private function exportToFile($srcData)
     {
         $dsExport = $this->openExportDB();
@@ -3001,6 +3044,26 @@ EOT;
         }
         $dsExport->write($srcData);
     } // exportToFile
+
+
+
+    private function executeEventDuplicating(array $newRec, $ds): void
+    {
+        $keys = explodeTrim(',', $this->repeatEventTaskPending);
+        $every = intval(@$this->userSuppliedData0['_repeat-every']);
+        $count = intval(@$this->userSuppliedData0['_repeat-count']);
+        $newRec[REC_KEY_ID] = false;
+        if ($every && $count) {
+            for ($i = 1; $i <= $count; $i++) {
+                foreach ($keys as $key) {
+                    $t = strtotime($newRec[$key]);
+                    $t = strtotime("+$every days", $t);
+                    $newRec[$key] = date('Y-m-d H:i', $t);
+                }
+                $ds->addRecord($newRec, false, true, true, true);
+            }
+        }
+    } // executeEventDuplicating
 
 } // Forms
 

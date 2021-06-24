@@ -76,10 +76,10 @@ $formElemCommentColor: gray;      // --form-elem-comment-color
         min-height: 2.5em;
         vertical-align: middle;
         padding: 0 0 1em 0;
+        max-width: 100%;
 
         * {
             box-sizing: border-box;
-            //vertical-align: middle;
         }
         label a,
         legend a {
