@@ -71,6 +71,7 @@ class HtmlTable
         $this->excludeColumns       = $this->getOption('excludeColumns', '(optional) Allows to exclude specific columns, e.g. "excludeColumns:2,4-5"');
         $this->sort 		        = $this->getOption('sort', '(optional) Allows to sort the table on a given columns, e.g. "sort:3"');
         $this->sortExcludeHeader    = $this->getOption('sortExcludeHeader', '(optional) Allows to exclude the first row from sorting');
+        $this->filter               = $this->getOption('filter', '(optional) Allows to filter data. Filter value is exected to be a PHP expression. Data is referenced as "[[elemKey]]", where elemKey is column-index or header-string.');
         $this->autoConvertLinks     = $this->getOption('autoConvertLinks', '(optional) If true, all data is scanned for patterns of URL, mail address or telephone numbers. If found the value is wrapped in a &lt;a> tag');
         $this->autoConvertTimestamps= $this->getOption('autoConvertTimestamps', '(optional) If true, integer values that could be timestamps (= min. 10 digits) are converted to time strings.');
         $this->caption	            = $this->getOption('caption', '(optional) If set, a caption tag is added to the table. The caption text may contain the pattern "##" which will be replaced by a number.');
@@ -99,6 +100,7 @@ class HtmlTable
         $this->enableTooltips       = $this->getOption('enableTooltips', '(optional) Enables tooltips, e.g. for cells containing too much text. To use, apply a class-name containing "tooltip" to the targeted cell, e.g. "tooltip1".');
         $this->export               = $this->getOption('export', '(optional) .');
         $this->exportMetaElements   = $this->getOption('exportMetaElements', '(optional) .');
+        $this->prefill              = $this->getOption('prefill', '(optional) .');
 
         $this->checkArguments();
 
@@ -142,7 +144,6 @@ class HtmlTable
         $this->applyHeaders();
 
         $this->injectRowButtons();
-//        $this->loadProcessingInstructions();
         $this->applyProcessingToData();
 
  //        $this->applyMiscOptions();
@@ -463,9 +464,19 @@ EOT;
         $nCols = sizeof(reset( $data ));
         $rowClass0 = $this->rowClass;
 
+        $rec = end($data);
+        foreach ($rec as $recKeyInx => $elem) {
+            if (strpos($elem, '<{<') !== false) {
+                break;
+            }
+        }
+
         $rInx = 1;
         $r = 0;
         foreach ($data as $recId => $rec) {
+            if (!$rec || !is_array($rec)) {
+                die("Error in renderHtmlTable(): empty data record");
+            }
             if ($header && ($r === 0)) {
                 $rowClass = 'lzy-hdr-row';
                 if (isset($this->specificRowClasses[$r])) {
@@ -491,7 +502,11 @@ EOT;
                 if ($recId === '') {
                     $recId = 'new-rec';
                 }
-                $recKey = " data-reckey='$recId'";
+                $recHash = $rec[ $recKeyInx ];
+                $recKey = '';
+                if (preg_match('/ <{< (.*?) ,/x', $recHash, $m)) {
+                    $recKey = " data-reckey='{$m[1]}'";
+                }
                 $rowClass = str_replace('*', $rInx, $rowClass0);
                 if (isset($this->specificRowClasses[$r])) {
                     $rowClass .= " {$this->specificRowClasses[$r]}";
@@ -1141,7 +1156,9 @@ EOT;
 
         $this->determineHeaders();
 
-        $this->sortData();
+        $this->applyFilter();
+
+        $this->applySort();
 
         $this->adjustTableSize();
         $this->insertCellAddressAttributes();
@@ -1176,7 +1193,7 @@ EOT;
     private function renderForm()
     {
         if ($this->editFormRendered) {
-            return;
+            return false;
         }
         $this->editFormRendered = true;
 
@@ -1200,6 +1217,7 @@ EOT;
             'cancelButtonCallback' => false,
             'validate' => true,
             'labelColons' => $this->labelColons,
+            'dynamicFormSupport' => true,
         ];
         if ($this->editFormArgs) {
             $args = array_merge($args, $this->editFormArgs);
@@ -1256,6 +1274,10 @@ $out
   </div><!-- /lzy-edit-rec-form -->
 
 EOT;
+        if ($this->prefill) {
+            $prefill = json_encode($this->prefill);
+            $this->page->addJs("var lzyTableFormPrefill = JSON.parse('$prefill');");
+        }
 
         return $out;
     } // renderForm
@@ -1405,7 +1427,7 @@ EOT;
         $out = getFile( $file );
         if ($out) {
             $out = removeCStyleComments( $out );
-            $out = str_replace(['#tickHash#','#tableCounter#'], [$this->tickHash, $this->tableCounter], $out);
+            $out = str_replace(['#file#','#tickHash#','#tableCounter#'], ['~/'.$this->dataSource, $this->tickHash, $this->tableCounter], $out);
             $out = compileMarkdownStr( $out );
             $out = <<<EOT
 
@@ -1584,23 +1606,67 @@ EOT;
 
 
 
-    private function sortData()
+    private function applySort()
     {
         if ($this->sort) {
+            $sortInx = $this->sort;
+            if (is_numeric($sortInx)) {
+                $sortInx = intval($sortInx) - 1;
+            } else {
+                $sortInx = array_search($sortInx, $this->headerElems);
+            }
+
             $data = &$this->data;
-            $s = $this->sort - 1;
-            if (($s >= 0) && ($s < sizeof($data))) {
+            if ($data && ($sortInx >= 0) && ($sortInx < sizeof($data))) {
                 if ($this->sortExcludeHeader) {
                     $row0 = array_shift($data);
                 }
-                $columns = array_column($data, $s);
+                $columns = array_column($data, $sortInx);
                 array_multisort($columns, SORT_ASC, $data);
                 if ($this->sortExcludeHeader) {
                     array_unshift($data, $row0);
                 }
             }
         }
-    } // sortData
+    } // applySort
+
+
+
+
+    private function applyFilter()
+    {
+        if (!$this->filter) {
+            return;
+        }
+        $phpExpr = $this->filter;
+        if (preg_match_all('/ \[\[ (.*?) ]] /x', $phpExpr, $m)) {
+            foreach ($m[1] as $i => $value) {
+                if (is_numeric($value)) {
+                    $inx = intval($value) - 1;
+                } else {
+                    $inx = array_search($value, $this->headerElems);
+                    if ($inx === false) {
+                        continue;
+                    }
+                }
+                $phpExpr = str_replace($m[0][$i], '@$'."rec[$inx]", $phpExpr);
+            }
+        }
+
+        $out = [];
+        foreach ($this->data as $r => $rec) {
+            try {
+                $res = eval( "return $phpExpr;" );
+            } catch (Throwable $t) {
+                print_r($t);
+                exit;
+            }
+            if ($res) {
+                $out[] = $rec;
+            }
+        }
+        $this->data = $out;
+    } // applyFilter
 
 
 
@@ -1612,18 +1678,20 @@ EOT;
         }
         $nCols = sizeof( reset($this->data) );
         $nRows = sizeof($this->data);
+        $recKeyInx = array_search(REC_KEY_ID, $this->structure['elemKeys']);
         if ($this->includeCellRefs) {
             $r = 0;
             foreach ($this->data as $rKey => $rec) {
+                $recKey = @$rec[ $recKeyInx ];
                 $ic = 0;
                 for ($c = 0; $c < $nCols; $c++) {
-                    if ($this->includeKeys && (@$this->headerElems[$c] === '_key')) {
+                    if ($this->includeKeys && (@$this->headerElems[$c] === REC_KEY_ID)) {
                         $this->data[$rKey][$c] .= "<{<$r,#>}>";
                     } else {
                         if (!isset($this->data[$rKey][$c])) {
-                            $this->data[$rKey][$c] = "<{<$r,$ic>}>";
+                            $this->data[$rKey][$c] = "<{<$recKey,$ic>}>";
                         } else {
-                            $this->data[$rKey][$c] .= "<{<$r,$ic>}>";
+                            $this->data[$rKey][$c] .= "<{<$recKey,$ic>}>";
                         }
                         $ic++;
                     }
@@ -1801,6 +1869,22 @@ EOT;
         $ds = new DataStorage2($this->options);
         $this->ds = $ds;
         $data0 = $ds->read();
+
+        if ($this->includeKeys === 'hash') {
+            $found = false;
+            foreach ($data0 as $key => $rec) {
+                if (!isset($rec[REC_KEY_ID]) || !preg_match('/^[A-Z0-9]{4,20}$/', $rec[REC_KEY_ID])) {
+                    $rec[REC_KEY_ID] = createHash();
+                    $data0[$key] = $rec;
+                    $found = true;
+                }
+            }
+            if ($found) {
+                $ds->write($data0);
+            }
+        }
+        $this->data0 = $data0;
+
         $this->structure = $structure = $ds->getStructure();
 
         $fields = $structure['elements'];

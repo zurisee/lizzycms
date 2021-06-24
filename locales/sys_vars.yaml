@@ -17,6 +17,11 @@ lzy-login-icon: '<span class="lzy-icon lzy-icon-user"></span>'
 
 
 
+#--- nexttime ------------------------------------
+lzy-nexttime-no-event-found:
+    de: Keine Veranstaltung geplant
+    _:  No event scheduled
+
 
 
 #--- Forms -----------------------------------------------
@@ -941,7 +946,7 @@ lzy-table-edit-btn-title:
     _:  'Edit this row'
 
 lzy-table-delete-rec-btn: ':trash:'
-lzy-table-new-rec-btn: ':edit:'
+lzy-table-new-rec-btn: '✚'
 
 lzy-table-delete-rec-title:
     de: 'Alle ausgewählten Zeilen löschen'

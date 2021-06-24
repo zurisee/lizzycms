@@ -29,7 +29,6 @@ function HTMLtable( tableObj ) {
 	}
 	this.tableInx = this.$table.data('inx');
 	this.formHash = this.$table.closest('[data-datasrc-ref]').data('datasrc-ref');
-	// this.formHash = this.$table.data('tableHash');
 	this.formHtml = null;
 	this.lzyTableNewRec = false;
 	this.formInx = false;
@@ -68,7 +67,6 @@ function HTMLtable( tableObj ) {
 
 
 
-
 	this.initViewRecPopup = function () {
 		if (!this.$table.hasClass('lzy-rec-preview')) {
 			return;
@@ -102,7 +100,6 @@ function HTMLtable( tableObj ) {
 
 
 
-
 	this.initEditFormPopup = function () {
 		const cls = 'lzy-popup-bg lzy-popup-' + this.formInx + ' lzy-popup-with-header';
 		const formHtml = this.formHtml;
@@ -119,7 +116,6 @@ function HTMLtable( tableObj ) {
 		this.$recEditForm = $( '#' + this.recEditPopupId + ' form');
 
 	}; // initEditFormPopup
-
 
 
 
@@ -161,12 +157,11 @@ function HTMLtable( tableObj ) {
 
 
 
-
 	this.openFormPopup = function ( $triggerSrc ) {
+		// triggered by click on edit-row button:
 		const parent = this;
 		var $table = null;
 		var fldPreset = this.waitSymbol;
-		var newRec = false;
 		parent.recKey = 'new-rec';
 		if (typeof $triggerSrc[0] === 'undefined') {
 			$triggerSrc = $( $triggerSrc );
@@ -175,7 +170,6 @@ function HTMLtable( tableObj ) {
 		} else {
 			$table = $triggerSrc;
 			fldPreset = '';
-			newRec = true;
 		}
 
 		var formTitle = '';
@@ -198,6 +192,7 @@ function HTMLtable( tableObj ) {
 			closeButton: false,
 			closeOnBgClick: false,
 			header: formTitle,
+			closeCallback: 'htmltableOnPopupClose',
 		});
 
 		const $form = this.$recEditForm;
@@ -206,42 +201,37 @@ function HTMLtable( tableObj ) {
 
 		if (this.recKey === 'new-rec') {
 			$form.addClass('lzy-new-data');
-			$('#lzy-edit-rec-delete-checkbox').hide();
+			$('.lzy-edit-rec-delete-checkbox').hide();
+			return;
+
 		} else  {
 			$form.removeClass('lzy-new-data');
 			$('.lzy-form-wrapper [name=_rec-key]').val( this.recKey );
-			$('#lzy-edit-rec-delete-checkbox').show();
+			$('.lzy-edit-rec-delete-checkbox').show();
 		}
 
-		// reset input fields, insert hourglass where possible:
-		$('.lzy-form-field-wrapper input', $form).each(function() {
-			const type = $(this).attr('type');
-			if ((type === 'string') || (type === 'text') || (type === 'textarea')) {
-				$(this).val( fldPreset );
-
-			} else if ((type === 'radio') || (type === 'checkbox')) {
-				$(this).prop('checked', false);
-			}
-		});
-		$('textarea', $form).val( fldPreset );
-		$('option', $form).each(function() {
-			$(this).prop('selected', false);
-		});
-
-		if ( this.lzyTableNewRec ) {
-			return;
-		}
-
-		// get data by ajax:
-		const req = '?get-rec&ds=' + this.formHash + ':form' + this.formInx + '&lock&recKey=' + this.recKey;
 		$('[type=submit]', $form).val( $('#lzy-edit-form-submit').text() );
 		$('#lzy-edit-rec-delete-checkbox input[type=checkbox]').prop('checked', false);
-
-		execAjax(false, req, function(json){
-			parent.updateEditForm( parent.recKey, parent.formId, json);
-		});
+		lzyForms.onOpen( this.recKey, $form );
 	}; // openFormPopup
 
+
+
+	this.prefillFields = function() {
+		$('[data-default-value]').each(function () {
+			let $this = $( this );
+			let defaultValue = $this.data('default-value');
+			$this.val( defaultValue );
+		});
+		if (typeof lzyTableFormPrefill !== 'undefined') {
+			for (let elem in lzyTableFormPrefill) {
+				let value = lzyTableFormPrefill[elem];
+				mylog(elem + ' => ' + value, false);
+				let $field = $('[name=' + elem + ']');
+				$field.val(value);
+			}
+		}
+	}; // prefillFields
 
 
 
@@ -291,7 +281,6 @@ function HTMLtable( tableObj ) {
 
 
 
-
 	this.makeReadonly = function ( $srcElem ) {
 		$('.lzy-form-field-wrapper', $srcElem).each(function () {
 			const $formEl = $( this );
@@ -325,60 +314,11 @@ function HTMLtable( tableObj ) {
 				$formEl.append('<div class="lzy-form-field-placeholder">&nbsp;</div>');
 			}
 		});
-	};
+	}; // makeReadonly
 
 
 
-
-	this.updateEditForm = function ( recKey, formId, json ) {
-		try {
-			var data = JSON.parse(json);
-		} catch (e) {
-			console.log('Error condition detected');
-			console.log(json);
-			let msg = '{{ lzy-table-record-locked }}';
-			if (msg.match(/^\{\{/)) {
-				msg = 'Table is locked or not available';
-			}
-			lzyPopupClose();
-			lzyPopup(msg);
-			// lzyPopup('{{ lzy-table-record-locked }}');
-			return false;
-		}
-		var i, val;
-		var sel;
-		if ( data.res !== 'Ok') {
-			this.handleException( data );
-		}
-		for (i in data.data) {
-			val = data.data[ i ];
-			if (i.match(/input:/)) {
-				$( i ).prop('checked', true);
-			} else if (i.match(/option/)) {
-				$( i ).prop('selected', true);
-			} else {
-				sel ='[name=' + i + ']';
-				$( sel, formId ).val( val );
-			}
-		}
-	}; // updateEditForm
-
-
-
-	this.handleException = function ( data ) {
-		lzyPopupClose();
-		var lockedRec = null, i = null;
-		if (typeof data.lockedRecs === 'object') {
-			for (i in data.lockedRecs) {
-				lockedRec = data.lockedRecs[i];
-				$('[data-reckey="' + lockedRec + '"]').addClass('lzy-record-locked');
-			}
-			lzyPopup('{{ lzy-table-record-locked }}');
-		}
-	};
-
-
-
+//??? still used?
 	this.updateUI = function ( json ) {
 		try {
 			var data = JSON.parse(json);
@@ -400,7 +340,6 @@ function HTMLtable( tableObj ) {
 
 
 
-
 	this.unlockRecord = function () {
 		const req = '?unlock-rec&ds=' + this.formHash + ':form' + this.formInx + '&recKey=' + this.recKey;
 		execAjax(false, req, function(json) {
@@ -410,7 +349,19 @@ function HTMLtable( tableObj ) {
 
 
 
-
 	this.init();
 
 } // HTMLtable
+
+
+
+function htmltableOnPopupClose() {
+	$('[name=_lizzy-form]').each(function () {
+		let formHash = $(this).val();
+		let url = appRoot + '_lizzy/_ajax_server.php?unlock-rec&ds=' + formHash + '&recKey=*';
+		// let url = appRoot + '_lizzy/_ajax_server.php?unlock-rec&ds=' + formHash + '&recKey=' + recKey;
+		$.ajax({
+			url: url,
+		});
+	});
+} // htmltableOnPopupClose
