@@ -2380,6 +2380,14 @@ EOT;
 
     private function checkAndRenderCachePage()
     {
+        // cached page can be rendered when:
+        // - no user is logged in
+        // - no GET or POST arguments present
+        // - no HASH is present in URL
+        // - Session-variable 'nc' is not set
+        // - Debug-mode is not active
+        // - no daily housekeeping is to be executed
+
         if (isset($_GET['reset'])) {  // reset page cache
             purgePageCache();
         }
@@ -2406,6 +2414,9 @@ EOT;
             return;
         }
         if (@$_SESSION['lizzy']['user'] || $_GET || $_POST) {
+            return;
+        }
+        if (preg_match('/[A-Z][A-Z0-9]{4,}/', $_SERVER['REQUEST_URI'])) {
             return;
         }
 
