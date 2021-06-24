@@ -374,7 +374,7 @@ function timeToStr( UNIX_timestamp ){
     let sec = a.getSeconds();
     let time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
     return time;
-}
+} // timeToStr
 
 
 
@@ -382,7 +382,14 @@ function timeToStr( UNIX_timestamp ){
 function htmlEntities(str)
 {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+} // htmlEntities
+
+
+
+
+function stripTags( str ) {
+    return str.replace(/(<([^>]+)>)/gi, '');
+} // stripTags
 
 
 
