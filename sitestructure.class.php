@@ -56,23 +56,14 @@ class SiteStructure
             $this->list = false;
             return;
         }
-        $this->site_enableCaching = $this->config->site_enableCaching;
-        $this->cacheFile = CACHE_PATH . '_siteStructure.dat';
 
+        // read config/sitemap.txt, extract list of pages (not yet hierarchical):
+        $this->list = $this->parseSitemapDef();
 
-		if (!$this->readCache()) {
-            if ($config->feature_sitemapFromFolders) {
-                $this->list = $this->getSitemapFromFolders();
+        // parse list of pages, compile hierarchical tree, i.e. sitemap:
+        $this->tree = $this->parseList();
 
-            } else {
-                $this->list = $this->parseSitemapDef();
-            }
-            $this->tree = $this->parseList();
-
-            $this->propagateProperties();   // properties marked with ! -> propagate into branches, e.g. 'lang!'='fr'
-
-            $this->writeCache();
-        }
+        $this->propagateProperties();   // properties marked with ! -> propagate into branches, e.g. 'lang!'='fr'
 
         $currNr = $this->findSiteElem($this->currPage);
         if ($currNr !== false) {
@@ -332,13 +323,22 @@ class SiteStructure
 
     private function _parseList($path, $parentLevel, $parentInx)
     {
+        $list = &$this->list;
         $listInx = &$this->listInx;
         $treeInx = 0;         // $treeInx -> counter within level
         $tree = [];
-        while ($listInx < $this->listSize) {
+        while ($listInx < sizeof($list)) {
+            $name = $list[$listInx]['name'];
+
+            // elem name == '*' means derive page-list from current folder down:
+            if ($name === '*') {
+                $branch = $this->getBranchFromFolders( $listInx, $parentLevel, $path );
+                array_splice( $this->list, $listInx, 1, $branch);
+            }
+
             // create tree elem as ref to list elem:
-            $tree[ $treeInx ] = &$this->list[$listInx];
-            $currTreeElem = &$this->list[$listInx];
+            $tree[ $treeInx ] = &$list[$listInx];
+            $currTreeElem = &$list[$listInx];
 
             if (isset($currTreeElem['specified_folder'])) {
                 $path1 = $currTreeElem['specified_folder'];
@@ -366,7 +366,7 @@ class SiteStructure
             $treeInx++;
             $listInx++;
 
-            $nextLevel = @$this->list[ $listInx]['level'];
+            $nextLevel = @$list[ $listInx]['level'];
             $up = ($nextLevel < $currLevel);
             $down = ($nextLevel > $currLevel);
             if ($up) {
@@ -378,7 +378,7 @@ class SiteStructure
                 $subtree = $this->_parseList($path1, $currLevel, $currInx);
 
                 $currTreeElem = array_merge($currTreeElem, $subtree);
-                $nextLevel = @$this->list[$listInx]['level'];
+                $nextLevel = @$list[$listInx]['level'];
                 $up = ($nextLevel < $currLevel);
                 if ($up) {
                     return $tree;
@@ -391,47 +391,55 @@ class SiteStructure
 
 
 
-    private function getSitemapFromFolders() {
-        $list = array();
-        $i = 0;
-        return $this->_traverseDir(PAGES_PATH,$i, 0, $list);
-    } // getSitemapFromFolders
-
-
-
-
-    private function _traverseDir($path, &$i, $level, &$list)
+    private function getBranchFromFolders( $listInx, $parentLevel, $path )
     {
-        if ($dh = opendir($path)) {
-            while (($f = readdir($dh)) !== false) {
-                $rec = [];
-                $file = $path . $f;
-                if (!is_dir($file) || (strpos('._#', $f[0]) !== false)) {
-                    continue;
-                }
+        $path1 = "{$GLOBALS['globalParams']['pagesFolder']}$path";
+        $dir = getDirDeep( "$path1*.md" );
+        $tmp = [];
+        foreach ($dir as $i => $elem) {
+            $elem = dirname($elem).'/';
+            if ($elem !== $path1) {
+                $tmp[$elem] = '';
+            }
+        }
+        $dir = array_keys($tmp);
+        sort($dir);
+        $branch = [];
+        foreach ($dir as $i => $p) {
+            $rec = &$branch[$i];
+            $level = $parentLevel + strlen( preg_replace('|[^/]|', '', $p)) - 2;
+            $basename = base_name( substr($p, 0, -1));
+            $name = ucwords( str_replace('_', ' ', $basename));
+            $rec['name'] = $name;
+            $rec['folder'] = "$basename/";
+            $rec['level'] = $level;
+            $rec['showthis'] = '';
+            $rec['isCurrPage'] = false;
+            $rec['listInx'] = 0;
+            $rec['urlExt'] = '';
+            $rec['active'] = false;
+            $rec['noContent'] = false;
+            $rec['hide'] = false;
+            $rec['restricted!'] = false;
+            $rec['actualFolder'] = false;
+            $rec['urlpath'] = false;
+            $rec['hasChildren'] = false;
+            $rec['parentInx'] = $listInx;
 
-                $name = preg_replace('/^\d\d_/', '', $f);
-                $rec['name'] = str_replace('_', ' ', $name);
-                $rec['level'] = $level;
-                if (!$list) {
-                    $rec['folder'] = '~/./';
-                    $rec['showthis'] = $f . '/';
-                } else {
-                    $rec['folder'] = $f . '/';
+            // read folder's config file .sitebranch.yaml', add items to page rec:
+            $configFile = $p . '.sitebranch.yaml';
+            if (file_exists($configFile)) {
+                $args = getYamlFile($configFile);
+                if (isset($args['restricted'])) {
+                    $args['restricted!'] = $args['restricted'];
+                    unset($args['restricted']);
                 }
-                $rec['isCurrPage'] = false;
-                $rec['listInx'] = $i;
-                $rec['urlExt'] = '';
-                $rec['active'] = false;
-                $rec['hide!'] = false;
-
-                $i++;
-                $list[] = $rec;
-                $this->_traverseDir("$path$f/", $i, $level + 1, $list);
-            };
-        };
-        return $list;
-    } // _traverseDir
+                $rec = array_merge($rec, $args);
+                $rec = $this->determineVisability( $rec );
+            }
+        }
+        return $branch;
+    } // getBranchFromFolders
 
 
 
@@ -701,44 +709,6 @@ class SiteStructure
 
         return false;
     } // hasActiveAncestor
-
-
-
-
-	private function writeCache()
-	{
-		if ($this->site_enableCaching) {
-			$cache = serialize($this);
-			file_put_contents($this->cacheFile, $cache);
-		}
-	} // writeCache
-
-
-
-
-	private function readCache()
-	{   // when cache can be used:
-        // - config>site_enableCaching: true
-        // - cached siteStructure exists
-        // - cached siteStructure is newer than config/sitemap.txt
-        $skipElements = ['currPage', 'config', 'site_sitemapFile', 'site_enableCaching'];
-		if ($this->site_enableCaching) {
-			if (!file_exists($this->cacheFile)) {
-				return false;
-			}
-			$cacheTime = filemtime($this->cacheFile);
-			if ($cacheTime > filemtime($this->site_sitemapFile)) {
-				$site = unserialize(file_get_contents($this->cacheFile));
-				foreach ($site as $key => $value) {
-					if (!in_array($key, $skipElements)) {
-						$this->$key = $value;
-					}
-				}
-				return true;
-			}
-		}
-		return false;
-	} // readCache
 
 
 
