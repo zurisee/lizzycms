@@ -40,7 +40,7 @@ class NextInTimeSequence
         $data = $this->getData();
 
         if (!$data || !is_array($data)) {
-            return "Error in next(): no data found.";
+            return '<div class="lzy-nexttime">{{ lzy-nexttime-no-event-found }}</div>';
         }
 
         $today = $this->today();    // optionally overridden by url-arg 'now'
@@ -50,6 +50,7 @@ class NextInTimeSequence
         $dateKey = $this->dateKey;
         foreach ($data as $rec) {
             if (!$rec) { continue; }
+
             if ($dateKey) {
                 $next = strtotime($rec[ $dateKey ]); // may or may not carry a time
             } elseif (!is_numeric($rec)) {
@@ -127,12 +128,14 @@ class NextInTimeSequence
         }
 
         // sort data, if dateKey is defined, sort on that element:
-        if ($dateKey) {
-            usort($data, function($a,$b) use($dateKey){
-                return ($a[$dateKey] > $b[$dateKey]);
-            });
-        } else {
-            sort($data);
+        if ($data) {
+            if ($dateKey) {
+                usort($data, function ($a, $b) use ($dateKey) {
+                    return ($a[$dateKey] > $b[$dateKey]);
+                });
+            } else {
+                sort($data);
+            }
         }
 
         // cache data and dateKey for later re-use:
@@ -170,20 +173,15 @@ class NextInTimeSequence
             $pattern2 = '';
             $days = $a[0];
             if ($days === '*') {
-//                $days = 1;
                 $pattern = "+1 day";
             } elseif (strpos($days, '.') === false) {
                 $pattern = "+$days days";
             } else {
                 $days = str_pad($days, 2, '0', STR_PAD_LEFT);
                 $pattern2 = "1970-01-$days";
-//                die("next() -> constructSequence(): not impl yet ");
             }
 
             $month = @$a[1];
-//            if (!$month) {
-//                $month = 0;
-//            } else
             if ($month === '*') {
                 $pattern .= " +1 month";
             } elseif (strpos($month, '.') === false) {
@@ -191,7 +189,6 @@ class NextInTimeSequence
             } else {
                 $month = str_pad($month, 2, '0', STR_PAD_LEFT);
                 $pattern2 = "1970-$month-".substr($pattern2,-2);
-//                die("next() -> constructSequence(): not impl yet ");
             }
 
             $years = @$a[2];
@@ -201,11 +198,8 @@ class NextInTimeSequence
                 $pattern .= " +$years years";
             } else {
                 $years = str_pad($years, 4, '20', STR_PAD_LEFT);
-//                die("next() -> constructSequence(): not impl yet ");
             }
-            $pattern2 = $years.substr($pattern2, 5);
 
-//            $pattern = '';
             if ($days) {
                 $pattern = "+$days days";
             }
@@ -284,6 +278,7 @@ class NextInTimeSequence
             if (strpos($excludeCondition, 'return ') === false) {
                 $excludeCondition = 'return '.$excludeCondition;
             }
+            $excludeCondition = trim($excludeCondition, ';') . ';';
             $GLOBALS['globalParams']['nextEvent'][$id]['excludeCondition'] = $excludeCondition;
         } elseif (isset($GLOBALS['globalParams']['nextEvent'][$id]['excludeCondition'])) {
             $excludeCondition = $GLOBALS['globalParams']['nextEvent'][$id]['excludeCondition'];
