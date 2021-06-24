@@ -454,11 +454,15 @@ class DataStorage2
         if (!$force && $this->isDbLocked( false )) {
             return false;
         }
+        if ($recId ==='*') {
+            return $this->_unlockAllRecs( $force );
+        }
+
         if (($recId = $this->fixRecId($recId)) === false) {
             return false;
         }
 
-        $locked = $this->isRecLocked( $recId );
+        $locked = $this->isRecLocked($recId);
         if ($locked && !$force) { // rec already locked
             return false;
         }
@@ -953,11 +957,23 @@ class DataStorage2
 
     private function createNewRecId( $default = false )
     {
+        if (!isset($this->structure['key'])) {
+            if (is_string($default) && strpos('index,numeric,string,hash,date,datetime,unixtime', $default) !== false) {
+                $this->structure['key'] = $default;
+                $default = false;
+            } else {
+                $this->structure['key'] = 'index';
+            }
+        }
         switch ($this->structure['key']) {
             case 'hash':
                 return createHash();
+
             case 'index':
-                return sizeof($this->getData(true));
+                $data = $this->getData(true);
+                return is_array($data) ? sizeof($this->getData(true)) : 0;
+
+            case 'numeric':
             case 'number':
                 $inx = 0;
                 foreach ($this->getData() as $key => $rec) {
@@ -969,10 +985,13 @@ class DataStorage2
 
             case 'date':
                 return date('Y-m-d');
+
             case 'datetime':
                 return date('Y-m-d H:i:s');
+
             case 'unixtime':
                 return time();
+
             default: // for everything else we use hash, unless default given:
                 return $default ? $default : createHash();
         }
@@ -1125,6 +1144,7 @@ class DataStorage2
 
     private function _isRecLocked( $recId )
     {
+        //$mySessId = $this->sessionId;
         $recLocks = $this->lowlevelReadRecLocks();
         if (!$recLocks) {
             return null;
@@ -1202,12 +1222,7 @@ class DataStorage2
     {
         $recLocks = $this->lowlevelReadRecLocks();
         if ($recId === '*') {
-            foreach ($recLocks as $rId => $lock) {
-                if (!$force && !$this->isMySessionID( $lock['lockOwner'] )) {
-                    continue;
-                }
-                unset($recLocks[$rId]);
-            }
+            return $this->_unlockAllRecs( $force );
 
         } elseif (isset($recLocks[$recId])) {
             if (!$force && !$this->isMySessionID( $recLocks[$recId]['lockOwner'] )) {
@@ -1223,6 +1238,7 @@ class DataStorage2
 
     private function _unlockAllRecs( $force )
     {
+        //$mySessId = $this->sessionId;
         if ( $force ) {
             $this->lowLevelWriteRecLocks( [] );
         } else {
@@ -1264,6 +1280,18 @@ class DataStorage2
 
         if (!$this->data || isset($this->data[ $recId ])) { // direct hit, done:
             return $recId;
+        }
+
+        // check case of hash (ignoring poss. ':form1'-type extension):
+        if (preg_match('/^([A-Z0-9]{4,20}):?/', $recId, $m)) {
+            $recId1 = $m[1];
+            if ($recId1) {
+                foreach ($this->data as $id => $rec) {
+                    if (@$rec[REC_KEY_ID] === $recId1) {
+                        return $id;
+                    }
+                }
+            }
         }
 
         if (preg_match('/\D/', $recId)) {     // it's a string:
@@ -2034,15 +2062,18 @@ EOT;
 
         if (($this->format === 'yaml') || ($this->format === 'json')) {
             // try to figure out keyType:
-            if (!isset($structure['key'])) {
+            if (!isset($structure['key']) || ($structure['key'] === false)) {
                 if (isset($rawData['origFile'])) {
-                    $rawData = trim(file_get_contents($rawData['origFile']));
+                    $rawData = getFile($rawData['origFile'], 'all', true);
                 }
                 if ($rawData) {
                     if ((($this->format === 'yaml') && ($rawData[0] === '-')) ||
                         (($this->format === 'json') && ($rawData[0] === '['))) {
                         $keyType = 'index';
                         $structure['key'] = 'index';
+                    } elseif (($this->format === 'yaml') && preg_match('/^[A-Z0-9]{4,20}/', $rawData)) {
+                        $keyType = 'hash';
+                        $structure['key'] = 'hash';
                     }
                 }
             }
