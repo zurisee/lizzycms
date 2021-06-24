@@ -122,6 +122,9 @@ function lzyOperateRevealPanel( that )
 		$('.lzy-focus-disabled', $revealContainer).each(function () {
 			let $el = $( this );
 			let tabindex = $el.data('tabindex');
+			if ((typeof tabindex !== 'number') || (tabindex < 0)) {
+				tabindex = 0;
+			}
 			$el.attr('tabindex', tabindex);
 		});
 
@@ -131,7 +134,13 @@ function lzyOperateRevealPanel( that )
 
 		// disable all focusable elements inside reveal-container:
 		$('.lzy-focus-disabled', $revealContainer).each(function () {
-			$( this ).attr('tabindex', -1);
+			let $this = $( this );
+			let tabindex = $this.attr('tabindex');
+			if ((typeof tabindex !== 'number') || (tabindex < 0)) {
+				tabindex = 0;
+			}
+			$this.data('tabindex', tabindex);
+			$this.attr('tabindex', -1);
 		});
 	}
 } // lzyOperateRevealPanel
