@@ -408,3 +408,138 @@ function var_r($var, $varName = '', $flat = false, $asHtml = true)
     return $out;
 } // var_r
 
+
+
+
+function getFile($pat, $removeComments = false, $removeEmptyLines = false)
+{
+    global $globalParams;
+    $pat = str_replace('~/', '', $pat);
+    if (strpos($pat, '~page/') === 0) {
+        $pat = str_replace('~page/', $globalParams['pageFolder'], $pat);
+    }
+    if (file_exists($pat)) {
+        $file = file_get_contents($pat);
+
+    } elseif ($fname = findFile($pat)) {
+        if (is_file($fname) && is_readable($fname)) {
+            $file = file_get_contents($fname);
+        } else {
+            fatalError("Error trying to read file '$fname'", 'File: '.__FILE__.' Line: '.__LINE__);
+        }
+    } else {
+        return false;
+    }
+
+    $file = zapFileEND($file);
+    if ($removeComments === true) {
+        $file = removeCStyleComments($file);
+    } elseif ($removeComments) {
+        $file = removeHashTypeComments($file);
+    }
+    if ($removeEmptyLines || strpos($removeComments, 'emptyLines')) {
+        $file = removeEmptyLines($file);
+    }
+    return $file;
+} // getFile
+
+
+
+
+function zapFileEND($file)
+{
+    $p = strpos($file, "__END__");
+    if ($p === false) {
+        return $file;
+    }
+
+    if ($p === 0) {     // on first line?
+        return '';
+    } elseif ($file[ $p - 1] === "\n") {	// must be at beginning of line
+        $file = substr($file, 0, $p);
+    }
+    return $file;
+} // zapFileEND
+
+
+
+
+function removeHashTypeComments($str)
+{
+    if (!$str) {
+        return '';
+    }
+    $lines = explode(PHP_EOL, $str);
+    $lead = true;
+    foreach ($lines as $i => $l) {
+        if (isset($l[0]) && ($l[0] === '#')) {  // # at beginning of line
+            unset($lines[$i]);
+        } elseif ($lead && !$l) {   // empty line while no data line encountered
+            unset($lines[$i]);
+        } else {
+            $lead = false;
+        }
+    }
+    return implode("\n", $lines);
+} // removeHashTypeComments
+
+
+
+
+function removeCStyleComments($str)
+{
+    $p = 0;
+    while (($p = strpos($str, '/*', $p)) !== false) {		// /* */ style comments
+
+        $ch_1 = $p? $str[$p-1] : "\n"; // char preceding '/*' must be whitespace
+        if (strpbrk(" \n\t", $ch_1) === false) {
+            $p += 2;
+            continue;
+        }
+        $p2 = strpos($str, "*/", $p);
+        $str = substr($str, 0, $p).substr($str, $p2+2);
+    }
+
+    $p = 0;
+    while (($p = strpos($str, '//', $p)) !== false) {		// // style comments
+
+        if ($p && ($str[$p-1] === ':')) {			// avoid http://
+            $p += 2;
+            continue;
+        }
+
+        if ($p && ($str[$p-1] === '\\')) {					// avoid shielded //
+            $str = substr($str, 0, $p-1).substr($str,$p);
+            $p += 2;
+            continue;
+        }
+        $p2 = strpos($str, "\n", $p);
+        if ($p2 === false) {
+            return substr($str, 0, $p);
+        }
+
+        if ((!$p || ($str[$p-1] === "\n")) && ($str[$p2])) {
+            $p2++;
+        }
+        $str = substr($str, 0, $p).substr($str, $p2);
+    }
+    return $str;
+} // removeCStyleComments
+
+
+
+
+function removeEmptyLines($str)
+{
+    $lines = explode(PHP_EOL, $str);
+    foreach ($lines as $i => $l) {
+        if (!$l) {
+            unset($lines[$i]);
+        }
+    }
+    return implode("\n", $lines);
+} // removeEmptyLines
+
+
+
+
