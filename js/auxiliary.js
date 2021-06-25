@@ -394,6 +394,26 @@ function stripTags( str ) {
 
 
 
+function createHash( length, unambiguous ) {
+    if (typeof length === 'undefined') {
+        length = 6;
+    }
+    let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let n1 = 26;
+    let n2 = 36;
+    if ((typeof unambiguous !== 'undefined') && unambiguous) {
+        chars = 'ACDEFHJKLMNPQRTUVWXY3479';
+        n1 = 20;
+        n2 = 24;
+    }
+    let hash = chars.charAt( Math.floor( Math.random() * n1 ) );  // first always a letter
+    for (i=1; i<length; i++) {
+        hash += chars.charAt( Math.floor( Math.random() * n2 ) );
+    }
+    return hash;
+} // createHash
+
+
 
 // plug-in to get specified element selected
 //  Usage: $('selector').selText();
