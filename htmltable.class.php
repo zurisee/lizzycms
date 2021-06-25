@@ -1615,6 +1615,9 @@ EOT;
             } else {
                 $sortInx = array_search($sortInx, $this->headerElems);
             }
+            if ($sortInx === false) {
+                return;
+            }
 
             $data = &$this->data;
             if ($data && ($sortInx >= 0) && ($sortInx < sizeof($data))) {
