@@ -1632,8 +1632,14 @@ EOT;
         // 'dataFile' refers to a yaml or csv file that contains the original data source
         // each dataFile is copied into a table within the lizzyDB
 
-        if ($this->secure && (strpos($this->dataFile, 'config/') !== false)) {
-            return null;
+        // access to files in config/ are risky -> restrict access to admins:
+        if ($this->secure && (strpos($this->dataFile, 'config/') !== false) && !@$GLOBALS['_SESSION']['lizzy']['isAdmin']) {
+            mylog("DataStorage: access to DB '$this->dataFile' in config/ folder denied. User would need to be admin.");
+            if ($GLOBALS['globalParams']['isLocalhost']) {
+                die("DataStorage: access to DB '$this->dataFile' in config/ folder denied. You'd have to be admin.");
+            } else {
+                return null;
+            }
         }
 
         // check data file
