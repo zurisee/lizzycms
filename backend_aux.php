@@ -22,6 +22,9 @@ define('REC_KEY_ID', 	        '_key');
 define('TIMESTAMP_KEY_ID', 	    '_timestamp');
 define('PASSWORD_PLACEHOLDER', 	'●●●●');
 
+use Symfony\Component\Yaml\Yaml;
+
+
 $GLOBALS['globalParams']['isBackend'] = true;
 $appRoot = getcwd().'/';
 if (strpos($appRoot, '_lizzy/') !== false) {
@@ -299,6 +302,103 @@ function checkGroupMembership($requiredGroup)
     }
     return false;
 } // checkGroupMembership
+
+
+
+function getYamlFile($filename, $returnStructure = false)
+{
+    $yaml = getFile($filename, true);
+    if ($yaml) {
+        $data = convertYaml($yaml);
+    } else {
+        $data = [];
+    }
+
+    $structure = false;
+    $structDefined = false;
+    if (isset($data['_structure'])) {
+        $structure = $data['_structure'];
+        unset($data['_structure']);
+        $structDefined = true;
+    }
+    if ($returnStructure) {     // return structure of data
+        if (!$structure) {      // source fild didn't contain a '_structure' record, so derive it from data:
+            $yaml = removeHashTypeComments($yaml);
+            $yaml = preg_replace("/\n.*/", '', $yaml);
+            $inx0 = '';
+            if (preg_match('/^ ([\'"]) ([\w\-\s:T]*) \1 : .*/x', $yaml, $m)) {
+                $inx0 = $m[2];
+            } elseif (preg_match('/^ ([\w\-\s:T]*) : .*/x', $yaml, $m)) {
+                $inx0 = $m[1];
+            }
+            if ($inx0) {
+                if (strtotime(($inx0))) {
+                    if (preg_match('/\d\d:\d\d/', $inx0)) {
+                        $structure['key'] = 'datetime';
+                    } else {
+                        $structure['key'] = 'date';
+                    }
+                } elseif (preg_match('/^\d+$/', $inx0)) {
+                    $structure['key'] = 'number';
+                } else {
+                    $structure['key'] = 'string';
+                }
+            }
+            $inxs = array_keys($data);  // get first data rec
+            if (isset($inxs[0])) {
+                foreach (array_keys($data[ $inxs[0] ]) as $name) {   // extract field names
+                    $structure['elements'][$name] = 'string';
+                }
+            }
+            if (!isset($structure['key'])) {
+                $structure['key'] = 'string';
+            }
+        }
+        return [$data, $structure, $structDefined];
+    }
+    return $data;
+} // getYamlFile
+
+
+
+
+function convertYaml($str, $stopOnError = true, $origin = '', $convertDates = true)
+{
+    $data = null;
+    $str = removeHashTypeComments($str);
+    if ($str) {
+        if (preg_match('/^[\'"] [^\'"]+ [\'"] (?!:) /x', $str)) {
+            $data = csv_to_array($str);
+
+        } else {
+            $str = str_replace("\t", '    ', $str);
+            try {
+                $data = Yaml::parse($str);
+            } catch(Exception $e) {
+                if ($stopOnError) {
+                    fatalError("Error in Yaml-Code: <pre>\n$str\n</pre>\n" . $e->getMessage(), 'File: '.__FILE__.' Line: '.__LINE__, $origin);
+                } else {
+                    writeLogStr("Error in Yaml-Code: [$str] -> " . $e->getMessage(), true);
+                    return null;
+                }
+            }
+        }
+    }
+    if (!$convertDates) {
+        return $data;
+    }
+    $data1 = [];
+    if (is_array($data)) {
+        foreach ($data as $key => $value) {
+            if (is_string($key) && ($t = strtotime($key))) {
+                $data1[$t] = $value;
+            } else {
+                $data1[$key] = $value;
+            }
+        }
+    }
+    return $data1;
+} // convertYaml
 
 
 
