@@ -15,6 +15,8 @@ section: "\n</section>\n<section>\n"
 
 lzy-login-icon: '<span class="lzy-icon lzy-icon-user"></span>'
 
+lzy-login-button-label: Login
+
 
 
 #--- nexttime ------------------------------------
@@ -30,7 +32,7 @@ Username:
     en: Username
 
 Password:
-    de: Kennwort
+    de: Passwort
     en: Password
 
 
@@ -457,8 +459,8 @@ Logout:
     en: Logout
 
 Login failed:
-    de: Benutzername oder Kennwort passen nicht.<br />Bitte versuchen Sie es erneut.
-    de2: Benutzername oder Kennwort passen nicht.<br />Bitte versuche es erneut.
+    de: Benutzername oder Passwort passen nicht.<br />Bitte versuchen Sie es erneut.
+    de2: Benutzername oder Passwort passen nicht.<br />Bitte versuche es erneut.
     en: User unknown or password incorrect.<br />Please try again.
 
 Insufficient privileges:
@@ -472,8 +474,8 @@ Err empty username:
     en: Please enter your user name
 
 Err empty password:
-    de: Bitte geben Sie Ihr Kennwort ein
-    de2: Bitte gib dein Kennwort ein
+    de: Bitte geben Sie Ihr Passwort ein
+    de2: Bitte gib dein Passwort ein
     en: Please enter your password
 
 LoginLink:
@@ -557,11 +559,11 @@ lzy-create-accesscode-user-unknown:
 
 
 #login with password:
-#    de: Anmeldung mit <br>Kennwort
+#    de: Anmeldung mit <br>Passwort
 #    en: Login with <br>password
 
 #login without password:
-#    de: Anmeldung ohne <br>Kennwort
+#    de: Anmeldung ohne <br>Passwort
 #    en: Login without <br>password
 
 #login with choice:
@@ -569,11 +571,11 @@ lzy-create-accesscode-user-unknown:
 #    en: Log in
 
 #login with password:
-#    de: mit <br>Kennwort
+#    de: mit <br>Passwort
 #    en: by <br>password
 #
 #login without password:
-#    de: ohne <br>Kennwort
+#    de: ohne <br>Passwort
 #    en: by <br>e-mail
 
 
@@ -596,12 +598,12 @@ un-pw-login-info:
 
 #login-password-info:
 login-password-login-info:
-    de: "Geben Sie Ihr Kennwort ein.Kontaktieren Sie den {{ webmaster_link }}, falls Sie das Kennwort vergessen haben oder ein sonstiges Problem aufgetreten ist."
-    de2: "Gib dein Kennwort ein.Kontaktiere den {{ webmaster_link }}, falls du das Kennwort vergessen hast oder ein sonstiges Problem aufgetreten ist."
+    de: "Geben Sie Ihr Passwort ein.Kontaktieren Sie den {{ webmaster_link }}, falls Sie das Passwort vergessen haben oder ein sonstiges Problem aufgetreten ist."
+    de2: "Gib dein Passwort ein.Kontaktiere den {{ webmaster_link }}, falls du das Passwort vergessen hast oder ein sonstiges Problem aufgetreten ist."
     en: "Enter your password.<br>Contact the {{ webmaster_link }} if you forgot your password or some other problem has come up."
 
 info-password-login-title:
-    de: 'Hilfe: zum Kennwort'
+    de: 'Hilfe: zum Passwort'
     en: 'Help on password'
 
 
@@ -610,7 +612,7 @@ info-password-login-title:
 #maillink Webmaster: "{{ concat('forgot password1', webmaster-email,'?subject=',login-problems,'&body=%0a%0aURL:%20',pageUrl, '\'\>Webmaster</a>') }}"
 
 #forgot password:
-#    de: "<a href='mailto:webmaster-email'>Kennwort funktioniert nicht oder vergessen...</a>"
+#    de: "<a href='mailto:webmaster-email'>Passwort funktioniert nicht oder vergessen...</a>"
 #    en: "<a href='mailto:webmaster-email'>Password not working or forgotten...</a>"
 #login-problems:
 #    de: Probleme beim Anmelden
@@ -621,12 +623,12 @@ info-password-login-title:
 #    en: "<a href='mailto:"
 #
 #forgot password2:
-#    de: "'>Kennwort funktioniert nicht oder vergessen...</a>"
+#    de: "'>Passwort funktioniert nicht oder vergessen...</a>"
 #    en: "'>Password not working or forgotten...</a>"
 
     
 #Login show password:
-#    de: Kennwort offen anzeigen
+#    de: Passwort offen anzeigen
 #    en: Show password in plain text
 
 #Login show password:
@@ -654,16 +656,16 @@ Err empty email:
 
 
 lzy-define-new-password:
-    de: 'Neues Kennwort festlegen'
+    de: 'Neues Passwort festlegen'
     _:  'Define New Password'
 
 lzy-define-new-password-text:
     de: |
         <strong>Achtung</strong>:<br>Sie haben sich eben mit einem "Einmal-Code" angemeldet.
-        Dieser wird künftig nicht mehr funktionieren. Sie können hier Ihr neues persönliches Kennwort festlegen:
+        Dieser wird künftig nicht mehr funktionieren. Sie können hier Ihr neues persönliches Passwort festlegen:
     de2: |
         <strong>Achtung</strong>:<br>Du hast dich eben mit einem "Einmal-Code" angemeldet.
-        Dieser wird künftig nicht mehr funktionieren. Du kannst hier dein neues persönliches Kennwort festlegen:
+        Dieser wird künftig nicht mehr funktionieren. Du kannst hier dein neues persönliches Passwort festlegen:
     _:  |
         <strong>Note</strong>:<br>You just logged in by means of a "one-time code", which will not work in the future.
         Here you can define your own password which will continue to work in the future:
@@ -895,7 +897,7 @@ lzy-email-change-successful:
 #--- User Admin ------------------------
 # Change PW:
 lzy-change-password-title:
-    de: Kennwort ändern
+    de: Passwort ändern
     _: Change your password
 
 lzy-invalid-email-address:

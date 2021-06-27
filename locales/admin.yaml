@@ -16,7 +16,7 @@ lzy-insufficient-privilege-for-page:
 lzy-login-with-password:
     de: 'Anmelden'
     _:  'Log in'
-#    de: 'Per Benutzername &amp; Kennwort'
+#    de: 'Per Benutzername &amp; Passwort'
 #    _:  'By Username &amp; Password'
 
 lzy-login-without-password:
@@ -24,7 +24,7 @@ lzy-login-without-password:
     _:  'By E-Mail'
 
 lzy-login-forgot-password:
-    de: 'Kennwort vergessen'
+    de: 'Passwort vergessen'
     _:  'Forgot password'
 
 lzy-login-sign-up:
@@ -78,11 +78,11 @@ lzy-login-username-prompt:
 
 lzy-login-mm-username-info-text:
     de: |
-        <p>Falls Sie <em>Benutzernamen</em> und <em>Kennwort</em> kennen, können Sie sich hier anmelden.</p>
+        <p>Falls Sie <em>Benutzernamen</em> und <em>Passwort</em> kennen, können Sie sich hier anmelden.</p>
         <p>Geben Sie hier Ihren <strong>Benutzernamen</strong> ein.&nbsp;
         Üblicherweise entspricht dies Ihrer E-Mail Adresse.</p>
     de2: |
-        <p>Falls du <em>Benutzernamen</em> und <em>Kennwort</em> kennst, kannst du dich hier anmelden.</p>
+        <p>Falls du <em>Benutzernamen</em> und <em>Passwort</em> kennst, kannst du dich hier anmelden.</p>
         <p>Gib hier deinen <strong>Benutzernamen</strong> ein.&nbsp;
         Üblicherweise entspricht dies deiner E-Mail Adresse.</p>
     en: |
@@ -99,33 +99,33 @@ lzy-login-username-info-text:
         <p>Enter your <em>username</em> here. Usually, this is your e-mail address.</p>
 
 lzy-login-password-prompt:
-    de: Kennwort
+    de: Passwort
     en: Password
 
 lzy-login-show-password:
-    de: 'Kennwort anzeigen/verstecken'
+    de: 'Passwort anzeigen/verstecken'
     _:  'Show/hide password'
 
 lzy-login-mm-password-info-text:
     de: |
-        <p>Geben Sie hier Ihr <strong>Kennwort</strong> ein.</p>
-        <p>Verwenden Sie &#34;Anmelden ohne Kennwort&#34;,&nbsp;
-        falls Sie ihr Kennwort nicht kennen (oder dieses nicht funktionierte).</p>
+        <p>Geben Sie hier Ihr <strong>Passwort</strong> ein.</p>
+        <p>Verwenden Sie &#34;Anmelden ohne Passwort&#34;,&nbsp;
+        falls Sie ihr Passwort nicht kennen (oder dieses nicht funktionierte).</p>
     de2: |
-        <p>Gib hier dein <strong>Kennwort</strong> ein.</p>
-        <p>Verwende &#34;Anmelden ohne Kennwort&#34;,&nbsp;
-        falls du dein Kennwort nicht kennen (oder dieses nicht funktionierte).</p>
+        <p>Gib hier dein <strong>Passwort</strong> ein.</p>
+        <p>Verwende &#34;Anmelden ohne Passwort&#34;,&nbsp;
+        falls du dein Passwort nicht kennen (oder dieses nicht funktionierte).</p>
     en: |
         <p>Enter your <strong>password</strong> here.</p>
         <p>Use &#34;By E-Mail&#34; if you don&#39;t have your password available (or if that didn&#39;t work).</p>
 
 lzy-login-password-info-text:
     de: |
-        <p>Geben Sie hier Ihr <strong>Kennwort</strong> ein.</p>
+        <p>Geben Sie hier Ihr <strong>Passwort</strong> ein.</p>
         <p class='lzy-accesscode-enabled'>Falls Sie dieses nicht zur Hand haben, lassen Sie das Feld einfach leer &ndash;
         Sie erhalten dann von uns eine E-Mail mit einem einmal gültigen Zugangs-Code.</p>
     de2: |
-        <p>Gib hier dein <strong>Kennwort</strong> ein.</p>
+        <p>Gib hier dein <strong>Passwort</strong> ein.</p>
         <p class='lzy-accesscode-enabled'>Falls du dieses nicht zur Hand habst, kannst du das Feld einfach leer lassen&ndash;
         Du erhältst dann von uns eine E-Mail mit einem einmal gültigen Zugangs-Code.</p>
     en: |
@@ -332,7 +332,7 @@ lzy-forgot-password1:
     _:  "<a href='mailto:"
 
 lzy-forgot-password2:
-    de: "'>Kennwort funktioniert nicht oder vergessen...</a>"
+    de: "'>Passwort funktioniert nicht oder vergessen...</a>"
     _:  "'>Password not working or forgotten...</a>"
 
 lzy-login-with-choice:
@@ -347,29 +347,29 @@ lzy-add-user-group-is:
 
 # Change PW Form:
 lzy-change-password-prompt:
-    de: Neues Kennwort
+    de: Neues Passwort
     _:  Enter new password
 
 lzy-change-password2-prompt:
-    de: Neues Kennwort bestätigen
+    de: Neues Passwort bestätigen
     _:  Confirm your new password
 
 lzy-change-password-info-title:
-    de: 'Hilfe: zum Kennwort'
+    de: 'Hilfe: zum Passwort'
     _:  'Help on password'
 
 lzy-change-password-info:
-    de: Das Kennwort muss mindestens {{ lzy-password-min-length }} Zeichen lang sein und Grossbuchstaben, Ziffern und Sonderzeichen enthalten.
+    de: Das Passwort muss mindestens {{ lzy-password-min-length }} Zeichen lang sein und Grossbuchstaben, Ziffern und Sonderzeichen enthalten.
     _:  The password must be at least {{ lzy-password-min-length }} characters long and must contain uppercase letters, digits and special characters.
 
 
 lzy-change-password2-info-title:
-    de: 'Hilfe: zur Kennwortbestätigung'
+    de: 'Hilfe: zur Passwortbestätigung'
     _:  'Help on password confirmation'
 
 lzy-change-password2-info:
-    de: Geben Sie das selbe Kennwort nochmals ein, um sicher zu sein, dass Sie sich nicht vertippt haben. <br /><br />Klicken Sie auf das Auge-Symbol, um die Kennwörter zu sehen.
-    de2: Gib das selbe Kennwort nochmals ein, um sicher zu sein, dass du dich nicht vertippt hast. <br /><br />Klicke auf das Auge-Symbol, um die Kennwörter zu sehen.
+    de: Geben Sie das selbe Passwort nochmals ein, um sicher zu sein, dass Sie sich nicht vertippt haben. <br /><br />Klicken Sie auf das Auge-Symbol, um die Kennwörter zu sehen.
+    de2: Gib das selbe Passwort nochmals ein, um sicher zu sein, dass du dich nicht vertippt hast. <br /><br />Klicke auf das Auge-Symbol, um die Kennwörter zu sehen.
     _:  Repeat the password to exclude typos. <br /><br />Click on the eye-symbol to view the entered passwords in plain text.
 
 
@@ -425,12 +425,12 @@ lzy-change-password-not-equal-response:
     _:  The entered passwords were not identical.
 
 lzy-change-password-too-short-response:
-    de: Das eingegebene Kennwort ist zu kurz, es muss mindestens {{ lzy-password-min-length }} Zeichen lang sein.<br> Ausserdem muss es Grossbuchstaben, Ziffern und Sonderzeichen enthalten.
+    de: Das eingegebene Passwort ist zu kurz, es muss mindestens {{ lzy-password-min-length }} Zeichen lang sein.<br> Ausserdem muss es Grossbuchstaben, Ziffern und Sonderzeichen enthalten.
     _:  The entered password is too short, it must be at least {{ lzy-password-min-length }} characters long.<br>Furthermore it must contain uppercase letters, digits and special characters.
 
 lzy-change-password-insufficient-response:
     de: |
-        Das neue Kennwort entsprecht nicht den Minimalanforderungen: <br /><br />
+        Das neue Passwort entsprecht nicht den Minimalanforderungen: <br /><br />
         Es muss mindestens {{ lzy-password-min-length }} Zeichen lang sein und <br />Grossbuchstaben, Ziffern und Sonderzeichen enthalten.
     _:  |
         The new password does not meet our security requirements:<br /><br />
@@ -466,7 +466,7 @@ lzy-add-users-to-group:
     _:  Add user(s) to group
 
 lzy-change-password:
-    de: Kennwort ändern
+    de: Passwort ändern
     _:  Change Password
 
 
@@ -504,7 +504,7 @@ lzy-onetime access link sent2:
 lzy-onetime access link sent3:
     de: "<p>&nbsp;</p>"
     _:  "<p>&nbsp;</p>"
-#    de: "<p><br />Alternativ können Sie sich auch mit Benutzername und Kennwort anmelden.</p>"
+#    de: "<p><br />Alternativ können Sie sich auch mit Benutzername und Passwort anmelden.</p>"
 #    _:  "<p><br />Alternatively, if you have a valid username and password you may log in directly.</p>"
 
 lzy-sign-up further info:
@@ -515,13 +515,13 @@ lzy-sign-up further info:
 
 # Change Password:
 lzy-password-changed-response:
-    de: Ihr neues Kennwort wurde gespeichert.
-    de2: Dein neues Kennwort wurde gespeichert.
+    de: Ihr neues Passwort wurde gespeichert.
+    de2: Dein neues Passwort wurde gespeichert.
     _:  Your new password has been saved.
 
 lzy-change-password-not-logged-in-response:
-    de: Wenn Sie Ihr Kennwort ändern möchten, müssen Sie sich zuerst anmelden.
-    de2: Wenn du dein Kennwort ändern möchtest, musst du dich zuerst anmelden.
+    de: Wenn Sie Ihr Passwort ändern möchten, müssen Sie sich zuerst anmelden.
+    de2: Wenn du dein Passwort ändern möchtest, musst du dich zuerst anmelden.
     _:  If you want to change your password you need to log in first.
 
 # Add User:
@@ -667,7 +667,7 @@ lzy-signup-email-verification sent2:
 lzy-signup-email-verification sent3:
     de: "<p>&nbsp;</p>"
     _:  "<p>&nbsp;</p>"
-#    de: "<p><br />Alternativ können Sie sich auch mit Benutzername und Kennwort anmelden.</p>"
+#    de: "<p><br />Alternativ können Sie sich auch mit Benutzername und Passwort anmelden.</p>"
 #    _:  "<p><br />Alternatively, if you have a valid username and password you may log in directly.</p>"
 
 
@@ -867,11 +867,11 @@ lzy-invite-user-request-description:
             <li>Jede Mail enthält einen individuellen <strong>Link</strong>. Der Link führt zu einem
                 Registrierungsformular dieser Website. <br />Aus Sicherheitsgründen können diese Links nur einmal verwendet werden.
                 Sie verfallen nach spätestens einer Woche.</li>
-            <li>Die eingeladene Person kann dort ihren <strong>Benutzernamen</strong> und ihr geheimes <strong>Kennwort</strong> definieren. 
+            <li>Die eingeladene Person kann dort ihren <strong>Benutzernamen</strong> und ihr geheimes <strong>Passwort</strong> definieren.
             Damit kann sich sie oder er später anmelden.</li>
         </ul>
         <h3>Beachte:</h3>
-        <p>&rarr; Anmelden kann man sich wahlweise mittels E-Mail Adresse oder Benutzername & Kennwort.<br />
+        <p>&rarr; Anmelden kann man sich wahlweise mittels E-Mail Adresse oder Benutzername & Passwort.<br />
            &rarr; Auch das Anfordern eines Zugangs-Links ist mit beiden möglich (falls diese Option freigeschaltet ist).
         </p>
     _:  |
@@ -1022,21 +1022,21 @@ lzy-self-signup-user-username-login-info:
     _:  'Define your username here.'
 
 lzy-self-signup-user-password-prompt:
-    de: 'Kennwort'
+    de: 'Passwort'
     _:  'Password'
 
 lzy-self-signup-user-password-prompt2:
-    de: 'Kennwort wiederholen'
+    de: 'Passwort wiederholen'
     _:  'Repeat password'
 
 lzy-self-signup-user-password-info:
     de: |
-        Bestimmen Sie hier Ihr Kennwort, das Sie künftig für diese Website verwenden wollen.
-        Das Kennwort sollte nicht leicht zu erraten sein.
+        Bestimmen Sie hier Ihr Passwort, das Sie künftig für diese Website verwenden wollen.
+        Das Passwort sollte nicht leicht zu erraten sein.
         Vermeiden Sie (generell), ein und dasselbe Kenntwort mehrfach zu verwenden.
     de2: |
-        Bestimme hier dein Kennwort, das du künftig für diese Website verwenden möchtest.
-        Das Kennwort sollte nicht leicht zu erraten sein.
+        Bestimme hier dein Passwort, das du künftig für diese Website verwenden möchtest.
+        Das Passwort sollte nicht leicht zu erraten sein.
         Vermeide (generell), ein und dasselbe Kenntwort mehrfach zu verwenden.
     _:  |
         Define the password with which you want to access this website in the future.
@@ -1049,8 +1049,8 @@ lzy-username-required:
     _:  'You need to define a username'
 
 lzy-password-required:
-    de: 'Sie müssen ein neues Kennwort definieren'
-    de2: 'Du musst ein neues Kennwort definieren'
+    de: 'Sie müssen ein neues Passwort definieren'
+    de2: 'Du musst ein neues Passwort definieren'
     _:  'You need to define a new password'
 
 lzy-signup-passwords-not-identical:
@@ -1064,13 +1064,13 @@ lzy-invite-user-create-hash-prompt:
 lzy-invite-user-create-hash-info:
     de: |
         Wenn aktiviert, erzeugt diese Option einen Access-Code (bzw. Zugangslink) für den neuen Benutzer.
-        Damit kann dieser die Website öffnen und sich direkt anmelden, ohne Benutzername und Kennwort einzugeben.
+        Damit kann dieser die Website öffnen und sich direkt anmelden, ohne Benutzername und Passwort einzugeben.
     _:  |
         If enabled, this option will generate access-code (resp. access-link) for the new user.
         With such a link the user can open this website and automatically be logged in without entering username and password.
 
 lzy-add-user-data-missing:
-    de: 'Registrierung misslungen: es fehlt Benutzername und/oder Kennwort.'
+    de: 'Registrierung misslungen: es fehlt Benutzername und/oder Passwort.'
     _:  'Sign-up failed: username and/or password missing.'
 
 lzy-signup-access-code-label:
@@ -1101,7 +1101,7 @@ lzy-user-self-signup-username:
     _:  'Username'
 
 lzy-user-self-signup-password:
-    de: 'Kennwort'
+    de: 'Passwort'
     _:  'Password'
 
 lzy-user-self-signup-displayname:
@@ -1128,7 +1128,7 @@ lzy-weak-pw-warning:
     de: |
         <h1>Warnung</h1>
         <div style='text-align:left;'>
-        <p>Das gewählte Kennwort ist sehr schwach, Sie sollten ein stärkeres wählen:</p>
+        <p>Das gewählte Passwort ist sehr schwach, Sie sollten ein stärkeres wählen:</p>
         <ul><li>Mindestens {{ lzy-password-min-length }} Zeichen</li>
             <li>Mindestens ein Grossbuchstabe</li>
             <li>Mindestens eine Ziffer</li>
@@ -1138,7 +1138,7 @@ lzy-weak-pw-warning:
     de2: |
         <h1>Warnung</h1>
         <div style='text-align:left;'>
-        <p>Das gewählte Kennwort ist sehr schwach, du solltest ein stärkeres wählen:</p>
+        <p>Das gewählte Passwort ist sehr schwach, du solltest ein stärkeres wählen:</p>
         <ul><li>Mindestens {{ lzy-password-min-length }} Zeichen</li>
             <li>Mindestens ein Grossbuchstabe</li>
             <li>Mindestens eine Ziffer</li>
@@ -1168,7 +1168,7 @@ lzy-add-user-username-prompt:
     en: 'Username (optional)'
 
 lzy-add-user-password-prompt:
-    de: 'Kennwort (optional)'
+    de: 'Passwort (optional)'
     en: 'Password (optional)'
 
 lzy-add-user-displayname-prompt:
@@ -1245,11 +1245,11 @@ lzy-signup-email-info-text:
     _: 'Your e-mail address'
 
 lzy-signup-pw-label:
-    de: 'Kennwort'
+    de: 'Passwort'
     _: 'Password'
 
 lzy-signup-pw-info-text:
-    de: 'Bestimmen Sie hier Ihr neues Kennwort und merken Sie sich dieses.'
+    de: 'Bestimmen Sie hier Ihr neues Passwort und merken Sie sich dieses.'
     _: 'Define your new password, please remember it for later use.'
 
 lzy-signup-username-label:
