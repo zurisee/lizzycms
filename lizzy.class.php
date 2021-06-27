@@ -959,7 +959,7 @@ EOT;
             } else {
 	            // login icon when not logged in:
 	            $login = <<<EOT
-<div class='lzy-login-link'><a href='{$GLOBALS['globalParams']['pageUrl']}?login' class='lzy-login-link'>{{ lzy-login-icon }}</a></div>
+<div class='lzy-login-link'><a href='{$GLOBALS['globalParams']['pageUrl']}?login' class='lzy-login-link'>{{ lzy-login-icon }}<span class='lzy-invisible'>{{ lzy-login-button-label }}</span></a></div>
 
 EOT;
             }
