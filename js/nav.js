@@ -31,7 +31,19 @@ LzyNav.prototype.init = function() {
     if ($('.lzy-nav-collapsed, .lzy-nav-collapsible, .lzy-nav-top-horizontal').length) {
         this.setHightOnHiddenElements();
     }
+    // now make sure that all collapsed links are not focussable:
+    $('.lzy-nav [aria-hidden=true] a').attr('tabindex', -1);
 
+    this.initEventHandlers();
+    this.setupKeyboardEvents();
+    this.openCurrentElement();
+}; // init
+
+
+
+
+LzyNav.prototype.initEventHandlers = function() {
+    let parent = this;
 
     // menu button in mobile mode:
     $('#lzy-nav-menu-icon').click(function(e) {
@@ -115,10 +127,7 @@ LzyNav.prototype.init = function() {
     $('html').on('click', '.touch .lzy-nav-wrapper .lzy-has-children > a', function (event) {
         parent.handleAccordion(this, event);
     });
-
-    this.setupKeyboardEvents();
-    this.openCurrentElement();
-}; // init
+};
 
 
 
