@@ -797,6 +797,8 @@ class Authentication
             foreach ($this->knownUsers as $key => $rec) {
                 if (!isset($rec['groups'])) {
                     $this->knownUsers[$key]['groups'] = isset($rec['group']) ? $rec['group'] : ''; // make group a synonym for groups
+                } elseif (is_array($rec['groups']) && isset($rec['groups'][0])) {
+                    $this->knownUsers[$key]['groups'] = $rec['groups'][0];
                 }
                 $this->knownUsers[$key]['username'] = $key;
             }
