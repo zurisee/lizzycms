@@ -920,9 +920,8 @@ EOT;
     private function assembleInlineJsAndJq( &$bodyEndInjections )
     {
         $screenSizeBreakpoint = $this->config->feature_screenSizeBreakpoint;
-        $pathToRoot = $this->lzy->pathToRoot;
         $rootJs  = <<<EOT
-        var appRoot = '$pathToRoot';
+        var appRoot = '{$GLOBALS['globalParams']['appRoot']}';
         var absAppRoot = '{$GLOBALS['globalParams']['appRoot']}';
         var systemPath = '{$GLOBALS['globalParams']['appRoot']}{$this->config->systemPath}';
         var screenSizeBreakpoint = $screenSizeBreakpoint
