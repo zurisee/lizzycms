@@ -21,7 +21,11 @@ $('.lzy-reveal-controller-elem').each(function() {
 		});
 
 	} else {											// case radio and checkbox:
-		$target = $( $this.attr('data-reveal-target') );
+		const targetSel = $this.attr('data-reveal-target');
+		$target = $( targetSel );
+		if ( !$target.length ) {
+			$target = $( $('[data-reveal-target]', $this).attr('data-reveal-target') );
+		}
 		if (!$target.parent().hasClass('lzy-reveal-container')) {
 			$target.wrap("<div class='lzy-reveal-container'></div>").show();
 			$target.css('margin-top', '-10000px');
@@ -44,6 +48,17 @@ $('.lzy-reveal-controller-elem').each(function() {
 		$el.addClass('lzy-focus-disabled').attr('tabindex', -1).data('tabindex', tabindex);
 	});
 }); // init
+
+
+
+// initialize target height:
+$('.lzy-reveal-container').each(function() {
+	const $revealContainer = $(this);
+	let $target = $('> div', $revealContainer);
+	const boundingBox = $target[0].getBoundingClientRect();
+	const marginTop = (-100 - Math.round(boundingBox.height)) + 'px'; // incl. some safety margin
+	$target.css({ transition: 'margin-top 0', marginTop: marginTop });
+});
 
 
 
@@ -107,16 +122,13 @@ function lzyOperateRevealPanel( that )
 
 	// now operate:
 	const $revealContainer = $target.closest('.lzy-reveal-container');
-	const boundingBox = $revealContainer[0].getBoundingClientRect();
-	const marginTop = (-10 - Math.round(boundingBox.height)) + 'px';
-	$target.css({ transition: 'margin-top 0', marginTop: marginTop });
+	$target.css({ transition: 'margin-top 0.3s' });
+
 	if ( !$revealContainer.hasClass('lzy-elem-revealed') ) { // open:
-		// set margin-top according to elem height:
-		$target.css({ transition: 'margin-top 0.3s' });
 		setTimeout(function () {
 			$revealController.attr('aria-expanded', 'true');
 			$target.parent().addClass('lzy-elem-revealed');
-		}, 20);
+		}, 30);
 
 		// ensable all focusable elements inside reveal-container:
 		$('.lzy-focus-disabled', $revealContainer).each(function () {
@@ -129,6 +141,10 @@ function lzyOperateRevealPanel( that )
 		});
 
 	} else { // close:
+		const boundingBox = $target[0].getBoundingClientRect();
+		const marginTop = (-10 - Math.round(boundingBox.height)) + 'px';
+		$target.css({ marginTop: marginTop });
+
 		$revealController.attr('aria-expanded', 'false');
 		$target.parent().removeClass('lzy-elem-revealed');
 
