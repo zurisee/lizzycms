@@ -266,11 +266,11 @@ function HTMLtable( tableObj ) {
 				var text;
 				var val;
 				if ($(this).prop('checked')) {
-					text = $('#lzy-edit-rec-delete-btn').text();
+					text = lzyEditRecDeleteBtn;
 					val = true;
 					mylog('delete');
 				} else {
-					text = $('#lzy-edit-form-submit').text();
+					text = lzyEditFormSubmit;
 					val = false;
 					mylog('don\'t delete');
 				}
