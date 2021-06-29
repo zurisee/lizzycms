@@ -67,6 +67,10 @@ html:not(.lzy-responsive-fontsize) .lzy-default-layout {
     font-size: 1rem;
 }
 
+.lzy-fluid-fontsize {
+    font-size: clamp(1.5rem, 8vw - 2rem, 3rem); // https://fluid-typography.netlify.app/
+}
+
 .lzy-responsive-fontsize {
     // responsive font-size:
     --min-font-size1: var(--min-font-size, #{$min-font-size});
