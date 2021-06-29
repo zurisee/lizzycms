@@ -758,7 +758,7 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
     }
 }
 .lzy-large-screen .lzy-form-elem-comment {
-    margin-left: var(--lzy-label-width, 6em);
+    margin-left: calc(var(--lzy-label-width, 6em) + 0.4em);
 }
 .lzy-form-elem-comment {
     margin-top: 0.6em;
