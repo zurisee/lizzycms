@@ -1970,7 +1970,10 @@ EOT;
                         }
                     }
                 }
-                if (@$desc['type'] === 'password') {
+                if (@$desc['type'] === 'bool') {
+                    $item = $item? 'lzy-value-true': 'lzy-value-false';
+                    $item = $this->lzy->trans->translateVariable($item, true);
+                } elseif (@$desc['type'] === 'password') {
                     $item = $item? PASSWORD_PLACEHOLDER: '';
                 } else {
                     $item = trim($item, '"\'');
