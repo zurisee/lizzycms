@@ -2540,6 +2540,9 @@ EOT;
         // extract ticketHash from GET or POST arguments:
         if ($_REQUEST) {
             foreach ($_REQUEST as $key => $value) {
+                if (($key[0] === '_' || ($key === 'accessCode'))) {
+                    continue;
+                }
                 if (is_string($value) && preg_match('/^ ([A-Z][A-Z0-9]{4,}) $/x', $value, $m)) {
                     $this->ticketHash[$key] = $m[1];
                 }
