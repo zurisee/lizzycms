@@ -1206,6 +1206,8 @@ EOT;
         }
         $form = new Forms( $this->lzy );
 
+        $splitChoiceElemsInDb = isset($this->options['splitChoiceElemsInDb'])? $this->options['splitChoiceElemsInDb']: true;
+
         // Form Head:
         $args = [
             'type' => 'form-head',
@@ -1218,6 +1220,8 @@ EOT;
             'validate' => true,
             'labelColons' => $this->labelColons,
             'dynamicFormSupport' => true,
+            'splitChoiceElemsInDb' => $splitChoiceElemsInDb,
+            'lockRecWhileFormOpen' => @$this->options['lockRecWhileFormOpen'],
         ];
         if ($this->editFormArgs) {
             $args = array_merge($args, $this->editFormArgs);
@@ -1278,6 +1282,11 @@ EOT;
             $prefill = json_encode($this->prefill);
             $this->page->addJs("var lzyTableFormPrefill = JSON.parse('$prefill');");
         }
+        $js = <<<EOT
+var lzyEditRecDeleteBtn = '{{ lzy-edit-rec-delete-btn }}';
+var lzyEditFormSubmit = '{{ lzy-edit-form-submit }}';
+EOT;
+        $this->page->addJs( $js );
 
         return $out;
     } // renderForm
@@ -1572,12 +1581,12 @@ EOT;
     private function adjustTableSize()
     {
         $data = &$this->data;
-        if (!isset($data)) {
+        if (!isset($data) || !$data) {
             $data['new-rec'] = [];
         }
 
         $nColsReq = $this->nColsReq;
-        $nCols = sizeof( reset($data));
+        $nCols = $data? sizeof( reset($data)) : 0;
         $nRows = $this->nRowsReq ? $this->nRowsReq : sizeof($data);
 
         if ($nColsReq) {
@@ -2127,7 +2136,7 @@ EOT;
 
     private function determineHeaders(): void
     {
-        if (!$this->headerElems) {
+        if (!@$this->headerElems) {
             $this->headerElems = null;
             if ($this->data && ($this->headers === true)) {
                 $this->headerElems = array_shift($this->data);
@@ -2135,8 +2144,13 @@ EOT;
                 $this->headerElems = explodeTrim(',|', $this->headers);
             }
         }
-        $this->nCols = isset($this->data) ? sizeof(reset($this->data)) : 0;
-        $this->nRows = sizeof($this->data);
+        if ($this->data) {
+            $this->nCols = sizeof( reset($this->data) );
+            $this->nRows = sizeof( $this->data );
+        } else {
+            $this->nCols = 0;
+            $this->nRows = 0;
+        }
     } // determineHeaders
 
 

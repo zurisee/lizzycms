@@ -136,17 +136,35 @@ function LzyForms() {
             let val = data.data[ key ];
             let sel ='[name=' + key + ']';
             let $el = $( sel, formId );
+            if (!$el.length) {
+                $el = $( '[name="' + key + '[]"]', formId );
+            }
             let type = $el.attr('type');
+            if (typeof type === 'undefined') {
+                const $p = $el.closest('.lzy-form-field-type-toggle');
+                if ($p.length) {
+                    type = 'toggle';
+                }
+            }
 
             if (',radio,checkbox,'.includes(type)) {
-                if (typeof val[0] !== 'undefined') {
-                    let tmp = val[0];
-                    val = tmp;
+                if ((typeof val === 'object') && (typeof val[0] !== 'undefined')) {
+                    val = val[0];
                 }
+                val = ',' + val.replace(' ', '') + ',';
                 $el.each(function () {
                     let v = $(this).val();
-                    $(this).prop('checked', val.includes(v) );
+                    $(this).prop('checked', val.includes(',' + v + ',') );
                 });
+            } else if (type === 'toggle') {
+                if (val) {
+                    $('.lzy-toggle-input-on', $el).prop('checked', true);
+                } else {
+                    $('.lzy-toggle-input-off', $el).prop('checked', true);
+                }
+
+            } else if (type === 'password') {
+                $el.val( '●●●●' );
             } else {
                 $el.val( val );
             }
@@ -337,23 +355,41 @@ function LzyForms() {
 
     this.onOpen = function ( recKey, $form ) {
         let parent = this;
-        if (typeof $form !== 'undefined') {
-            this.clearForm( $form );
-            parent.fetchValuesFromHost($form, recKey).then(function (json) {
-                parent.updateForm( $form, recKey, json);
-                parent.presetDefaultValues( $form );
-                parent.updateLiveValues( $form );
-            });
+        if (typeof recKey === 'undefined') {
+            recKey = false;
+        }
 
+        // case $form explicitly provided:
+        if (typeof $form !== 'undefined') {
+            this.clearForm($form);
+            // case new-rec -> no need to fetchValuesFromHost:
+            if (!recKey || (recKey === 'new-rec')) {
+                parent.presetDefaultValues($form);
+                parent.updateLiveValues($form);
+
+            } else {
+                parent.fetchValuesFromHost($form, recKey).then(function (json) {
+                    parent.updateForm($form, recKey, json);
+                    parent.presetDefaultValues($form);
+                    parent.updateLiveValues($form);
+                });
+            }
+
+        // case apply to any $form:
         } else {
             $('.lzy-form').each(function () {
                 let $form = $(this);
-                parent.clearForm( $form );
-                parent.fetchValuesFromHost($form, recKey).then(function (json) {
-                    parent.updateForm( $form, recKey, json);
-                    parent.presetDefaultValues( $form );
-                    parent.updateLiveValues( $form );
-                });
+                parent.clearForm($form);
+                if (!recKey || (recKey === 'new-rec')) {
+                    parent.presetDefaultValues($form);
+                    parent.updateLiveValues($form);
+                } else {
+                    parent.fetchValuesFromHost($form, recKey).then(function (json) {
+                        parent.updateForm($form, recKey, json);
+                        parent.presetDefaultValues($form);
+                        parent.updateLiveValues($form);
+                    });
+                }
             });
         }
     }; // openForm
@@ -378,3 +414,6 @@ function LzyForms() {
 
 } // LzyForms
 
+$('.lzy-form').on('submit',function () {
+    mylog('sumbitting form');
+});

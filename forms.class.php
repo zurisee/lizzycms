@@ -10,10 +10,10 @@ define('SPAM_LOG_FILE', 	    LOG_PATH.'spam-log.txt');
 
 define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,'.
     'legend,customResponseEvaluation,customResponseEvaluationFunction,next,file,confirmationText,formDataCaching,'.
-    'encapsulate,formTimeout,avoidDuplicates,confirmationEmail,'.
+    'encapsulate,formTimeout,avoidDuplicates,confirmationEmail,dynamicFormSupport,'.
     'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,'.
     'validate,showData,showDataMinRows,options,encapsulate,disableCaching,labelWidth,'.
-    'translateLabel,labelPosition,formName,formHeader,formHint,formFooter,showSource,');
+    'translateLabel,labelPosition,formName,formHeader,formHint,formFooter,showSource,splitChoiceElemsInDb,');
 
 define('ELEM_ATTRIBUTES', 	    ',label,type,id,class,wrapperClass,name,required,value,'.
 	'options,optionLabels,layout,info,comment,translateLabel,'.
@@ -166,6 +166,9 @@ class Forms
 
         $currForm->dynamicFormSupport = (isset($args['dynamicFormSupport'])) ? $args['dynamicFormSupport'] : false;
         $currForm->lockRecWhileFormOpen = (isset($args['lockRecWhileFormOpen'])) ? $args['lockRecWhileFormOpen'] : false;
+
+        // in rare cases (e.g. config/users.yaml) we need choice elements to be stored in plain form, not as an array:
+        $currForm->splitChoiceElemsInDb = (isset($args['splitChoiceElemsInDb'])) ? $args['splitChoiceElemsInDb'] : true;
 
         $currForm->formName = $label;
         $currForm->translateLabels = (isset($args['translateLabels'])) ? $args['translateLabels'] : false;
@@ -1146,8 +1149,12 @@ EOT;
 
         // optionLabels = small text in background of widget -> defined by arg 'optionLabels':
         $optionLabels = explodeTrim( ',', $this->currRec->optionLabels );
-        $lblOff = $optionLabels[0]? "<span class='lzy-toggle-text'>{$optionLabels[0]}</span>": '';
-        $lblOn = $optionLabels[1]? "<span class='lzy-toggle-text'>{$optionLabels[1]}": '';
+        $lblOff = '';
+        $lblOn = '';
+        if ($optionLabels) {
+            $lblOff = "<span class='lzy-toggle-text'>{$optionLabels[0]}</span>";
+            $lblOn = "<span class='lzy-toggle-text'>{$optionLabels[1]}";
+        }
 
         list($descrBy, $description) = $this->renderElemDescription();
 
@@ -1668,7 +1675,7 @@ EOT;
         }
         if (($this->currForm->labelColons === null) && $hasColon) {
             $label .= ':';
-        } elseif ($this->currForm->labelColons && $hasColon) {
+        } elseif ($this->currForm->labelColons) {
             $label .= ':';
         }
         if ($requiredMarker) {
@@ -2127,7 +2134,11 @@ EOT;
 
                 // loop over fields in rec, look for differences:
                 $identical = true;
-                foreach ($rec as $dbFldKey => $value) {
+//??? modif for user-admin
+// -> need to check whether works in other situations, e.g if struct derived from (incomplete) data
+//                foreach ($rec as $dbFldKey => $value) {
+                $keys = array_unique( array_merge($struc['elemKeys'], array_keys($rec)));
+                foreach ($keys as $dbFldKey) {
                     // ignore all meta attributes:
                     if (@$dbFldKey[0] === '_') {
                         continue;
@@ -2141,18 +2152,19 @@ EOT;
                         }
                     }
                     if (!$usrDataFldName) {
-                        die("Error in saveUserSuppliedDataToDB(): inconsistancy in rec structure -> 'name' missing in \$formElemDescr:".var_r($formElemDescr));
+                        continue;
+//???                        die("Error in saveUserSuppliedDataToDB(): inconsistancy in rec structure -> 'name' missing in \$formElemDescr:".var_r($formElemDescr));
                     }
 
                     if (is_array($userSuppliedData[$usrDataFldName])) {
-                        $v1 = strtolower(str_replace(' ', '', $userSuppliedData[$usrDataFldName][0]));
+                        $v1 = strtolower(str_replace(' ', '', @$userSuppliedData[$usrDataFldName][0]));
                     } else {
-                        $v1 = strtolower(str_replace(' ', '', $userSuppliedData[$usrDataFldName]));
+                        $v1 = strtolower(str_replace(' ', '', @$userSuppliedData[$usrDataFldName]));
                     }
                     if (is_array($rec[$dbFldKey])) {
-                        $v2 = strtolower(str_replace(' ', '', $rec[$dbFldKey][0]));
+                        $v2 = strtolower(str_replace(' ', '', @$rec[$dbFldKey][0]));
                     } else {
-                        $v2 = strtolower(str_replace(' ', '', $rec[$dbFldKey]));
+                        $v2 = strtolower(str_replace(' ', '', @$rec[$dbFldKey]));
                     }
                     if (($v1 !== $v2) && ($v1 !== PASSWORD_PLACEHOLDER)) {
                         $identical = false;
@@ -2161,6 +2173,7 @@ EOT;
                 }
                 $doubletFound |= $identical;
             }
+
             if ($doubletFound && !$this->repeatEventTaskPending) {
                 $this->clearCache();
                 $this->errorDescr[$this->formInx]['_announcement_'] = '{{ lzy-form-duplicate-data }}';
@@ -2199,11 +2212,13 @@ EOT;
             if ($struc['key'] === 'index') {
                 $recKey = false;
             }
-//ToDo: check and report res:
             $res = $ds->addRecord($newRec, $recKey, true, true, true);
 
         } else {
             $res = $ds->writeRecord($recKey, $newRec, true, true, true);
+        }
+        if (!$res) {
+            mylog("forms:saveUserSuppliedDataToDB(): Error writing to DB");
         }
 
         if ($this->repeatEventTaskPending) {
@@ -2304,24 +2319,30 @@ EOT;
             // handle element types 'radio,checkbox,dropdown':
             if (strpos('radio,checkbox,dropdown', $type) !== false) {
                 $value = $rec[$key];
-                $rec[$key] = [];
-                if (is_array($value)) {
-                    $rec[$key][0] = implode(',', $value);
-                } else {
-                    $rec[$key][0] = $value;
-                }
-                for ($i=1; $i<sizeof($elemDef->optionNames); $i++) {
-                    $option = $elemDef->optionNames[$i];
-                    $label = $elemDef->optionLabels[$i];
-                    if (!$label) {
-                        continue;
-                    } elseif (is_array($value)) {
-                        $rec[$key][$option] = (bool) in_array($option, $value);
+                if ($this->currForm->splitChoiceElemsInDb) {
+                    $rec[$key] = [];
+                    if (is_array($value)) {
+                        $rec[$key][0] = implode(',', $value);
                     } else {
-                        $rec[$key][$option] = ($option === $value);
+                        $rec[$key][0] = $value;
+                    }
+                    for ($i = 1; $i < sizeof($elemDef->optionNames); $i++) {
+                        $option = $elemDef->optionNames[$i];
+                        $label = $elemDef->optionLabels[$i];
+                        if (!$label) {
+                            continue;
+                        } elseif (is_array($value)) {
+                            $rec[$key][$option] = (bool)in_array($option, $value);
+                        } else {
+                            $rec[$key][$option] = ($option === $value);
+                        }
+                    }
+                    $rec[$key]['_splitOutput'] = $elemDef->splitOutput;
+                } else {
+                    if (is_array($value)) {
+                        $rec[$key] = implode(',', $value);
                     }
                 }
-                $rec[$key]['_splitOutput'] = $elemDef->splitOutput;
 
             // handle element type 'password':
             } elseif ($type === 'password') {
