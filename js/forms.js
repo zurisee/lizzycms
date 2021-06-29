@@ -37,11 +37,19 @@ function LzyForms() {
                 return;
             }
             const type = $(this).attr('type');
+            // regular text types:
             if ((type === 'string') || (type === 'text') || (type === 'textarea')) {
                 $this.val( fldPreset );
 
+            // toggle type:
+            } else if ((type === 'radio') && ($this.closest('.lzy-form-field-type-toggle').length)) {
+                $this.prop('checked', $this.hasClass('lzy-toggle-input-off'));
+
+            // choice types:
             } else if ((type === 'radio') || (type === 'checkbox')) {
                 $this.prop('checked', false);
+
+            // any other types (just in case):
             } else {
                 $this.val( '' );
             }
@@ -188,7 +196,11 @@ function LzyForms() {
             }
 
             let value = $this.data('default-value');
-            if (typeof value === 'string') {
+            if ($this.hasClass('lzy-formelem-toggle-wrapper')) {
+                $('.lzy-toggle-input-off', $this).prop('checked', !value);
+                $('.lzy-toggle-input-on', $this).prop('checked', value);
+
+            } else if (typeof value === 'string') {
                 value = value.replace(/´/g, "'");
                 // check whether there are compound definitions "=(...)":
                 let compound = value.match(/=\(\((.*)\)\)/); // =((
@@ -206,6 +218,8 @@ function LzyForms() {
                     mylog(code, false);
                     value = Function(code)(); // requires 'site_ContentSecurityPolicy: false'
                 }
+            } else if (typeof value === 'boolean') {
+                value = value? 'true': 'false';
             }
 
             if (!$this.hasClass('lzy-fieldset-body')) {

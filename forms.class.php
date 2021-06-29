@@ -5,13 +5,12 @@
 
 define('UPLOAD_SERVER',         '~sys/_upload_server.php');
 define('THUMBNAIL_PATH', 	    '_/thumbnails/');
-define('DEFAULT_EXPORT_FILE', 	'~page/form-export.csv');
 define('FORM_LOG_FILE', 	    LOG_PATH.'form-log.txt');
 define('SPAM_LOG_FILE', 	    LOG_PATH.'spam-log.txt');
 
 define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,'.
     'legend,customResponseEvaluation,customResponseEvaluationFunction,next,file,confirmationText,formDataCaching,'.
-    'encapsulate,formTimeout,avoidDuplicates,export,exportMetaElements,exportKey,confirmationEmail,'.
+    'encapsulate,formTimeout,avoidDuplicates,confirmationEmail,'.
     'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,'.
     'validate,showData,showDataMinRows,options,encapsulate,disableCaching,labelWidth,'.
     'translateLabel,labelPosition,formName,formHeader,formHint,formFooter,showSource,');
@@ -25,7 +24,7 @@ define('ELEM_ATTRIBUTES', 	    ',label,type,id,class,wrapperClass,name,required,
 define('UNARY_ELEM_ATTRIBUTES', ',required,translateLabel,splitOutput,autocomplete,');
 
 define('SUPPORTED_TYPES', 	    ',text,readonly,password,email,textarea,radio,checkbox,'.
-    'dropdown,button,url,date,time,datetime,month,number,range,tel,file,'.
+    'dropdown,button,url,date,time,datetime,month,number,range,tel,toggle,file,'.
     'fieldset,fieldset-end,reveal,hidden,literal,bypassed,');
 
  // types to ignore in output:
@@ -41,22 +40,19 @@ $GLOBALS['globalParams']['formTooltipsInitialized'] = false;
 
 class Forms
 {
-	private $page;
+	private   $page;
     protected $inx;
-	private $currForm = null;		// shortcut to $formDescr[ $currFormIndex ]
-	private $currRec = null;		// shortcut to $currForm->formElements[ $currRecIndex ]
-    private $submitButtonRendered = false;
+	private   $currForm = null;		// shortcut to $formDescr[ $currFormIndex ]
+	private   $currRec = null;		// shortcut to $currForm->formElements[ $currRecIndex ]
+    private   $submitButtonRendered = false;
     protected $errorDescr = [];
     protected $responseToClient = false;
-    private $revealJsAdded = false;
     protected $skipRenderingForm = false;
     protected $formId = false;
-    public   $file = false;
-    private  $db = false;
-    private  $dbExport = false;
-    private  $exportFileImported = false;
-    private  $recKey = null;
-    private  $isNewRec = null;
+    public    $file = false;
+    private   $db = false;
+    private   $recKey = null;
+    private   $isNewRec = null;
 
 
 	public function __construct($lzy, $userDataEval = null)
@@ -197,18 +193,12 @@ class Forms
         $currForm->encapsulate = (isset($args['encapsulate'])) ? $args['encapsulate'] : $currForm->encapsulate;
         $currForm->formTimeout = (isset($args['formTimeout'])) ? $args['formTimeout'] : false;
         $currForm->avoidDuplicates = (isset($args['avoidDuplicates'])) ? $args['avoidDuplicates'] : true;
-        $currForm->export = (isset($args['export'])) ? $args['export'] : false;
-        $currForm->exportedDataIsMaster = (isset($args['exportedDataIsMaster'])) ? $args['exportedDataIsMaster'] : false;
-        $currForm->exportMetaElements = (isset($args['exportMetaElements'])) ? $args['exportMetaElements'] : false;
         $currForm->submitButtonCallback = (isset($args['submitButtonCallback'])) ? $args['submitButtonCallback'] : 'auto';
         $currForm->cancelButtonCallback = (isset($args['cancelButtonCallback'])) ? $args['cancelButtonCallback'] : 'auto';
         $currForm->confirmationEmail = (isset($args['confirmationEmail'])) ? $args['confirmationEmail'] : false;
         $currForm->confirmationEmailTemplate = (isset($args['confirmationEmailTemplate'])) ? $args['confirmationEmailTemplate'] : false;
-        $currForm->labelColons = (isset($args['labelColons'])) ? $args['labelColons'] : false;
+        $currForm->labelColons = (isset($args['labelColons'])) ? $args['labelColons'] : null; // default: colon if explicitly provided
         $currForm->labelWidth = (isset($args['labelWidth'])) ? $args['labelWidth'] : false;
-        if ($currForm->export === true) {
-            $currForm->export = DEFAULT_EXPORT_FILE;
-        }
 
         if (!$currForm->file) {
             $currForm->file = "~data/form-$formId.yaml";
@@ -248,12 +238,6 @@ class Forms
 
         $currForm->validate = (isset($args['validate'])) ? $args['validate'] : false;
         $currForm->showData = (isset($args['showData'])) ? $args['showData'] : false;
-        if (($currForm->showData) && !$currForm->export) {
-            $currForm->export = '~page/' . $this->formId . '_export.csv';
-        }
-        if ($currForm->export) {
-            $currForm->export = resolvePath($currForm->export, true);
-        }
 
         $currForm->showDataMinRows = (isset($args['showDataMinRows'])) ? $args['showDataMinRows'] : false;
 
@@ -411,8 +395,16 @@ EOT;
         }
 
         $rec->value = @$args['value']? $args['value']: '';
-        $rec->defaultValue = @$args['defaultValue']? $args['defaultValue']: '';
+        if (isset($args['defaultValue'])) {
+            $this->currForm->dynamicFormSupport = true;
+            $rec->defaultValue = $args['defaultValue'];
+        } else {
+            $rec->defaultValue = null;
+        }
         $rec->liveValue = @$args['liveValue']? $args['liveValue']: '';
+        if ($rec->liveValue) {
+            $this->currForm->dynamicFormSupport = true;
+        }
         $rec->postProcess = (isset($args['postProcess'])) ? $args['postProcess'] : false;
 
         // for radio, checkbox and dropdown: options define the values available
@@ -596,6 +588,10 @@ EOT;
                 $elem = $this->renderDropdown();
                 break;
 
+            case 'toggle':
+                $elem = $this->renderToggle();
+                break;
+
             case 'button':
                 $elem = $this->renderButtons();
                 $wrapperClass = '';
@@ -633,15 +629,19 @@ EOT;
                 $elem = $this->renderTel();
                 break;
 
-            case 'file':
-                $elem = $this->renderFileUpload();
-                break;
+//            case 'file':
+//                $elem = $this->renderFileUpload();
+//                break;
 
             case 'fieldset':
                 return $this->renderFieldsetBegin();
 
             case 'fieldset-end':
                 return "\t\t\t\t</fieldset>\n";
+
+            case 'hash':
+                $elem = $this->renderHash();
+                break;
 
             case 'reveal':
                 $elem = $this->renderReveal();
@@ -749,8 +749,6 @@ EOT;
         }
         $formId = $this->formId;
         $currForm = $this->currForm;
-
-        $this->initFormJs();
 
         $this->initButtonHandlers();
 
@@ -1127,6 +1125,51 @@ EOT;
 
 
 
+    private function renderToggle()
+    {
+        $label = $this->getLabel();
+        $value = $this->getValueAttr('toggle');
+        if ($value) {
+            $stateOn = ' checked';
+            $stateOff = '';
+        } else {
+            $stateOff = ' checked';
+            $stateOn = '';
+        }
+        $reveal = $revealCls = '';
+        $target = $this->currRec->target;
+        if ($target) {
+            $this->addRevealJs();
+            $reveal = " data-reveal-target='$target'";
+            $revealCls = ' lzy-reveal-controller-elem';
+        }
+
+        // optionLabels = small text in background of widget -> defined by arg 'optionLabels':
+        $optionLabels = explodeTrim( ',', $this->currRec->optionLabels );
+        $lblOff = $optionLabels[0]? "<span class='lzy-toggle-text'>{$optionLabels[0]}</span>": '';
+        $lblOn = $optionLabels[1]? "<span class='lzy-toggle-text'>{$optionLabels[1]}": '';
+
+        list($descrBy, $description) = $this->renderElemDescription();
+
+        $out = <<<EOT
+            <div class="lzy-label-wrapper lzy-toggle-widget-label{$this->currRec->class}">$label</div>
+            <div class="lzy-formelem-toggle-wrapper$revealCls" {$this->currRec->inpAttr}$reveal>
+              <input type="radio" name="{$this->currRec->name}" value="false" class="lzy-toggle-input-off" id='{$this->currRec->fldPrefix}{$this->currRec->elemId}-off' $stateOff$descrBy />
+              <label class="lzy-form-label lzy-toggle-off" for="{$this->currRec->fldPrefix}{$this->currRec->elemId}-off">$lblOff</span></label>
+
+              <input type="radio" name="{$this->currRec->name}" value="true" class="lzy-toggle-input-on" id='{$this->currRec->fldPrefix}{$this->currRec->elemId}-on' $stateOn$descrBy$reveal />
+              <label class="lzy-form-label lzy-toggle-on" for="{$this->currRec->fldPrefix}{$this->currRec->elemId}-on">$lblOn</label>
+              
+              <div class="lzy-toggle-handle"></div>
+            </div>
+EOT;
+
+        $out .= $description;
+        return $out;
+    } // renderToggle
+
+
+
     private function renderUrl()
     {
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
@@ -1250,147 +1293,181 @@ EOT;
         }
         $out = "\t\t\t<fieldset$class>\n$legend";
         return $out;
-    } // renderTel
+    } // renderFieldsetBegin
 
 
 
-    private function renderFileUpload()
+    private function renderHash()
     {
-        // While Lizzy's file-manager is active (admin_enableFileManager=true), the upload feature is not working due
-        // to an incompatibility. Thus, we render a dummy button containing a warning:
-        $e1 = $this->trans->config->admin_enableFileManager;
-        $e2 = !isset($this->trans->page->frontmatter["admin_enableFileManager"]) || $this->trans->page->frontmatter["admin_enableFileManager"];
-        $e3 = !isset($this->trans->page->frontmatter["enableFileManager"]) || $this->trans->page->frontmatter["enableFileManager"];
-        if ($e1 && $e2 && $e3) {
-            $str = "<button class='lzy-form-file-upload-label lzy-button'><span class='lzy-icon-error' title='Upload() not working while Lizzy&#39;s file-manager is active.'></span>{$this->currRec->label}</button>";
-            return $str;
+        $out = '';
+        if ($this->currRec->errorMsg) {
+            $out .= "\t\t\t<div class='lzy-form-field-errorMsg' aria-hidden='true'>{$this->currRec->errorMsg}</div>\n";
         }
+        $out .= $this->getLabel(); // includes infoIcon
+        $value = $this->getValueAttr();
 
+        $out .= "\t\t\t<input type='string' class='lzy-input-hash {$this->currRec->class}' {$this->currRec->inpAttr}$value />\n";
+        $out .= "\t\t\t<button id='lzy-input-hash-{$this->inx}' class='lzy-button lzy-generate-hash' type='button'>{{ lzy-generate-hash }}</button>\n";
 
-        $inx = $this->inx;
-        $id = "lzy-upload-elem-{$this->formInx}-$inx";
-		$server = isset($this->args['server']) ? $this->args['server'] : UPLOAD_SERVER;
-		$multiple = $this->currRec->multiple ? 'multiple' : '';
-
-        $targetPath = fixPath($this->currRec->uploadPath);
-        $targetPath = makePathDefaultToPage($targetPath);
-        $targetPathHttp = $targetPath;
-        $targetFilePath = resolvePath($targetPath);
-
-        $rec = [
-            'uploadPath' => $targetFilePath,
-            'pagePath' => $GLOBALS['globalParams']['pageFolder'], //??? -> rename subsequently
-            'pathToPage' => $GLOBALS['globalParams']['pathToPage'],
-            'appRootUrl' => $GLOBALS['globalParams']['absAppRootUrl'],
-            'user'      => $_SESSION["lizzy"]["user"],
-        ];
-        $tick = new Ticketing(['defaultType' => 'lzy-upload']);
-        $this->ticket = $tick->createTicket($rec, 25);
-
-
-        $thumbnailPath = THUMBNAIL_PATH;
-        $list = "\t<div class='lzy-uploaded-files-title'>{{ lzy-uploaded-files-title }}</div>\n";  // assemble list of existing files
-        $list .= "<ul>";
-        $dispNo = ' style="display:none;"';
-		if (isset($this->currRec->showExisting) && $this->currRec->showExisting) {
-			$files = getDir($targetFilePath.'*');
-			foreach ($files as $file) {
-				if (is_file($file) && (fileExt($file) !== 'md')) {
-					$file = basename($file);
-					if (preg_match("/\.(jpe?g|gif|png)$/i", $file)) {
-						$list .= "<li><span>$file</span><span><img src='$targetPathHttp$thumbnailPath$file' alt=''></span></li>";
-					} else {
-						$list .= "<li><span>$file</span></li>";
-					}
-				}
-                $dispNo = '';
-            }
+        if (isset($this->currRec->option)) {
+            $unambiguous = (strpos($this->currRec->option, 'unambiguous') !== false) ? 'true' : 'false';
+        } else {
+            $unambiguous = 'false';
         }
-        $list .= "</ul>\n";
+        $length = isset($this->currRec->length) ? $this->currRec->length : '8';
 
-		$labelClass = $this->currRec->labelClass;
-        $out = <<<EOT
-            <div class="lzy-upload-wrapper">
-                <input type="hidden" name="lzy-upload" value="{$this->ticket}" />
-                <label class="$id lzy-form-file-upload-label $labelClass" for="$id">{$this->currRec->label}</label>
-                <input id="$id" class="lzy-form-file-upload-hidden" type="file" name="files[]" data-url="$server" $multiple />
-    
-                <div class='lzy-form-progress-indicator lzy-form-progress-indicator$inx' style="display: none;">
-                    <progress id="lzy-progressBar$inx" class="lzy-form-progressBar" max='100' value='0'>
-                        <span id="lzy-form-progressBarFallback1-$inx"><span id="lzy-form-progressBarFallback2-$inx">&#160;</span></span>
-                    </progress>
-                    <div><span aria-live="polite" id="lzy-form-progressPercent$inx" class="lzy-form-progressPercent"></span></div>
-                </div>
-            </div> <!-- /lzy-upload-wrapper-->
-			<div id='lzy-form-uploaded$inx' class='lzy-form-uploaded'$dispNo >$list</div>
-
+        $jq = <<<EOT
+$('#lzy-input-hash-{$this->inx}').click(function() {
+    let \$wrapper = $(this).closest('.lzy-form-field-wrapper');
+    let \$input = $('.lzy-input-hash', \$wrapper);
+    const newHash = createHash( $length, $unambiguous ); // unambiguous
+    \$input.val( newHash );
+});
 EOT;
-
-        if (!isset($this->uploadInitialized)) {
-            $js = <<<EOT
-var lzyD = new Date();
-var lzyT0 = lzyD.getTime();
-
-EOT;
-            $this->page->addJs($js);
-            $this->uploadInitialized = true;
-        }
-		$jq = <<<EOT
-
-	$('#$id').fileupload({
-	    url: '$server',
-		dataType: 'json',
-		
-		progressall: function (e, data) {
-		    mylog('processing upload');
-		    $('.lzy-form-progress-indicator$inx').show();
-			var progress = parseInt(data.loaded / data.total * 100, 10);
-			$('#lzy-progressBar$inx').val(progress);
-			var lzyD = new Date();
-			var lzyT1 = lzyD.getTime();
-			if (((lzyT1 - lzyT0) > 500) && (progress < 100)) {
-				lzyT0 = lzyT1;
-				$('#lzy-form-progressPercent$inx').text( progress + '%' );
-			}
-			if (progress === 100) {
-				$('#lzy-form-progressPercent$inx').text( progress + '%' );
-			}
-		},
-
-		done: function (e, data) {
-		    mylog('upload accomplished');
-			$.each(data.result.files, function (index, file) {
-				if (file.name.match(/\.(jpe?g|gif|png)$/i)) {
-					var img = '<img src="$targetPathHttp$thumbnailPath' + file.name + '" alt="" />';
-				} else {
-					var img = '';
-				}
-				var line = '<li><span>' + file.name + '</span><span>' + img + '</span></li>';
-				$('#lzy-form-uploaded$inx').show();
-				$('#lzy-form-uploaded$inx ul').append(line);
-			});
-		},
-		
-		error: function (data, textStatus, errorThrown) { 
-		    mylog( data.responseText ); 
-		},
-	});
-
-EOT;
-		$this->page->addJq($jq);
-
-		if (!isset($this->fileUploadInitialized)) {
-			$this->fileUploadInitialized = true;
-
-			$this->page->addJqFiles([
-			    '~sys/third-party/jquery-upload/js/vendor/jquery.ui.widget.js',
-                '~sys/third-party/jquery-upload/js/jquery.iframe-transport.js',
-                '~sys/third-party/jquery-upload/js/jquery.fileupload.js',
-                '~sys/third-party/jquery-upload/js/jquery.fileupload-process.js']);
-		}
-		
+        $this->page->addJq($jq);
         return $out;
-    } // renderFileUpload
+    } // renderNumber
+
+
+
+
+//    private function renderFileUpload()
+//    {
+//        // While Lizzy's file-manager is active (admin_enableFileManager=true), the upload feature is not working due
+//        // to an incompatibility. Thus, we render a dummy button containing a warning:
+//        $e1 = $this->trans->config->admin_enableFileManager;
+//        $e2 = !isset($this->trans->page->frontmatter["admin_enableFileManager"]) || $this->trans->page->frontmatter["admin_enableFileManager"];
+//        $e3 = !isset($this->trans->page->frontmatter["enableFileManager"]) || $this->trans->page->frontmatter["enableFileManager"];
+//        if ($e1 && $e2 && $e3) {
+//            $str = "<button class='lzy-form-file-upload-label lzy-button'><span class='lzy-icon-error' title='Upload() not working while Lizzy&#39;s file-manager is active.'></span>{$this->currRec->label}</button>";
+//            return $str;
+//        }
+//
+//
+//        $inx = $this->inx;
+//        $id = "lzy-upload-elem-{$this->formInx}-$inx";
+//		$server = isset($this->args['server']) ? $this->args['server'] : UPLOAD_SERVER;
+//		$multiple = $this->currRec->multiple ? 'multiple' : '';
+//
+//        $targetPath = fixPath($this->currRec->uploadPath);
+//        $targetPath = makePathDefaultToPage($targetPath);
+//        $targetPathHttp = $targetPath;
+//        $targetFilePath = resolvePath($targetPath);
+//
+//        $rec = [
+//            'uploadPath' => $targetFilePath,
+//            'pagePath' => $GLOBALS['globalParams']['pageFolder'], //??? -> rename subsequently
+//            'pathToPage' => $GLOBALS['globalParams']['pathToPage'],
+//            'appRootUrl' => $GLOBALS['globalParams']['absAppRootUrl'],
+//            'user'      => $_SESSION["lizzy"]["user"],
+//        ];
+//        $tick = new Ticketing(['defaultType' => 'lzy-upload']);
+//        $this->ticket = $tick->createTicket($rec, 25);
+//
+//
+//        $thumbnailPath = THUMBNAIL_PATH;
+//        $list = "\t<div class='lzy-uploaded-files-title'>{{ lzy-uploaded-files-title }}</div>\n";  // assemble list of existing files
+//        $list .= "<ul>";
+//        $dispNo = ' style="display:none;"';
+//		if (isset($this->currRec->showExisting) && $this->currRec->showExisting) {
+//			$files = getDir($targetFilePath.'*');
+//			foreach ($files as $file) {
+//				if (is_file($file) && (fileExt($file) !== 'md')) {
+//					$file = basename($file);
+//					if (preg_match("/\.(jpe?g|gif|png)$/i", $file)) {
+//						$list .= "<li><span>$file</span><span><img src='$targetPathHttp$thumbnailPath$file' alt=''></span></li>";
+//					} else {
+//						$list .= "<li><span>$file</span></li>";
+//					}
+//				}
+//                $dispNo = '';
+//            }
+//        }
+//        $list .= "</ul>\n";
+//
+//		$labelClass = $this->currRec->labelClass;
+//        $out = <<<EOT
+//            <div class="lzy-upload-wrapper">
+//                <input type="hidden" name="lzy-upload" value="{$this->ticket}" />
+//                <label class="$id lzy-form-file-upload-label $labelClass" for="$id">{$this->currRec->label}</label>
+//                <input id="$id" class="lzy-form-file-upload-hidden" type="file" name="files[]" data-url="$server" $multiple />
+//
+//                <div class='lzy-form-progress-indicator lzy-form-progress-indicator$inx' style="display: none;">
+//                    <progress id="lzy-progressBar$inx" class="lzy-form-progressBar" max='100' value='0'>
+//                        <span id="lzy-form-progressBarFallback1-$inx"><span id="lzy-form-progressBarFallback2-$inx">&#160;</span></span>
+//                    </progress>
+//                    <div><span aria-live="polite" id="lzy-form-progressPercent$inx" class="lzy-form-progressPercent"></span></div>
+//                </div>
+//            </div> <!-- /lzy-upload-wrapper-->
+//			<div id='lzy-form-uploaded$inx' class='lzy-form-uploaded'$dispNo >$list</div>
+//
+//EOT;
+//
+//        if (!isset($this->uploadInitialized)) {
+//            $js = <<<EOT
+//var lzyD = new Date();
+//var lzyT0 = lzyD.getTime();
+//
+//EOT;
+//            $this->page->addJs($js);
+//            $this->uploadInitialized = true;
+//        }
+//		$jq = <<<EOT
+//
+//	$('#$id').fileupload({
+//	    url: '$server',
+//		dataType: 'json',
+//
+//		progressall: function (e, data) {
+//		    mylog('processing upload');
+//		    $('.lzy-form-progress-indicator$inx').show();
+//			var progress = parseInt(data.loaded / data.total * 100, 10);
+//			$('#lzy-progressBar$inx').val(progress);
+//			var lzyD = new Date();
+//			var lzyT1 = lzyD.getTime();
+//			if (((lzyT1 - lzyT0) > 500) && (progress < 100)) {
+//				lzyT0 = lzyT1;
+//				$('#lzy-form-progressPercent$inx').text( progress + '%' );
+//			}
+//			if (progress === 100) {
+//				$('#lzy-form-progressPercent$inx').text( progress + '%' );
+//			}
+//		},
+//
+//		done: function (e, data) {
+//		    mylog('upload accomplished');
+//			$.each(data.result.files, function (index, file) {
+//				if (file.name.match(/\.(jpe?g|gif|png)$/i)) {
+//					var img = '<img src="$targetPathHttp$thumbnailPath' + file.name + '" alt="" />';
+//				} else {
+//					var img = '';
+//				}
+//				var line = '<li><span>' + file.name + '</span><span>' + img + '</span></li>';
+//				$('#lzy-form-uploaded$inx').show();
+//				$('#lzy-form-uploaded$inx ul').append(line);
+//			});
+//		},
+//
+//		error: function (data, textStatus, errorThrown) {
+//		    mylog( data.responseText );
+//		},
+//	});
+//
+//EOT;
+//		$this->page->addJq($jq);
+//
+//		if (!isset($this->fileUploadInitialized)) {
+//			$this->fileUploadInitialized = true;
+//
+//			$this->page->addJqFiles([
+//			    '~sys/third-party/jquery-upload/js/vendor/jquery.ui.widget.js',
+//                '~sys/third-party/jquery-upload/js/jquery.iframe-transport.js',
+//                '~sys/third-party/jquery-upload/js/jquery.fileupload.js',
+//                '~sys/third-party/jquery-upload/js/jquery.fileupload-process.js']);
+//		}
+//
+//        return $out;
+//    } // renderFileUpload
 
 
 
@@ -1500,6 +1577,8 @@ EOT;
 
 	private function renderFormTail()
     {
+        $this->initFormJs();
+
         $formInx = $this->currForm->formInx;
         if (!$this->skipRenderingForm) {
             if ($this->currForm->antiSpam) {
@@ -1562,11 +1641,6 @@ EOT;
             $this->page->addJq( $jq );
         }
 
-        // refresh export if necessary:
-        if ($this->currForm->export) {
-            $this->export();
-        }
-
         // present previously received data to form owner:
         if ($this->currForm->showData) {
             $out .= $this->renderDataTable();
@@ -1592,7 +1666,9 @@ EOT;
         } elseif ($this->currRec->translateLabel) {
             $label = $this->trans->translateVariable($label, true);
         }
-        if ($this->currForm->labelColons || ($hasColon && (strpos($label,':') !== false))) {
+        if (($this->currForm->labelColons === null) && $hasColon) {
+            $label .= ':';
+        } elseif ($this->currForm->labelColons && $hasColon) {
             $label .= ':';
         }
         if ($requiredMarker) {
@@ -2056,16 +2132,18 @@ EOT;
                     if (@$dbFldKey[0] === '_') {
                         continue;
                     }
+
                     $usrDataFldName = false;
-                    foreach ($currForm->formElements as $i => $formDescr) {
-                        if ($formDescr->dataKey === $dbFldKey) {
-                            $usrDataFldName = $formDescr->name;
+                    foreach ($currForm->formElements as $i => $formElemDescr) {
+                        if ($formElemDescr->dataKey === $dbFldKey) {
+                            $usrDataFldName = $formElemDescr->name;
                             break;
                         }
                     }
                     if (!$usrDataFldName) {
-                        die("Error in saveUserSuppliedDataToDB(): inconsistancy in rec structure -> 'name' missing in \$formDescr:".var_r($formDescr));
+                        die("Error in saveUserSuppliedDataToDB(): inconsistancy in rec structure -> 'name' missing in \$formElemDescr:".var_r($formElemDescr));
                     }
+
                     if (is_array($userSuppliedData[$usrDataFldName])) {
                         $v1 = strtolower(str_replace(' ', '', $userSuppliedData[$usrDataFldName][0]));
                     } else {
@@ -2182,7 +2260,7 @@ EOT;
             }
         }
 
-        foreach ($elemDefs as $defInx => $elemDef) {
+        foreach ($elemDefs as $elemDef) {
             $key = $elemDef->name;
             $type = $elemDef->type;
 
@@ -2251,6 +2329,10 @@ EOT;
                     $rec[$key] = password_hash($rec[$key], PASSWORD_DEFAULT);
                 }
 
+            // toggle switch:
+            } elseif ($type === 'toggle') {
+                $rec[$key] = ($rec[$key] !== 'false'); // save as boolean
+
             // skip buttons
             } elseif ($type === 'button') {
                 unset($rec[ $key ]);
@@ -2267,25 +2349,6 @@ EOT;
             }
         }
     } // prepareDataRec
-
-
-
-	private function export()
-    {
-        if ($this->exportFileImported) {
-            return;
-        }
-        $currForm = $this->currForm;
-        $outFile = $currForm->export;
-
-        // get received form data:
-        $ds = $this->openDB();
-        $srcData = $ds->read( true );
-        if (!$srcData) {
-            return;
-        }
-        $this->exportToFile( $srcData );
-    } // export
 
 
 
@@ -2570,16 +2633,16 @@ EOT;
         $value = $this->currRec->value;
         $initialValue = $this->currRec->defaultValue;
         $liveValue = $this->currRec->liveValue;
-        
-        if (($type !== 'radio') && ($type !== 'checkbox') && ($type !== 'dropdown')) {
+
+        if (($type !== 'radio') && ($type !== 'checkbox') && ($type !== 'dropdown') && ($type !== 'toggle')) {
             if (@$this->currRec->prefill) {
                 $initialValue = $this->currRec->prefill;
             }
         } else {
-            $initialValue = $this->currRec->prefill;
+            $initialValue = @$this->currRec->prefill;
         }
         
-        if ($initialValue && ($initialValue[0] !== '=')) {
+        if ($initialValue && is_string($initialValue) && ($initialValue[0] !== '=')) {
             if ($type === 'tel') {
                 if (preg_match('/\D/', $initialValue)) {
                     $initialValue = preg_replace('/[^\d.\-+()]/', '', $initialValue);
@@ -2609,11 +2672,15 @@ EOT;
             }
         }
 
-        if ($value) {
+        if ($value && ($type !== 'toggle')) {
             $value = $value ? " value='$value'" : '';
         }
-        if ($initialValue) {
-            $initialValue = str_replace("'", "´", $initialValue);
+        if ($initialValue !== null) {
+            if (is_string($initialValue)) {
+                $initialValue = str_replace("'", "´", $initialValue);
+            } elseif (is_bool($initialValue)) {
+                $initialValue = $initialValue? 'true': 'false';
+            }
             $this->currRec->inpAttr .= " data-default-value='$initialValue'";
         }
         if ($liveValue) {
@@ -2687,31 +2754,8 @@ EOT;
 EOT;
 
         require_once SYSTEM_PATH.'htmltable.class.php';
-        $ds = $this->openExportDB();
-        $data = $ds->read( true );
-        if (!$data) {
-            return '';
-        }
-        $showDataMinRows = isset($currForm->showDataMinRows)? $currForm->showDataMinRows:
-            (isset($this->currRec->showDataMinRows)? $this->currRec->showDataMinRows : false);
-        if ($showDataMinRows) {
-            $nCols = @sizeof($data[0]);
-            $emptyRow = array_fill(0, $nCols, '&nbsp;');
-            $max = intval($showDataMinRows) + 1;
-            for ($i = sizeof($data); $i < $max; $i++) {
-                $data[$i] = $emptyRow;
-            }
-            for ($i=0; $i < $max; $i++) {
-                $index = $i ? $i : '#';
-                $rec = $data[$i];
-                array_splice($rec, 0,0, [$index]);
-                $data[$i] = $rec;
-            }
-        }
-        $structure = $ds->getStructure();
-        array_unshift($data, $structure['elemKeys']);
         $options = [
-            'data' => $data,
+            'dataSource' => $currForm->file,
             'headers' => true,
         ];
         $tbl = new HtmlTable($this->lzy, $options);
@@ -2974,74 +3018,6 @@ EOT;
 
 
 
-    private function openExportDB()
-    {
-        if ($this->dbExport) {
-            return $this->dbExport;
-        }
-        if (!$this->currForm) {
-            return null;
-        }
-        $currForm = $this->currForm;
-        $structure['key'] = 'index';
-        $structure['elements'] = [];
-        $elemKeys = [];
-        foreach ($currForm->formElements as $fldI => $fldDescr) {
-            $fldType = @$fldDescr->type;
-            if ((strpos(PSEUDO_TYPES, $fldType) !== false) || ($fldDescr->name[0] === '_')) {
-                continue;
-            }
-            if ($fldDescr->splitOutput) {
-                foreach ($fldDescr->optionLabels as $k => $v) {
-                    if ($k === 0) {
-                        continue;
-                    }
-                    $elemKeys[] = $v;
-                }
-            } else {
-                $elemKeys[] = $fldDescr->label;
-            }
-        }
-        $elemKeys[] = TIMESTAMP_KEY_ID;
-        $elemKeys[] = REC_KEY_ID;
-
-        foreach ($elemKeys as $label) {
-            $structure['elements'][$label] = [
-                'type' => 'string',
-            ];
-        }
-        $structure['elemKeys'] = $elemKeys;
-
-        $fileName = @$currForm->export;
-        if (!$fileName) {
-            $fileName = resolvePath( DEFAULT_EXPORT_FILE );
-        }
-        $this->dbExport = new DataStorage2([
-            'dataSource' => $fileName,
-            'structureDef' => $structure,
-            'includeKeys' => $currForm->exportMetaElements,
-            'includeTimestamp' => $currForm->exportMetaElements,
-        ]);
-        return $this->dbExport;
-    } // openExportDB
-
-
-
-    private function exportToFile($srcData)
-    {
-        $dsExport = $this->openExportDB();
-        foreach ($srcData as $recKey => $rec) {
-            foreach ($rec as $elemKey => $v) {
-                if (is_array($v)) {
-                    $srcData[$recKey][$elemKey] = isset($v[0]) ? $v[0] : implode(',', $v);
-                }
-            }
-        }
-        $dsExport->write($srcData);
-    } // exportToFile
-
-
-
     private function executeEventDuplicating(array $newRec, $ds): void
     {
         $keys = explodeTrim(',', $this->repeatEventTaskPending);
@@ -3078,8 +3054,6 @@ class FormDescriptor
     public $action = '';
     public $class = '';
     public $options = '';
-    public $export = '';
-    public $exportMetaElements = '';
     public $dataKey = '';
     public $bypassedValues = [];
     public $prefill = false;
