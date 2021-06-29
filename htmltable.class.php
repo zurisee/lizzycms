@@ -1895,9 +1895,17 @@ EOT;
                 $ds->write($data0);
             }
         }
-        $this->data0 = $data0;
 
         $this->structure = $structure = $ds->getStructure();
+
+        // special case: recKey is linked to a rec-element -> defined as "key => '=fieldname'":
+        if ($structure['key'][0] === '=') {
+            $keyKey = substr($structure['key'],1);
+            foreach ($data0 as $k => $rec) {
+                $data0[$k][$keyKey] = $k;
+            }
+        }
+        $this->data0 = $data0;
 
         $fields = $structure['elements'];
         if ($this->headers) {

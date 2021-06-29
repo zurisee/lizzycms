@@ -313,13 +313,26 @@ class DataStorage2
     {
         $this->getData(true);
 
-        $recId = $this->fixRecId($recId);
-        if (isset($this->data[ $recId ])) { // direct hit:
-            return $this->data[ $recId ];
+        // special case: $this->structure['key'] is defined as '=xy'
+        $keyElem = false;
+        if (isset($this->structure['key']) && $this->structure['key'] && ($this->structure['key'][0] === '=')) {
+            $keyElem = substr($this->structure['key'], 1);
         }
 
-        // check whether there's a record with corresponding '_key' field:
-        return $this->findRecByContent(REC_KEY_ID, $recId);
+        $recId = $this->fixRecId($recId);
+        if (isset($this->data[ $recId ])) { // direct hit:
+            $rec = $this->data[ $recId ];
+        } else {
+            // check whether there's a record with corresponding '_key' field:
+            $rec = $this->findRecByContent(REC_KEY_ID, $recId);
+        }
+
+        // special case: $this->structure['key'] is defined as '=xy' (2)
+        // -> reverse here by copying recId in to element xy
+        if ($keyElem && !isset($rec[$keyElem])) {
+            $rec[$keyElem] = $recId;
+        }
+        return $rec;
     } // readRecord
 
 

@@ -2161,7 +2161,7 @@ EOT;
                     } else {
                         $v1 = strtolower(str_replace(' ', '', @$userSuppliedData[$usrDataFldName]));
                     }
-                    if (is_array($rec[$dbFldKey])) {
+                    if (isset($rec[$dbFldKey]) && is_array($rec[$dbFldKey])) {
                         $v2 = strtolower(str_replace(' ', '', @$rec[$dbFldKey][0]));
                     } else {
                         $v2 = strtolower(str_replace(' ', '', @$rec[$dbFldKey]));
