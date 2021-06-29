@@ -2086,7 +2086,7 @@ EOT;
             // get first regular record:
             $data = $this->getData();
             if ($data) {
-                foreach ($data as $k => $rec) { // skip meat elements...
+                foreach ($data as $k => $rec) { // skip meta elements...
                     if (!is_string($k) || (@$k[0] !== '_')) {
                         break;
                     }
@@ -2116,9 +2116,15 @@ EOT;
             return $structure;
         }
 
-        foreach (array_keys($rec0) as $elemKey) {
+        foreach ($rec0 as $elemKey => $val) {
             $structure['elemKeys'][] = $elemKey;
-            $structure['elements'][$elemKey]['type'] = 'string';
+            $type = 'string';
+            if (is_numeric($val)) {
+                $type = 'numeric';
+            } elseif (is_bool($val)) {
+                $type = 'bool';
+            }
+            $structure['elements'][$elemKey]['type'] = $type;
             $structure['elements'][$elemKey]['name'] = translateToIdentifier($elemKey, false, true, false);
             $structure['elements'][$elemKey]['formLabel'] = $elemKey;
         }
