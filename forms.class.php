@@ -9,7 +9,7 @@ define('FORM_LOG_FILE', 	    LOG_PATH.'form-log.txt');
 define('SPAM_LOG_FILE', 	    LOG_PATH.'spam-log.txt');
 define ('FORMS_DEFAULT_TICKET_VALIDITY_TIME', 259200); // 3 days
 
-define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,'.
+define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,export,'.
     'legend,customResponseEvaluation,customResponseEvaluationFunction,next,file,confirmationText,formDataCaching,'.
     'encapsulate,formTimeout,avoidDuplicates,confirmationEmail,dynamicFormSupport,'.
     'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,'.
@@ -770,6 +770,7 @@ EOT;
             $this->formHash = $this->tck->createTicket($currForm->ticketPayload, false, null, false, $currForm->ticketHash);
         } else {
             $this->formHash = $currForm->ticketHash; // if ticket provided by caller
+            $this->tck->updateTicket($this->formHash, null); // reset _ticketValidTill
         }
 
         $id = " id='{$this->formId}'";
