@@ -38,6 +38,7 @@ class Ticketing
         $this->defaultType = isset($options['defaultType']) ? $options['defaultType'] : 'generic';
         $this->unambiguous = isset($options['unambiguous']) ? $options['unambiguous'] : false;
         $this->defaultValidityPeriod = isset($options['defaultValidityPeriod']) ? $options['defaultValidityPeriod'] : DEFAULT_TICKET_VALIDITY_TIME;
+        $this->validityPeriod = $this->defaultValidityPeriod;
         $this->defaultMaxConsumptionCount = isset($options['defaultMaxConsumptionCount']) ? $options['defaultMaxConsumptionCount'] : 1;
         if (($this->defaultMaxConsumptionCount === false) || ($this->defaultMaxConsumptionCount == -1)) {
             $this->defaultMaxConsumptionCount = PHP_INT_MAX;
@@ -54,15 +55,19 @@ class Ticketing
 
     public function createTicket($rec = [], $maxConsumptionCount = false, $validityPeriod = null, $type = false, $givenHash = false)
     {
-        $type = $type? $type : $this->defaultType;
+        $this->type = $type? $type : $this->defaultType;
         $maxConsumptionCount = $maxConsumptionCount ?$maxConsumptionCount : $this->defaultMaxConsumptionCount;
         $pathToPage = @$GLOBALS['globalParams']['pathToPage'];
+
+        if ($validityPeriod) {
+            $this->validityPeriod = $validityPeriod;
+        }
 
         if ($givenHash) {
             $ticketHash = $givenHash;
         } else {
             // first check whether ticket already exists for this page:
-            $ticketHash = getStaticVariable("$pathToPage.tickets.$type");
+            $ticketHash = getStaticVariable("$pathToPage.tickets.$this->type");
         }
         if ($ticketHash !== null) {
             foreach (explodeTrim(',', $ticketHash) as $tHash) {
@@ -70,14 +75,17 @@ class Ticketing
                 if ($ticketRec && is_array($ticketRec)) {
                     if ($rec && is_array($rec)) {
                         $rec = array_merge($ticketRec, $rec);
+                        $rec['_ticketValidTill'] = time() + $this->validityPeriod;
                         $this->updateTicket($tHash, $rec);
+                    } else {
+                        $this->updateTicket($tHash); // just update _ticketValidTill
                     }
                     return $tHash;
                 }
             }
         }
         $ticketHash = $this->_createTicket($rec, $maxConsumptionCount, $validityPeriod, $type, $givenHash);
-        setStaticVariable("$pathToPage.tickets.$type", $ticketHash, ',');
+        setStaticVariable("$pathToPage.tickets.$this->type", $ticketHash, ',');
         return $ticketHash;
     } // createTicket
 
@@ -94,18 +102,18 @@ class Ticketing
         $ticketRec['_dataPath'] = $GLOBALS['globalParams']['dataPath'];
 
         if ($validityPeriod === null) {
-            $ticketRec['_ticketValidTill'] = time() + $this->defaultValidityPeriod;
+            $this->validityPeriod = $this->defaultValidityPeriod;
 
         } elseif (($validityPeriod === false) || ($validityPeriod <= 0)) {
-            $ticketRec['_ticketValidTill'] = PHP_INT_MAX;
-
-        } elseif (is_string($validityPeriod)) {
-            $ticketRec['_ticketValidTill'] = strtotime( $validityPeriod );
-            mylog('ticket till: '.date('Y-m-d', $ticketRec['_ticketValidTill']));
+            $this->validityPeriod = PHP_INT_MAX;
 
         } else {
-            $ticketRec['_ticketValidTill'] = time() + $validityPeriod;
+            $this->validityPeriod = $validityPeriod;
         }
+        $ticketRec['_ticketValidTill'] = time() + $this->validityPeriod;
+
+// just for testing:
+$ticketRec['_ticketValidTillStr'] = date('Y-m-d H:i:s', $ticketRec['_ticketValidTill']);
 
         if ($givenHash) {
             $ticketHash = $givenHash;
@@ -140,10 +148,16 @@ class Ticketing
 
 
 
-    public function updateTicket($ticketHash, $data, $overwrite = false)
+    public function updateTicket($ticketHash, $data = null, $overwrite = false)
     {
         $ticketRec = $this->ds->readRecord($ticketHash);
-        if (!$overwrite && $ticketRec) {
+        if ($data === null) {
+            $data = $ticketRec;
+            $data['_ticketValidTill'] = time() + $this->validityPeriod;
+// just for testing:
+$data['_ticketValidTillStr'] = date('Y-m-d H:i:s', $ticketRec['_ticketValidTill']);
+
+        } elseif (!$overwrite && $ticketRec) {
             $data = array_merge($ticketRec, $data);
         }
         $this->ds->writeRecord($ticketHash, $data);
@@ -275,6 +289,7 @@ class Ticketing
             }
         }
         $this->ds->unlockDB();
+        return true;
     } // purgeExpiredTickets
 
 
