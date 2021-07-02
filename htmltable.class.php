@@ -25,6 +25,21 @@ class HtmlTable
     private $strToAppend = '';
     private $liveDataSrcRef = '';
     private $ticketHash;
+    private $jq;
+    private $headerElems;
+    private $data;
+    private $data0;
+    private $tableCounter;
+    private $showRecViewButton;
+    private $textResourcesRendered;
+    private $structure;
+    private $recStructure;
+    private $ds;
+    private $instructions;
+    private $phpExpr;
+    private $nCols;
+    private $processingInstructions;
+
     public function __construct($lzy, $options)
     {
         $this->options      = $options;
@@ -454,6 +469,9 @@ EOT;
         }
 
         $data = &$this->data;
+        if (!$this->data0) {
+            return '{{ lzy-table-no-data-available }}';
+        }
 
         $header = ($this->headers !== false);
 
@@ -1067,7 +1085,7 @@ EOT;
             if ($this->captionIndex) {
                 $this->tableCounter = $this->captionIndex;
             }
-            if (preg_match('/(.*)\#\#=(\d+)(.*)/', $this->caption, $m)) {
+            if (preg_match('/(.*)##=(\d+)(.*)/', $this->caption, $m)) {
                 $this->tableCounter = intval($m[2]);
                 $this->caption = $m[1] . '##' . $m[3];
             }
@@ -1549,7 +1567,7 @@ EOT;
         if (is_string($value) && ($bracketsOptional && ($value[0] !== '['))) {
             $value = "[$value]";
         }
-        if (is_string($value) && preg_match('/^(?<!\\\) \[ (?!\[) (.*) \] $/x', "$value", $m)) {
+        if (is_string($value) && preg_match('/^(?<!\\\) \[ (?!\[) (.*) ] $/x', "$value", $m)) {
             $value = $m[1];
             $ch1 = isset($value[1]) ? $value[1] : '';
             if (!($ch1 === ',') && !($ch1 === '|')) {
@@ -1775,20 +1793,20 @@ EOT;
                     $d = trim($data[$r][$c]);
 
                     // email address:
-                    if (preg_match_all('/ ([\w\-\.]*?) \@ ([\w\-\.]*?\.\w{2,6}) /x', $d, $m)) {
+                    if (preg_match_all('/ ([\w\-.]*?) @ ([\w\-.]*?\.\w{2,6}) /x', $d, $m)) {
                         foreach ($m[0] as $addr) {
                             $d = str_replace($addr, "<a href='mailto:$addr'>$addr</a>@@lzy-td-email@@", $d);
                         }
 
                     // phone number:
-                    } elseif (preg_match('/^( \+? [\d\-\s\(\)]* )$/x', $d, $m)) {
-                        $tel = preg_replace('/[^\d\+]/', '', $d);
+                    } elseif (preg_match('/^( \+? [\d\-\s()]* )$/x', $d, $m)) {
+                        $tel = preg_replace('/[^\d+]/', '', $d);
                         if (strlen($tel) > 7) {
                             $d = "<a href='tel:$tel'>$d</a>@@lzy-td-tel@@";
                         }
 
                     // url:
-                    } elseif (preg_match('|^( (https?://)? ([\w\-\.]+ \. [\w\-]{1,6}))$|xi', $d, $m)) {
+                    } elseif (preg_match('|^( (https?://)? ([\w\-.]+ \. [\w\-]{1,6}))$|xi', $d, $m)) {
                         if (!$m[2]) {
                             $url = "https://".$m[3];
                         } else {
@@ -1895,62 +1913,64 @@ EOT;
                 $ds->write($data0);
             }
         }
+        $this->data0 = $data0;
 
         $this->structure = $structure = $ds->getStructure();
 
-        // special case: recKey is linked to a rec-element -> defined as "key => '=fieldname'":
-        if ($structure['key'][0] === '=') {
-            $keyKey = substr($structure['key'],1);
-            foreach ($data0 as $k => $rec) {
-                $data0[$k][$keyKey] = $k;
-            }
-        }
-        $this->data0 = $data0;
-
-        $fields = $structure['elements'];
-        if ($this->headers) {
-            if ($this->headers === true) {
-                if (isset($structure['elemKeys'][0]) && is_int($structure['elemKeys'][0])) {
-                    $this->headerElems = array_shift($data0);
-                } else {
-                    $this->headerElems = $structure['elemKeys'];
+        if (isset($structure['key'])) {
+            // special case: recKey is linked to a rec-element -> defined as "key => '=fieldname'":
+            if (is_string($structure['key']) && $structure['key'] && $structure['key'][0] === '=') {
+                $keyKey = substr($structure['key'], 1);
+                foreach ($data0 as $k => $rec) {
+                    $data0[$k][$keyKey] = $k;
                 }
-                $rec0 = reset($data0);
-                $ic = 0;
-                if ($rec0) {
-                    foreach ($rec0 as $item) {
-                        if (is_array($item)) {
-                            // handle splitOutput of composite elements if directive is embedded in field description:
-                            if (isset($item['_splitOutput']) && $item['_splitOutput']) {
-                                foreach ($item as $k => $v) {
-                                    if (($k === 0) || ($k[0] === '_')) { // skip special elems
-                                        unset($item[$k]);
+            }
+
+            $fields = $structure['elements'];
+            if ($this->headers) {
+                if ($this->headers === true) {
+                    if (isset($structure['elemKeys'][0]) && is_int($structure['elemKeys'][0])) {
+                        $this->headerElems = array_shift($data0);
+                    } else {
+                        $this->headerElems = $structure['elemKeys'];
+                    }
+                    $rec0 = reset($data0);
+                    $ic = 0;
+                    if ($rec0) {
+                        foreach ($rec0 as $item) {
+                            if (is_array($item)) {
+                                // handle splitOutput of composite elements if directive is embedded in field description:
+                                if (isset($item['_splitOutput']) && $item['_splitOutput']) {
+                                    foreach ($item as $k => $v) {
+                                        if (($k === 0) || ($k[0] === '_')) { // skip special elems
+                                            unset($item[$k]);
+                                        }
                                     }
+                                    $newCols = array_keys($item);
+                                    array_splice($this->headerElems, $ic, 1, $newCols);
+                                    $ic += sizeof($newCols) - 1;
                                 }
-                                $newCols = array_keys($item);
-                                array_splice($this->headerElems, $ic, 1, $newCols);
-                                $ic += sizeof($newCols) - 1;
                             }
+                            $ic++;
                         }
-                        $ic++;
                     }
                 }
+                if ($this->includeKeys && !in_array('_key', $this->headerElems)) {
+                    $this->headerElems[] = '_key';
+                }
             }
-            if ($this->includeKeys && !in_array('_key', $this->headerElems)) {
-                $this->headerElems[] = '_key';
+            $i = 0;
+            foreach ($fields as $desc) {
+                // handle option 'omit:true' from structure file:
+                if (@$desc['omit']) {
+                    unset($this->headerElems[$i]);
+                }
+                // handle option 'hide:true' from structure file:
+                if (@$desc['hide']) {
+                    $this->headerElems[$i] .= '%%!off$$';
+                }
+                $i++;
             }
-        }
-        $i = 0;
-        foreach ($fields as $desc) {
-            // handle option 'omit:true' from structure file:
-            if (@$desc['omit']) {
-                unset($this->headerElems[$i]);
-            }
-            // handle option 'hide:true' from structure file:
-            if (@$desc['hide']) {
-                $this->headerElems[$i] .= '%%!off$$';
-            }
-            $i++;
         }
         $data = [];
         $this->data = [];
@@ -2032,7 +2052,7 @@ EOT;
 
                 // extract optinal attributes:
                 $attributes = '';
-                if (preg_match('/(.*?) \s* \{ (.*) \}/x', $button, $m)) {
+                if (preg_match('/(.*?) \s* { (.*) }/x', $button, $m)) {
                     $button = $m[1];
                     $attributes = str_replace(['&#34;','&#39;'], ['"',"'"], $m[2]);
                 }
