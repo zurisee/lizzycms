@@ -89,8 +89,7 @@ $globalParams = array(
 
 class Lizzy
 {
-    private $lzyDb = null;  // -> SQL DB for caching DataStorage data-files
-	private $currPage = false;
+//	private $currPage;
 	private $systemPath = SYSTEM_PATH;
 	public  $pathToRoot;
 	public  $pagePath;
@@ -123,7 +122,7 @@ class Lizzy
             $user = 'anon';
         }
 
-        $this->debugLogBuffer = "REQUEST_URI: {$_SERVER["REQUEST_URI"]}  FROM: [$user]\n";
+        $this->debugLogBuffer = "REQUEST_URI: {$_SERVER['REQUEST_URI']}  FROM: [$user]\n";
         if ($_REQUEST) {
             $this->debugLogBuffer .= "REQUEST: ".var_r($_REQUEST, 'REQUEST', true)."\n";
         }
@@ -571,11 +570,11 @@ class Lizzy
             return;
         }
         if ($forceUpdate) {
-            $html = preg_replace('/(\<link\s+href=(["])[^"]+)"/m', "$1$forceUpdate\"", $html);
-            $html = preg_replace("/(\<link\s+href=(['])[^']+)'/m", "$1$forceUpdate'", $html);
+            $html = preg_replace('/(<link\s+href=(["])[^"]+)"/m', "$1$forceUpdate\"", $html);
+            $html = preg_replace("/(<link\s+href=(['])[^']+)'/m", "$1$forceUpdate'", $html);
 
-            $html = preg_replace('/(\<script\s+src=(["])[^"]+)"/m', "$1$forceUpdate\"", $html);
-            $html = preg_replace("/(\<script\s+src=(['])[^']+)'/m", "$1$forceUpdate'", $html);
+            $html = preg_replace('/(<script\s+src=(["])[^"]+)"/m', "$1$forceUpdate\"", $html);
+            $html = preg_replace("/(<script\s+src=(['])[^']+)'/m", "$1$forceUpdate'", $html);
         }
     } // applyForcedBrowserCacheUpdate
 
@@ -584,48 +583,23 @@ class Lizzy
     private function setupErrorHandling()
     {
         global $globalParams;
-        $globalParams['errorLogFile'] = '';
+        if ($this->config->debug_errorLogging) {
+            $globalParams['errorLogFile'] = LOG_FILE;
+        } else {
+            $globalParams['errorLogFile'] = '';
+        }
+
         if ($this->auth->checkGroupMembership('editors') || $this->localHost) {     // set displaying errors on screen:
             $old = ini_set('display_errors', '1');  // on
             error_reporting(E_ALL);
 
-        } elseif (file_exists(HOUSEKEEPING_FILE)) {
+        } else {
             $old = ini_set('display_errors', '0');  // off
             error_reporting(0);
         }
         if ($old === false) {
-            fatalError("Error setting up error handling... (no kidding)", 'File: '.__FILE__.' Line: '.__LINE__);
+            fatalError("Error while setting up error handling... (no kidding)", 'File: '.__FILE__.' Line: '.__LINE__);
         }
-
-    //        if ($this->config->debug_errorLogging && !file_exists(ERROR_LOG_ARCHIVE)) {
-    //            $errorLogPath = dirname(ERROR_LOG_ARCHIVE).'/';
-    //            $errorLogFile = ERROR_LOG_ARCHIVE;
-    //
-    //            // make error log folder:
-    //            preparePath($errorLogPath);
-    //            if (!is_writable($errorLogPath)) {
-    //                die("Error: no write permission to create error log folder '$errorLogPath'");
-    //            }
-    //
-    //            // make error archtive file and check
-    //            touch($errorLogFile);
-    //            if (!file_exists($errorLogFile) || !is_writable($errorLogPath)) {
-    //                die("Error: unable to create error log file '$errorLogPath' - probably access rights are not ");
-    //            }
-    //
-    //            // make error log file, check and delete immediately
-    //            touch(ERROR_LOG);
-    //            if (!file_exists(ERROR_LOG) || !is_writable(ERROR_LOG)) {
-    //                die("Error: unable to create error log file '".ERROR_LOG."' - probably access rights are not ");
-    //            }
-    //            unlink(ERROR_LOG);
-    //
-    //            ini_set("log_errors", 1);
-    //            ini_set("error_log", $errorLogFile);
-    //            //error_log( "Error-logging started" );
-    //
-    //            $globalParams['errorLogFile'] = ERROR_LOG;
-    //        }
     } // setupErrorHandling
 
 
@@ -686,10 +660,10 @@ class Lizzy
     {
         global $globalParams;
 
-        $requestUri         = (isset($_SERVER["REQUEST_URI"])) ? rawurldecode($_SERVER["REQUEST_URI"]) : '';
+        $requestUri         = (isset($_SERVER['REQUEST_URI'])) ? rawurldecode($_SERVER['REQUEST_URI']) : '';
         $requestedPath      = $requestUri;
         $urlArgs               = '';
-        if (preg_match('/^ (.*?) [\?#&] (.*)/x', $requestUri, $m)) {
+        if (preg_match('/^ (.*?) [?#&] (.*)/x', $requestUri, $m)) {
             $requestedPath = $m[1];
             $urlArgs = $m[2];
         }
@@ -771,7 +745,7 @@ EOT;
         $globalParams['pagesFolder'] = PAGES_PATH;
         $globalParams['filepathToRoot'] = $pathToAppRoot;
         $globalParams['absAppRoot'] = $absAppRootPath;  // path from FS root to base folder of app, e.g. /Volumes/...
-        $globalParams['absAppRootUrl'] = $globalParams["host"] . substr($appRoot, 1);  // path from FS root to base folder of app, e.g. /Volumes/...
+        $globalParams['absAppRootUrl'] = $globalParams['host'] . substr($appRoot, 1);  // path from FS root to base folder of app, e.g. /Volumes/...
         $globalParams['appRootUrl'] = $appRootUrl;  //
         $globalParams['appRoot'] = $appRoot;  // path from docRoot to base folder of app, e.g. 'on/'
         $globalParams['redirectedAppRootUrl'] = $redirectedAppRootUrl;  // the part that has been skipped by .htaccess
@@ -806,7 +780,7 @@ EOT;
         $this->pathToRoot = $urlToAppRoot;
 
         // get IP-address
-        $ip = $_SERVER["HTTP_HOST"];
+        $ip = $_SERVER['HTTP_HOST'];
         if (stripos($ip, 'localhost') !== false) {  // case of localhost, not executed on host
             $ifconfig = shell_exec('ifconfig');
             $p = strpos($ifconfig, 'inet 192.168');
@@ -903,9 +877,9 @@ EOT;
             if (!$this->config->isLegacyBrowser) {
                 $this->page->addJsFiles("HAMMERJS");
                 if ($this->config->feature_touchDeviceSupport) {
-                    $this->page->addJqFiles(["HAMMERJQ", "TOUCH_DETECTOR", "PAGE_SWITCHER", "JQUERY"]);
+                    $this->page->addJqFiles(['HAMMERJQ', 'TOUCH_DETECTOR', 'PAGE_SWITCHER', 'JQUERY']);
                 } else {
-                    $this->page->addJqFiles(["HAMMERJQ", "PAGE_SWITCHER", "JQUERY"]);
+                    $this->page->addJqFiles(['HAMMERJQ', 'PAGE_SWITCHER', 'JQUERY']);
                 }
             }
         }
@@ -927,7 +901,7 @@ EOT;
 	private function setTransvars0()
 	{
         $requestScheme  = ((isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'])) ? $_SERVER['REQUEST_SCHEME'].'://' : 'HTTP://';
-        $requestUri     = (isset($_SERVER["REQUEST_URI"])) ? rawurldecode($_SERVER["REQUEST_URI"]) : '';
+        $requestUri     = (isset($_SERVER['REQUEST_URI'])) ? rawurldecode($_SERVER['REQUEST_URI']) : '';
         $appRoot        = fixPath(commonSubstr( dir_name($_SERVER['SCRIPT_NAME']), dir_name($requestUri), '/'));
         $appRootUrl     = $requestScheme.$_SERVER['HTTP_HOST'] . $appRoot;
         $this->trans->addVariable('appRootUrl', $appRootUrl);
@@ -1058,7 +1032,7 @@ EOT;
 		} else {
 			$title = $this->trans->getVariable('page_title');
 			$pageName = $this->siteStructure->currPageRec['name'];
-			if ($this->siteStructure->currPageRec["folder"] === '') {   // Homepage: just show site title
+			if ($this->siteStructure->currPageRec['folder'] === '') {   // Homepage: just show site title
                 $title = $this->trans->getVariable('site_title');
             } else {
                 $title = preg_replace('/\$page_name/', $pageName, $title);
@@ -1104,7 +1078,7 @@ EOT;
             'pagePath' => $GLOBALS['globalParams']['pageFolder'],
             'pathToPage' => $GLOBALS['globalParams']['pathToPage'],
             'appRootUrl' => $GLOBALS['globalParams']['absAppRootUrl'],
-            'user'      => $_SESSION["lizzy"]["user"],
+            'user'      => $_SESSION['lizzy']['user'],
         ];
         $tick = new Ticketing();
         $ticket = $tick->createTicket($rec, 25);
@@ -1908,7 +1882,7 @@ EOT;
         $globalParams['userAgent'] = $ua->get();
         $this->isLegacyBrowser = $ua->isLegacyBrowser();
         $_SESSION['lizzy']['userAgent'] = $globalParams['userAgent'];
-        $globalParams['HTTP_USER_AGENT'] = $_SERVER['HTTP_USER_AGENT'];
+        $globalParams['HTTP_USER_AGENT'] = @$_SERVER['HTTP_USER_AGENT'];
 
         $this->isMobile = $ua->isMobile();
 
@@ -1974,7 +1948,7 @@ EOT;
             $devDataPath = 'data/';
         }
 
-        $rootPath = dirname($_SERVER["SCRIPT_NAME"]);
+        $rootPath = dirname($_SERVER['SCRIPT_NAME']);
         $pat = '#'. $this->config->site_devDataPathPattern .'#i';
         $isDev = preg_match($pat, $rootPath);      // dev folder?
         $isDev &= !getUrlArg('forceOnair');
@@ -1986,7 +1960,7 @@ EOT;
             }
             $this->config->site_dataPath = $devDataPath;
             $GLOBALS['globalParams']['dataPath'] = $devDataPath;
-            $_SESSION["lizzy"]["dataPath"] = $devDataPath;
+            $_SESSION['lizzy']['dataPath'] = $devDataPath;
             $this->trans->addVariable('dataPath', $devDataPath);
             return;
 
@@ -2212,14 +2186,6 @@ EOT;
 
 
 
-//??? obsolete? delete?
-//    public function getLzyDb()
-//    {
-//        return $this->lzyDb;
-//    }
-
-
-
     private function renderUrlArgHelp()
     {
         $overlay = <<<EOT
@@ -2305,7 +2271,7 @@ EOT;
     {
         global $globalParams;
         $this->siteStructure = new SiteStructure($this, $this->reqPagePath);
-        $this->currPage = $this->reqPagePath = $this->siteStructure->currPage;
+//        $this->currPage = $this->reqPagePath = $this->siteStructure->currPage;
 
         $this->pagePath = $this->siteStructure->getPagePath();
         $this->pathToPage = PAGES_PATH . $this->pagePath;   //  includes pages/
@@ -2456,7 +2422,7 @@ EOT;
     {
         $scriptPath = dir_name($_SERVER['SCRIPT_NAME']);
         // ignore filename part of request:
-        $requestUri = (isset($_SERVER["REQUEST_URI"])) ? rawurldecode($_SERVER["REQUEST_URI"]) : '';
+        $requestUri = (isset($_SERVER['REQUEST_URI'])) ? rawurldecode($_SERVER['REQUEST_URI']) : '';
         if (fileExt($requestUri)) {
             $requestUri = dir_name($requestUri);
         }
