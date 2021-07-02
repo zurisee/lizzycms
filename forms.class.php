@@ -7,6 +7,7 @@ define('UPLOAD_SERVER',         '~sys/_upload_server.php');
 define('THUMBNAIL_PATH', 	    '_/thumbnails/');
 define('FORM_LOG_FILE', 	    LOG_PATH.'form-log.txt');
 define('SPAM_LOG_FILE', 	    LOG_PATH.'spam-log.txt');
+define ('FORMS_DEFAULT_TICKET_VALIDITY_TIME', 259200); // 3 days
 
 define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,'.
     'legend,customResponseEvaluation,customResponseEvaluationFunction,next,file,confirmationText,formDataCaching,'.
@@ -69,7 +70,7 @@ class Forms
         $this->tck = new Ticketing([
             'defaultType' => 'lzy-form',
             'defaultMaxConsumptionCount' => 100,
-            'defaultValidityPeriod' => 259200, // 3 days
+            'defaultValidityPeriod' => FORMS_DEFAULT_TICKET_VALIDITY_TIME,
         ]);
 
         // $userDataEval===false suppresses user-data-evaluation (because client does it on its own)
