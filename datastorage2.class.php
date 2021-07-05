@@ -709,20 +709,16 @@ class DataStorage2
             if ($this->includeKeys && !isset($this->structure['elements'][REC_KEY_ID])) {
                 if ($this->includeTimestamp) {
                     $this->structure['elements'][TIMESTAMP_KEY_ID] = ['type' => 'string'];
-                    $this->structure['elemKeys'][] = TIMESTAMP_KEY_ID;
                 }
                 $this->structure['elements'][REC_KEY_ID] = [ 'type' => 'string' ];
-                $this->structure['elemKeys'][] = REC_KEY_ID;
             }
         } else {
             $this->determineStructure();
             if ($this->includeKeys && !isset($this->structure['elements'][REC_KEY_ID])) {
                 if ($this->includeTimestamp) {
                     $this->structure['elements'][TIMESTAMP_KEY_ID] = ['type' => 'string'];
-                    $this->structure['elemKeys'][] = TIMESTAMP_KEY_ID;
                 }
                 $this->structure['elements'][REC_KEY_ID] = [ 'type' => 'string' ];
-                $this->structure['elemKeys'][] = REC_KEY_ID;
             }
         }
         return $this->structure;
@@ -1850,18 +1846,19 @@ EOT;
         }
         // prepend header row:
         $structure = $this->getStructure();
-        if (isset($structure['elemKeys'])) {
+        if (isset($structure['elements'])) {
             if (!$this->includeKeys) {
-                $i = array_search(REC_KEY_ID, $structure['elemKeys']);
+                $elemKeys = array_keys($structure['elements']);
+                $i = array_search(REC_KEY_ID, $elemKeys);
                 if ($i !== false) {
-                    unset($structure['elemKeys'][$i]);
+                    unset($elemKeys);
                 }
-                $i = array_search(TIMESTAMP_KEY_ID, $structure['elemKeys']);
+                $i = array_search(TIMESTAMP_KEY_ID, $elemKeys);
                 if ($i !== false) {
-                    unset($structure['elemKeys'][$i]);
+                    unset($elemKeys);
                 }
             }
-            $outData[0] = array_values($structure['elemKeys']);
+            $outData[0] = array_values($elemKeys);
         }
         // remove field labels:
         foreach ($array as $row) {
@@ -1937,7 +1934,6 @@ EOT;
             // if not suppressed: use first data row as element-labels:
             if ($this->userCsvFirstRowAsLabels) {
                 $elemKeys = array_shift( $data );
-                $this->structure['elemKeys'] = $elemKeys;
                 foreach ($elemKeys as $k => $elemKey) {
                     $name = translateToIdentifier($elemKey, false, true, false);
                     $this->structure['elements'][$elemKey] = ['type' => 'string', 'name' => $name, 'formLabel' => $elemKey];
@@ -2042,10 +2038,7 @@ EOT;
             $this->structure = $structure;
             return $structure;
         }
-        if (!isset($structure['elemKeys']) || !$structure['elemKeys']) { // fields missing
-            $structure['elemKeys'] = array_keys($structure['elements']);
-        }
-        
+
         // add 'name' elem:
         $rec0 = reset($structure['elements']);
         if (!isset($rec0['name']) || !$rec0['name']) {
@@ -2071,7 +2064,7 @@ EOT;
     private function deriveStructureFromData()
     {
         $rawData = $this->lowlevelReadRawData();
-        $structure = [ 'key' => false, 'elements' => [], 'elemKeys' => [] ];
+        $structure = [ 'key' => false, 'elements' => [] ];
         if (!$rawData[ 'data']) {
             return $structure;
         }
@@ -2130,7 +2123,6 @@ EOT;
         }
 
         foreach ($rec0 as $elemKey => $val) {
-            $structure['elemKeys'][] = $elemKey;
             $type = 'string';
             if (is_numeric($val)) {
                 $type = 'numeric';
@@ -2299,7 +2291,7 @@ EOT;
         }
         $data1 = [];
         foreach ($data as $recKey => $elem) {
-            foreach ($this->structure['elemKeys'] as $elemKey) {
+            foreach (array_keys($this->structure['elements']) as $elemKey) {
                 if (isset($data[$recKey][$elemKey])) {
                     $data1[$recKey][$elemKey] = $data[$recKey][$elemKey];
                 } else {
