@@ -1966,8 +1966,13 @@ function stripNewlinesWithinTransvars($str)
             break;
         }
         $s = substr($str, $p1, $p2-$p1+2);
-        $s = preg_replace("/\n\s*/ms", '↵ ',$s);
- 
+        // macro call may be on multiple lines, if so flatten.
+        // -> if so, a newline terminates an argument, even if ',' is missing:
+        $s = preg_replace("/,\s*\n/ms", ',↵ ',$s);
+        $s = preg_replace("/\n\s*/ms", ',↵ ',$s);
+        $s = str_replace("(,↵", '(↵ ',$s);
+//        $s = preg_replace("/\n\s*/ms", '↵ ',$s);
+
         $str = substr($str, 0, $p1) . $s . substr($str, $p2+2);
         $p1 += strlen($s);
     } while (strpos($str, '{{', $p1) !== false);
