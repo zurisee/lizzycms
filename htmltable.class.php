@@ -193,6 +193,31 @@ EOT;
         $file = substr( $file , 0, -1);
         $file = "$path$file";
 
+        // handle export of meta keys:
+        if ($this->exportMetaElements) {
+            $includeTS = ($this->exportMetaElements === true) || (strpos($this->exportMetaElements, 'time') !== false);
+            $includeKey = ($this->exportMetaElements === true) ||
+                (strpos($this->exportMetaElements, 'key') !== false) ||
+                (strpos($this->exportMetaElements, 'hash') !== false);
+            foreach ($this->data as $key => $rec) {
+                if ($key === 'hdr') {
+                    if ($includeTS) {
+                        $this->data[$key][] = TIMESTAMP_KEY_ID;
+                    }
+                    if ($includeKey) {
+                        $this->data[$key][] = REC_KEY_ID;
+                    }
+                } else {
+                    if ($includeTS) {
+                        $this->data[$key][] = $this->data0[$key][TIMESTAMP_KEY_ID];
+                    }
+                    if ($includeKey) {
+                        $this->data[$key][] = $this->data0[$key][REC_KEY_ID];
+                    }
+                }
+            }
+        }
+
         if (strpos($this->export, '.csv') !== false) {
             $this->exportToCsv( $file );
 
@@ -213,8 +238,7 @@ EOT;
     {
         // define temporary $structure to control export by datastorage:
         $structure['key'] = 'index';
-        $structure['elemKeys'] = $this->data['hdr'];
-        foreach ($structure['elemKeys'] as $elemKey) {
+        foreach ($this->data['hdr'] as $elemKey) {
             $structure['elements'][$elemKey] = [ 'type' => 'string', 'name' => $elemKey ];
         }
 
@@ -247,7 +271,7 @@ EOT;
         $r = 1;
         foreach ($data as $rec) {
             $c = 0;
-            foreach ($rec as $k => $v) {
+            foreach ($rec as $v) {
                 $cell = preg_replace('/<{(.*?)}>/', '', $v);
                 $c1 = intval($c / 26);
                 $c1 = $c1 ? chr( 65 + $c1 ) : '';
@@ -1708,7 +1732,7 @@ EOT;
         }
         $nCols = sizeof( reset($this->data) );
         $nRows = sizeof($this->data);
-        $recKeyInx = array_search(REC_KEY_ID, $this->structure['elemKeys']);
+        $recKeyInx = array_search(REC_KEY_ID, array_keys($this->structure['elements']));
         if ($this->includeCellRefs) {
             $r = 0;
             foreach ($this->data as $rKey => $rec) {
@@ -1929,10 +1953,11 @@ EOT;
             $fields = $structure['elements'];
             if ($this->headers) {
                 if ($this->headers === true) {
-                    if (isset($structure['elemKeys'][0]) && is_int($structure['elemKeys'][0])) {
+                    $elemKeys = array_keys($structure['elements']);
+                    if (isset($elemKeys[0]) && is_int($elemKeys[0])) {
                         $this->headerElems = array_shift($data0);
                     } else {
-                        $this->headerElems = $structure['elemKeys'];
+                        $this->headerElems = $elemKeys;
                     }
                     $rec0 = reset($data0);
                     $ic = 0;
@@ -2029,7 +2054,7 @@ EOT;
 
         if (!$data) {
             // add empty row:
-            foreach ($structure['elemKeys'] as $c => $label) {
+            foreach (array_keys($structure['elements']) as $c => $label) {
                 $data['new-rec'][$c] = '';
             }
         }
