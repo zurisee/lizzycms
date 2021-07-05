@@ -1768,8 +1768,8 @@ EOT;
 	{
 	    $form = $this->currForm;
 	    $form->bypassedValues = @$this->bypassedValues;
-	    if (isset( $form->prefillRec["dataKey"] )) {
-            $form->dataKey = $form->prefillRec["dataKey"];
+	    if (isset( $form->prefillRec['dataKey'] )) {
+            $form->dataKey = $form->prefillRec['dataKey'];
         }
         $formObj = base64_encode( serialize( $form) );
         $formDescr = [];
@@ -1880,7 +1880,7 @@ EOT;
         $cmd = @$userSuppliedData['_lizzy-form-next'];
         if ($cmd === '_ignore_') {     // _ignore_
             $this->cacheUserSuppliedData($formInx, $userSuppliedData);
-            return;
+            return false;
 
         } elseif ($cmd === '_reset_') { // _reset_
             $this->clearCache();
@@ -1921,7 +1921,7 @@ EOT;
         $errDescr = @$this->errorDescr[ $this->formInx ];
         if ($errDescr) {
             $_POST = [];
-            return true;
+            return false;
         }
 
         $msgToOwner = $this->assembleResponses();
@@ -1960,7 +1960,7 @@ EOT;
 
         $customResponseEvaluationFunction = @$currForm->customResponseEvaluationFunction;
         if ($customResponseEvaluationFunction && function_exists( $customResponseEvaluationFunction )) {
-            $res = $customResponseEvaluationFunction($this->lzy, $this, $userSuppliedData);
+            $res = $customResponseEvaluationFunction($this->lzy, $this, $userSuppliedData); // $res = false -> everything ok
             if (is_string($res)) {
                 $this->clearCache();
                 $this->skipRenderingForm = true;
@@ -1995,6 +1995,7 @@ EOT;
             $this->responseToClient = $msgToClient . '<br>' . $this->responseToClient;
             $this->skipRenderingForm = true;
         }
+        return true;
     } // evaluateUserSuppliedData
 
 
@@ -2139,7 +2140,7 @@ EOT;
 //??? modif for user-admin
 // -> need to check whether works in other situations, e.g if struct derived from (incomplete) data
 //                foreach ($rec as $dbFldKey => $value) {
-                $keys = array_unique( array_merge($struc['elemKeys'], array_keys($rec)));
+                $keys = array_unique( array_merge(array_keys($struc['elements']), array_keys($rec)));
                 foreach ($keys as $dbFldKey) {
                     // ignore all meta attributes:
                     if (@$dbFldKey[0] === '_') {
@@ -3000,8 +3001,6 @@ EOT;
         unset($struct['elements'][REC_KEY_ID]);
         $struct['elements'][TIMESTAMP_KEY_ID] = ['type' => 'string'];
         $struct['elements'][REC_KEY_ID] = ['type' => 'string'];
-        unset($struct['elemKeys']);
-        $struct['elemKeys'] = array_keys($struct['elements']);
         $ds->setStructure($struct);
         $data = $ds->read();
         foreach ($data as $recKey => $rec) {
