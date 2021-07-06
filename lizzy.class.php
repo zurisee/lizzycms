@@ -293,7 +293,7 @@ class Lizzy
 
         $this->injectPageSwitcher();
 
-        $this->warnOnErrors();
+//        $this->warnOnErrors();
 
         $this->setTransvars2();
 
