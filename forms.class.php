@@ -20,7 +20,7 @@ define('ELEM_ATTRIBUTES', 	    ',label,type,id,class,wrapperClass,name,required,
 	'options,optionLabels,layout,info,comment,translateLabel,'.
 	'labelInOutput,splitOutput,placeholder,autocomplete,'.
 	'description,pattern,min,max,path,target,'.
-    'defaultValue,liveValue,postProcess,');
+    'defaultValue,derivedValue,liveValue,postProcess,');
 
 define('UNARY_ELEM_ATTRIBUTES', ',required,translateLabel,splitOutput,autocomplete,');
 
@@ -404,6 +404,10 @@ EOT;
             $rec->defaultValue = $args['defaultValue'];
         } else {
             $rec->defaultValue = null;
+        }
+        $rec->derivedValue = @$args['derivedValue']? $args['derivedValue']: '';
+        if ($rec->derivedValue) {
+            $this->currForm->dynamicFormSupport = true;
         }
         $rec->liveValue = @$args['liveValue']? $args['liveValue']: '';
         if ($rec->liveValue) {
@@ -2654,44 +2658,78 @@ EOT;
 
     private function getValueAttr($type = false)
     {
-        $value = $this->currRec->value;
-        $initialValue = $this->currRec->defaultValue;
-        $liveValue = $this->currRec->liveValue;
+        // 1) value
+        // 2) default value
+        // 3) derived value
+        // 4) live value
+        $value = $this->_getValue( 'value' );
 
+        $defaultValue = $this->_getValue( 'defaultValue' );
+        if ($defaultValue !== null) {
+            if ($defaultValue && !(is_string($defaultValue) && ($defaultValue[0] === '='))) {
+                $value = $defaultValue;
+            }
+            $this->currRec->inpAttr .= " data-default-value='$defaultValue'";
+        }
+
+        $derivedValue = $this->_getValue( 'derivedValue' );
+        if ($derivedValue) {
+            if (!(is_string($derivedValue) && ($derivedValue[0] === '='))) {
+                $value = $derivedValue;
+            }
+            $this->currRec->inpAttr .= " data-derived-value='$derivedValue'";
+        }
+
+        $liveValue = $this->_getValue( 'liveValue' );
+        if ($liveValue) {
+            $liveValue = str_replace("'", "´", $liveValue);
+            $this->currRec->inpAttr .= " data-live-value='$liveValue'";
+        }
+
+        $value = $this->parseValue($type, $value);
+        return $value;
+    } // getValueAttr
+
+
+
+    private function parseValue($type, $value)
+    {
         if (($type !== 'radio') && ($type !== 'checkbox') && ($type !== 'dropdown') && ($type !== 'toggle')) {
             if (@$this->currRec->prefill) {
-                $initialValue = $this->currRec->prefill;
+                $value = $this->currRec->prefill;
             }
         } else {
-            $initialValue = @$this->currRec->prefill;
+            $value = @$this->currRec->prefill;
         }
-        
-        if ($initialValue && is_string($initialValue) && ($initialValue[0] !== '=')) {
+
+        // skip non-strings and acive values (which start with '='):
+        if ($value && is_string($value) && ($value[0] !== '=')) {
+            // perform some basic format checks:
             if ($type === 'tel') {
-                if (preg_match('/\D/', $initialValue)) {
-                    $initialValue = preg_replace('/[^\d.\-+()]/', '', $initialValue);
+                if (preg_match('/\D/', $value)) {
+                    $value = preg_replace('/[^\d.\-+()]/', '', $value);
                 }
             } elseif ($type === 'number') {
-                $initialValue = preg_replace('/[^\d.\-+]/', '', $initialValue);
+                $value = preg_replace('/[^\d.\-+]/', '', $value);
             } elseif ($type === 'url') {
-                if (!preg_match('/[^@]+ @ [^@]+ \. [^@]{2,10}/x', $initialValue)) {
-                    $initialValue = '';
+                if (!preg_match('/[^@]+ @ [^@]+ \. [^@]{2,10}/x', $value)) {
+                    $value = '';
                 }
             } elseif ($type === 'month') {
-                if (!preg_match('/\d{4}-\d{2}/', $initialValue)) {
-                    $initialValue = '';
+                if (!preg_match('/\d{4}-\d{2}/', $value)) {
+                    $value = '';
                 }
             } elseif ($type === 'time') {
-                if (!preg_match('/\d{2}:\d{2}(:\d{2})?/', $initialValue)) {
-                    $initialValue = '';
+                if (!preg_match('/\d{2}:\d{2}(:\d{2})?/', $value)) {
+                    $value = '';
                 }
             } elseif ($type === 'date') {
-                if (!preg_match('/\d{4}-\d{2}-\d{2}/', $initialValue)) {
-                    $initialValue = '';
+                if (!preg_match('/\d{4}-\d{2}-\d{2}/', $value)) {
+                    $value = '';
                 }
             } elseif ($type === 'datetime') {
-                if (!preg_match('/\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}(:\d{2})?/', $initialValue)) {
-                    $initialValue = '';
+                if (!preg_match('/\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}(:\d{2})?/', $value)) {
+                    $value = '';
                 }
             }
         }
@@ -2699,20 +2737,26 @@ EOT;
         if ($value && ($type !== 'toggle')) {
             $value = $value ? " value='$value'" : '';
         }
-        if ($initialValue !== null) {
-            if (is_string($initialValue)) {
-                $initialValue = str_replace("'", "´", $initialValue);
-            } elseif (is_bool($initialValue)) {
-                $initialValue = $initialValue? 'true': 'false';
-            }
-            $this->currRec->inpAttr .= " data-default-value='$initialValue'";
+        return $value;
+    } // parseActiveValue
+    
+    
+    
+    private function _getValue( $which )
+    {
+        $value = null;
+        if (isset($this->currRec->$which)) {
+            $value = $this->currRec->$which;
         }
-        if ($liveValue) {
-            $liveValue = str_replace("'", "´", $liveValue);
-            $this->currRec->inpAttr .= " data-live-value='$liveValue'";
+        if ($value !== null) {
+            if (is_string($value)) {
+                $value = str_replace("'", "´", $value);
+            } elseif (is_bool($value)) {
+                $value = $value ? 'true' : 'false';
+            }
         }
         return $value;
-    } // getValueAttr
+    } // _getValue
 
 
 

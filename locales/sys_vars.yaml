@@ -175,7 +175,9 @@ lzy-form-response-email-template-not-found:
 lzy-form-data-key: _datakey
 #lzy-form-data-key: DataKey
 
-
+lzy-table-record-locked:
+    de: 'Der gewünschte Datensatz ist derzeit gesperrt durch den Zugriff eines anderen Benutzers.'
+    _:  'The requestes data record is currently locked by another user.'
 
 
 

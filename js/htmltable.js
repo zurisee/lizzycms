@@ -202,7 +202,6 @@ function HTMLtable( tableObj ) {
 		if (this.recKey === 'new-rec') {
 			$form.addClass('lzy-new-data');
 			$('.lzy-edit-rec-delete-checkbox').hide();
-			return;
 
 		} else  {
 			$form.removeClass('lzy-new-data');
@@ -318,28 +317,6 @@ function HTMLtable( tableObj ) {
 
 
 
-//??? still used?
-	this.updateUI = function ( json ) {
-		try {
-			var data = JSON.parse(json);
-		} catch (e) {
-			console.log('Error condition detected');
-			console.log(json);
-			return false;
-		}
-		var data1 = data.data;
-		var targ = '';
-		var val = '';
-		var r = data1.recInx;
-		for (var c in data1.rec) {
-			val = data1.rec[ c ];
-			targ = '[data-ref="' + r + ',' + c + '"]';
-			$( targ ).text( val );
-		}
-	}; // updateUI
-
-
-
 	this.unlockRecord = function () {
 		const req = '?unlock-rec&ds=' + this.formHash + ':form' + this.formInx + '&recKey=' + this.recKey;
 		execAjax(false, req, function(json) {
@@ -359,7 +336,6 @@ function htmltableOnPopupClose() {
 	$('[name=_lizzy-form]').each(function () {
 		let formHash = $(this).val();
 		let url = appRoot + '_lizzy/_ajax_server.php?unlock-rec&ds=' + formHash + '&recKey=*';
-		// let url = appRoot + '_lizzy/_ajax_server.php?unlock-rec&ds=' + formHash + '&recKey=' + recKey;
 		$.ajax({
 			url: url,
 		});

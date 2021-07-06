@@ -188,12 +188,14 @@ function LzyForms() {
 
 
 
-    this.presetDefaultValues = function ( $form, placehoderInEmptyFields ) {
+    this.presetValues = function ( $form, mode, placehoderInEmptyFields ) {
         let parent = this;
-        // finds all 'data-default-value' instances in form and copies value to value attrib
-        // default values may be defined as literals '' or as compound definition '=( x..y )', which may contain
+        // finds all 'data-xy-value' (where xy=mode) instances in $form and copies value to value attrib
+        // xy values may be defined as literals '' or as compound definition '=( x..y )', which may contain
         // references to other input fields defined as '$varName'. These will be string-replaced.
         // Example: data-default-value="=( Mr. $lastname )" => " Mr. Bond "
+        // 'mode' can take two values: 'default' or 'derived'. Default is copied into form BEFORE data is ajax-loaded
+        //  from server. Derived is copied AFTER, thus compound definitions can use newly loaded data.
         if (typeof placehoderInEmptyFields === 'undefined') {
             placehoderInEmptyFields = this.waitSymbol;
         }
@@ -203,17 +205,23 @@ function LzyForms() {
         this.$form = $form;
         this.liveUpdateActive = false;
 
-        // copy default-values to value attributs:
-        $('[data-default-value]', $form).each(function () {
+        // add/remove wait-symbols:
+        $('input', $form).each(function () {
             let $this = $(this);
-
-            // only preset fields with default if field is empty:
-            let origVal = $this.val();
-            if (origVal && (origVal !== placehoderInEmptyFields)) {
-                return;
+            let type = $this.attr('type');
+            if ('text,textarea,'.includes(type)) {
+                if (mode === 'default') {
+                    $this.val(placehoderInEmptyFields);
+                } else if ($this.val() === placehoderInEmptyFields) {
+                    $this.val('');
+                }
             }
+        });
 
-            let value = $this.data('default-value');
+        // copy default-values to value attributs:
+        $('[data-' + mode + '-value]', $form).each(function () {
+            let $this = $(this);
+            let value = $this.data( mode + '-value' );
             if ($this.hasClass('lzy-formelem-toggle-wrapper')) {
                 $('.lzy-toggle-input-off', $this).prop('checked', !value);
                 $('.lzy-toggle-input-on', $this).prop('checked', value);
@@ -243,7 +251,6 @@ function LzyForms() {
             if (!$this.hasClass('lzy-fieldset-body')) {
                 $this.val(value);
             } else  {
-                // $('input[value='+ value+']', $this).val(value);
                 $('input[value=normal]', $this).prop('checked', true);
             }
             $this.attr('value', value);
@@ -251,7 +258,86 @@ function LzyForms() {
             if (typeof lbl === 'undefined') {
                 lbl = $('[name]', $this).attr('name');
             }
-            mylog('presetDefaultValues: ' + lbl + ' => ' + value, false);
+            mylog('preset'+ mode +' values : ' + lbl + ' => ' + value, false);
+        });
+
+
+        if (mode === 'derived') {
+            // live-values may have been deactivated by prepending '#' to value, so re-activate all:
+            $('[data-live-value]', $form).each(function () {
+                let $this = $(this);
+                let a = $this.attr('data-live-value');
+                if (a.charAt(0) === '#') {
+                    $this.attr('data-live-value', a.substr(1));
+                }
+            });
+        }
+
+        this.liveUpdateActive = true;
+    }; // presetValues
+
+
+
+    this.updateDerivedValues = function ( $form ) {
+        let parent = this;
+        // finds all 'data-derived-value' instances in form and copies value to value attrib
+        // derived values may be defined as literals '' or as compound definition '=( x..y )', which may contain
+        // references to other input fields defined as '$varName'. These will be string-replaced.
+        // Example: data-derived-value="=( Mr. $lastname )" => " Mr. Bond "
+        if (typeof $form === 'undefined') {
+            $form = $('lzy-form');
+        }
+        this.$form = $form;
+        this.liveUpdateActive = false;
+
+        // copy derived-values to value attributs:
+        $('[data-derived-value]', $form).each(function () {
+            let $this = $(this);
+
+            // only preset fields with derived if field is empty:
+            let origVal = $this.val();
+            if (origVal && (origVal !== placehoderInEmptyFields)) {
+                return;
+            }
+
+            let value = $this.data('derived-value');
+            if ($this.hasClass('lzy-formelem-toggle-wrapper')) {
+                $('.lzy-toggle-input-off', $this).prop('checked', !value);
+                $('.lzy-toggle-input-on', $this).prop('checked', value);
+
+            } else if (typeof value === 'string') {
+                value = value.replace(/´/g, "'");
+                // check whether there are compound definitions "=(...)":
+                let compound = value.match(/=\(\((.*)\)\)/); // =((
+                if (compound !== null) {
+                    value = compound[1];
+                    // check whether there is a reference to some other input field (defined as '$varName'):
+                    value = parent.resolveInputVars(value);
+                }
+
+                // handle expressions to eval:
+                compound = value.match(/^=eval\(\((.*?)\)\)/); // =eval((
+                if (compound !== null) {
+                    let expr = parent.resolveInputVars(compound[1]);
+                    let code = '"use strict";return (' + expr + ')';
+                    mylog(code, false);
+                    value = Function(code)(); // requires 'site_ContentSecurityPolicy: false'
+                }
+            } else if (typeof value === 'boolean') {
+                value = value? 'true': 'false';
+            }
+
+            if (!$this.hasClass('lzy-fieldset-body')) {
+                $this.val(value);
+            } else  {
+                $('input[value=normal]', $this).prop('checked', true);
+            }
+            $this.attr('value', value);
+            let lbl = $this.attr('name');
+            if (typeof lbl === 'undefined') {
+                lbl = $('[name]', $this).attr('name');
+            }
+            mylog('updateDerivedValues: ' + lbl + ' => ' + value, false);
         });
 
 
@@ -265,7 +351,8 @@ function LzyForms() {
         });
 
         this.liveUpdateActive = true;
-    }; // presetDefaultValues
+    }; // updateDerivedValues
+
 
 
 
@@ -361,38 +448,35 @@ function LzyForms() {
 
         // case $form explicitly provided:
         if (typeof $form !== 'undefined') {
-            this.clearForm($form);
-            // case new-rec -> no need to fetchValuesFromHost:
-            if (!recKey || (recKey === 'new-rec')) {
-                parent.presetDefaultValues($form);
-                parent.updateLiveValues($form);
-
-            } else {
-                parent.fetchValuesFromHost($form, recKey).then(function (json) {
-                    parent.updateForm($form, recKey, json);
-                    parent.presetDefaultValues($form);
-                    parent.updateLiveValues($form);
-                });
-            }
+            this._openForm( recKey, $form );
 
         // case apply to any $form:
         } else {
             $('.lzy-form').each(function () {
                 let $form = $(this);
-                parent.clearForm($form);
-                if (!recKey || (recKey === 'new-rec')) {
-                    parent.presetDefaultValues($form);
-                    parent.updateLiveValues($form);
-                } else {
-                    parent.fetchValuesFromHost($form, recKey).then(function (json) {
-                        parent.updateForm($form, recKey, json);
-                        parent.presetDefaultValues($form);
-                        parent.updateLiveValues($form);
-                    });
-                }
+                parent._openForm( recKey, $form );
             });
         }
     }; // openForm
+
+
+
+    this._openForm = function( recKey, $form ) {
+        let parent = this;
+        this.clearForm($form);
+        this.presetValues($form, 'default');
+        if (!recKey || (recKey === 'new-rec')) {
+            this.presetValues($form, 'derived');
+
+            this.updateLiveValues($form);
+        } else {
+            this.fetchValuesFromHost($form, recKey).then(function (json) {
+                parent.updateForm($form, recKey, json);
+                parent.presetValues($form, 'derived');
+                parent.updateLiveValues($form);
+            });
+        }
+    }; // _openForm
 
 
 
@@ -414,6 +498,9 @@ function LzyForms() {
 
 } // LzyForms
 
+
+
+
 $('.lzy-form').on('submit',function () {
-    mylog('sumbitting form');
+    mylog('sumbitting form', false);
 });
