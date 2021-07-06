@@ -159,15 +159,7 @@ a:focus > .lzy-focus-only-visible {
 .lzy-next-page-link a {
 	right: 0;
 }
-//.lzy-page-switcher-links a::before {
-//	content: ' ';
-//	position: absolute;
-//	top: -4px;
-//	right: -4px;
-//	bottom: -4px;
-//	left: -4px;
-//	z-index: -1;
-//}
+
 .lzy-page-switcher-links a::before {
 	content: ' ';
 	position: absolute;
@@ -1187,15 +1179,14 @@ body {
 		text-align: center;
 		line-height: 1em;
 		margin: 0;
-		content: '\254B';
+		content: '➕';
 		transition: transform 0.3s;
 		transform-origin: 50% 50%;
 	}
 	input.lzy-reveal-icon:checked::before {
-		transform: rotate( 90deg );
-//		transform-origin: 50% 50%;
+		transform: rotate( 180deg );
 		transition: transform 0.3s;
-		content: '\2503';
+		content: '➖';
 	}
 	.lzy-reveal-controller label {
 		width: calc(100% - 2em);
@@ -1205,7 +1196,6 @@ body {
 .lzy-reveal-container {
 	overflow: hidden;
 	&.lzy-elem-revealed {
-//		margin-bottom: 1em;
 		transition: margin-bottom 0.3s;
 		> div {
 			margin-top: 0 !important;

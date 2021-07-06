@@ -887,16 +887,15 @@ body {
 		height: 2em;
         text-align: center;
         margin: 0;
-        content: '\254B';
-        transition: transform 0.3s;
+		content: '➕';
+		transition: transform 0.3s;
         transform-origin: 50% 50%;
     }
     input.lzy-reveal-icon:checked::before {
-        transform: rotate( 90deg );
-        content: '\2503';
+        transform: rotate( 180deg );
+		content: '➖';
     }
     .lzy-reveal-controller label {
-        //width: calc(100% - 2em);
 		width: calc(100% - 2.5em);
 		padding-left: 0.4em;
 		cursor: pointer;
