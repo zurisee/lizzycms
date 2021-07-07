@@ -71,7 +71,12 @@ class NextInTimeSequence
             if (!$skip && ($dayOfEvent >= $today)) {
                 $event = $next;
                 break;
+            } else {
+                $next = 0;
             }
+        }
+        if (!$next) {
+            return '<div class="lzy-nexttime">{{ lzy-nexttime-no-event-found }}</div>';
         }
         if ($returnRec === null) {
             return $next;
