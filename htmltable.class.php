@@ -1190,9 +1190,12 @@ EOT;
         }
 
         if ($this->dataSource) {
-                if (!file_exists($this->dataSource)) {
-                    $this->dataSource = false;
-                }
+            if (@$this->dataSource[0] === '~') {
+                $this->dataSource = resolvePath($this->dataSource);
+            }
+            if (!file_exists($this->dataSource)) {
+                $this->dataSource = false;
+            }
         }
 
         $this->loadDataFromFile();
