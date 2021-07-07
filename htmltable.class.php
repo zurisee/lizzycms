@@ -67,6 +67,7 @@ class HtmlTable
         $this->rowClass 	        = $this->getOption('rowClass', '(optional) Class applied to each table row', 'lzy-row-*');
         $this->cellIds 	            = $this->getOption('cellIds', '(optional) If true, each cell gets an ID which is derived from the cellClass');
         $this->nRowsReq 		    = $this->getOption('nRows', '(optional) Number of rows: if set the table is forced to this number of rows');
+        $this->minRows 		        = $this->getOption('minRows', '(optional) Minimum Number of rows: if set the table contains at least that many rows.');
         $this->nColsReq 		    = $this->getOption('nCols', '(optional) Number of columns: if set the table is forced to this number of columns');
         $this->includeKeys          = $this->getOption('includeKeys', '[true|false] If true and not a .csv source: key elements will be included in data.', true);
         $this->interactive          = $this->getOption('interactive', '[true|false] If true, module "Datatables" is activated, providing for interactive features such as sorting, searching etc.');
@@ -493,7 +494,7 @@ EOT;
         }
 
         $data = &$this->data;
-        if (!$this->data0) {
+        if ($this->nRows < 1) {
             return '{{ lzy-table-no-data-available }}';
         }
 
@@ -1630,6 +1631,9 @@ EOT;
         $nColsReq = $this->nColsReq;
         $nCols = $data? sizeof( reset($data)) : 0;
         $nRows = $this->nRowsReq ? $this->nRowsReq : sizeof($data);
+        if ($this->minRows) {
+            $nRows = max(intval($this->minRows), $nRows);
+        }
 
         if ($nColsReq) {
             if ($nColsReq > $nCols) { // increase size
