@@ -887,13 +887,14 @@ body {
 		height: 2em;
         text-align: center;
         margin: 0;
-		content: '➕';
+		content: '+';
+		font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 		transition: transform 0.3s;
         transform-origin: 50% 50%;
     }
     input.lzy-reveal-icon:checked::before {
         transform: rotate( 180deg );
-		content: '➖';
+		content: '–';
     }
     .lzy-reveal-controller label {
 		width: calc(100% - 2.5em);
