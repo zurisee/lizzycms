@@ -2313,7 +2313,9 @@ EOT;
         if (!$this->config->site_enableCaching || !$GLOBALS['globalParams']['cachingActive']) {
             return;
         }
-        if (isset($_SESSION['lizzy']['nc']) && $_SESSION['lizzy']['nc']) {
+
+        // skip writing to cache as long as there any URL-args:
+        if ($_REQUEST) {
             return;
         }
 
