@@ -162,7 +162,7 @@ class AjaxServer
             lzyExit('failed#get-rec');
         }
         $recKey = $this->get_request_data('recKey');
-        if (!$recKey) {
+        if ($recKey === false) {
             $recKey = $this->get_request_data('dataRef');
         }
 
@@ -558,7 +558,7 @@ class AjaxServer
             $dataRef = $m[1];
             $setId = $m[2];
         }
-        if ($dataRef &&preg_match('/^[A-Z0-9]{4,20}$/', $dataRef)) {     // dataRef (=ticket hash) available
+        if ($dataRef && preg_match('/^[A-Z0-9]{4,20}$/', $dataRef)) {     // dataRef (=ticket hash) available
             $ticketing = new Ticketing();
             $ticketRec = $ticketing->consumeTicket($dataRef);
             if ($ticketRec) {      // corresponding ticket found
