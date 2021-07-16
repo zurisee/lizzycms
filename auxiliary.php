@@ -1318,7 +1318,7 @@ function getPostData($varName, $permitNL = false, $unsetAfterRead = false)
         }
     }
     return $out;
-} // get_post_data
+} // getPostData
 
 
 
@@ -2580,3 +2580,24 @@ function findArrayElementByAttribute( $array, $key, $value) {
     });
     return $res;
 } // findArrayElementByAttribute
+
+
+
+function secondsToTime( $seconds, $sep = '' )
+{
+    $days = intdiv($seconds, 86400);
+    $hours = intdiv(($seconds - $days*86400), 3600);
+    $minutes = intdiv(($seconds - $days*86400 - $hours*3600), 60);
+    $seconds = $seconds - ($days*86400 + $hours*3600 + $minutes*60);
+
+    $days = $days? (($days == 1)? "$days{{ lzy-time-day }}": "$days{{ lzy-time-days }}"): '';
+    $hours = $hours? (($hours == 1)? "$hours{{ lzy-time-hours }}": "$hours{{ lzy-time-hours }}"): '';
+    $minutes = $minutes? (($minutes == 1)? "$minutes{{ lzy-time-minutes }}": "$minutes{{ lzy-time-minutes }}"): '';
+    $seconds = $seconds? (($seconds == 1)? "$seconds{{ lzy-time-seconds }}": "$seconds{{ lzy-time-seconds }}"): '';
+
+    $out = $days;
+    $out = ($out && $hours)? "$out$sep$hours": $out;
+    $out = ($out && $minutes)? "$out$sep$minutes": $out;
+    $out = ($out && $seconds)? "$out$sep$seconds": $out;
+    return $out;
+} // secondsToTime
