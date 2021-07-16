@@ -572,6 +572,9 @@ class DataStorage2
         if (strpos($key, '*') !== false) {
             return $this->_readElementGroup( $key );
         }
+        if (strpos($key, '#') !== false) {
+            return $this->_readNumericKeyElements( $key );
+        }
 
         // access nested element ('d3,d31,d312'):
         $rec = $this->data;
@@ -583,7 +586,13 @@ class DataStorage2
                 } elseif (isset(array_keys($rec)[$k])) { // hit via index
                     $rec = $rec[ array_keys($rec)[$k] ];
                 } else { // not found
-                    $rec = null;
+                    $k1 = findArrayElementByAttribute($rec, REC_KEY_ID, $k, true);
+                    if ($k1) {
+                        $k1 = array_keys($k1)[0];
+                        $rec = &$rec[$k1];
+                    } else {
+                        $rec = null;
+                    }
                     break;
                 }
 
@@ -593,9 +602,10 @@ class DataStorage2
             }
         }
 
-        if (is_array($rec)) {
-            $rec = null;
-        }
+//??? what was that for...?
+//        if (is_array($rec)) {
+//            $rec = null;
+//        }
         return $rec;
     } // readElement
 
@@ -621,10 +631,100 @@ class DataStorage2
 
 
 
-    public function writeElement($key, $value, $locking = true, $blocking = true, $logModifTimes = false)
+    public function writeElement($key, $value, $locking = true, $blocking = true, $logModifTimes = false, $dataKeyOverrideHash)
     {
         if (strpos($key, ',') === false) {
             return $this->writeRecord($key, $value, $locking, $blocking, $logModifTimes);
+        }
+
+        if ($locking && !$this->lockDB( false, $blocking )) {
+            return false;
+        } elseif ($this->isDbLocked(false)) {
+            return false;
+        }
+        $this->getData(true);
+        if (!$this->data) {
+            $this->data = [];
+        }
+        $createNewKey = false;
+        if (substr($key, -1) === '*') {
+            $key = substr($key,0,-2);
+            $createNewKey = true;
+        }
+        $rec = &$this->data;
+
+        foreach (explodeTrim(',', $key) as $k) {
+            $k = trim($k, '\'"');
+            if (is_array($rec)) {
+                if (isset($rec[$k])) { // direct hit
+                    $rec = &$rec[$k];
+                } elseif (isset(array_keys($rec)[$k])) { // hit via index
+                    $rec = &$rec[ array_keys($rec)[$k] ];
+                } else { // not found, create element
+                    $k1 = findArrayElementByAttribute($rec, REC_KEY_ID, $k, true);
+                    if ($k1) {
+                        $k1 = array_keys($k1)[0];
+                        if (isset($rec[$k1])) {
+                            $rec = &$rec[$k1];
+                            $createNewKey = false;
+                        } else {
+                            $rec[$k] = [];
+                            $rec = &$rec[$k1];
+                        }
+                    } else {
+                        if ($dataKeyOverrideHash) {
+                            $i = createHash();
+                        } else {
+                            for ($i = 0; true; $i++) {
+                                if (!isset($rec[$i])) {
+                                    break;
+                                }
+                            }
+                        }
+                        $rec[$i] = [];
+                        $rec = &$rec[$i];
+                    }
+                }
+
+            } else {
+                list($r,$c) = explodeTrim(',', $key);
+                if (!isset($this->data[$r][$c]) || is_array($this->data[$r])) {
+                    $this->data[$r][$c] = $value;
+                    $rec = &$this->data[$r][$c];
+                } else {
+                    // Error: parent elem exists, but is of scalar type:
+                    $rec = null;
+                }
+            }
+        }
+
+        if ($rec !== null) {
+            if ($createNewKey) {
+                $rec[] = $value;
+            } else {
+                $rec = $value;
+            }
+            $res = $this->lowLevelWrite();
+
+            if ($this->logModifTimes || $logModifTimes) {
+                $key = preg_replace('/,.*/', '', $key);
+                $this->updateRecLastUpdate( $key );
+            }
+        }
+
+        if ($locking) {
+            $this->unlockDB();
+        }
+        return $res;
+    } // writeElement
+
+
+
+
+    public function deleteElement($key, $locking = true, $blocking = true)
+    {
+        if (strpos($key, ',') === false) {
+            return $this->deleteRecord($key, $locking, $blocking);
         }
 
         if ($locking && !$this->lockDB( false, $blocking )) {
@@ -644,16 +744,24 @@ class DataStorage2
                     $rec = &$rec[$k];
                 } elseif (isset(array_keys($rec)[$k])) { // hit via index
                     $rec = &$rec[ array_keys($rec)[$k] ];
-                } else { // not found, create element
-                    $rec[$k] = [];
-                    $rec = &$rec[$k];
+                } else { // not found, look for elem with matching _key
+                    $k1 = findArrayElementByAttribute($rec, REC_KEY_ID, $k, true);
+                    if ($k1 !== false) {
+                        $k1 = array_keys($k1)[0];
+                        if (isset($rec[$k1])) {
+                            unset($rec[$k1]);
+                        } else {
+                            return "Error..."; //???
+                        }
+                    } else {
+                        return "Error..."; //???
+                    }
                 }
 
             } else {
                 list($r,$c) = explodeTrim(',', $key);
                 if (!isset($this->data[$r][$c]) || is_array($this->data[$r])) {
-                    $this->data[$r][$c] = $value;
-                    $rec = &$this->data[$r][$c];
+                    unset( $this->data[$r][$c] );
                 } else {
                     // Error: parent elem exists, but is of scalar type:
                     $rec = null;
@@ -661,21 +769,13 @@ class DataStorage2
             }
         }
 
-        if ($rec !== null) {
-            $rec = $value;
-            $res = $this->lowLevelWrite();
-
-            if ($this->logModifTimes || $logModifTimes) {
-                $key = preg_replace('/,.*/', '', $key);
-                $this->updateRecLastUpdate( $key );
-            }
-        }
+        $res = $this->lowLevelWrite();
 
         if ($locking) {
             $this->unlockDB();
         }
-        return $res;
-    } // writeElement
+        return (bool)$res;
+    } // deleteElement
 
 
 
@@ -1074,6 +1174,45 @@ class DataStorage2
         }
         return $rec;
     } // _readElementGroup
+
+
+
+
+    private function _readNumericKeyElements( $key )
+    {
+        // syntax variant 'd3,d31,d312'
+        if (strpos($key, ',') === false) {
+            return null;
+        }
+
+        $rec = $this->data;
+        $keys = explodeTrim(',', $key);
+        foreach ($keys as $k) {
+            array_shift($keys);
+            $k = trim($k, '\'"');
+            if ($k === '#') {
+                $outRecs = [];
+                foreach ($rec as $kk => $subRec) {
+                    if (!is_numeric($kk)) {
+                        continue;
+                    }
+                    $outRecs[] = $subRec;
+                }
+                return $outRecs;
+            } else {
+                $n = intval($k);
+                if ($n || ($k === '0')) {
+                    $k = $n;
+                }
+                if (isset($rec[$k])) {
+                    $rec = $rec[$k];
+                } else {
+                    return null;
+                }
+            }
+        }
+        return $rec;
+    } // _readNumericKeyElements
 
 
 
