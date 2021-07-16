@@ -81,7 +81,7 @@ function LzyForms() {
         }
 
         return new Promise(function(resolve) {
-            if ((typeof recKey === 'undefined') || !recKey) {
+            if ((typeof recKey === 'undefined') || (recKey === false)) {
                 resolve( false );
                 return;
             }
@@ -465,7 +465,8 @@ function LzyForms() {
         let parent = this;
         this.clearForm($form);
         this.presetValues($form, 'default');
-        if (!recKey || (recKey === 'new-rec')) {
+        if ((recKey === false) || (recKey === 'new-rec')) {
+        // if (!recKey || (recKey === 'new-rec')) {
             this.presetValues($form, 'derived');
 
             this.updateLiveValues($form);
