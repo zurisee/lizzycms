@@ -8,16 +8,17 @@ define('THUMBNAIL_PATH', 	    '_/thumbnails/');
 define('FORM_LOG_FILE', 	    LOG_PATH.'form-log.txt');
 define('SPAM_LOG_FILE', 	    LOG_PATH.'spam-log.txt');
 define ('FORMS_DEFAULT_TICKET_VALIDITY_TIME', 259200); // 3 days
+define ('DEFAULT_FORMS_TIMEOUT', 900); // 15 minutes
 
 define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,export,'.
     'legend,customResponseEvaluation,customResponseEvaluationFunction,next,file,confirmationText,formDataCaching,'.
-    'encapsulate,formTimeout,avoidDuplicates,confirmationEmail,dynamicFormSupport,'.
-    'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,'.
-    'validate,showData,showDataMinRows,options,encapsulate,disableCaching,labelWidth,'.
+    'encapsulate,formTimeout,avoidDuplicates,confirmationEmail,dynamicFormSupport,labelColons,'.
+    'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,suppressFormFeedback,'.
+    'validate,novalidate,showData,showDataMinRows,options,encapsulate,disableCaching,labelWidth,'.
     'translateLabel,labelPosition,formName,formHeader,formHint,formFooter,showSource,splitChoiceElemsInDb,');
 
 define('ELEM_ATTRIBUTES', 	    ',label,type,id,class,wrapperClass,name,required,value,'.
-	'options,optionLabels,layout,info,comment,translateLabel,'.
+	'option,options,optionLabels,layout,info,comment,translateLabel,'.
 	'labelInOutput,splitOutput,placeholder,autocomplete,'.
 	'description,pattern,min,max,path,target,'.
     'defaultValue,derivedValue,liveValue,postProcess,');
@@ -70,7 +71,8 @@ class Forms
         $this->tck = new Ticketing([
             'defaultType' => 'lzy-form',
             'defaultMaxConsumptionCount' => 100,
-            'defaultValidityPeriod' => FORMS_DEFAULT_TICKET_VALIDITY_TIME,
+            'defaultValidityPeriod' => DEFAULT_FORMS_TIMEOUT,
+//            'defaultValidityPeriod' => FORMS_DEFAULT_TICKET_VALIDITY_TIME,
         ]);
 
         // $userDataEval===false suppresses user-data-evaluation (because client does it on its own)
@@ -85,6 +87,8 @@ class Forms
                 $GLOBALS['globalParams']['lzyFormsCount']--;
             }
         }
+//$this->errorDescr[$this->formInx]['_announcement_'] = '{{ lzy-form-duplicate-data }}';
+//$this->skipRenderingForm = true;
 	} // __construct
 
     
@@ -128,8 +132,8 @@ class Forms
                 }
             }
             if ($buttons['value'] !== '') {
-                $buttons["label"] = rtrim($buttons["label"], ',');
-                $buttons["value"] = rtrim($buttons["value"], ',');
+                $buttons['label'] = rtrim($buttons['label'], ',');
+                $buttons['value'] = rtrim($buttons['value'], ',');
                 $out .= $this->_render($buttons);
             }
         }
@@ -185,6 +189,7 @@ class Forms
         $currForm->formHeader = (isset($args['legend'])) ? $args['legend'] : $currForm->formHeader;
         $currForm->formHint = (isset($args['formHint'])) ? $args['formHint'] : '';
         $currForm->formFooter = (isset($args['formFooter'])) ? $args['formFooter'] : '';
+        $currForm->suppressFormFeedback = (isset($args['suppressFormFeedback'])) ? $args['suppressFormFeedback'] : false;
 
         $currForm->customResponseEvaluation = (isset($args['customResponseEvaluation'])) ? $args['customResponseEvaluation'] : '';
         $currForm->customResponseEvaluationFunction = (isset($args['customResponseEvaluationFunction'])) ? $args['customResponseEvaluationFunction'] : '';
@@ -208,6 +213,8 @@ class Forms
             $currForm->file = "~data/form-$formId.yaml";
         }
         $currForm->file = resolvePath($currForm->file, true);
+
+        $currForm->skipConfirmation = (isset($args['skipConfirmation'])) ? $args['skipConfirmation'] : false;
 
         $currForm->prefill = (isset($args['prefill'])) ? $args['prefill'] : false;
         if ($currForm->prefill) {
@@ -240,7 +247,8 @@ class Forms
             $this->page->addDebugMsg('"antiSpam" disabled on localhost');
         }
 
-        $currForm->validate = (isset($args['validate'])) ? $args['validate'] : false;
+        $currForm->validate = (isset($args['validate'])) ? $args['validate'] : ((isset($args['novalidate'])) ? !$args['novalidate'] : false);
+//        $currForm->validate = (isset($args['validate'])) ? $args['validate'] : false;
         $currForm->showData = (isset($args['showData'])) ? $args['showData'] : false;
 
         $currForm->showDataMinRows = (isset($args['showDataMinRows'])) ? $args['showDataMinRows'] : false;
@@ -251,6 +259,8 @@ class Forms
 
         $currForm->ticketPayload = (isset($args['ticketPayload'])) ? $args['ticketPayload'] : null;
         $currForm->ticketHash = (isset($args['ticketHash'])) ? $args['ticketHash'] : false;
+
+        $currForm->recModifyCheck = (isset($args['recModifyCheck'])) ? $args['recModifyCheck'] : false;
 
         if (stripos('above', $currForm->labelPosition) !== false) {
             $currForm->class .= ' lzy-form-labels-above';
@@ -418,6 +428,10 @@ EOT;
         // for radio, checkbox and dropdown: options define the values available
         //  optionLabels are optional and used in the page, e.g. if you need a longish formulation to describe the option
         //  (for backward compatibility, value is accepted in place of options)
+//        if (isset($args['option'])) {
+//            $args['options'] = $args['option'];
+//        }
+        $rec->option = @$args['option']? $args['option']: $rec->value;
         $rec->options = @$args['options']? $args['options']: $rec->value;
         $rec->optionLabels = @$args['optionLabels']? $args['optionLabels']: $rec->options;
 
@@ -558,7 +572,7 @@ EOT;
         if ($this->skipRenderingForm && (strpos('form-head,form-tail', $type) === false)) {
             return '';
         }
-        $elem = '';
+        $elem = $preElem = '';
         switch ($type) {
             case 'form-head':
                 return $this->renderFormHead();
@@ -601,7 +615,8 @@ EOT;
                 break;
 
             case 'button':
-                $elem = $this->renderButtons();
+//                $elem = $this->renderButtons();
+                list($elem, $preElem) = $this->renderButtons();
                 $wrapperClass = '';
                 break;
 
@@ -725,6 +740,7 @@ EOT;
         if ($this->submitButtonRendered &&
                 (stripos($this->currForm->options, 'norequiredcomment') === false)) {
             $this->submitButtonRendered = false;
+            $out = $preElem . $out;
             if ($this->currForm->formHint) {
                 $out = "\t\t<div class='lzy-form-hint'>{$this->currForm->formHint}</div>\n$out";
 
@@ -752,6 +768,10 @@ EOT;
 
     private function renderFormHead()
     {
+        if ($this->skipRenderingForm && $this->currForm->skipConfirmation) {
+            $this->skipRenderingForm = false;
+        }
+
         if ($this->skipRenderingForm) {
             return "\t<div class='lzy-form-hide-when-completed'>\n";
         }
@@ -820,15 +840,17 @@ EOT;
         }
 
         // handle general error feedback:
-        if (@$this->errorDescr[ $this->currForm->formInx]['_announcement_']) {
-            $msg = $this->errorDescr[ $this->currForm->formInx]['_announcement_'];
-            $this->errorDescr[ $this->currForm->formInx]['_announcement_'] = false;
-            $out .= "\t<div class='$announcementClass'>$msg</div>\n";
+        if (!$this->currForm->suppressFormFeedback) {
+            if (@$this->errorDescr[$this->currForm->formInx]['_announcement_']) {
+                $msg = $this->errorDescr[$this->currForm->formInx]['_announcement_'];
+                $this->errorDescr[$this->currForm->formInx]['_announcement_'] = false;
+                $out .= "\t<div class='$announcementClass'>$msg</div>\n";
 
-        } elseif (@$this->errorDescr[ 'generic' ]['_announcement_']) {
-            $msg = $this->errorDescr[ $this->currForm->formInx]['_announcement_'];
-            $out .= "\t<div class='$announcementClass'>$msg</div>\n";
-            $this->errorDescr[ 'generic' ]['_announcement_'] = false;
+            } elseif (@$this->errorDescr['generic']['_announcement_']) {
+                $msg = $this->errorDescr[$this->currForm->formInx]['_announcement_'];
+                $out .= "\t<div class='$announcementClass'>$msg</div>\n";
+                $this->errorDescr['generic']['_announcement_'] = false;
+            }
         }
 
         $out .= "\t  <form$id$_class$_method$_action$novalidate>\n";
@@ -1578,14 +1600,67 @@ EOT;
                 } elseif ((stripos($type, 'reset') !== false) || (stripos($type, 'cancel') !== false)) {
                     $out .= "$indent<input type='reset' id='$id' value='$label' $class />\n";
 
-				} else { // custome button
+				} elseif ($type === 'delete') { // delete button
+                    $out .= "$indent<input type='submit' id='$id' name='_lzy-delete-rec' value='$label' $class />\n";
+
+                } else { // custome button
 					$out .= "$indent<button id='$id' $class type='button'>$label</button>\n";
 				}
 			}
 		}
-        return $out;
+
+//        if (strpos(','.$this->currRec->options, ',delete') !== false) {
+//            $preElem = $this->renderDeleteRec();
+//        } else {
+//            $preElem = '';
+//        }
+        $preElem = $this->renderDeleteRec();
+
+        return [$out, $preElem];
+//        return $out;
     } //renderButtons
 
+
+
+    private function renderDeleteRec()
+    {
+        if (strpos(','.$this->currRec->option, ',delete-rec') === false) {
+            return '';
+        }
+        $out = <<<EOT
+
+        <!-- === form delete rec ----------------- -->
+		<div class='lzy-form-delete-rec lzy-form-field-wrapper lzy-form-field-wrapper-2 lzy-form-field-type-checkbox lzy-form-field-type-choice'>
+			<fieldset class='lzy-form-label lzy-form-checkbox-label'>
+			  <div class='lzy-fieldset-body'>
+                <div class='lzy-form-checkbox-elem lzy-form-choice-elem'>
+                    <input id='lzy-form-delete-rec-{$this->inx}' type='checkbox' name='_lzy-delete-rec' value='true' /><label for='lzy-form-delete-rec-{$this->inx}'>{{ lzy-delete-rec-label }}</label>
+                </div>
+			  </div><!--/lzy-fieldset-body -->
+			</fieldset>
+			<span class="lzy-form-delete-rec-btn-lbl dispno">{{ lzy-form-delete-rec-btn-lbl }}</span>
+		</div><!-- /field-wrapper -->
+        <!-- === form delete rec ----------------- -->
+
+
+EOT;
+        $jq = <<<EOT
+let \$submitBtn = $('.lzy-form-button-submit');
+let \$deleteRecCheckbox = $('[name=_lzy-delete-rec]');
+let \$labelText = $('.lzy-form-delete-rec-btn-lbl');
+\$deleteRecCheckbox.change(function() {
+    if (\$deleteRecCheckbox.prop('checked')) {
+        let origLabel = \$submitBtn.val();
+        \$labelText.data('orig-text', origLabel);
+        \$submitBtn.val( \$labelText.text() );
+    } else {
+        \$submitBtn.val( \$labelText.data('orig-text') );
+    }
+});
+EOT;
+        $this->page->addJq($jq);
+        return $out;
+    } // renderDeleteRec
 
 
 	private function renderFormTail()
@@ -1594,6 +1669,7 @@ EOT;
 
         $formInx = $this->currForm->formInx;
         if (!$this->skipRenderingForm) {
+//        if (!$this->skipRenderingForm || $this->currForm->skipConfirmation) {
             if ($this->currForm->antiSpam) {
                 $this->initAntiSpam();
             }
@@ -1635,10 +1711,11 @@ EOT;
                     $msgToClient = "<div class='lzy-form-override-msg'>{$this->errorDescr[ 'generic' ]['_override_']}</div>\n";
                 }
             }
-            $out .= "\t<div class='lzy-form-response'>$msgToClient</div>\n";
-        } else {
-            $out .= "\t</div><!-- /lzy-form-wrapper -->\n\n";
+            $out .= "\t  <div class='lzy-form-response'>$msgToClient</div>\n";
+//        } else {
+//            $out .= "\t</div><!-- /lzy-form-wrapper -->\n\n";
         }
+        $out .= "\t</div><!-- /lzy-form-wrapper -->\n\n";
 
         if ($this->errorDescr) {
             $jq = <<<'EOT'
@@ -1653,6 +1730,10 @@ $('.lzy-form-error:first').each(function () {
 EOT;
             $this->page->addJq( $jq );
         }
+
+        // initiate window-freeze if form is open for too long:
+        $this->page->addJq( 'freezeWindowAfter(\'' . (DEFAULT_FORMS_TIMEOUT - 10) .'s\');' );
+//        $this->page->addJq( 'freezeWindowAfter(\'5s\');' );
 
         // present previously received data to form owner:
         if ($this->currForm->showData) {
@@ -1904,7 +1985,10 @@ EOT;
         $this->prepareUserSuppliedData(); // handles radio and checkboxes
 
         // check required entries:
-        $this->checkSuppliedDataEntries();
+//        $this->checkSuppliedDataEntries();
+        if (!$this->checkSuppliedDataEntries()) {
+            return false;
+        }
         if ( @$this->errorDescr[$formInx] ) {
             $this->cacheUserSuppliedData($formInx, $userSuppliedData);
             return false;
@@ -1933,20 +2017,8 @@ EOT;
 
         $customResponseEvaluation = @$currForm->customResponseEvaluation;
         if ($customResponseEvaluation) {
-			$result = $this->trans->doUserCode($customResponseEvaluation, null, true);
-			if (is_array($result)) {
-			    if (!$result[0]) {
-                    fatalError($result[1]);
-                } else {
-                    $this->clearCache();
-                    return $result[1];
-                }
-            }
-			if ($result) {
-			    if (!function_exists('evalForm')) {
-                    fatalError("Warning: trying to execute evalForm(), but not defined in '$customResponseEvaluation'.", 'File: '.__FILE__.' Line: '.__LINE__);
-                }
-				$res = evalForm( $this);
+            if (function_exists($customResponseEvaluation)) {
+                $res =  $customResponseEvaluation();
                 if (is_array($res)) {
                     $msgToClient = $res[0];
                     if (is_array($res[1])) {
@@ -1957,9 +2029,36 @@ EOT;
                 } else {
                     $msgToClient = $res;
                 }
-			} else {
-                fatalError("Warning: executing code '$customResponseEvaluation' has been blocked; modify 'config/config.yaml' to fix this.", 'File: '.__FILE__.' Line: '.__LINE__);
-			}
+
+            } else {
+                $result = $this->trans->doUserCode($customResponseEvaluation, null, true);
+                if (is_array($result)) {
+                    if (!$result[0]) {
+                        fatalError($result[1]);
+                    } else {
+                        $this->clearCache();
+                        return $result[1];
+                    }
+                }
+                if ($result) {
+                    if (!function_exists('evalForm')) {
+                        fatalError("Warning: trying to execute evalForm(), but not defined in '$customResponseEvaluation'.", 'File: ' . __FILE__ . ' Line: ' . __LINE__);
+                    }
+                    $res = evalForm($this);
+                    if (is_array($res)) {
+                        $msgToClient = $res[0];
+                        if (is_array($res[1])) {
+                            $msgToOwner = $res[1];
+                        } else {
+                            $msgToOwner['body'] = $res[1];
+                        }
+                    } else {
+                        $msgToClient = $res;
+                    }
+                } else {
+                    fatalError("Warning: executing code '$customResponseEvaluation' has been blocked; modify 'config/config.yaml' to fix this.", 'File: ' . __FILE__ . ' Line: ' . __LINE__);
+                }
+            }
         }
 
         $customResponseEvaluationFunction = @$currForm->customResponseEvaluationFunction;
@@ -2006,13 +2105,17 @@ EOT;
 
 	private function saveAndWrapUp($msgToOwner)
 	{
-	    if (isset($this->userSuppliedData0['_delete'])) {
-            writeLogStr("Delete data: [$this->recKey]", FORM_LOG_FILE);
-            $this->deleteDataRecord();
-
-        } elseif (!$this->saveUserSuppliedDataToDB()) {
+	    if (!$this->saveUserSuppliedDataToDB()) {
             return false;
         }
+//	    if (isset($this->userSuppliedData0['_lzy-delete-rec'])) {
+////	    if (isset($this->userSuppliedData0['_delete'])) {
+//            writeLogStr("Delete data: [$this->recKey]", FORM_LOG_FILE);
+//            $this->deleteDataRecord();
+//
+//        } elseif (!$this->saveUserSuppliedDataToDB()) {
+//            return false;
+//        }
 
         $this->clearCache();
 
@@ -2095,11 +2198,10 @@ EOT;
 	{
         $currForm = $this->currForm;
         $userSuppliedData = $this->userSuppliedData;
-        $recKey = &$this->recKey;
+        $recKey = $recKey0 = &$this->recKey;
         if ($recKey === 'new-rec') {
             $recKey = '';
         }
-        $this->isNewRec = true;
 
         $ds = $this->openDB();
 
@@ -2113,6 +2215,15 @@ EOT;
 
         $oldRec = false;
 
+        if (isset($this->dataKeyOverride)) {
+            $recKey = $this->getOverrideKey( $recKey );
+            $recKey0 = preg_replace('/^.*,/', '', $recKey);
+//            if (!$recKey) {
+//                $recKey = $recKey0 = createHash();
+//            }
+//            $recKey = str_replace('*', $recKey, $this->dataKeyOverride);
+        }
+
         // handle special case: structure[key] contains pattern '=xy', if so use that element as key:
         if ($struc['key'][0] === '=') {
             $useAsKey = substr($struc['key'], 1);
@@ -2121,17 +2232,23 @@ EOT;
             }
         }
 
-        if (!$recKey) {
+//        if (!$recKey) {
+        if ($this->isNewRec) {
             writeLogStr("New data: [{$currForm->formName}:$recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
         } else {
-            $this->isNewRec = false;
+//            $this->isNewRec = false;
             writeLogStr("Data modified: [{$currForm->formName}:$recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
         }
 
         // check whether data already present in DB, if not disabled:
+//if (false && $currForm->avoidDuplicates) {
         if ($currForm->avoidDuplicates) {
             $doubletFound = false;
-            $data = $ds->read();
+            if (isset($this->dataKeyOverride)) {
+                $data = $ds->readElement($this->dataKeyOverride);
+            } else {
+                $data = $ds->read();
+            }
             // loop over records:
             foreach ($data as $dataRecKey => $rec) {
                 // generally ignore all data keys starting with '_':
@@ -2212,7 +2329,19 @@ EOT;
         }
 
         $newRec[ TIMESTAMP_KEY_ID ] = date('Y-m-d H:i:s');
-        $newRec[ REC_KEY_ID ] = $recKey;
+        if ($recKey !== '') {
+            $newRec[REC_KEY_ID] = $recKey0;
+        } else {
+            $newRec[REC_KEY_ID] = createHash();
+        }
+//        $newRec[ REC_KEY_ID ] = $recKey;
+
+        // special case: external directive re. dataKay (e.g. from enroll):
+        if (isset($this->dataKeyOverride)) {
+            $ds->writeElement($recKey, $newRec, true, true, true, $this->dataKeyOverrideHash);
+//            $ds->writeElement($recKey, $newRec, true, true);
+            return true;
+        }
 
         if ($this->isNewRec) {
             // add new record:
@@ -2223,6 +2352,11 @@ EOT;
 
         } else {
             $res = $ds->writeRecord($recKey, $newRec, true, true, true);
+//            if (isset($this->dataKeyOverride)) {
+//                $res = $ds->writeElement($recKey, $newRec, true, true, true);
+//            } else {
+//                $res = $ds->writeRecord($recKey, $newRec, true, true, true);
+//            }
         }
         if (!$res) {
             mylog("forms:saveUserSuppliedDataToDB(): Error writing to DB");
@@ -2241,10 +2375,34 @@ EOT;
         if (!@$this->userSuppliedData0['_rec-key']) {
             return false;
         }
+
         $recKey = $this->userSuppliedData0['_rec-key'];
         $ds = $this->openDB();
-        $res = $ds->deleteRecord($recKey);
-        return $res;
+        if (isset($this->dataKeyOverride)) {
+//            $recKey = str_replace('*', $recKey, $this->dataKeyOverride);
+            $recKey = $this->getOverrideKey( $recKey );
+        }
+        $rec = $ds->readElement($recKey);
+        if ($this->currForm->recModifyCheck) {
+            $checkKey = $this->currForm->recModifyCheck;
+            $checkValue = strtolower(trim( @$rec[ $checkKey ] ));
+            $suppliedValue = strtolower(trim( @$this->userSuppliedData0[ $checkKey ] ));
+            if ($checkValue === $suppliedValue) {
+                $res = $ds->deleteElement($recKey);
+                if (!$res) {
+                    return '{{ lzy-forms-delete-rec-failed }}';
+                }
+            } else {
+                return '{{ lzy-forms-delete-rec-check-failed }}';
+            }
+        } else {
+            $res = $ds->deleteElement($recKey);
+            if (!$res) {
+                return '{{ lzy-forms-delete-rec-failed }}';
+            }
+        }
+        $this->clearCache();
+        return false;
     } // deleteDataRecord
 
 
@@ -2836,6 +2994,44 @@ EOT;
 
     private function checkSuppliedDataEntries()
     {
+        // delete record if requested:
+        if (isset($this->userSuppliedData0['_lzy-delete-rec'])) {
+            $res = $this->deleteDataRecord();
+            if (!$res) {
+                writeLogStr("Forms: data-rec '{$this->userSuppliedData0['_rec-key']}' deleted", FORM_LOG_FILE);
+                $this->page->addMessage('{{ lzy-form-rec-deleted }}');
+            } else {
+                $this->page->addPopup( $res );
+//                $this->page->addMessage( $res );
+//                $this->page->addMessage('{{ lzy-form-rec-delete-failed }}');
+                writeLogStr("Forms:checkSuppliedDataEntries(): Delete rec '{$this->userSuppliedData0['_rec-key']}' failed", FORM_LOG_FILE);
+            }
+            return false;
+        }
+
+        // modify record if requested:
+        if (@$this->currForm->recModifyCheck && @$this->userSuppliedData0['_rec-key']) {
+//            if (!@$this->userSuppliedData0['_rec-key']) {
+//                return false;
+//            }
+
+            $recKey = $this->userSuppliedData0['_rec-key'];
+            $ds = $this->openDB();
+            if (isset($this->dataKeyOverride)) {
+//                $recKey = str_replace('*', $recKey, $this->dataKeyOverride);
+                $recKey = $this->getOverrideKey( $recKey );
+            }
+            $rec = $ds->readElement($recKey);
+            $checkKey = $this->currForm->recModifyCheck;
+            $checkValue = strtolower(trim( @$rec[ $checkKey ] ));
+            $suppliedValue = strtolower(trim( @$this->userSuppliedData0[ $checkKey ] ));
+            if ($checkValue !== $suppliedValue) {
+                $this->page->addPopup('{{ lzy-form-rec-modify-failed }}');
+//                $this->page->addMessage('{{ lzy-form-rec-modify-failed }}');
+                return false;
+            }
+        }
+
         $currForm = $this->currForm;
         $userSuppliedData = $this->userSuppliedData;
         $formEmpty = true;
@@ -2896,7 +3092,9 @@ EOT;
         if (@$this->errorDescr[$this->formInx]) {
             $log .= "\nError Msg: ".str_replace(["\n", '  '], ' ', var_export($this->errorDescr[$this->formInx], true));
             writeLogStr("Form-Error [{$currForm->formName}]:\n$log\n", FORM_LOG_FILE);
+            return false;
         }
+        return true;
     } // checkSuppliedDataEntries
 
 
@@ -3073,8 +3271,47 @@ EOT;
             preparePath( $currForm->file );
         }
 
+        $file = false;
+//        $dataRef = $this->get_request_data('ds');
+        $dataRef = getPostData('_lizzy-data-ref');
+        $setId = '';
+        if (preg_match('/(.*):(.*)/', $dataRef, $m)) {
+            $dataRef = $m[1];
+            $setId = $m[2];
+        }
+        if ($dataRef && preg_match('/^[A-Z0-9]{4,20}$/', $dataRef)) {     // dataRef (=ticket hash) available
+            $ticketing = new Ticketing();
+            $ticketRec = $ticketing->consumeTicket($dataRef);
+            if ($ticketRec) {      // corresponding ticket found
+                if ($setId && isset($ticketRec[$setId])) {
+                    $ticketRec = $ticketRec[$setId];
+                }
+                if (isset($ticketRec['_dataSource'])) {
+                    $file = PATH_TO_APP_ROOT . $ticketRec['_dataSource'];
+                } elseif (isset($ticketRec['dataSrc'])) {
+                    $file = PATH_TO_APP_ROOT . $ticketRec['dataSrc']; //???
+                } elseif (isset($ticketRec['form'])) {
+                    $file = PATH_TO_APP_ROOT . $ticketRec['file'];
+                }
+                if (isset($ticketRec['_dataKey'])) {
+                    $this->dataKeyOverride = $ticketRec['_dataKey'];
+                }
+//                $this->ticketRec = $ticketRec;
+//                if (isset($ticketRec['formDescr'])) {
+//                    $this->formElements = $ticketRec['formDescr'];
+//                }
+//            } else {
+//                $this->error = 'restart';
+//                return false;
+            }
+        }
+        if (!$file) {
+            $file = $currForm->file;
+        }
+
         $this->db = new DataStorage2([
-            'dataFile' => $currForm->file,
+//            'dataFile' => $currForm->file,
+            'dataFile' => $file,
             'useRecycleBin' => $currForm->useRecycleBin,
             'includeKeys' => true,
             'includeTimestamp' => true,
@@ -3101,6 +3338,27 @@ EOT;
             }
         }
     } // executeEventDuplicating
+
+
+
+    private function getOverrideKey( $recKey )
+    {
+        $dataKeyOverride = $this->dataKeyOverride;
+        if (!$recKey) {
+            $recKey = createHash();
+        } elseif (strpos($recKey, ',') !== false) {
+            return $recKey;
+        }
+
+        if (strpos($dataKeyOverride, '*') !== false) {
+            $recKey = str_replace('*', $recKey, $this->dataKeyOverride);
+            $this->dataKeyOverrideHash = true;
+        } elseif (strpos($dataKeyOverride, '#') !== false) {
+            $recKey = str_replace('#', $recKey, $this->dataKeyOverride);
+            $this->dataKeyOverrideHash = false;
+        }
+        return $recKey;
+    } // getOverrideKey
 
 } // Forms
 

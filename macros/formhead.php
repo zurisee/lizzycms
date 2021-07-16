@@ -74,7 +74,7 @@ $this->addMacro($macroName, function () {
         //    'will be warned when trying to leave the page without submiting the form. Default: true.', true);
 
         $this->getArg($macroName, 'replaceQuotes', 'If true, quote characters (\' and ") contained in user\'s '.
-            'entries will be converted to lookalikes, which cannot interfere with data-file-formats (yaml, json, csv).', true);
+            'entries will be converted to lookalikes, which cannot interfere with data-file-formats (yaml, json, csv). Default: true.', true);
 
         $this->getArg($macroName, 'antiSpam', '[false,field-ID] If true, an invisible "honey-pot" field is added '.
             'to the form. Spam-attacks typically try to fill in data and thus can be identified on the server. '.

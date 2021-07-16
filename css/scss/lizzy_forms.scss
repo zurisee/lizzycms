@@ -526,7 +526,11 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
         .lzy-form-choice-elem {
             > * {
                 vertical-align: top;
-                line-height: 1.2em;
+//??? checkboxes too high (found in enroll-form)
+//                line-height: 1.2em;
+            }
+            input {
+                margin-top: 0;
             }
             margin-bottom: 0.3em;
         }

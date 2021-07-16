@@ -941,6 +941,10 @@ lzy-edit-rec-delete-option:
     de: 'Diesen Datensatz löschen'
     _:  Delete data record
 
+lzy-delete-rec-label:
+    de: 'Diesen Datensatz löschen'
+    _:  Delete this data record
+
 lzy-table-new-rec-title:
     de: 'Neue Zeile einfügen'
     _:  'Add new row'
@@ -955,6 +959,10 @@ lzy-table-new-rec-btn: '✚'
 lzy-table-delete-rec-title:
     de: 'Alle ausgewählten Zeilen löschen'
     _:  'Delete all selected rows'
+
+lzy-form-delete-rec-btn-lbl:
+    de: 'Jetzt löschen'
+    _:  Delete now
 
 lzy-edit-rec-delete-btn:
     de: 'Jetzt löschen'
@@ -978,6 +986,35 @@ lzy-table-delete-recs-popup:
     de: 'Alle ausgewählten Zeilen löschen?'
     _:  'Delete selected records?'
 
+lzy-form-rec-deleted:
+    de: 'Datensatz gelöscht'
+    _:  'Data record deleted'
+
+#lzy-form-rec-delete-failed:
+#    de: ''
+#    _:  ''
+
+lzy-forms-delete-rec-failed:
+    de: 'Fehlgeschlagen: interner Fehler beim löschen.'
+    _: 'Failed: internal error while deleting record.'
+
+lzy-forms-delete-rec-check-failed:
+    de: 'Fehlgeschlagen: E-Mail Adresse stimmte nicht überein.'
+    _:  'Failed: e-mail address did not match.'
+
+lzy-form-rec-modify-failed:
+    de: 'Fehlgeschlagen: E-Mail Adresse stimmte nicht überein.'
+    _:  'Failed: e-mail address did not match.'
+
+lzy-generate-hash:
+    de: 'Hash-Code erzeugen'
+    _:  'Generate hash code'
+
+lzy-form-error-formhash-lost:
+    de: 'Interner Fehler (Formular-Referenz fehlt)'
+    _:  'Internal error (form-reference missing)'
+
+
 #--- DataTables ----------------------
 lzy-datatables-search-button:
     de: Suchen
@@ -986,4 +1023,38 @@ lzy-datatables-search-button:
 lzy-datatables-records:
     de: Datensätze
     _:  Records
+
+
+#--- Date/time
+lzy-time-day:
+    de: ' Tag'
+    _:  ' day'
+
+lzy-time-days:
+    de: ' Tage'
+    _:  ' days'
+
+lzy-time-hour:
+    de: ' Stunde'
+    _:  ' hour'
+
+lzy-time-hours:
+    de: ' Stunden'
+    _:  ' hours'
+
+lzy-time-minute:
+    de: ' Minute'
+    _:  ' minute'
+
+lzy-time-minutes:
+    de: ' Minuten'
+    _:  ' minutes'
+
+lzy-time-second:
+    de: ' Sekunde'
+    _:  ' second'
+
+lzy-time-seconds:
+    de: Sekunden
+    _:  seconds
 

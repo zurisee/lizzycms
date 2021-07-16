@@ -48,7 +48,8 @@ class HtmlTable
         $this->tableCounter = &$GLOBALS['globalParams']['tableCounter'][ $GLOBALS['globalParams']['pagePath'] ];
         $this->tableCounter++;
         $this->helpText     = false;
-        $this->tickHash     = false;
+        $this->ticketHash     = false;
+//        $this->tickHash     = false;
         $this->specificRowClasses     = [];
         if ($options === 'help') {
             $this->helpText = [];
@@ -57,6 +58,7 @@ class HtmlTable
         $this->editFormRendered = false;
 
         $this->dataSource	        = $this->getOption('dataSource', '(optional if nCols is set) Name of file containing data. Format may be .cvs or .yaml and is expected be local to page folder.');
+        $this->preselectData	    = $this->getOption('preselectData', 'If set, pre-selects data from dataSource before rendering (only makes sense for higher dimensional data).');
         $this->inMemoryData	        = $this->getOption('data', 'Alternative to "dataSource": provide data directly as array. E.g. data: $array,');
         $this->id 			        = $this->getOption('id', '(optional) Id applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
         $this->wrapperClass 	    = $this->getOption('wrapperClass', '(optional) Class applied to the table tag (resp. wrapping div tag if renderAsDiv is set). Use "lzy-table-default" to apply default styling.');
@@ -486,9 +488,12 @@ EOT;
     private function renderHtmlTable()
     {
         $out = '';
-        if ($this->editableBy) {
-            $this->tableDataAttr .= " data-table-hash='{$this->tickHash}' data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
-        }
+//        if ($this->editableBy) {
+//            $this->tableDataAttr .= " data-datasrc-ref='{$this->ticketHash}'";
+//            $this->tableDataAttr .= " data-ref='{$this->ticketHash}'";
+//            $this->tableDataAttr .= " data-table-hash='{$this->ticketHash}'";
+//            $this->tableDataAttr .= " data-table-hash='{$this->tickHash}' data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
+//        }
         if ($this->activityButtons) {
             $out = $this->renderTableActionButtons();
         }
@@ -1261,7 +1266,8 @@ EOT;
             'class' => 'lzy-form lzy-edit-data-form',
             'file' => '~/'.$this->dataSource,
             'warnLeavingPage' => false, //???
-            'ticketHash' => $this->tickHash,
+            'ticketHash' => $this->ticketHash,
+//            'ticketHash' => $this->tickHash,
             'cancelButtonCallback' => false,
             'validate' => true,
             'labelColons' => $this->labelColons,
@@ -1929,7 +1935,23 @@ EOT;
         $this->options['includeTimestamp'] = $this->options['includeKeys'];
         $ds = new DataStorage2($this->options);
         $this->ds = $ds;
-        $data0 = $ds->read();
+//        $data0 = $ds->read();
+
+        if ($this->preselectData) {
+            $data0 = $ds->readElement( $this->preselectData );
+            $rec0 = reset( $data0 );
+            $descrs = [];
+            foreach ($rec0 as $k => $item) {
+                $descrs[$k] = ['type' => 'string', 'name' => $k, 'formLabel' => $k];
+            }
+            $this->structure = $structure = [
+                'key' => 'index',
+                'elements' => $descrs,
+            ];
+        } else {
+            $data0 = $ds->read();
+            $this->structure = $structure = $ds->getStructure();
+        }
 
         if ($this->includeKeys === 'hash') {
             $found = false;
@@ -1946,7 +1968,7 @@ EOT;
         }
         $this->data0 = $data0;
 
-        $this->structure = $structure = $ds->getStructure();
+//        $this->structure = $structure = $ds->getStructure();
 
         if (isset($structure['key'])) {
             // special case: recKey is linked to a rec-element -> defined as "key => '=fieldname'":
@@ -2168,7 +2190,7 @@ EOT;
         $button = 'lzy-table-delete-rec-btn';
         $this->jq .= <<<'EOT'
 $('.lzy-table-trash-btn, .lzy-table-delete-rec-btn').click(function() {
-    const $table = $('.lzy-table', $(this).closest('.lzy-table-wrapper '));
+    const $table = $('.lzy-table', $(this).closest('.lzy-table-wrapper'));
     const ds = $table.closest('[data-datasrc-ref]').attr('data-datasrc-ref');
     var recs = '';
     $('.lzy-table-row-selector:checked', $table).each(function() {
@@ -2263,7 +2285,7 @@ EOT;
             if (!$this->liveDataSrcRef) {
                 $setId = "set$this->tableCounter";
                 $tickRec[$setId]['_dataSource'] = $this->dataSource;
-                $tck = new Ticketing(['defaultMaxConsumptionCount' => false]);
+                $tck = new Ticketing(['defaultMaxConsumptionCount' => false, 'defaultType' => 'htmltable']);
                 if ($this->ticketHash && $tck->ticketExists($this->ticketHash)) {
                     $tck->createHash(true);
                     $tck->updateTicket($this->ticketHash, $tickRec);
