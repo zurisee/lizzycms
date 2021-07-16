@@ -17,6 +17,9 @@ function freezeWindowAfter( delay, onClick, retrigger = false ) {
                 case 's':
                     t = m[1] * 1000;
                     break;
+                case 'm':
+                    t = m[1] * 60000;
+                    break;
                 case 'h':
                     t = m[1] * 3600000;
                     break;
@@ -27,7 +30,9 @@ function freezeWindowAfter( delay, onClick, retrigger = false ) {
         }
     }
     const img = appRoot + '_lizzy/rsc/sleeping.png';
-    const overlay = '<div class="lzy-overlay-background lzy-v-h-centered"><div><img src="'+img+'" alt="Sleeping..." class="lzy-timeout-img" /></div></div>';
+    const overlay = '<div class="lzy-overlay-background lzy-timedout lzy-v-h-centered"><div>'+
+        '<img src="'+img+'" title="Please reload page" alt="Sleeping..." class="lzy-timeout-img" />'+
+        '</div></div>';
     if (windowTimeout) {
         clearTimeout(windowTimeout);
     }
