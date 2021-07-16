@@ -40,8 +40,8 @@ class Ticketing
         $this->defaultValidityPeriod = isset($options['defaultValidityPeriod']) ? $options['defaultValidityPeriod'] : DEFAULT_TICKET_VALIDITY_TIME;
         $this->validityPeriod = $this->defaultValidityPeriod;
         $this->defaultMaxConsumptionCount = isset($options['defaultMaxConsumptionCount']) ? $options['defaultMaxConsumptionCount'] : 1;
-        if (($this->defaultMaxConsumptionCount === false) || ($this->defaultMaxConsumptionCount == -1)) {
-            $this->defaultMaxConsumptionCount = PHP_INT_MAX;
+        if ($this->defaultMaxConsumptionCount < 0) {
+            $this->defaultMaxConsumptionCount = false;
         }
         $this->ds = new DataStorage2([
             'dataSource' => $dataSrc,
@@ -59,8 +59,12 @@ class Ticketing
         $maxConsumptionCount = $maxConsumptionCount ?$maxConsumptionCount : $this->defaultMaxConsumptionCount;
         $pathToPage = @$GLOBALS['globalParams']['pathToPage'];
 
-        if ($validityPeriod) {
-            $this->validityPeriod = $validityPeriod;
+        if ($validityPeriod !== null) {
+            if ($validityPeriod > 0) {
+                $this->validityPeriod = $validityPeriod;
+            } else {
+                $this->validityPeriod = false;
+            }
         }
 
         if ($givenHash) {
@@ -75,7 +79,11 @@ class Ticketing
                 if ($ticketRec && is_array($ticketRec)) {
                     if ($rec && is_array($rec)) {
                         $rec = array_merge($ticketRec, $rec);
-                        $rec['_ticketValidTill'] = time() + $this->validityPeriod;
+                        if ($this->validityPeriod) {
+                            $rec['_ticketValidTill'] = time() + $this->validityPeriod;
+                        } else {
+                            $rec['_ticketValidTill'] = false;
+                        }
                         $this->updateTicket($tHash, $rec);
                     } else {
                         $this->updateTicket($tHash); // just update _ticketValidTill
@@ -96,7 +104,9 @@ class Ticketing
     {
         $ticketRec = $rec;
         $ticketRec['_maxConsumptionCount'] = $maxConsumptionCount ?$maxConsumptionCount : $this->defaultMaxConsumptionCount;
-        $ticketRec['_maxConsumptionCount'] = intval( $ticketRec['_maxConsumptionCount'] );
+        if ($ticketRec['_maxConsumptionCount'] !== false) {
+            $ticketRec['_maxConsumptionCount'] = intval($ticketRec['_maxConsumptionCount']);
+        }
         $ticketRec['_ticketType'] = $type ? $type : $this->defaultType;
         $ticketRec['_currPage'] = $GLOBALS['globalParams']['pageFolder'];
         $ticketRec['_dataPath'] = $GLOBALS['globalParams']['dataPath'];
@@ -104,16 +114,17 @@ class Ticketing
         if ($validityPeriod === null) {
             $this->validityPeriod = $this->defaultValidityPeriod;
 
-        } elseif (($validityPeriod === false) || ($validityPeriod <= 0)) {
-            $this->validityPeriod = PHP_INT_MAX;
+        } elseif ($validityPeriod <= 0) {
+            $this->validityPeriod = false;
 
         } else {
             $this->validityPeriod = $validityPeriod;
         }
-        $ticketRec['_ticketValidTill'] = time() + $this->validityPeriod;
-
-// just for testing:
-$ticketRec['_ticketValidTillStr'] = date('Y-m-d H:i:s', $ticketRec['_ticketValidTill']);
+        if ($this->validityPeriod) {
+            $ticketRec['_ticketValidTill'] = time() + $this->validityPeriod;
+        } else {
+            $ticketRec['_ticketValidTill'] = false;
+        }
 
         if ($givenHash) {
             $ticketHash = $givenHash;
@@ -124,7 +135,7 @@ $ticketRec['_ticketValidTillStr'] = date('Y-m-d H:i:s', $ticketRec['_ticketValid
         $this->ds->writeRecord($ticketHash, $ticketRec);
 
         return $ticketHash;
-    } // createTicket
+    } // _createTicket
 
 
 
@@ -153,12 +164,15 @@ $ticketRec['_ticketValidTillStr'] = date('Y-m-d H:i:s', $ticketRec['_ticketValid
         $ticketRec = $this->ds->readRecord($ticketHash);
         if ($data === null) {
             $data = $ticketRec;
-            $data['_ticketValidTill'] = time() + $this->validityPeriod;
-// just for testing:
-$data['_ticketValidTillStr'] = date('Y-m-d H:i:s', $ticketRec['_ticketValidTill']);
-
         } elseif (!$overwrite && $ticketRec) {
             $data = array_merge($ticketRec, $data);
+        }
+
+        // update _ticketValidTill:
+        if ($this->validityPeriod) {
+            $data['_ticketValidTill'] = time() + $this->validityPeriod;
+        } else {
+            $data['_ticketValidTill'] = false;
         }
         $this->ds->writeRecord($ticketHash, $data);
     } // updateTicket
@@ -180,12 +194,12 @@ $data['_ticketValidTillStr'] = date('Y-m-d H:i:s', $ticketRec['_ticketValidTill'
             $ticketRec = false;
             $this->lastError = 'ticket was of wrong type';
 
-        } elseif (isset($ticketRec['_ticketValidTill']) && ($ticketRec['_ticketValidTill'] < time())) {      // ticket expired
+        } elseif (isset($ticketRec['_ticketValidTill']) && ($ticketRec['_ticketValidTill'] !== false) && ($ticketRec['_ticketValidTill'] < time())) {      // ticket expired
             $this->ds->deleteRecord($ticketHash);
             $ticketRec = false;
             $this->lastError = 'code timed out';
 
-        } elseif (isset($ticketRec['_maxConsumptionCount'])) {
+        } elseif (@$ticketRec['_maxConsumptionCount'] !== false) {
             $n = $ticketRec['_maxConsumptionCount'];
             if ($n > 1) {
                 $ticketRec['_maxConsumptionCount'] = $n - 1;
@@ -279,7 +293,7 @@ $data['_ticketValidTillStr'] = date('Y-m-d H:i:s', $ticketRec['_ticketValidTill'
         if ($tickets) {
             foreach ($tickets as $key => $ticket) {
                 if (!isset($ticket['_ticketValidTill']) ||
-                    ($ticket['_ticketValidTill'] < $now)) {    // has expired
+                    ($ticket['_ticketValidTill'] !== false) && ($ticket['_ticketValidTill'] < $now)) {    // has expired
                     unset($tickets[$key]);
                     $ticketsToPurge = true;
                 }
