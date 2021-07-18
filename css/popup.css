@@ -52,21 +52,20 @@ body {
 	position: relative;
 	padding: 5px;
 	background: #666;
-	color: #eee;
 	line-height: 2rem;
-	font-size: 16pt;
 	border-top-left-radius: 8px;
 	border-top-right-radius: 8px;
 	padding-left: 1rem;
+}
+#lzy .lzy-popup-header > div {
+	color: #eee;
+	font-size: 16pt;
 }
 #lzy .lzy-popup-wrapper label {
 	color: black;
 }
 .lzy-popup-wrapper {
 	cursor: default;
-}
-.lzy-popup-header > div {
-	min-height: 2rem;
 }
 .lzy-popup-header.lzy-draggable > div {
 	cursor: move;
