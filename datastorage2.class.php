@@ -42,6 +42,7 @@ use Symfony\Component\Yaml\Yaml;
 class DataStorage2
 {
     private $lzyDb = null;
+    private $dbModeRW = null;
     private $dataFile;
     private $tableName;
     private $data = null;
@@ -1749,13 +1750,36 @@ EOT;
 
     private function openDbReadWrite()
     {
+        if ($this->dbModeRW) {
+            return;
+        }
+        $this->_openDbReadWrite();
+        $this->dbModeRW = true;
+    } // openDbReadWrite
+
+    private function _openDbReadWrite()
+    {
         if ($this->lzyDb) {
             $this->lzyDb->close();
         }
         $this->lzyDb = new SQLite3(LIZZY_DB, SQLITE3_OPEN_READWRITE);
         $this->lzyDb->busyTimeout(5000);
         $this->lzyDb->exec('PRAGMA journal_mode = wal;'); // https://www.php.net/manual/de/sqlite3.exec.php
-    } // openDbReadWrite
+    } // _openDbReadWrite
+
+//    private function openDbReadWrite()
+//    {
+//        if ($this->dbModeRW) {
+//            return;
+//        }
+//        if ($this->lzyDb) {
+//            $this->lzyDb->close();
+//        }
+//        $this->lzyDb = new SQLite3(LIZZY_DB, SQLITE3_OPEN_READWRITE);
+//        $this->lzyDb->busyTimeout(5000);
+//        $this->lzyDb->exec('PRAGMA journal_mode = wal;'); // https://www.php.net/manual/de/sqlite3.exec.php
+//        $this->dbModeRW = true;
+//    } // openDbReadWrite
 
 
 
@@ -1769,6 +1793,7 @@ EOT;
         }
         $this->lzyDb = new SQLite3(LIZZY_DB, SQLITE3_OPEN_READONLY);
         $this->lzyDb->busyTimeout(5000);
+        $this->dbModeRW = false;
     } // openDbReadWrite
 
 
