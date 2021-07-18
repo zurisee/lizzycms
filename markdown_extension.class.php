@@ -251,7 +251,7 @@ class LizzyExtendedMarkdown extends \cebe\markdown\MarkdownExtra
                 $line = substr($line,1);
                 $cells = preg_split('/\s(?<!\\\)\|/', $line); // pattern is ' |'
                 foreach ($cells as $cell) {
-                    if ($cell[0] === '>') {
+                    if ($cell && ($cell[0] === '>')) {
                         $cells2 = explode('|', $cell);
                         foreach ($cells2 as $j => $c) {
                             $col++;
