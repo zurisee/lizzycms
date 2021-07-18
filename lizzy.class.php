@@ -64,7 +64,8 @@ define('TRANSVAR_ARG_QUOTES', 	'!@#$%&:?');    // Special quotes to enclose tran
 define('MKDIR_MASK',            0700); // permissions for file access by Lizzy
 define('MKDIR_MASK_WEBACCESS',  0755); // permissions for files cache
 
-$files = ['config/user_variables.yaml', SYSTEM_PATH.LOCALES_PATH.'*', '_lizzy/macros/'.LOCALES_PATH.'*'];
+$files = ['config/user_variables.yaml', SYSTEM_PATH.LOCALES_PATH.'*'];
+//$files = ['config/user_variables.yaml', SYSTEM_PATH.LOCALES_PATH.'*', '_lizzy/macros/'.LOCALES_PATH.'*'];
 
 
 use Symfony\Component\Yaml\Yaml;
@@ -780,16 +781,7 @@ EOT;
         $this->pathToRoot = $urlToAppRoot;
 
         // get IP-address
-        $ip = $_SERVER['HTTP_HOST'];
-        if (stripos($ip, 'localhost') !== false) {  // case of localhost, not executed on host
-            $ifconfig = shell_exec('ifconfig');
-            $p = strpos($ifconfig, 'inet 192.168');
-            $ip = substr($ifconfig, $p+5);
-            if (preg_match('/([\d\.]+)/', $ip, $match)) {
-                $ip = $match[1];
-            }
-        }
-        $this->serverIP = $ip;
+        $this->serverIP = getHostByName( getHostName() );
 
         // check whether to support legacy browsers -> load jQ version 1
         if ($this->config->feature_supportLegacyBrowsers) {
@@ -2310,6 +2302,11 @@ EOT;
 
     private function storeToCache($html)
     {
+        if (@$GLOBALS['globalParams']['toCache']) {
+            $toCache = $GLOBALS['globalParams']['toCache'];
+            file_put_contents(CACHE_PATH.'_cachedParams.json', json_encode($toCache));
+        }
+
         if (!$this->config->site_enableCaching || !$GLOBALS['globalParams']['cachingActive']) {
             return;
         }
@@ -2358,6 +2355,12 @@ EOT;
 
         if (isset($_GET['reset'])) {  // reset page cache
             purgePageCache();
+        }
+
+        if (file_exists(CACHE_PATH.'_cachedParams.json')) {
+            $json = file_get_contents(CACHE_PATH.'_cachedParams.json');
+            $params = json_decode( $json, true );
+            $GLOBALS['globalParams'] = array_merge($GLOBALS['globalParams'], $params);
         }
 
         if (isset($_GET['nc'])) {  // nc = no-caching

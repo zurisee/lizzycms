@@ -367,8 +367,50 @@ function convertYaml($str, $stopOnError = true, $origin = '', $convertDates = tr
 
 
 
+function checkYamlCache($filename)
+{
+    if (!file_exists($filename) || strpos($filename, 'config/users.yaml') !== false) {
+        return false;
+    }
+
+    $data = false;
+    $cacheFile = CACHE_PATH.'yaml/'.fileExt($filename,true).'.json';
+    if (file_exists($cacheFile)) {
+        $t = filemtime($cacheFile);
+        $t0 = filemtime($filename);
+        if ($t0 < $t) {
+            $data = file_get_contents($cacheFile);
+            $data = json_decode($data, true);
+        }
+    }
+    return $data;
+} // checkYamlCache
+
+
+
+
+function writeYamlCache($filename, $data)
+{
+    if (strpos($filename, 'config/users.yaml') !== false) {
+        return;
+    }
+    $cacheFile = CACHE_PATH.'yaml/'.fileExt($filename,true).'.json';
+    if (!file_exists($cacheFile)) {
+        preparePath($cacheFile);
+    }
+
+    $json = json_encode( $data );
+    file_put_contents($cacheFile, $json);
+} // writeYamlCache
+
+
+
+
 function getYamlFile($filename, $returnStructure = false)
 {
+    if (!$returnStructure && ($data = checkYamlCache($filename))) {
+        return $data;
+    }
 	$yaml = getFile($filename, true);
 	if ($yaml) {
         $data = convertYaml($yaml);
@@ -418,6 +460,7 @@ function getYamlFile($filename, $returnStructure = false)
         }
 	    return [$data, $structure, $structDefined];
     }
+    writeYamlCache($filename, $data);
 	return $data;
 } // getYamlFile
 
@@ -442,6 +485,7 @@ function writeToYamlFile($file, $data, $level = 3, $saveToRecycleBin = false)
     }
 	$hdr = getHashCommentedHeader($file);
 	file_put_contents($file, $hdr.$yaml);
+    writeYamlCache($file, $yaml);
 } // writeToYamlFile
 
 
@@ -1658,7 +1702,8 @@ function dateFormatted($date = false, $format = false)
 function touchFile($file, $time = false)
 {	// work-around: PHP's touch() fails if http-user is not owner of file
 	if ($time) {
-        shell_exec("touch -t ".date("YmdHi.s", $time)." $file");
+//        shell_exec("touch -t ".date("YmdHi.s", $time)." $file");
+        touch($file, $time);
 	} else {
 		touch($file);
 	}
@@ -2244,7 +2289,12 @@ function checkPermission($str0, $lzy = false, $and = false) {
 
 function getGitTag($shortForm = true)
 {
-    $str = shell_exec('cd _lizzy; git describe --tags --abbrev=0; git log --pretty="%ci" -n1 HEAD');
+    if (isset($GLOBALS['globalParams']['gitTag'])) {
+        $str = $GLOBALS['globalParams']['gitTag'];
+    } else {
+        $str = shell_exec('cd _lizzy; git describe --tags --abbrev=0; git log --pretty="%ci" -n1 HEAD');
+        $GLOBALS['globalParams']['toCache']['gitTag'] = $str;
+    }
     if ($shortForm) {
         return preg_replace("/\n.*/", '', $str);
     } else {
