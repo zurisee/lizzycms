@@ -266,13 +266,13 @@ class Forms
             $currForm->class .= ' lzy-form-labels-above';
         }
 
-        $jq = <<<EOT
-$('.lzy-textarea-autogrow textarea').on('input', function() {
-    this.parentNode.dataset.replicatedValue = this.value;
-});
-EOT;
-
-        $this->page->addJq( $jq );
+//        $jq = <<<EOT
+//$('.lzy-textarea-autogrow textarea').on('input', function() {
+//    this.parentNode.dataset.replicatedValue = this.value;
+//});
+//EOT;
+//
+//        $this->page->addJq( $jq );
 
         return 'form-head';
     } // parseHeadElemArgs
@@ -1627,6 +1627,11 @@ EOT;
         if (strpos(','.$this->currRec->option, ',delete-rec') === false) {
             return '';
         }
+        if (@$GLOBALS['globalParams']['formsDeleteRecRendered']) {
+            return '';
+        }
+        $GLOBALS['globalParams']['formsDeleteRecRendered'] = true;
+
         $out = <<<EOT
 
         <!-- === form delete rec ----------------- -->
@@ -1731,9 +1736,8 @@ EOT;
             $this->page->addJq( $jq );
         }
 
-        // initiate window-freeze if form is open for too long:
-        $this->page->addJq( 'freezeWindowAfter(\'' . (DEFAULT_FORMS_TIMEOUT - 10) .'s\');' );
-//        $this->page->addJq( 'freezeWindowAfter(\'5s\');' );
+//        // initiate window-freeze if form is open for too long:
+//        $this->page->addJq( 'freezeWindowAfter(\'' . (DEFAULT_FORMS_TIMEOUT - 10) .'s\');' );
 
         // present previously received data to form owner:
         if ($this->currForm->showData) {
@@ -2686,7 +2690,12 @@ EOT;
 
     private function initButtonHandlers()
     {
-        $id = "fld_ch{$this->inx}";
+        if (@$GLOBALS['globalParams']['formsButtonHandlersInitialized']) {
+            return;
+        }
+        $GLOBALS['globalParams']['formsButtonHandlersInitialized'] = true;
+
+//        $id = "fld_ch{$this->inx}";
         $js = <<<EOT
 
 function noInputPopup() {
@@ -2696,26 +2705,38 @@ function noInputPopup() {
         buttons: '{{ Continue }}',
         closeButton: false,
     });
-    $( '#$id' ).focus();
 }
 
 EOT;
+//        $js = <<<EOT
+//
+//function noInputPopup() {
+//    lzyPopup({
+//        text: '{{ lzy-form-empty-form-warning }}',
+//        trigger: true,
+//        buttons: '{{ Continue }}',
+//        closeButton: false,
+//    });
+//    $( '#$id' ).focus();
+//}
+//
+//EOT;
         $this->page->addJs($js);
 
-        $formId = '#'.$this->currForm->formId;
+//        $formId = '#'.$this->currForm->formId;
 
         $logFile = SPAM_LOG_FILE;
 
         $jq = '';
         if ($this->currForm->submitButtonCallback === 'auto') {
             if ($this->currForm->antiSpam) {
-                $jq .= <<<EOT
+                $jq .= <<<'EOT'
 
-$('$formId input[type=submit]').click(function(e) {
-    let \$form = $('$formId');
-    if (!$('.lzy-form-check', \$form ).val()) {
+$('.lzy-form input[type=submit]').click(function(e) {
+    let $form = $(this).closest('.lzy-form');
+    if (!$('.lzy-form-check', $form ).val()) {
         let s = '';
-        $( 'input,textarea', \$form).each(function() {
+        $( 'input,textarea', $form).each(function() {
             let type = $(this).attr('type');
             if ((type === 'hidden') || (type === 'submit') || (type === 'reset') || (type === 'button')) {
                 return;
@@ -2727,7 +2748,7 @@ $('$formId input[type=submit]').click(function(e) {
                 s += $(this).val();
             }
         });
-        $( 'option', \$form).each(function() {
+        $( 'option', $form).each(function() {
             if ( $(this).prop('selected') && $(this).val() ) {
                 s += 'Y';
             }
@@ -2739,16 +2760,56 @@ $('$formId input[type=submit]').click(function(e) {
         }
 
         lzyFormUnsaved = false;
-        \$form[0].submit();
+        $form[0].submit();
         return;
     }
     e.preventDefault();
-    let data = JSON.stringify( \$form.serializeArray() );
+    let data = JSON.stringify( $form.serializeArray() );
     serverLog('suspicious form data: ' + data, '$logFile');
     initAntiSpamPopup();
 });
 
 EOT;
+//                $jq .= <<<EOT
+//
+//$('$formId input[type=submit]').click(function(e) {
+//    let \$form = $('$formId');
+//    if (!$('.lzy-form-check', \$form ).val()) {
+//        let s = '';
+//        $( 'input,textarea', \$form).each(function() {
+//            let type = $(this).attr('type');
+//            if ((type === 'hidden') || (type === 'submit') || (type === 'reset') || (type === 'button')) {
+//                return;
+//            } else if ((type === 'radio') || (type === 'checkbox')) {
+//                if ($(this).prop('checked') || $(this).prop('selected')) {
+//                    s = 'X';
+//                }
+//            } else {
+//                s += $(this).val();
+//            }
+//        });
+//        $( 'option', \$form).each(function() {
+//            if ( $(this).prop('selected') && $(this).val() ) {
+//                s += 'Y';
+//            }
+//        });
+//        if (!s) {
+//            e.preventDefault();
+//            noInputPopup();
+//            return;
+//        }
+//
+//        lzyFormUnsaved = false;
+//        \$form[0].submit();
+//        return;
+//    }
+//    e.preventDefault();
+//    let data = JSON.stringify( \$form.serializeArray() );
+//    serverLog('suspicious form data: ' + data, '$logFile');
+//    initAntiSpamPopup();
+//});
+//
+//EOT;
             }
         } else {
 
@@ -2756,34 +2817,70 @@ EOT;
 
 
         if ($this->currForm->cancelButtonCallback === 'auto') {
-            $jq .= <<<EOT
+            $jq .= <<<'EOT'
 
-$('$formId input[type=reset]').click(function(e) {  // reset: clear all entries
-    let \$form = $('$formId');
-    $('.lzy-form-cmd', \$form ).val('_reset_');
+$('.lzy-form input[type=reset]').click(function(e) {  // reset: clear all entries
+    let $form = $(this).closest('.lzy-form');
+    $('.lzy-form-cmd', $form ).val('_reset_');
     lzyFormUnsaved = false;
-    \$form[0].submit();
+    $form[0].submit();
 });
 EOT;
+//            $jq .= <<<EOT
+//
+//$('$formId input[type=reset]').click(function(e) {  // reset: clear all entries
+//    let \$form = $('$formId');
+//    $('.lzy-form-cmd', \$form ).val('_reset_');
+//    lzyFormUnsaved = false;
+//    \$form[0].submit();
+//});
+//EOT;
         }
 
-        $jq .= <<<EOT
+        $jq .= <<<'EOT'
        
-$('$formId .lzy-form-pw-toggle').click(function(e) {
+$('.lzy-form .lzy-form-pw-toggle').click(function(e) {
     e.preventDefault();
-    let \$form = $('$formId');
-    let \$pw = $('.lzy-form-password', \$form);
+    let $form = $(this).closest('.lzy-form');
+    let $pw = $('.lzy-form-password', $form);
     let rcsPath = systemPath + 'rsc/';
-    if (\$pw.attr('type') === 'text') {
-        \$pw.attr('type', 'password');
-        $('.lzy-form-show-pw-icon', \$form).attr('src', rcsPath + 'show.png');
+    if ($pw.attr('type') === 'text') {
+        $pw.attr('type', 'password');
+        $('.lzy-form-show-pw-icon', $form).attr('src', rcsPath + 'show.png');
     } else {
-        \$pw.attr('type', 'text');
-        $('.lzy-form-show-pw-icon', \$form).attr('src', rcsPath +'hide.png');
+        $pw.attr('type', 'text');
+        $('.lzy-form-show-pw-icon', $form).attr('src', rcsPath +'hide.png');
     }
 });
 
 EOT;
+//        $jq .= <<<EOT
+//
+//$('$formId .lzy-form-pw-toggle').click(function(e) {
+//    e.preventDefault();
+//    let \$form = $('$formId');
+//    let \$pw = $('.lzy-form-password', \$form);
+//    let rcsPath = systemPath + 'rsc/';
+//    if (\$pw.attr('type') === 'text') {
+//        \$pw.attr('type', 'password');
+//        $('.lzy-form-show-pw-icon', \$form).attr('src', rcsPath + 'show.png');
+//    } else {
+//        \$pw.attr('type', 'text');
+//        $('.lzy-form-show-pw-icon', \$form).attr('src', rcsPath +'hide.png');
+//    }
+//});
+//
+//EOT;
+
+        $jq .= <<<EOT
+$('.lzy-textarea-autogrow textarea').on('input', function() {
+    this.parentNode.dataset.replicatedValue = this.value;
+});
+EOT;
+
+        // initiate window-freeze if form is open for too long:
+        $jq .= "\nfreezeWindowAfter('" . (DEFAULT_FORMS_TIMEOUT - 10) ."s');\n";
+
         $this->page->addJq($jq);
     } // initButtonHandlers
 
