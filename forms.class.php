@@ -1685,7 +1685,7 @@ EOT;
             }
         } else {
             $out = "\t</div><!-- /lzy-form-hide-when-completed -->\n";
-            $this->page->addJq("$('.lzy-form-hide-when-completed').css('display', 'none');");
+//            $this->page->addJq("$('.lzy-form-hide-when-completed').css('display', 'none');");
         }
 
         // save form data to DB:
@@ -1720,8 +1720,9 @@ EOT;
 //        } else {
 //            $out .= "\t</div><!-- /lzy-form-wrapper -->\n\n";
         }
-        $out .= "\t</div><!-- /lzy-form-wrapper -->\n\n";
-
+        if (!$this->skipRenderingForm) {
+            $out .= "\t</div><!-- /lzy-form-wrapper -->\n\n";
+        }
         if ($this->errorDescr) {
             $jq = <<<'EOT'
 
@@ -1860,56 +1861,80 @@ EOT;
 	    if (isset( $form->prefillRec['dataKey'] )) {
             $form->dataKey = $form->prefillRec['dataKey'];
         }
-        $formObj = base64_encode( serialize( $form) );
-        $formDescr = [];
-        $i = 0;
-        foreach ($form->formElements as $elem) {
-            if ($elem->name && ($elem->name[0] === '_')) {
-                continue;
-            }
-            $formDescr[$i]['label'] = $elem->labelInOutput;
-            $formDescr[$i]['name'] = $elem->name;
-            $formDescr[$i++]['type'] = $elem->type;
-        }
-        if (!$this->formHash) {
-            $this->errorDescr['generic']['_announcement_'] = '{{ lzy-form-error-formhash-lost }}';
+//        $formDescr = [];
+//        $i = 0;
+//        foreach ($form->formElements as $elem) {
+//            if ($elem->name && ($elem->name[0] === '_')) {
+//                continue;
+//            }
+//            $formDescr[$i]['label'] = $elem->labelInOutput;
+//            $formDescr[$i]['name'] = $elem->name;
+//            $formDescr[$i++]['type'] = $elem->type;
+//        }
+//        if (!$this->formHash) {
+//            $this->errorDescr['generic']['_announcement_'] = '{{ lzy-form-error-formhash-lost }}';
+//            return;
+//        }
+//        $dataKeys = [];
+//        foreach ($form->formElements as $element) {
+//            if ($element->type !== 'button') {
+//                $dataKeys[$element->dataKey] = $element->labelInOutput;
+//            }
+//        }
+//        $formHash = preg_replace('/:.*/', '', $this->formHash);
+//        $this->tck->updateTicket( $formHash, [
+////        $this->tck->updateTicket( $this->formHash, [
+//            "form$this->formInx" => [
+////                'form'          => $formObj,
+//                'formDescr'     => $formDescr,
+//                'dataSrc'       => $this->currForm->file,
+//                'dataKeys'      => $dataKeys,
+//                ]
+//        ] );
+
+        $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['globalParams']['pagePath'] . "forms-cache-{$this->formInx}.txt";
+        if (file_exists($cacheFile)) {
             return;
         }
-        $dataKeys = [];
-        foreach ($form->formElements as $element) {
-            if ($element->type !== 'button') {
-                $dataKeys[$element->dataKey] = $element->labelInOutput;
-            }
-        }
-        $this->tck->updateTicket( $this->formHash, [
-            "form$this->formInx" => [
-                'form'          => $formObj,
-                'formDescr'     => $formDescr,
-                'dataSrc'       => $this->currForm->file,
-                'dataKeys'      => $dataKeys,
-                ]
-        ] );
-	} // saveFormDescr
+        $formObj = base64_encode( serialize( $form ) );
+        preparePath($cacheFile);
+        file_put_contents($cacheFile, $formObj);
+
+//writeToYamlFile('tmp.yaml', (array)$form);
+    } // saveFormDescr
 
 
 
-    public function restoreFormDescr($formHash = false, $formInx = false)
+    protected function restoreFormDescr($formHash = false, $formInx = false)
 	{
-	    if (!$formHash) {
-	        if (!$this->formHash) {
-                return null;
-            }
-	        $formHash = $this->formHash;
-        }
-        $rec = $this->tck->consumeTicket($formHash);
-        $formInx = $formInx? $formInx : $this->formInx;
-	    $fInx = "form$formInx";
-        if (isset($rec[$fInx])) {
-            return unserialize(base64_decode($rec[$fInx]['form']));
-        } else {
+        $formInx = $formInx? $this->formInx: false;
+        if (!$formInx) {
             return null;
         }
+        $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['globalParams']['pagePath'] . "forms-cache-$formInx.txt";
+        if (!file_exists($cacheFile)) {
+            return null;
+        }
+        $str = file_get_contents($cacheFile);
+        return unserialize(base64_decode( $str ));
 	} // restoreFormDescr
+//    public function restoreFormDescr($formHash = false, $formInx = false)
+//	{
+//	    if (!$formHash) {
+//	        if (!$this->formHash) {
+//                return null;
+//            }
+//	        $formHash = $this->formHash;
+//        }
+//        $rec = $this->tck->consumeTicket($formHash);
+//        $formInx = $formInx? $formInx : $this->formInx;
+//	    $fInx = "form$formInx";
+//        if (isset($rec[$fInx])) {
+//            return unserialize(base64_decode($rec[$fInx]['form']));
+//        } else {
+//            return null;
+//        }
+//	} // restoreFormDescr
 
 
 
