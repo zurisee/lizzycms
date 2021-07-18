@@ -17,6 +17,7 @@ define('DEV_MODE_CONFIG_FILE',  CONFIG_PATH.'dev-mode-config.yaml');
 define('PAGES_PATH',            'pages/');
 define('HOMEPAGE_PATH',         'home/');
 define('DATA_PATH',             'data/');
+define('SYSTEM_CACHE_PATH',     '.#sys-cache/');
 define('CACHE_PATH',            '.cache/');
 define('MODULES_CACHE_PATH',    '.cache/files/');
 define('PAGE_CACHE_PATH',       CACHE_PATH.'pages/');
@@ -29,7 +30,8 @@ define('USER_FINAL_CODE_FILE',  USER_CODE_PATH.'final-code.php');
 define('USER_VAR_DEF_FILE',     USER_CODE_PATH.'var-definitions.php');
 define('ICS_PATH',              'ics/'); // where .ics files are located
 
-define('DEFAULT_TICKETS_PATH', '.#tickets/');
+define('DEFAULT_TICKETS_PATH', SYSTEM_CACHE_PATH);
+//define('DEFAULT_TICKETS_PATH', '.#tickets/');
 define('DAILY_PURGE_FILE',      CONFIG_PATH.'daily-purge.txt');
 define('USER_DAILY_CODE_FILE',  USER_CODE_PATH.'@daily-task.php');
 define('CACHE_DEPENDENCY_FILE', '.#page-cache.dependency.txt');
