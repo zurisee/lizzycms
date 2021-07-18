@@ -499,6 +499,9 @@ EOT;
         }
 
         $data = &$this->data;
+        if ($this->nCols === 0) {
+            return '';
+        }
         if ($this->nRows < 1) {
             return '{{ lzy-table-no-data-available }}';
         }
@@ -1740,11 +1743,14 @@ EOT;
 
     private function insertCellAddressAttributes()
     {
+        if (!$this->data0) {
+            return;
+        }
         if ($this->liveData) {
             $this->includeCellRefs = true;
         }
         $nCols = sizeof( reset($this->data) );
-        $nRows = sizeof($this->data);
+//        $nRows = sizeof($this->data);
         $recKeyInx = array_search(REC_KEY_ID, array_keys($this->structure['elements']));
         if ($this->includeCellRefs) {
             $r = 0;
@@ -1773,6 +1779,9 @@ EOT;
 
     private function excludeColumns()
     {
+        if (!$this->data0) {
+            return;
+        }
         if (!$this->excludeColumns && !$this->hideMetaFields) {
             return;
         }
