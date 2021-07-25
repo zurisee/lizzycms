@@ -10,7 +10,7 @@
 
 // variables and default values:
 $form-width: 30em;      // --lzy-form-width
-$label-width: 6em;      // --lzy-label-width
+$label-width: 7em;      // --lzy-label-width
 $form-box-width: 7em;   // --lzy-form-box-width
 $form-grid-gap: 10px;   // --lzy-form-grid-gap
 
@@ -205,7 +205,7 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
 
     .lzy-label-wrapper {
         display: inline-block;
-        width: 7em;
+        width: $label-width;
         width: var(--lzy-label-width, $label-width);
     }
     .lzy-form-field-type-textarea .lzy-label-wrapper {

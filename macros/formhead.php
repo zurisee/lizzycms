@@ -50,6 +50,7 @@ $this->addMacro($macroName, function () {
         $this->getArg($macroName, 'labelWidth', '[width incl. unit] Defines the default label width, e.g. "8em" (default: 6em)', 'auto');
 
         $this->getArg($macroName, 'labelPosition', '[left,above,auto] Defines where field labels are positioned (default: auto)', 'auto');
+        $this->getArg($macroName, 'labelColons', '[true,false] Defines whether to put a colon after each label (default: leave as is; false: suppress even if contained in label string)', false);
 
         $this->getArg($macroName, 'translateLabels', 'If true, Lizzy will try to translate all labels in this form (default: false)', '');
 
@@ -58,12 +59,6 @@ $this->addMacro($macroName, function () {
 
         $this->getArg($macroName, 'avoidDuplicates', 'If true, Lizzy checks whether identical data-rec already '.
             'exists in DB. If so, skips storing new rec. (default: true).', true);
-
-        $this->getArg($macroName, 'export', '[true,false,filename] If set, form data so far collected will be exported '.
-            'to this file. (Default: false; true means "'.DEFAULT_EXPORT_FILE.'")', '');
-
-        $this->getArg($macroName, 'exportKey', '[true,false] If true, exported table will contain a column '.
-            'containing the key into the form-DB. You can use this key in conjunction with arg "prefill". (Default: false)', '');
 
         $this->getArg($macroName, 'prefill', '[hash,url-arg] Hash corresponds to the key in the form-DB, i.e. where '.
             'previous form entries are stored. The "prefill" arguments lets you render the form prefilled with an '.

@@ -10,7 +10,7 @@ define('SPAM_LOG_FILE', 	    LOG_PATH.'spam-log.txt');
 define ('FORMS_DEFAULT_TICKET_VALIDITY_TIME', 259200); // 3 days
 define ('DEFAULT_FORMS_TIMEOUT', 900); // 15 minutes
 
-define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,export,'.
+define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,keyType,export,'.
     'legend,customResponseEvaluation,customResponseEvaluationFunction,next,file,confirmationText,formDataCaching,'.
     'encapsulate,formTimeout,avoidDuplicates,confirmationEmail,dynamicFormSupport,labelColons,'.
     'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,suppressFormFeedback,'.
@@ -39,22 +39,27 @@ mb_internal_encoding("utf-8");
 $GLOBALS['globalParams']['lzyFormsCount'] = 0;
 $GLOBALS['globalParams']['formDataCachingInitialized'] = false;
 $GLOBALS['globalParams']['formTooltipsInitialized'] = false;
+$GLOBALS['globalParams']['forms_skipRenderingForm'] = [];
+$GLOBALS['globalParams']['forms_responseToClient'] = [];
 
 class Forms
 {
 	private   $page;
     protected $inx;
-	private   $currForm = null;		// shortcut to $formDescr[ $currFormIndex ]
-	private   $currRec = null;		// shortcut to $currForm->formElements[ $currRecIndex ]
+	private   $currForm;		// shortcut to $formDescr[ $currFormIndex ]
+	private   $currRec;		    // shortcut to $currForm->formElements[ $currRecIndex ]
     private   $submitButtonRendered = false;
     protected $errorDescr = [];
-    protected $responseToClient = false;
-    protected $skipRenderingForm = false;
+    protected $responseToClient;
+    protected $skipRenderingForm;
     protected $formId = false;
     public    $file = false;
     private   $db = false;
-    private   $recKey = null;
-    private   $isNewRec = null;
+    private   $recKey;
+    private   $isNewRec;
+    private   $bypassedValues;
+    private   $infoInitialized, $args, $mailfrom, $dataKeyOverride;
+    protected $userSuppliedData, $userSuppliedData0, $repeatEventTaskPending, $dataKeyOverrideHash;
 
 
 	public function __construct($lzy, $userDataEval = null)
@@ -68,27 +73,19 @@ class Forms
         $this->currForm = new FormDescriptor; // object as will be saved in DB
         $this->infoInitialized = &$GLOBALS['globalParams']['formTooltipsInitialized'];
 
-        $this->tck = new Ticketing([
-            'defaultType' => 'lzy-form',
-            'defaultMaxConsumptionCount' => 100,
-            'defaultValidityPeriod' => DEFAULT_FORMS_TIMEOUT,
-//            'defaultValidityPeriod' => FORMS_DEFAULT_TICKET_VALIDITY_TIME,
-        ]);
+        $GLOBALS['globalParams']['forms_responseToClient'][$this->formInx] = false;
+        $this->responseToClient = &$GLOBALS['globalParams']['forms_responseToClient'][$this->formInx];
+        $GLOBALS['globalParams']['forms_skipRenderingForm'][$this->formInx] = false;
+        $this->skipRenderingForm = &$GLOBALS['globalParams']['forms_skipRenderingForm'][$this->formInx];
 
-        // $userDataEval===false suppresses user-data-evaluation (because client does it on its own)
         if ($userDataEval !== false) {
-            if (isset($_POST['_lizzy-form'])) {    // we received data:
+            if (isset($_POST['_lizzy-form-id'])) {    // we received data for curr form:
                 $this->evaluateUserSuppliedData();
-                $_POST['__lizzy-form'] = $_POST['_lizzy-form'];
-                unset( $_POST['_lizzy-form'] );
-            }
-            // $userDataEval===true means client just wants to eval data, not instantiate an object:
-            if ($userDataEval === true) {
-                $GLOBALS['globalParams']['lzyFormsCount']--;
+                if ($userDataEval === true) {
+                    $GLOBALS['globalParams']['lzyFormsCount']--;
+                }
             }
         }
-//$this->errorDescr[$this->formInx]['_announcement_'] = '{{ lzy-form-duplicate-data }}';
-//$this->skipRenderingForm = true;
 	} // __construct
 
     
@@ -183,6 +180,7 @@ class Forms
         $currForm->wrapperClass = (isset($args['wrapperClass'])) ? $args['wrapperClass'] : '';
         $currForm->method = (isset($args['method'])) ? $args['method'] : 'post';
         $currForm->action = (isset($args['action'])) ? $args['action'] : '';
+        $currForm->keyType = (isset($args['keyType'])) ? $args['keyType'] : false;
         $currForm->mailTo = (isset($args['mailto'])) ? $args['mailto'] : ((isset($args['mailTo'])) ? $args['mailTo'] : '');
         $currForm->mailFrom = (isset($args['mailfrom'])) ? $args['mailfrom'] : ((isset($args['mailFrom'])) ? $args['mailFrom'] : '');
         $currForm->formHeader = (isset($args['formHeader'])) ? $args['formHeader'] : ''; // synonyme for 'legend'
@@ -248,7 +246,6 @@ class Forms
         }
 
         $currForm->validate = (isset($args['validate'])) ? $args['validate'] : ((isset($args['novalidate'])) ? !$args['novalidate'] : false);
-//        $currForm->validate = (isset($args['validate'])) ? $args['validate'] : false;
         $currForm->showData = (isset($args['showData'])) ? $args['showData'] : false;
 
         $currForm->showDataMinRows = (isset($args['showDataMinRows'])) ? $args['showDataMinRows'] : false;
@@ -257,22 +254,14 @@ class Forms
         $currForm->options = isset($args['options']) ? $args['options'] : (isset($args['option']) ? $args['option'] : '');
         $currForm->options = str_replace('-', '', $currForm->options);
 
-        $currForm->ticketPayload = (isset($args['ticketPayload'])) ? $args['ticketPayload'] : null;
-        $currForm->ticketHash = (isset($args['ticketHash'])) ? $args['ticketHash'] : false;
+//        $currForm->ticketPayload = (isset($args['ticketPayload'])) ? $args['ticketPayload'] : null;
+//        $currForm->ticketHash = (isset($args['ticketHash'])) ? $args['ticketHash'] : false;
 
         $currForm->recModifyCheck = (isset($args['recModifyCheck'])) ? $args['recModifyCheck'] : false;
 
         if (stripos('above', $currForm->labelPosition) !== false) {
             $currForm->class .= ' lzy-form-labels-above';
         }
-
-//        $jq = <<<EOT
-//$('.lzy-textarea-autogrow textarea').on('input', function() {
-//    this.parentNode.dataset.replicatedValue = this.value;
-//});
-//EOT;
-//
-//        $this->page->addJq( $jq );
 
         return 'form-head';
     } // parseHeadElemArgs
@@ -318,6 +307,10 @@ class Forms
             $name = $args['name'];
         } else {
             $name = $label;
+        }
+
+        if (($type === 'button') && (strpos($args['options'], 'submit') !== false)) {
+            $name = '';
         }
         $name = str_replace(' ', '_', $name);
         $name = preg_replace("/[^[:alnum:]_-]/m", '', $name);	// remove any non-letters, except _ and -
@@ -369,7 +362,7 @@ class Forms
         $rec->wrapperClass = @$args['wrapperClass']? $args['wrapperClass']: '';
 
         if (isset($args['required']) && $args['required']) {
-            if (preg_match('/(.*)\s*\[(.*)\]/', $args['required'], $m)) {
+            if (preg_match('/(.*)\s*\[(.*)]/', $args['required'], $m)) {
                 $rec->required = false;
                 $rec->requiredGroup = explodeTrim(',', $m[2]);
                 $marker = $m[1];
@@ -393,7 +386,7 @@ class Forms
             if (isset($this->currForm->prefillRec[ $rec->dataKey ])) {
                 $value = $this->currForm->prefillRec[ $rec->dataKey ];
                 if (is_string($value) && strpbrk($value, ',|')) {
-                    $rec->prefill = explodeTrim( "|$value");
+                    $rec->prefill = explodeTrim(',|', "|$value");
                 } else {
                     $rec->prefill = $value;
                 }
@@ -428,9 +421,6 @@ class Forms
         // for radio, checkbox and dropdown: options define the values available
         //  optionLabels are optional and used in the page, e.g. if you need a longish formulation to describe the option
         //  (for backward compatibility, value is accepted in place of options)
-//        if (isset($args['option'])) {
-//            $args['options'] = $args['option'];
-//        }
         $rec->option = @$args['option']? $args['option']: $rec->value;
         $rec->options = @$args['options']? $args['options']: $rec->value;
         $rec->optionLabels = @$args['optionLabels']? $args['optionLabels']: $rec->options;
@@ -615,7 +605,6 @@ EOT;
                 break;
 
             case 'button':
-//                $elem = $this->renderButtons();
                 list($elem, $preElem) = $this->renderButtons();
                 $wrapperClass = '';
                 break;
@@ -790,13 +779,6 @@ EOT;
         $this->userSuppliedData = $this->getUserSuppliedDataFromCache( $currForm->formInx );
         $currForm->creationTime = time();
 
-        if (!$currForm->ticketHash || !$this->tck->ticketExists($currForm->ticketHash)) {
-            $this->formHash = $this->tck->createTicket($currForm->ticketPayload, false, null, false, $currForm->ticketHash);
-        } else {
-            $this->formHash = $currForm->ticketHash; // if ticket provided by caller
-            $this->tck->updateTicket($this->formHash, null); // reset _ticketValidTill
-        }
-
         $id = " id='{$this->formId}'";
 
         $legendClass = 'lzy-form-header';
@@ -853,11 +835,11 @@ EOT;
             }
         }
 
+        $this->formHash = $this->getFormHash();
+
         $out .= "\t  <form$id$_class$_method$_action$novalidate>\n";
-		$out .= "\t\t<input type='hidden' name='_lizzy-form-id' value='{$this->formInx}' />\n";
-		$out .= "\t\t<input type='hidden' name='_lizzy-form-label' value='{$currForm->formName}' />\n";
-		$out .= "\t\t<input type='hidden' name='_lizzy-form' value='{$this->formHash}:form{$this->formInx}' class='lzy-form-hash' />\n";
-		$out .= "\t\t<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-next' value='{$currForm->next}' />\n";
+		$out .= "\t\t<input type='hidden' name='_lizzy-form-id' value='{$this->formHash}' />\n";
+		$out .= "\t\t<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-cmd' value='' />\n";
 
 		if ($currForm->antiSpam) {
             $out .= "\t\t<div class='fld-ch' aria-hidden='true'>\n";
@@ -1508,11 +1490,10 @@ EOT;
 
     private function renderHidden()
     {
-        $name = " name='{$this->currRec->name}'";
         $value = $this->getValueAttr();
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
 
-        $out = "<input type='hidden' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$name$value />\n";
+        $out = "<input type='hidden' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
         return $out;
     } // renderHidden
 
@@ -1609,15 +1590,9 @@ EOT;
 			}
 		}
 
-//        if (strpos(','.$this->currRec->options, ',delete') !== false) {
-//            $preElem = $this->renderDeleteRec();
-//        } else {
-//            $preElem = '';
-//        }
         $preElem = $this->renderDeleteRec();
 
         return [$out, $preElem];
-//        return $out;
     } //renderButtons
 
 
@@ -1674,7 +1649,6 @@ EOT;
 
         $formInx = $this->currForm->formInx;
         if (!$this->skipRenderingForm) {
-//        if (!$this->skipRenderingForm || $this->currForm->skipConfirmation) {
             if ($this->currForm->antiSpam) {
                 $this->initAntiSpam();
             }
@@ -1685,7 +1659,6 @@ EOT;
             }
         } else {
             $out = "\t</div><!-- /lzy-form-hide-when-completed -->\n";
-//            $this->page->addJq("$('.lzy-form-hide-when-completed').css('display', 'none');");
         }
 
         // save form data to DB:
@@ -1717,8 +1690,6 @@ EOT;
                 }
             }
             $out .= "\t  <div class='lzy-form-response'>$msgToClient</div>\n";
-//        } else {
-//            $out .= "\t</div><!-- /lzy-form-wrapper -->\n\n";
         }
         if (!$this->skipRenderingForm) {
             $out .= "\t</div><!-- /lzy-form-wrapper -->\n\n";
@@ -1736,9 +1707,6 @@ $('.lzy-form-error:first').each(function () {
 EOT;
             $this->page->addJq( $jq );
         }
-
-//        // initiate window-freeze if form is open for too long:
-//        $this->page->addJq( 'freezeWindowAfter(\'' . (DEFAULT_FORMS_TIMEOUT - 10) .'s\');' );
 
         // present previously received data to form owner:
         if ($this->currForm->showData) {
@@ -1857,84 +1825,52 @@ EOT;
 	private function saveFormDescr()
 	{
 	    $form = $this->currForm;
+	    $form->formHash = $this->formHash;
 	    $form->bypassedValues = @$this->bypassedValues;
 	    if (isset( $form->prefillRec['dataKey'] )) {
             $form->dataKey = $form->prefillRec['dataKey'];
         }
-//        $formDescr = [];
-//        $i = 0;
-//        foreach ($form->formElements as $elem) {
-//            if ($elem->name && ($elem->name[0] === '_')) {
-//                continue;
-//            }
-//            $formDescr[$i]['label'] = $elem->labelInOutput;
-//            $formDescr[$i]['name'] = $elem->name;
-//            $formDescr[$i++]['type'] = $elem->type;
-//        }
-//        if (!$this->formHash) {
-//            $this->errorDescr['generic']['_announcement_'] = '{{ lzy-form-error-formhash-lost }}';
-//            return;
-//        }
-//        $dataKeys = [];
-//        foreach ($form->formElements as $element) {
-//            if ($element->type !== 'button') {
-//                $dataKeys[$element->dataKey] = $element->labelInOutput;
-//            }
-//        }
-//        $formHash = preg_replace('/:.*/', '', $this->formHash);
-//        $this->tck->updateTicket( $formHash, [
-////        $this->tck->updateTicket( $this->formHash, [
-//            "form$this->formInx" => [
-////                'form'          => $formObj,
-//                'formDescr'     => $formDescr,
-//                'dataSrc'       => $this->currForm->file,
-//                'dataKeys'      => $dataKeys,
-//                ]
-//        ] );
 
-        $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['globalParams']['pagePath'] . "forms-cache-{$this->formInx}.txt";
+        $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['globalParams']['pagePath'] . "form-descr-{$this->formInx}.txt";
         if (file_exists($cacheFile)) {
             return;
         }
-        $formObj = base64_encode( serialize( $form ) );
+        $str = $this->formHash . ':'. base64_encode( serialize( $form ) );
         preparePath($cacheFile);
-        file_put_contents($cacheFile, $formObj);
-
-//writeToYamlFile('tmp.yaml', (array)$form);
+        file_put_contents($cacheFile, $str);
     } // saveFormDescr
 
 
 
-    protected function restoreFormDescr($formHash = false, $formInx = false)
+    protected function getFormHash()
+    {
+        $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['globalParams']['pagePath'] . "form-descr-$this->formInx.txt";
+        if (file_exists($cacheFile)) {
+            $str = file_get_contents($cacheFile);
+            $formHash = substr($str, 0, 8);
+        } else {
+            $formHash = strtolower( createHash(8) );
+        }
+        return $formHash;
+    } // getFormHash
+
+
+
+    protected function restoreFormDescr( $formHash )
 	{
-        $formInx = $formInx? $this->formInx: false;
-        if (!$formInx) {
-            return null;
+        for ($formInx=1; true; $formInx++) {
+            $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['globalParams']['pagePath'] . "form-descr-$formInx.txt";
+            if (!file_exists($cacheFile)) {
+                return null;
+            }
+            $str = file_get_contents($cacheFile);
+            if (strpos($str, $formHash) === 0) {
+                break;
+            }
         }
-        $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['globalParams']['pagePath'] . "forms-cache-$formInx.txt";
-        if (!file_exists($cacheFile)) {
-            return null;
-        }
-        $str = file_get_contents($cacheFile);
-        return unserialize(base64_decode( $str ));
+        $this->currForm = unserialize(base64_decode( substr($str, 9 )));
+        return $this->currForm;
 	} // restoreFormDescr
-//    public function restoreFormDescr($formHash = false, $formInx = false)
-//	{
-//	    if (!$formHash) {
-//	        if (!$this->formHash) {
-//                return null;
-//            }
-//	        $formHash = $this->formHash;
-//        }
-//        $rec = $this->tck->consumeTicket($formHash);
-//        $formInx = $formInx? $formInx : $this->formInx;
-//	    $fInx = "form$formInx";
-//        if (isset($rec[$fInx])) {
-//            return unserialize(base64_decode($rec[$fInx]['form']));
-//        } else {
-//            return null;
-//        }
-//	} // restoreFormDescr
 
 
 
@@ -1969,21 +1905,20 @@ EOT;
 			$this->clearCache();
 			return false;
 		}
-        $this->formInx = $formInx = $userSuppliedData['_lizzy-form-id'];
 
-        if (!isset($userSuppliedData['_lizzy-form'])) { // already evaluated, nothing to do
-            return false;
-        }
-        $formHash = $this->formHash = $userSuppliedData['_lizzy-form'];
-        $formHash = preg_replace('/:.*/', '', $formHash);
-        $this->currForm = $this->restoreFormDescr( $formHash, $formInx );
-        $currForm = $this->currForm;
+        $formHash = $userSuppliedData['_lizzy-form-id'];
+        $currForm = $this->restoreFormDescr( $formHash );
 
         // ticket timed out or formInx not matching:
-        if (($currForm === null) || ($formInx !== $this->formInx)) {
+        if (($currForm === null) || ($currForm->formHash !== $formHash)) {
             $this->clearCache();
             return false;
         }
+        if ($this->formInx !== $currForm->formInx) {
+            return false;
+        }
+        $formInx = $currForm->formInx;
+        $this->formHash = $formHash;
 
         // anti-spam check:
         if ($this->checkHoneyPot()) {
@@ -1991,7 +1926,7 @@ EOT;
             return false;
         }
 
-        $cmd = @$userSuppliedData['_lizzy-form-next'];
+        $cmd = @$userSuppliedData['_lizzy-form-cmd'];
         if ($cmd === '_ignore_') {     // _ignore_
             $this->cacheUserSuppliedData($formInx, $userSuppliedData);
             return false;
@@ -2014,7 +1949,6 @@ EOT;
         $this->prepareUserSuppliedData(); // handles radio and checkboxes
 
         // check required entries:
-//        $this->checkSuppliedDataEntries();
         if (!$this->checkSuppliedDataEntries()) {
             return false;
         }
@@ -2095,14 +2029,14 @@ EOT;
             $res = $customResponseEvaluationFunction($this->lzy, $this, $userSuppliedData); // $res = false -> everything ok
             if (is_string($res)) {
                 $this->clearCache();
-                $this->skipRenderingForm = true;
+                $GLOBALS['globalParams']['forms_skipRenderingForm'][$this->formInx] = true;
                 $this->responseToClient = $res;
                 return '';
             } elseif(is_array($res)) {
                 // second elem of $res set => means skip rendering form and override output:
                 if (isset($res[1])) {
                     $this->errorDescr[ 'generic' ]['_override_'] = $res[1];
-                    $this->skipRenderingForm = true;
+                    $GLOBALS['globalParams']['forms_skipRenderingForm'][$this->formInx] = true;
 
                 } else {
                     $this->errorDescr[$currForm->formInx]['_announcement_'] = $res[0];
@@ -2114,6 +2048,10 @@ EOT;
         $cont = false;
         if ($noError ) {
             $cont = $this->saveAndWrapUp($msgToOwner);
+        }
+        if ($cont) {
+            $_POST['__lizzy-form-id'] = $_POST['_lizzy-form-id'];
+            unset($_POST['_lizzy-form-id']);
         }
 
         if ($cont && $this->currForm->confirmationEmail) {
@@ -2137,14 +2075,6 @@ EOT;
 	    if (!$this->saveUserSuppliedDataToDB()) {
             return false;
         }
-//	    if (isset($this->userSuppliedData0['_lzy-delete-rec'])) {
-////	    if (isset($this->userSuppliedData0['_delete'])) {
-//            writeLogStr("Delete data: [$this->recKey]", FORM_LOG_FILE);
-//            $this->deleteDataRecord();
-//
-//        } elseif (!$this->saveUserSuppliedDataToDB()) {
-//            return false;
-//        }
 
         $this->clearCache();
 
@@ -2163,7 +2093,7 @@ EOT;
         $msgToOwner = "{$currForm->formName}\n===================\n\n";
 
 		foreach ($currForm->formElements as $element) {
-		    if ((strpos(PSEUDO_TYPES, $element->type) !== false) || ($element->name[0] === '_')) {
+		    if ((strpos(PSEUDO_TYPES, $element->type) !== false) || (@$element->name[0] === '_')) {
                 continue;
             }
             $label = $element->labelInOutput;
@@ -2247,10 +2177,6 @@ EOT;
         if (isset($this->dataKeyOverride)) {
             $recKey = $this->getOverrideKey( $recKey );
             $recKey0 = preg_replace('/^.*,/', '', $recKey);
-//            if (!$recKey) {
-//                $recKey = $recKey0 = createHash();
-//            }
-//            $recKey = str_replace('*', $recKey, $this->dataKeyOverride);
         }
 
         // handle special case: structure[key] contains pattern '=xy', if so use that element as key:
@@ -2261,16 +2187,13 @@ EOT;
             }
         }
 
-//        if (!$recKey) {
         if ($this->isNewRec) {
             writeLogStr("New data: [{$currForm->formName}:$recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
         } else {
-//            $this->isNewRec = false;
             writeLogStr("Data modified: [{$currForm->formName}:$recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
         }
 
         // check whether data already present in DB, if not disabled:
-//if (false && $currForm->avoidDuplicates) {
         if ($currForm->avoidDuplicates) {
             $doubletFound = false;
             if (isset($this->dataKeyOverride)) {
@@ -2306,7 +2229,6 @@ EOT;
                     }
                     if (!$usrDataFldName) {
                         continue;
-//???                        die("Error in saveUserSuppliedDataToDB(): inconsistancy in rec structure -> 'name' missing in \$formElemDescr:".var_r($formElemDescr));
                     }
 
                     if (is_array($userSuppliedData[$usrDataFldName])) {
@@ -2363,12 +2285,10 @@ EOT;
         } else {
             $newRec[REC_KEY_ID] = createHash();
         }
-//        $newRec[ REC_KEY_ID ] = $recKey;
 
         // special case: external directive re. dataKay (e.g. from enroll):
         if (isset($this->dataKeyOverride)) {
             $ds->writeElement($recKey, $newRec, true, true, true, $this->dataKeyOverrideHash);
-//            $ds->writeElement($recKey, $newRec, true, true);
             return true;
         }
 
@@ -2381,11 +2301,6 @@ EOT;
 
         } else {
             $res = $ds->writeRecord($recKey, $newRec, true, true, true);
-//            if (isset($this->dataKeyOverride)) {
-//                $res = $ds->writeElement($recKey, $newRec, true, true, true);
-//            } else {
-//                $res = $ds->writeRecord($recKey, $newRec, true, true, true);
-//            }
         }
         if (!$res) {
             mylog("forms:saveUserSuppliedDataToDB(): Error writing to DB");
@@ -2408,7 +2323,6 @@ EOT;
         $recKey = $this->userSuppliedData0['_rec-key'];
         $ds = $this->openDB();
         if (isset($this->dataKeyOverride)) {
-//            $recKey = str_replace('*', $recKey, $this->dataKeyOverride);
             $recKey = $this->getOverrideKey( $recKey );
         }
         $rec = $ds->readElement($recKey);
@@ -2595,9 +2509,6 @@ EOT;
             unset($_SESSION["lizzy"]['forms']);
         }
         $this->errorDescr = null;
-	    if ($this->formHash) {
-            $this->tck->deleteTicket($this->formHash);
-        }
 	} // clearCache
 
 
@@ -2720,7 +2631,6 @@ EOT;
         }
         $GLOBALS['globalParams']['formsButtonHandlersInitialized'] = true;
 
-//        $id = "fld_ch{$this->inx}";
         $js = <<<EOT
 
 function noInputPopup() {
@@ -2733,24 +2643,7 @@ function noInputPopup() {
 }
 
 EOT;
-//        $js = <<<EOT
-//
-//function noInputPopup() {
-//    lzyPopup({
-//        text: '{{ lzy-form-empty-form-warning }}',
-//        trigger: true,
-//        buttons: '{{ Continue }}',
-//        closeButton: false,
-//    });
-//    $( '#$id' ).focus();
-//}
-//
-//EOT;
         $this->page->addJs($js);
-
-//        $formId = '#'.$this->currForm->formId;
-
-        $logFile = SPAM_LOG_FILE;
 
         $jq = '';
         if ($this->currForm->submitButtonCallback === 'auto') {
@@ -2795,49 +2688,7 @@ $('.lzy-form input[type=submit]').click(function(e) {
 });
 
 EOT;
-//                $jq .= <<<EOT
-//
-//$('$formId input[type=submit]').click(function(e) {
-//    let \$form = $('$formId');
-//    if (!$('.lzy-form-check', \$form ).val()) {
-//        let s = '';
-//        $( 'input,textarea', \$form).each(function() {
-//            let type = $(this).attr('type');
-//            if ((type === 'hidden') || (type === 'submit') || (type === 'reset') || (type === 'button')) {
-//                return;
-//            } else if ((type === 'radio') || (type === 'checkbox')) {
-//                if ($(this).prop('checked') || $(this).prop('selected')) {
-//                    s = 'X';
-//                }
-//            } else {
-//                s += $(this).val();
-//            }
-//        });
-//        $( 'option', \$form).each(function() {
-//            if ( $(this).prop('selected') && $(this).val() ) {
-//                s += 'Y';
-//            }
-//        });
-//        if (!s) {
-//            e.preventDefault();
-//            noInputPopup();
-//            return;
-//        }
-//
-//        lzyFormUnsaved = false;
-//        \$form[0].submit();
-//        return;
-//    }
-//    e.preventDefault();
-//    let data = JSON.stringify( \$form.serializeArray() );
-//    serverLog('suspicious form data: ' + data, '$logFile');
-//    initAntiSpamPopup();
-//});
-//
-//EOT;
             }
-        } else {
-
         }
 
 
@@ -2851,15 +2702,6 @@ $('.lzy-form input[type=reset]').click(function(e) {  // reset: clear all entrie
     $form[0].submit();
 });
 EOT;
-//            $jq .= <<<EOT
-//
-//$('$formId input[type=reset]').click(function(e) {  // reset: clear all entries
-//    let \$form = $('$formId');
-//    $('.lzy-form-cmd', \$form ).val('_reset_');
-//    lzyFormUnsaved = false;
-//    \$form[0].submit();
-//});
-//EOT;
         }
 
         $jq .= <<<'EOT'
@@ -2879,23 +2721,6 @@ $('.lzy-form .lzy-form-pw-toggle').click(function(e) {
 });
 
 EOT;
-//        $jq .= <<<EOT
-//
-//$('$formId .lzy-form-pw-toggle').click(function(e) {
-//    e.preventDefault();
-//    let \$form = $('$formId');
-//    let \$pw = $('.lzy-form-password', \$form);
-//    let rcsPath = systemPath + 'rsc/';
-//    if (\$pw.attr('type') === 'text') {
-//        \$pw.attr('type', 'password');
-//        $('.lzy-form-show-pw-icon', \$form).attr('src', rcsPath + 'show.png');
-//    } else {
-//        \$pw.attr('type', 'text');
-//        $('.lzy-form-show-pw-icon', \$form).attr('src', rcsPath +'hide.png');
-//    }
-//});
-//
-//EOT;
 
         $jq .= <<<EOT
 $('.lzy-textarea-autogrow textarea').on('input', function() {
@@ -3124,8 +2949,6 @@ EOT;
                 $this->page->addMessage('{{ lzy-form-rec-deleted }}');
             } else {
                 $this->page->addPopup( $res );
-//                $this->page->addMessage( $res );
-//                $this->page->addMessage('{{ lzy-form-rec-delete-failed }}');
                 writeLogStr("Forms:checkSuppliedDataEntries(): Delete rec '{$this->userSuppliedData0['_rec-key']}' failed", FORM_LOG_FILE);
             }
             return false;
@@ -3133,14 +2956,10 @@ EOT;
 
         // modify record if requested:
         if (@$this->currForm->recModifyCheck && @$this->userSuppliedData0['_rec-key']) {
-//            if (!@$this->userSuppliedData0['_rec-key']) {
-//                return false;
-//            }
 
             $recKey = $this->userSuppliedData0['_rec-key'];
             $ds = $this->openDB();
             if (isset($this->dataKeyOverride)) {
-//                $recKey = str_replace('*', $recKey, $this->dataKeyOverride);
                 $recKey = $this->getOverrideKey( $recKey );
             }
             $rec = $ds->readElement($recKey);
@@ -3149,7 +2968,6 @@ EOT;
             $suppliedValue = strtolower(trim( @$this->userSuppliedData0[ $checkKey ] ));
             if ($checkValue !== $suppliedValue) {
                 $this->page->addPopup('{{ lzy-form-rec-modify-failed }}');
-//                $this->page->addMessage('{{ lzy-form-rec-modify-failed }}');
                 return false;
             }
         }
@@ -3238,7 +3056,7 @@ EOT;
                 $value = $value[0];
             }
             $value = $value? $value: '{{ lzy-confirmation-response-element-empty }}';
-            $this->trans->addVariable("{$key}_value", $value);
+            $this->trans->addVariable("{$key}-value", $value);
         }
         if ($this->currForm->confirmationEmailTemplate === true) {
             $subject = '{{ lzy-confirmation-response-subject }}';
@@ -3294,7 +3112,7 @@ EOT;
                 $css = $page->get('css');
                 $fm = $page->get('frontmatter');
                 $subject = isset($fm['subject']) ? $fm['subject'] : '';
-                $message = extractHtmlBody($tmpl);
+                $message = $this->page->extractHtmlBody($tmpl);
                 $message = translateUmlauteToHtml( ltrim($message) );
                 $isHtml = true;
 
@@ -3317,13 +3135,6 @@ EOT;
             $this->responseToClient = '{{ lzy-form-confirmation-email-sent }}';
         }
     } // sendConfirmationMail
-
-
-
-    protected function getFormHash()
-    {
-        return $this->formHash;
-    }
 
 
 
@@ -3356,12 +3167,26 @@ EOT;
 
     private function updateDbStructure()
     {
+        if (!$this->currForm->keyType) {
+            return false;
+        }
         $ds = $this->openDB();
         $struct = $ds->getStructure();
-        if (isset($struct['elements'][TIMESTAMP_KEY_ID])) {
+        if (isset($struct['key']) && ($struct['key'] === $this->currForm->keyType)) {
             return false;
         }
 
+        $struct['key'] = $this->currForm->keyType;
+
+        foreach ($this->currForm->formElements as $element) {
+            if (!$element->name[0] || ($element->name[0] === '_')) {
+                continue;
+            }
+            $elemKey = $element->dataKey;
+            $struct['elements'][$elemKey]['type'] = @$element->type? $element->type: 'string';
+            $struct['elements'][$elemKey]['name'] = translateToIdentifier($elemKey, false, true, false);
+            $struct['elements'][$elemKey]['formLabel'] = @$element->formLabel? $element->formLabel: $elemKey;
+        }
         unset($struct['elements'][REC_KEY_ID]);
         $struct['elements'][TIMESTAMP_KEY_ID] = ['type' => 'string'];
         $struct['elements'][REC_KEY_ID] = ['type' => 'string'];
@@ -3378,7 +3203,6 @@ EOT;
 
 
 
-
     private function openDB()
     {
         if ($this->db) {
@@ -3387,54 +3211,35 @@ EOT;
         if (!$this->currForm) {
             return null;
         }
-        $currForm = $this->currForm;
+        $file = $this->currForm->file;
 
-        if (!file_exists($currForm->file)) {
-            preparePath( $currForm->file );
-        }
-
-        $file = false;
-//        $dataRef = $this->get_request_data('ds');
-        $dataRef = getPostData('_lizzy-data-ref');
-        $setId = '';
-        if (preg_match('/(.*):(.*)/', $dataRef, $m)) {
-            $dataRef = $m[1];
-            $setId = $m[2];
-        }
-        if ($dataRef && preg_match('/^[A-Z0-9]{4,20}$/', $dataRef)) {     // dataRef (=ticket hash) available
-            $ticketing = new Ticketing();
-            $ticketRec = $ticketing->consumeTicket($dataRef);
+        // url-arg 'ds' may override file -> used by table, reservation etc.:
+        //   (if used, 'ds' contains a ticket hash, possibly including a :setX specifier)
+        $dataRef = getRequestData('ds');
+        if ($dataRef) {
+            $setId = '';
+            if (preg_match('/ ([a-z0-9]{4,20}) : (.*) /x', $dataRef, $m)) {
+                $dataRef = $m[1];
+                $setId = $m[2];
+            }
+            $tck = new Ticketing();
+            $ticketRec = $tck->consumeTicket( $dataRef );
             if ($ticketRec) {      // corresponding ticket found
                 if ($setId && isset($ticketRec[$setId])) {
                     $ticketRec = $ticketRec[$setId];
                 }
                 if (isset($ticketRec['_dataSource'])) {
                     $file = PATH_TO_APP_ROOT . $ticketRec['_dataSource'];
-                } elseif (isset($ticketRec['dataSrc'])) {
-                    $file = PATH_TO_APP_ROOT . $ticketRec['dataSrc']; //???
-                } elseif (isset($ticketRec['form'])) {
-                    $file = PATH_TO_APP_ROOT . $ticketRec['file'];
                 }
                 if (isset($ticketRec['_dataKey'])) {
                     $this->dataKeyOverride = $ticketRec['_dataKey'];
                 }
-//                $this->ticketRec = $ticketRec;
-//                if (isset($ticketRec['formDescr'])) {
-//                    $this->formElements = $ticketRec['formDescr'];
-//                }
-//            } else {
-//                $this->error = 'restart';
-//                return false;
             }
-        }
-        if (!$file) {
-            $file = $currForm->file;
         }
 
         $this->db = new DataStorage2([
-//            'dataFile' => $currForm->file,
             'dataFile' => $file,
-            'useRecycleBin' => $currForm->useRecycleBin,
+            'useRecycleBin' => $this->currForm->useRecycleBin,
             'includeKeys' => true,
             'includeTimestamp' => true,
         ]);
@@ -3494,7 +3299,7 @@ class FormDescriptor
     public $formName = '';
     public $formElements = [];    // fields contained in this form
 
-    public $mailto = '';        // data entered by users will be sent to this address
+    public $mailto;        // data entered by users will be sent to this address
     public $process = '';
     public $method = '';
     public $action = '';
@@ -3510,6 +3315,16 @@ class FormDescriptor
     public $antiSpam = true;
     public $showData = true;
     public $replaceQuotes = true;
+    public $translateLabels;
+    public $formInx, $file;
+    public $formHint;
+    public $skipConfirmation;
+    public $labelWidth;
+    public $wrapperClass;
+    public $encapsulate, $recModifyCheck, $dynamicFormSupport, $lockRecWhileFormOpen;
+    public $formHeader, $formFooter, $next, $avoidDuplicates, $splitChoiceElemsInDb;
+    public $suppressFormFeedback, $labelColons, $confirmationEmail, $confirmationText, $mailTo;
+    public $cancelButtonCallback, $confirmationEmailTemplate, $keyType, $useRecycleBin;
 }
 
 
