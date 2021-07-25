@@ -58,7 +58,7 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
         // extended brackets to enclose args: e.g. ## ... ##
         // Note: special case '!!' -> skips translation to HTML-quotes
         $cc = false;
-        if (strpos(TRANSVAR_ARG_QUOTES, $c) !== false) {
+        if ($c && (strpos(TRANSVAR_ARG_QUOTES, $c) !== false)) {
             $cc = preg_quote("$c$c");
         }
         if ($cc && preg_match("/^ $cc ([^$c]+) $cc (.*) $/x", $str, $m)) {
@@ -1376,6 +1376,28 @@ function get_post_data($varName, $permitNL = false)
     }
     return $out;
 } // get_post_data
+
+
+
+function getRequestData($varName) {
+    global $argv;
+    $out = null;
+    if (isset($_GET[$varName])) {
+        $out = safeStr($_GET[$varName]);
+
+    } elseif (isset($_POST[$varName])) {
+        $out = $_POST[$varName];
+
+    } elseif (isLocalhost() && isset($argv)) {	// for local debugging
+        foreach ($argv as $s) {
+            if (strpos($s, $varName) === 0) {
+                $out = preg_replace('/^(\w+=)/', '', $s);
+                break;
+            }
+        }
+    }
+    return $out;
+} // getRequestData
 
 
 
