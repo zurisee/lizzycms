@@ -65,6 +65,9 @@ html:not(.lzy-responsive-fontsize) .lzy-default-layout {
 
 .lzy-default-layout {
     font-size: 1rem;
+    hr {
+        margin: 2em 0;
+    }
 }
 
 .lzy-fluid-fontsize {
