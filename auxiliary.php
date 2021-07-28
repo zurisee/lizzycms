@@ -12,10 +12,10 @@ use Symfony\Component\Yaml\Yaml;
 function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
 {
     $str0 = $str;
-    $str = trim($str);
+    $str = trim($str, '↵ ');
     $str = str_replace("\t", '    ', $str);
     if (!($str = trim($str))) {
-        return false;
+        return [];
     }
 
     // skip '{{ ... }}' to avoid conflict with '{ ... }':
