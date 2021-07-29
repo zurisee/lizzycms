@@ -1767,21 +1767,6 @@ EOT;
         $this->lzyDb->exec('PRAGMA journal_mode = wal;'); // https://www.php.net/manual/de/sqlite3.exec.php
     } // _openDbReadWrite
 
-//    private function openDbReadWrite()
-//    {
-//        if ($this->dbModeRW) {
-//            return;
-//        }
-//        if ($this->lzyDb) {
-//            $this->lzyDb->close();
-//        }
-//        $this->lzyDb = new SQLite3(LIZZY_DB, SQLITE3_OPEN_READWRITE);
-//        $this->lzyDb->busyTimeout(5000);
-//        $this->lzyDb->exec('PRAGMA journal_mode = wal;'); // https://www.php.net/manual/de/sqlite3.exec.php
-//        $this->dbModeRW = true;
-//    } // openDbReadWrite
-
-
 
 
 
@@ -2011,15 +1996,15 @@ EOT;
         // prepend header row:
         $structure = $this->getStructure();
         if (isset($structure['elements'])) {
+            $elemKeys = array_keys($structure['elements']);
             if (!$this->includeKeys) {
-                $elemKeys = array_keys($structure['elements']);
                 $i = array_search(REC_KEY_ID, $elemKeys);
                 if ($i !== false) {
-                    unset($elemKeys);
+                    unset($elemKeys[$i]);
                 }
                 $i = array_search(TIMESTAMP_KEY_ID, $elemKeys);
                 if ($i !== false) {
-                    unset($elemKeys);
+                    unset($elemKeys[$i]);
                 }
             }
             $outData[0] = array_values($elemKeys);
@@ -2173,10 +2158,10 @@ EOT;
         if (file_exists( $structureFile )) {
             $structure = getYamlFile( $structureFile );
 
-        } elseif (isset($this->data['_structure'])) {
-            // structure may be submitted within data in a special record '_structure':
-            $structure = $this->data['_structure'];
-            unset($this->data['_structure']);
+    //        } elseif (isset($this->data['_structure'])) {
+    //            // structure may be submitted within data in a special record '_structure':
+    //            $structure = $this->data['_structure'];
+    //            unset($this->data['_structure']);
         }
         return $structure;
     } // checkExternalStructureDef
