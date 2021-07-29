@@ -617,7 +617,7 @@ class LizzyMarkdown
             }
         }
 
-		if (!preg_match('/(.*) \[\[ (.*?) ]] (.*)/x', $line, $m)) {
+		if (!preg_match('/(.*) (?<=!\/) \[\[ (.*?) ]] (.*)/x', $line, $m)) {
             if ($returnElements) {
                 return [$line, null, null, null, null];
             } else {
