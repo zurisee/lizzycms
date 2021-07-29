@@ -7,7 +7,7 @@ define('EXTENSIONS_PATH', 	    SYSTEM_PATH.'extensions/');
 define('DATA_PATH', 		    'data/');
 define('CACHE_PATH',            '.cache/');
 define('LOG_PATH',              '.#logs/');
-define('DEFAULT_TICKETS_PATH',  '.#tickets/');
+define('DEFAULT_TICKETS_PATH',  '.#sys-cache/');
 
 define('SERVICE_LOG',           PATH_TO_APP_ROOT . LOG_PATH.'backend-log.txt');
 define('ERROR_LOG',             PATH_TO_APP_ROOT . LOG_PATH.'errlog.txt');
