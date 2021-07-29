@@ -51,6 +51,7 @@ class Forms
     private   $submitButtonRendered = false;
     protected $errorDescr = [];
     protected $responseToClient;
+    protected $args;
     protected $skipRenderingForm;
     protected $formId = false;
     public    $file = false;
@@ -58,7 +59,7 @@ class Forms
     private   $recKey;
     private   $isNewRec;
     private   $bypassedValues;
-    private   $infoInitialized, $args, $mailfrom, $dataKeyOverride;
+    private   $infoInitialized, $mailfrom, $dataKeyOverride;
     protected $userSuppliedData, $userSuppliedData0, $repeatEventTaskPending, $dataKeyOverrideHash;
 
 
@@ -79,11 +80,11 @@ class Forms
         $this->skipRenderingForm = &$GLOBALS['globalParams']['forms_skipRenderingForm'][$this->formInx];
 
         if ($userDataEval !== false) {
-            if (isset($_POST['_lizzy-form-id'])) {    // we received data for curr form:
+            if (isset($_POST['_lzy-form-ref'])) {    // we received data for curr form:
                 $this->evaluateUserSuppliedData();
-                if ($userDataEval === true) {
-                    $GLOBALS['globalParams']['lzyFormsCount']--;
-                }
+            }
+            if ($userDataEval === true) {
+                $GLOBALS['globalParams']['lzyFormsCount']--;
             }
         }
 	} // __construct
@@ -254,9 +255,6 @@ class Forms
         $currForm->options = isset($args['options']) ? $args['options'] : (isset($args['option']) ? $args['option'] : '');
         $currForm->options = str_replace('-', '', $currForm->options);
 
-//        $currForm->ticketPayload = (isset($args['ticketPayload'])) ? $args['ticketPayload'] : null;
-//        $currForm->ticketHash = (isset($args['ticketHash'])) ? $args['ticketHash'] : false;
-
         $currForm->recModifyCheck = (isset($args['recModifyCheck'])) ? $args['recModifyCheck'] : false;
 
         if (stripos('above', $currForm->labelPosition) !== false) {
@@ -309,7 +307,7 @@ class Forms
             $name = $label;
         }
 
-        if (($type === 'button') && (strpos($args['options'], 'submit') !== false)) {
+        if (($type === 'button') && (strpos(@$args['options'], 'submit') !== false)) {
             $name = '';
         }
         $name = str_replace(' ', '_', $name);
@@ -838,8 +836,8 @@ EOT;
         $this->formHash = $this->getFormHash();
 
         $out .= "\t  <form$id$_class$_method$_action$novalidate>\n";
-		$out .= "\t\t<input type='hidden' name='_lizzy-form-id' value='{$this->formHash}' />\n";
-		$out .= "\t\t<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-cmd' value='' />\n";
+		$out .= "\t\t<input type='hidden' name='_lzy-form-ref' value='{$this->formHash}' />\n";
+		$out .= "\t\t<input type='hidden' name='_lzy-form-cmd' value='' class='lzy-form-cmd' />\n";
 
 		if ($currForm->antiSpam) {
             $out .= "\t\t<div class='fld-ch' aria-hidden='true'>\n";
@@ -1849,7 +1847,7 @@ EOT;
             $str = file_get_contents($cacheFile);
             $formHash = substr($str, 0, 8);
         } else {
-            $formHash = strtolower( createHash(8) );
+            $formHash = createHash(8, false, true);
         }
         return $formHash;
     } // getFormHash
@@ -1901,12 +1899,12 @@ EOT;
         $this->userSuppliedData0 = $_POST;
 
         $userSuppliedData = &$this->userSuppliedData;
-		if (!isset($userSuppliedData['_lizzy-form-id'])) {
+		if (!isset($userSuppliedData['_lzy-form-ref'])) {
 			$this->clearCache();
 			return false;
 		}
 
-        $formHash = $userSuppliedData['_lizzy-form-id'];
+        $formHash = $userSuppliedData['_lzy-form-ref'];
         $currForm = $this->restoreFormDescr( $formHash );
 
         // ticket timed out or formInx not matching:
@@ -1926,7 +1924,7 @@ EOT;
             return false;
         }
 
-        $cmd = @$userSuppliedData['_lizzy-form-cmd'];
+        $cmd = @$userSuppliedData['_lzy-form-cmd'];
         if ($cmd === '_ignore_') {     // _ignore_
             $this->cacheUserSuppliedData($formInx, $userSuppliedData);
             return false;
@@ -2050,8 +2048,8 @@ EOT;
             $cont = $this->saveAndWrapUp($msgToOwner);
         }
         if ($cont) {
-            $_POST['__lizzy-form-id'] = $_POST['_lizzy-form-id'];
-            unset($_POST['_lizzy-form-id']);
+            $_POST['__lzy-form-ref'] = $_POST['_lzy-form-ref'];
+            unset($_POST['_lzy-form-ref']);
         }
 
         if ($cont && $this->currForm->confirmationEmail) {
@@ -2195,65 +2193,8 @@ EOT;
 
         // check whether data already present in DB, if not disabled:
         if ($currForm->avoidDuplicates) {
-            $doubletFound = false;
-            if (isset($this->dataKeyOverride)) {
-                $data = $ds->readElement($this->dataKeyOverride);
-            } else {
-                $data = $ds->read();
-            }
-            // loop over records:
-            foreach ($data as $dataRecKey => $rec) {
-                // generally ignore all data keys starting with '_':
-                if (@$dataRecKey[0] === '_') {
-                    continue;
-                }
-
-                // loop over fields in rec, look for differences:
-                $identical = true;
-//??? modif for user-admin
-// -> need to check whether works in other situations, e.g if struct derived from (incomplete) data
-//                foreach ($rec as $dbFldKey => $value) {
-                $keys = array_unique( array_merge(array_keys($struc['elements']), array_keys($rec)));
-                foreach ($keys as $dbFldKey) {
-                    // ignore all meta attributes:
-                    if (@$dbFldKey[0] === '_') {
-                        continue;
-                    }
-
-                    $usrDataFldName = false;
-                    foreach ($currForm->formElements as $i => $formElemDescr) {
-                        if ($formElemDescr->dataKey === $dbFldKey) {
-                            $usrDataFldName = $formElemDescr->name;
-                            break;
-                        }
-                    }
-                    if (!$usrDataFldName) {
-                        continue;
-                    }
-
-                    if (is_array($userSuppliedData[$usrDataFldName])) {
-                        $v1 = strtolower(str_replace(' ', '', @$userSuppliedData[$usrDataFldName][0]));
-                    } else {
-                        $v1 = strtolower(str_replace(' ', '', @$userSuppliedData[$usrDataFldName]));
-                    }
-                    if (isset($rec[$dbFldKey]) && is_array($rec[$dbFldKey])) {
-                        $v2 = strtolower(str_replace(' ', '', @$rec[$dbFldKey][0]));
-                    } else {
-                        $v2 = strtolower(str_replace(' ', '', @$rec[$dbFldKey]));
-                    }
-                    if (($v1 !== $v2) && ($v1 !== PASSWORD_PLACEHOLDER)) {
-                        $identical = false;
-                        break;
-                    }
-                }
-                $doubletFound |= $identical;
-            }
-
-            if ($doubletFound && !$this->repeatEventTaskPending) {
-                $this->clearCache();
-                $this->errorDescr[$this->formInx]['_announcement_'] = '{{ lzy-form-duplicate-data }}';
-                $this->skipRenderingForm = true;
-                writeLogStr("Unchanged data: ignored [{$currForm->formName}:$this->recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
+            $keys0 = array_keys($struc['elements']);
+            if ($this->checkDuplicates($ds, $keys0, $currForm, $userSuppliedData)) {
                 return false;
             }
         }
@@ -2314,6 +2255,76 @@ EOT;
 
 
 
+    private function checkDuplicates($ds, $keys0, $currForm, $userSuppliedData)
+    {
+        $doubletFound = false;
+        if (isset($this->dataKeyOverride)) {
+            $data = $ds->readElement($this->dataKeyOverride);
+        } else {
+            $data = $ds->read();
+        }
+        // loop over records:
+        foreach ($data as $dataRecKey => $rec) {
+            // generally ignore all data keys starting with '_':
+            if (@$dataRecKey[0] === '_') {
+                continue;
+            }
+
+            // loop over fields in rec, look for differences:
+            $identical = true;
+//??? modif for user-admin
+// -> need to check whether works in other situations, e.g if struct derived from (incomplete) data
+//                foreach ($rec as $dbFldKey => $value) {
+//            $keys = array_unique( array_merge(array_keys($struc['elements']), array_keys($rec)));
+            $keys = array_unique( array_merge( $keys0, array_keys($rec)));
+            foreach ($keys as $dbFldKey) {
+                // ignore all meta attributes:
+                if (@$dbFldKey[0] === '_') {
+                    continue;
+                }
+
+                $usrDataFldName = false;
+                foreach ($currForm->formElements as $i => $formElemDescr) {
+                    if ($formElemDescr->dataKey === $dbFldKey) {
+                        $usrDataFldName = $formElemDescr->name;
+                        break;
+                    }
+                }
+                if (!$usrDataFldName) {
+                    continue;
+                }
+
+                if (is_array($userSuppliedData[$usrDataFldName])) {
+                    $v1 = strtolower(str_replace(' ', '', @$userSuppliedData[$usrDataFldName][0]));
+                } else {
+                    $v1 = strtolower(str_replace(' ', '', @$userSuppliedData[$usrDataFldName]));
+                }
+                if (isset($rec[$dbFldKey]) && is_array($rec[$dbFldKey])) {
+                    $v2 = strtolower(str_replace(' ', '', @$rec[$dbFldKey][0]));
+                } else {
+                    $v2 = strtolower(str_replace(' ', '', @$rec[$dbFldKey]));
+                }
+                if (($v1 !== $v2) && ($v1 !== PASSWORD_PLACEHOLDER)) {
+                    $identical = false;
+                    break;
+                }
+            }
+            $doubletFound |= $identical;
+        }
+
+        if ($doubletFound && !$this->repeatEventTaskPending) {
+            $this->clearCache();
+            $this->errorDescr[$this->formInx]['_announcement_'] = '{{ lzy-form-duplicate-data }}';
+            $this->skipRenderingForm = true;
+            writeLogStr("Unchanged data: ignored [{$currForm->formName}:$this->recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
+        } else {
+            $doubletFound = false;
+        }
+        return $doubletFound;
+    } // checkDuplicates
+
+
+
     private function deleteDataRecord()
     {
         if (!@$this->userSuppliedData0['_rec-key']) {
@@ -2361,7 +2372,7 @@ EOT;
         if ((@$this->currForm->dataKey !== null) && (@$this->currForm->dataKey !== '')) {
             $this->recKey = $currForm->dataKey;
             $this->isNewRec = false;
-        } elseif ($this->recKey === null) {
+        } elseif (!$this->recKey) {
             $this->recKey = createHash();
             $this->isNewRec = true;
         }
@@ -2470,7 +2481,7 @@ EOT;
 
         foreach ($elemDefs as $key => $elemDef) {
             // drop user-defined elements that have dataKey === false or dataKey starts with '_':
-            if (!$elemDef || ($elemDef->dataKey === false) || ($elemDef->dataKey[0] === '_')) {
+            if (!$elemDef || !@$elemDef->dataKey || ($elemDef->dataKey[0] === '_')) {
                 if (isset($rec[ $elemDef->name ])) {
                     unset( $rec[$elemDef->name ]);
                 }
@@ -3216,9 +3227,13 @@ EOT;
         // url-arg 'ds' may override file -> used by table, reservation etc.:
         //   (if used, 'ds' contains a ticket hash, possibly including a :setX specifier)
         $dataRef = getRequestData('ds');
+        if (!$dataRef) {
+            // if not found, try form hidden field _lizzy-data-ref:
+            $dataRef = @$_POST['_lizzy-data-ref'];
+        }
         if ($dataRef) {
             $setId = '';
-            if (preg_match('/ ([a-z0-9]{4,20}) : (.*) /x', $dataRef, $m)) {
+            if (preg_match('/ ([A-Z0-9]{4,20}) : (.*) /x', $dataRef, $m)) {
                 $dataRef = $m[1];
                 $setId = $m[2];
             }

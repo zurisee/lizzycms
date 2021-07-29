@@ -43,7 +43,7 @@ class UserAdmin extends UserAdminBase
             $tickRec = $tck->consumeTicket($hash);
             $tickType = @$tickRec['_ticketType'];
         }
-        $cmd = getPostData('_lizzy-form-cmd');
+        $cmd = getPostData('_lzy-form-cmd');
         if (!$cmd && !$tickType) {
             return;
         }
@@ -216,7 +216,7 @@ EOT;
 	<div class='lzy-form-wrapper lzy-form-colored'>
 	    <h2>{{ lzy-invite-user-request-header }}</h2>
 	  <form id='lizzy-form1' class='lzy-form lzy-form-labels-above lzy-encapsulated' method='post' novalidate>
-		<input type='hidden' class='lzy-form-cmd' name='_lizzy-form-cmd' value='invite-users' />
+		<input type='hidden' class='lzy-form-cmd' name='_lzy-form-cmd' value='invite-users' />
 		<input type='hidden' name='landingpage' value='$landingPage' />
 		<input type='hidden' name='proxyuser' value='$proxyuser' />
 		<input type='hidden' name='registrationperiod' value='$registrationPeriod' />

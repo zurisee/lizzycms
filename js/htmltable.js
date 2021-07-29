@@ -28,7 +28,7 @@ function HTMLtable( tableObj ) {
 		this.$table = $( tableObj );
 	}
 	this.tableInx = this.$table.data('inx');
-	this.formHash = this.$table.closest('[data-datasrc-ref]').data('datasrc-ref');
+	this.dataRef = this.$table.closest('[data-datasrc-ref]').data('datasrc-ref');
 	this.formHtml = null;
 	this.lzyTableNewRec = false;
 	this.formInx = false;
@@ -173,7 +173,6 @@ function HTMLtable( tableObj ) {
 		}
 
 		var formTitle = '';
-		this.formHash = $table.closest('[data-datasrc-ref]').data('datasrc-ref');
 		const popupId = '#lzy-recedit-popup-' + this.formInx;
 		const $popup = $( popupId );
 
@@ -318,7 +317,7 @@ function HTMLtable( tableObj ) {
 
 
 	this.unlockRecord = function () {
-		const req = '?unlock-rec&ds=' + this.formHash + ':form' + this.formInx + '&recKey=' + this.recKey;
+		const req = '?unlock-rec&ds=' + this.dataRef + ':form' + this.formInx + '&recKey=' + this.recKey;
 		execAjax(false, req, function(json) {
 			mylog( json );
 		});
@@ -334,8 +333,8 @@ function HTMLtable( tableObj ) {
 
 function htmltableOnPopupClose() {
 	$('[name=_lizzy-form]').each(function () {
-		let formHash = $(this).val();
-		let url = appRoot + '_lizzy/_ajax_server.php?unlock-rec&ds=' + formHash + '&recKey=*';
+		let dataRef = $(this).val();
+		let url = appRoot + '_lizzy/_ajax_server.php?unlock-rec&ds=' + dataRef + '&recKey=*';
 		$.ajax({
 			url: url,
 		});

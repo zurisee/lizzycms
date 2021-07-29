@@ -955,6 +955,7 @@ lzy-table-edit-btn-title:
 
 lzy-table-delete-rec-btn: ':trash:'
 lzy-table-new-rec-btn: '✚'
+lzy-table-download-btn: ':download:'
 
 lzy-table-delete-rec-title:
     de: 'Alle ausgewählten Zeilen löschen'
@@ -1024,6 +1025,31 @@ lzy-datatables-records:
     de: Datensätze
     _:  Records
 
+
+#--- Tables --------------------------
+lzy-table-download-title:
+    de: 'Diese Tabelle herunter laden'
+    _:  'Download this table'
+
+
+lzy-table-download-text:
+    de: 'Tabelle herunter laden:'
+    _:  'Click to download:'
+
+
+lzy-table-download-header:
+    de: 'Download'
+    _:  'Download'
+
+lzy-table-download-excel:
+    _: 'Excel (.xlsx)'
+
+lzy-table-download-ods:
+    _: 'OpenOffice (.ods)'
+
+lzy-table-download-prefix:
+    de: 'als '
+    _:  'as '
 
 #--- Date/time
 lzy-time-day:

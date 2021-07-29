@@ -72,12 +72,10 @@ function LzyForms() {
 
 
     this.fetchValuesFromHost = function( $form, recKey ) {
-        let formHash = $('[name=_lizzy-form]', $form).val();
-        let url = null;
+        let formRef = $('[name=_lzy-form-ref]', $form).val();
+        let url = appRoot + '_lizzy/_ajax_server.php?get-rec&ds=' + formRef + '&keyType=name&recKey=' + recKey;
         if (this.lockRecWhileFormOpen) {
-            url = appRoot + '_lizzy/_ajax_server.php?get-rec&ds=' + formHash  + '&lock&recKey=' + recKey; // includes '&lock'
-        } else {
-            url = appRoot + '_lizzy/_ajax_server.php?get-rec&ds=' + formHash + '&recKey=' + recKey;
+            url += '&lock'; // include '&lock'
         }
 
         return new Promise(function(resolve) {
@@ -466,18 +464,30 @@ function LzyForms() {
         this.clearForm($form);
         this.presetValues($form, 'default');
         if ((recKey === false) || (recKey === 'new-rec')) {
-        // if (!recKey || (recKey === 'new-rec')) {
+            this.setRecKey( $form, '' );
             this.presetValues($form, 'derived');
-
             this.updateLiveValues($form);
         } else {
             this.fetchValuesFromHost($form, recKey).then(function (json) {
+                parent.setRecKey( $form, recKey );
                 parent.updateForm($form, recKey, json);
                 parent.presetValues($form, 'derived');
                 parent.updateLiveValues($form);
             });
         }
     }; // _openForm
+
+
+
+    this.setRecKey = function( $form, recKey )
+    {
+        let $recKey = $('[name=_rec-key]', $form);
+        if (!$recKey.length) {
+            $form.append('<input type="hidden" name="_rec-key" value="' + recKey + '">');
+        } else {
+            $recKey.val( recKey );
+        }
+    } // setRecKey
 
 
 

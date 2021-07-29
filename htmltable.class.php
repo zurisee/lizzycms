@@ -12,6 +12,7 @@ define('SCALAR_TYPES',
 
 define('DEFAULT_EDIT_FORM_TEMPLATE_FILE', '~page/-table_edit_form_template.md');
 define('LZY_TABLE_SHOW_REC_ICON', "<span class='lzy-icon lzy-icon-show2'></span>");
+define('DOWNLOAD_PATH_LINK_FILE', '.#download.link');
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -27,13 +28,10 @@ class HtmlTable
     private $ticketHash;
     private $jq;
     private $headerElems;
-    private $data;
-    private $data0;
-    private $tableCounter;
-    private $showRecViewButton;
+    private $data, $dataBare, $data0;
+    private $tableCounter, $nRows;
     private $textResourcesRendered;
     private $structure;
-    private $recStructure;
     private $ds;
     private $instructions;
     private $phpExpr;
@@ -49,7 +47,6 @@ class HtmlTable
         $this->tableCounter++;
         $this->helpText     = false;
         $this->ticketHash     = false;
-//        $this->tickHash     = false;
         $this->specificRowClasses     = [];
         if ($options === 'help') {
             $this->helpText = [];
@@ -89,7 +86,7 @@ class HtmlTable
         $this->excludeColumns       = $this->getOption('excludeColumns', '(optional) Allows to exclude specific columns, e.g. "excludeColumns:2,4-5"');
         $this->sort 		        = $this->getOption('sort', '(optional) Allows to sort the table on a given columns, e.g. "sort:3"');
         $this->sortExcludeHeader    = $this->getOption('sortExcludeHeader', '(optional) Allows to exclude the first row from sorting');
-        $this->filter               = $this->getOption('filter', '(optional) Allows to filter data. Filter value is exected to be a PHP expression. Data is referenced as "[[elemKey]]", where elemKey is column-index or header-string.');
+ //        $this->filter               = $this->getOption('filter', '(optional) Allows to filter data. Filter value is exected to be a PHP expression. Data is referenced as "[[elemKey]]", where elemKey is column-index or header-string.');
         $this->autoConvertLinks     = $this->getOption('autoConvertLinks', '(optional) If true, all data is scanned for patterns of URL, mail address or telephone numbers. If found the value is wrapped in a &lt;a> tag');
         $this->autoConvertTimestamps= $this->getOption('autoConvertTimestamps', '(optional) If true, integer values that could be timestamps (= min. 10 digits) are converted to time strings.');
         $this->caption	            = $this->getOption('caption', '(optional) If set, a caption tag is added to the table. The caption text may contain the pattern "##" which will be replaced by a number.');
@@ -142,11 +139,13 @@ class HtmlTable
         if ($help) {
             return $this->helpText;
         }
-        if (isset($_POST['_lizzy-form'])) {
-            require_once SYSTEM_PATH.'forms.class.php';
-            new Forms( $this->lzy, true );
-            unset($_POST['_lizzy-form']);
-        }
+        //??? conflicting with forms->showData
+        //   --> is possible here that form eval is missed, ie that ($this->editingActive || $this->activityButtons || $this->recViewButtonsActive) false?
+//        if (isset($_POST['_lizzy-form'])) {
+//            require_once SYSTEM_PATH.'forms.class.php';
+//            new Forms( $this->lzy, true );
+//            unset($_POST['_lizzy-form']);
+//        }
 
         // for "active tables": load modules and set class:
         if ($this->editingActive || $this->activityButtons || $this->recViewButtonsActive) {
@@ -163,8 +162,6 @@ class HtmlTable
 
         $this->injectRowButtons();
         $this->applyProcessingToData();
-
- //        $this->applyMiscOptions();
 
         $this->injectEditFormRef();
         $out = $this->injectEditingFeatures();
@@ -187,7 +184,8 @@ EOT;
         if (!$this->export) {
             return;
         }
-        $file = resolvePath( $this->export );
+
+        $file = $this->getDownloadFilename();
         $path = dir_name( $file );
         $file = basename( $file );
         $file = str_replace(['.xlsx','.ods','.csv', '.'], '', $file) . '.';
@@ -252,8 +250,8 @@ EOT;
             'includeTimestamp' => false,
         ]);
 
+        $data = $this->dataBare;
         // remove header row (it's already handled in $structure)
-        $data = $this->data;
         array_shift($data);
         foreach ($data as $key => $rec) {
             foreach ($rec as $k => $v) {
@@ -267,10 +265,30 @@ EOT;
 
     private function exportToOfficeFormats( $file, $type = '.xlsx.ods' )
     {
+        $fileXlsx = $fileOds = false;
+        $upToDate = true;
+        $ts0 = filemtime($this->dataSource);
+        if (strpos($type, 'xlsx') !== false) {
+            $fileXlsx = "$file.xlsx";
+            $ts = @filemtime($fileXlsx);
+            if ($ts0 > $ts) {
+                $upToDate = false;
+            }
+        }
+        if (strpos($type, 'ods') !== false) {
+            $fileOds = "$file.ods";
+            $ts = @filemtime($fileOds);
+            if ($ts0 > $ts) {
+                $upToDate = false;
+            }
+        }
+        if ($upToDate) {
+            return;
+        }
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        $data = $this->data;
+        $data = $this->dataBare;
         $r = 1;
         foreach ($data as $rec) {
             $c = 0;
@@ -286,14 +304,14 @@ EOT;
             $r++;
         }
 
-        if (strpos($type, 'xlsx') !== false) {
+        if ($fileXlsx) {
             $writer = new Xlsx($spreadsheet);
-            $writer->save($file . '.xlsx');
+            $writer->save($fileXlsx);
         }
 
-        if (strpos($type, 'ods') !== false) {
+        if ($fileOds) {
             $writer = new Ods($spreadsheet);
-            $writer->save($file . '.ods');
+            $writer->save($fileOds);
         }
     } // exportToOfficeFormats
 
@@ -416,14 +434,6 @@ EOT;
 
 
 
-
-    //    private function applyMiscOptions()
-    //    {
-    //    } // applyMiscOptions
-
-
-
-
     private function applyHeaders()
     {
         if (!$this->headers && !$this->headersLeft) {
@@ -488,12 +498,6 @@ EOT;
     private function renderHtmlTable()
     {
         $out = '';
-//        if ($this->editableBy) {
-//            $this->tableDataAttr .= " data-datasrc-ref='{$this->ticketHash}'";
-//            $this->tableDataAttr .= " data-ref='{$this->ticketHash}'";
-//            $this->tableDataAttr .= " data-table-hash='{$this->ticketHash}'";
-//            $this->tableDataAttr .= " data-table-hash='{$this->tickHash}' data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
-//        }
         if ($this->activityButtons) {
             $out = $this->renderTableActionButtons();
         }
@@ -909,7 +913,6 @@ EOT;
             }
             $data[$r][$c] = $newCellVal.$class;
         }
-        return;
     } // applyCellInstructionsToColumn
 
 
@@ -1210,7 +1213,7 @@ EOT;
 
         $this->determineHeaders();
 
-        $this->applyFilter();
+    //        $this->applyFilter();
 
         $this->applySort();
 
@@ -1219,10 +1222,11 @@ EOT;
 
         $this->excludeColumns();
 
+        // copy data at this stage for later export:
+        $this->dataBare = array_merge([$this->headerElems], $this->data);
+
         $this->nCols = sizeof(reset($this->data));
         $this->nRows = sizeof($this->data);
-
-        return;
     } // loadData
 
 
@@ -1255,10 +1259,8 @@ EOT;
             return $this->importForm();
         }
 
-        if (@!$this->recStructure) {
-            $recStructure = $this->ds->getStructure();
-        }
-        $form = new Forms( $this->lzy );
+        $recStructure = $this->ds->getStructure();
+        $form = new Forms( $this->lzy, false );
 
         $splitChoiceElemsInDb = isset($this->options['splitChoiceElemsInDb'])? $this->options['splitChoiceElemsInDb']: true;
 
@@ -1270,7 +1272,6 @@ EOT;
             'file' => '~/'.$this->dataSource,
             'warnLeavingPage' => false, //???
             'ticketHash' => $this->ticketHash,
-//            'ticketHash' => $this->tickHash,
             'cancelButtonCallback' => false,
             'validate' => true,
             'labelColons' => $this->labelColons,
@@ -1312,7 +1313,7 @@ EOT;
             'wrapperClass' => "lzy-edit-rec-delete-checkbox",
             'class' => "lzy-edit-rec-delete-checkbox",
             'label' => 'Delete',
-            'name' => '_delete',
+            'name' => '_lzy-delete-rec',
             'options' => '{{ lzy-edit-rec-delete-option }}',
         ] );
 
@@ -1352,10 +1353,11 @@ EOT;
     private function exportForm()
     {
         $exportFile = getUrlArg('exportForm', true);
-
-        if (@!$this->recStructure) {
-            $recStructure = $this->ds->getStructure();
+        if (!$exportFile) {
+            $exportFile = "~/$this->dataSource.form-template.md";
         }
+
+        $recStructure = $this->ds->getStructure();
 
         $out = "// Form-Template for $this->dataSource\n\n";
 
@@ -1375,7 +1377,6 @@ EOT;
 	id: 'lzy-edit-data-form-#tableCounter#',
 	class: 'lzy-form lzy-edit-data-form',
 	file: '\~/$this->dataSource',
-	ticketHash: #tickHash#,
 	cancelButtonCallback: false,
 	validate: true,
 	labelColons: $labelColons,$formArgs
@@ -1491,7 +1492,7 @@ EOT;
         $out = getFile( $file );
         if ($out) {
             $out = removeCStyleComments( $out );
-            $out = str_replace(['#file#','#tickHash#','#tableCounter#'], ['~/'.$this->dataSource, $this->tickHash, $this->tableCounter], $out);
+            $out = str_replace(['#file#','#tableCounter#'], ['~/'.$this->dataSource, $this->tableCounter], $out);
             $out = compileMarkdownStr( $out );
             $out = <<<EOT
 
@@ -1703,40 +1704,40 @@ EOT;
 
 
 
-    private function applyFilter()
-    {
-        if (!$this->filter) {
-            return;
-        }
-        $phpExpr = $this->filter;
-        if (preg_match_all('/ \[\[ (.*?) ]] /x', $phpExpr, $m)) {
-            foreach ($m[1] as $i => $value) {
-                if (is_numeric($value)) {
-                    $inx = intval($value) - 1;
-                } else {
-                    $inx = array_search($value, $this->headerElems);
-                    if ($inx === false) {
-                        continue;
-                    }
-                }
-                $phpExpr = str_replace($m[0][$i], '@$'."rec[$inx]", $phpExpr);
-            }
-        }
-
-        $out = [];
-        foreach ($this->data as $r => $rec) {
-            try {
-                $res = eval( "return $phpExpr;" );
-            } catch (Throwable $t) {
-                print_r($t);
-                exit;
-            }
-            if ($res) {
-                $out[] = $rec;
-            }
-        }
-        $this->data = $out;
-    } // applyFilter
+    //    private function applyFilter()
+    //    {
+    //        if (!$this->filter) {
+    //            return;
+    //        }
+    //        $phpExpr = $this->filter;
+    //        if (preg_match_all('/ \[\[ (.*?) ]] /x', $phpExpr, $m)) {
+    //            foreach ($m[1] as $i => $value) {
+    //                if (is_numeric($value)) {
+    //                    $inx = intval($value) - 1;
+    //                } else {
+    //                    $inx = array_search($value, $this->headerElems);
+    //                    if ($inx === false) {
+    //                        continue;
+    //                    }
+    //                }
+    //                $phpExpr = str_replace($m[0][$i], '@$'."rec[$inx]", $phpExpr);
+    //            }
+    //        }
+    //
+    //        $out = [];
+    //        foreach ($this->data as $r => $rec) {
+    //            try {
+    //                $res = eval( "return $phpExpr;" );
+    //            } catch (Throwable $t) {
+    //                print_r($t);
+    //                exit;
+    //            }
+    //            if ($res) {
+    //                $out[] = $rec;
+    //            }
+    //        }
+    //        $this->data = $out;
+    //    } // applyFilter
 
 
 
@@ -1750,7 +1751,6 @@ EOT;
             $this->includeCellRefs = true;
         }
         $nCols = sizeof( reset($this->data) );
-//        $nRows = sizeof($this->data);
         $recKeyInx = array_search(REC_KEY_ID, array_keys($this->structure['elements']));
         if ($this->includeCellRefs) {
             $r = 0;
@@ -1777,7 +1777,7 @@ EOT;
 
 
 
-    private function excludeColumns()
+    private function excludeColumns( $data = null )
     {
         if (!$this->data0) {
             return;
@@ -1785,7 +1785,9 @@ EOT;
         if (!$this->excludeColumns && !$this->hideMetaFields) {
             return;
         }
-        $data = &$this->data;
+        if ($data === null) {
+            $data = &$this->data;
+        }
 
         // parse excludeColumns directive, e.g. '1,3-5':
         $exclColumns = explodeTrim(',', $this->excludeColumns);
@@ -1944,7 +1946,6 @@ EOT;
         $this->options['includeTimestamp'] = $this->options['includeKeys'];
         $ds = new DataStorage2($this->options);
         $this->ds = $ds;
-//        $data0 = $ds->read();
 
         if ($this->preselectData) {
             $data0 = $ds->readElement( $this->preselectData );
@@ -1977,8 +1978,7 @@ EOT;
         }
         $this->data0 = $data0;
 
-//        $this->structure = $structure = $ds->getStructure();
-
+        // if structure is know -> apply structure-info:
         if (isset($structure['key'])) {
             // special case: recKey is linked to a rec-element -> defined as "key => '=fieldname'":
             if (is_string($structure['key']) && $structure['key'] && $structure['key'][0] === '=') {
@@ -1990,51 +1990,85 @@ EOT;
 
             $fields = $structure['elements'];
             if ($this->headers) {
-                if ($this->headers === true) {
-                    $elemKeys = array_keys($structure['elements']);
-                    if (isset($elemKeys[0]) && is_int($elemKeys[0])) {
-                        $this->headerElems = array_shift($data0);
-                    } else {
-                        $this->headerElems = $elemKeys;
-                    }
-                    $rec0 = reset($data0);
-                    $ic = 0;
-                    if ($rec0) {
-                        foreach ($rec0 as $item) {
-                            if (is_array($item)) {
-                                // handle splitOutput of composite elements if directive is embedded in field description:
-                                if (isset($item['_splitOutput']) && $item['_splitOutput']) {
-                                    foreach ($item as $k => $v) {
-                                        if (($k === 0) || ($k[0] === '_')) { // skip special elems
-                                            unset($item[$k]);
-                                        }
-                                    }
-                                    $newCols = array_keys($item);
-                                    array_splice($this->headerElems, $ic, 1, $newCols);
-                                    $ic += sizeof($newCols) - 1;
-                                }
-                            }
-                            $ic++;
-                        }
-                    }
-                }
-                if ($this->includeKeys && !in_array('_key', $this->headerElems)) {
-                    $this->headerElems[] = '_key';
-                }
+                $this->getHeaders($fields, $data0);
             }
-            $i = 0;
-            foreach ($fields as $desc) {
-                // handle option 'omit:true' from structure file:
-                if (@$desc['omit']) {
-                    unset($this->headerElems[$i]);
-                }
-                // handle option 'hide:true' from structure file:
-                if (@$desc['hide']) {
-                    $this->headerElems[$i] .= '%%!off$$';
-                }
-                $i++;
+            $this->applyHideOmitColumns($fields);
+        }
+
+        $data = $this->prepareData($data0, $fields);
+
+        if (!$data) {
+            // add empty row:
+            foreach (array_keys($structure['elements']) as $c => $label) {
+                $data['new-rec'][$c] = '';
             }
         }
+
+        $this->data = $data;
+    } // loadDataFromFile
+
+
+
+
+    private function getHeaders($elements, $data0)
+    {
+        if ($this->headers === true) {
+            $elemKeys = array_keys($elements);
+            if (isset($elemKeys[0]) && is_int($elemKeys[0])) {
+                $this->headerElems = array_shift($data0);
+            } else {
+                $this->headerElems = $elemKeys;
+            }
+            $rec0 = reset($data0);
+            $ic = 0;
+            if ($rec0) {
+                foreach ($rec0 as $item) {
+                    if (is_array($item)) {
+                        // handle splitOutput of composite elements if directive is embedded in field description:
+                        if (isset($item['_splitOutput']) && $item['_splitOutput']) {
+                            foreach ($item as $k => $v) {
+                                if (($k === 0) || ($k[0] === '_')) { // skip special elems
+                                    unset($item[$k]);
+                                }
+                            }
+                            $newCols = array_keys($item);
+                            array_splice($this->headerElems, $ic, 1, $newCols);
+                            $ic += sizeof($newCols) - 1;
+                        }
+                    }
+                    $ic++;
+                }
+            }
+        }
+        if ($this->includeKeys && !in_array('_key', $this->headerElems)) {
+            $this->headerElems[] = '_key';
+        }
+    } // getHeaders
+
+
+
+
+    private function applyHideOmitColumns($fields)
+    {
+        $i = 0;
+        foreach ($fields as $desc) {
+            // handle option 'omit:true' from structure file:
+            if (@$desc['omit']) {
+                unset($this->headerElems[$i]);
+            }
+            // handle option 'hide:true' from structure file:
+            if (@$desc['hide']) {
+                $this->headerElems[$i] .= '%%!off$$';
+            }
+            $i++;
+        }
+    } // applyHideOmitColumns
+
+
+
+
+    private function prepareData($data0, $fields)
+    {
         $data = [];
         $this->data = [];
         $ir = 0;
@@ -2050,7 +2084,7 @@ EOT;
                 if (@$desc['omit']) {
                     continue;
                 }
-                $item = isset($rec[ $c ])? $rec[ $c ]: (isset($rec[ $ic ])? $rec[ $ic ]: '');
+                $item = isset($rec[$c]) ? $rec[$c] : (isset($rec[$ic]) ? $rec[$ic] : '');
                 if (is_array($item)) {
                     // handle splitOutput of composite elements if directive is embedded in field description:
                     if (isset($item['_splitOutput']) && $item['_splitOutput']) {
@@ -2071,10 +2105,10 @@ EOT;
                     }
                 }
                 if (@$desc['type'] === 'bool') {
-                    $item = $item? 'lzy-value-true': 'lzy-value-false';
+                    $item = $item ? 'lzy-value-true' : 'lzy-value-false';
                     $item = $this->lzy->trans->translateVariable($item, true);
                 } elseif (@$desc['type'] === 'password') {
-                    $item = $item? PASSWORD_PLACEHOLDER: '';
+                    $item = $item ? PASSWORD_PLACEHOLDER : '';
                 } else {
                     $item = trim($item, '"\'');
                     $item = str_replace("\n", '<br />', $item);
@@ -2089,16 +2123,8 @@ EOT;
             }
             $ir++;
         }
-
-        if (!$data) {
-            // add empty row:
-            foreach (array_keys($structure['elements']) as $c => $label) {
-                $data['new-rec'][$c] = '';
-            }
-        }
-
-        $this->data = $data;
-    } // loadDataFromFile
+        return $data;
+    } // prepareData
 
 
 
@@ -2127,11 +2153,17 @@ EOT;
                 } elseif (strcasecmp($button, 'delete-rec') === 0) {
                     list($button, $class, $attributes) = $this->appendDeleteButton($attributes);
 
+                } elseif (strcasecmp($button, 'download-table') === 0) {
+                    $this->export = true;
+                    list($button, $class, $attributes) = $this->appendDownloadButton($attributes);
+                    $this->export();
+
                 } else {
                     $class = translateToClassName($button);
                 }
                 $buttons .= <<<EOT
     <button id='$class-{$this->id}' class='lzy-button lzy-button-lean $class' $attributes type="button"><span class="lzy-table-activity-btn">{{ $button }}</span></button>
+
 EOT;
             }
         }
@@ -2186,7 +2218,7 @@ $('.lzy-table-new-rec-btn').click(function() {
 });
 EOT;
         $class = 'lzy-table-new-rec-btn';
-        $attributes = " title='{{ lzy-table-new-rec-title }}'";
+        $attributes = "$attributes title='{{ lzy-table-new-rec-title }}'";
         return [$button, $class, $attributes];
     } // appendNewRecButton
 
@@ -2218,9 +2250,38 @@ $('.lzy-table-trash-btn, .lzy-table-delete-rec-btn').click(function() {
 
 EOT;
         $class = 'lzy-table-delete-rec-btn';
-        $attributes = " title='{{ lzy-table-delete-rec-title }}'";
+        $attributes = "$attributes title='{{ lzy-table-delete-rec-title }}'";
         return [$button, $class, $attributes];
     } // appendDeleteButton
+
+
+
+
+    private function appendDownloadButton( $attributes )
+    {
+        $file = $this->getDownloadFilename();
+        $this->injectSelectionCol = true;
+        $button = 'lzy-table-download-btn';
+        $this->jq .= <<<EOT
+
+$('.lzy-table-download-btn').click(function() {
+    mylog('open table download popup', false);
+    const \$tableWrapper = $(this).closest('.lzy-table-wrapper');
+    const \$table = $('.lzy-table', \$tableWrapper);
+    const tableInx = \$table.data('inx');
+    const popup = '<p>{{ lzy-table-download-text }}</p><ul><li>{{^ lzy-table-download-prefix }}<a href="~/{$file}xlsx" download target="_blank">{{ lzy-table-download-excel }}</a>{{^ lzy-table-download-postfix }}</li><li>{{^ lzy-table-download-prefix }}<a href="~/{$file}ods" download target="_blank">{{ lzy-table-download-ods }}</a>{{^ lzy-table-download-postfix }}</li></ul>';
+    lzyPopup({ 
+        text: popup,
+        header: '{{ lzy-table-download-header }}',
+        wrapperClass: 'lzy-table-download',
+    });
+    return;
+});
+EOT;
+        $class = 'lzy-table-download-btn';
+        $attributes = "$attributes title='{{ lzy-table-download-title }}'";
+        return [$button, $class, $attributes];
+    } // appendDownloadButton
 
 
 
@@ -2307,4 +2368,25 @@ EOT;
         return $out;
     } // injectEditingFeatures
 
+
+
+
+    private function getDownloadFilename()
+    {
+        $dlLinkFile = resolvePath('~page/'.DOWNLOAD_PATH_LINK_FILE);
+        if (file_exists($dlLinkFile)) {
+            $dlHash = file_get_contents($dlLinkFile);
+        } else {
+            $dlHash = createHash(8, false, true);
+            file_put_contents($dlLinkFile, $dlHash);
+        }
+        $ts = filemtime($this->dataSource);
+        $ts = date('Ymd_Hi_', $ts);
+        if ($this->export === true) {
+            $file = "download/$dlHash/$ts".base_name($this->dataSource, false).'.';
+        } else {
+            $file = "download/$dlHash/$ts".$this->export.'.';
+        }
+        return $file;
+    } // getDownloadFilename
 } // HtmlTable
