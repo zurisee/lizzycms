@@ -9,10 +9,14 @@
 
 define('SYSTEM_PATH', 		'');		                            // same directory
 define('PATH_TO_APP_ROOT', 	'../');		                            // root folder of web app
+define('SYSTEM_CACHE_PATH', PATH_TO_APP_ROOT.'.#sys-cache/');		                // system-cache directory
 define('LOCK_TIMEOUT', 		120);	                                // max time till field is automatically unlocked
 define('MAX_URL_ARG_SIZE',  255);
 
 ob_start();
+if (!session_start()) {
+    $this->mylog("ERROR in __construct(): failed to start session");
+}
 
 require_once 'vendor/autoload.php';
 require_once 'backend_aux.php';
@@ -29,7 +33,6 @@ session_set_cookie_params(["HttpOnly" => "true"]); //false, true
 
 
 if (isset($_GET['abort'])) {
-    session_start();
     $_SESSION['lizzy']['ajaxServerAbort'] = time();
     session_write_close();
     exit();
@@ -45,9 +48,6 @@ class AjaxServer
 		if (sizeof($_GET) < 1) {
 			exit('Hello, this is '.basename(__FILE__));
 		}
-        if (!session_start()) {
-            $this->mylog("ERROR in __construct(): failed to start session");
-        }
         $this->clear_duplicate_cookies();
 
         $timezone = isset($_SESSION['lizzy']['systemTimeZone']) && $_SESSION['lizzy']['systemTimeZone'] ? $_SESSION['lizzy']['systemTimeZone'] : 'CET';
@@ -177,9 +177,29 @@ class AjaxServer
 
         $dataRec = $this->db->readRecord( $recKey );
 
+        // forms.js needs name attr as key -> convert:
+        if ($_REQUEST['keyType'] === 'name') {
+            $dataRec = $this->prepareDataRec($dataRec);
+        }
+
         $json = json_encode(['res' => 'Ok', 'data' => $dataRec]);
         lzyExit( $json );
     } // getDataRec
+
+
+
+
+    private function prepareDataRec($rec)
+    {
+        $out = [];
+        $structure = $this->db->getStructure();
+        if (is_array($structure['elements']) ) {
+            foreach ($structure['elements'] as $label => $element) {
+                $out[$element['name']] = $rec[$label];
+            }
+        }
+        return $out;
+    } // prepareDataRec
 
 
 
@@ -207,79 +227,6 @@ class AjaxServer
         lzyExit( $json );
     } // getDataElem
 
-
-//	private function getDataRec()
-//    {
-//        if (!$this->openDB( )) {
-//            lzyExit('failed#get-rec');
-//        }
-//        $recKey = $this->get_request_data('recKey');
-//        if (!$recKey) {
-//            $recKey = $this->get_request_data('dataRef');
-//        }
-//
-//        // lock record if requested:
-//        if (isset($_REQUEST['lock'])) {
-//            $res = $this->db->lockRec( $recKey );
-//            if (!$res) {
-//                $json = json_encode(['res' => 'failed', 'lockedRecs' => [$recKey]]);
-//                lzyExit( $json );
-//            }
-//        }
-//
-//        $dataRec = $this->db->readRecord( $recKey );
-//        $outData = [];
-//        if (!$dataRec) {
-//            $json = json_encode(['res' => 'Error: getDataRec() no data found', 'data' => '']);
-//            lzyExit( $json );
-//        }
-//        if (isset($this->ticketRec['recDef'])) {
-//            foreach ($this->ticketRec['recDef'] as $key => $rec) {
-//                $outData["#fld_" . $rec[0]] = isset($dataRec[$key]) ? $dataRec[$key] : '';
-//            }
-//
-//        } else {
-//            foreach ( $this->ticketRec['formDescr'] as $descr) {
-//                $key = $descr['name'];
-//                $type = $descr['type'];
-//                if (isset($dataRec[$key])) {
-//                    $value = $dataRec[$key];
-//                } else {
-//                    $key1 = $descr['label'];
-//                    $value = isset($dataRec[$key1])? $dataRec[$key1]: '';
-//                }
-//                if (is_array($value)) {
-//                    // radio,checkbox,dropdown types have special structure:
-//                    //  -> $value[0] contains display value
-//                    if (isset($value[0])) {
-//                        $value = $value[0];
-//                    } else {
-//                        $value = implode(',', $value);
-//                    }
-//                }
-//                if ($type === 'radio') {
-//                    $outData["input:radio[value='$value']"] = 'checked';
-//                    continue;
-//                } elseif ($type === 'checkbox') {
-//                    $values = explodeTrim(',', rtrim($value, ','));
-//                    foreach ($values as $vv) {
-//                        $outData["input:checkbox[value='$vv']"] = 'checked';
-//                    }
-//                    continue;
-//                } elseif ($type === 'dropdown') {
-//                    // 	$('option[value=Italy]').attr('selected', 'selected');
-//                    $outData["option[value='$value']"] = 'selected';
-//                    continue;
-//                }
-//                if ($type === 'password') {
-//                    $value = $value? PASSWORD_PLACEHOLDER:'';
-//                }
-//                $outData[ $key ] = $value;
-//            }
-//        }
-//        $json = json_encode(['res' => 'Ok', 'data' => $outData]);
-//        lzyExit( $json );
-//    } // getDataRec
 
 
 
@@ -580,6 +527,12 @@ class AjaxServer
                 $this->error = 'restart';
                 return false;
             }
+
+        // if request came from a form:
+        } elseif ($dataRef && preg_match('/^[a-z0-9]{4,20}$/', $dataRef)) {
+            require_once SYSTEM_PATH.'forms.class.php';
+            $form = $this->restoreFormDescr( $dataRef );
+            $this->dataFile = PATH_TO_APP_ROOT.$form->file;
         }
 
         // if primary method didn't work, try default DB in page folder
@@ -615,6 +568,20 @@ class AjaxServer
 
 
 
+    private function restoreFormDescr( $formHash )
+    {
+        for ($formInx=1; true; $formInx++) {
+            $cacheFile = SYSTEM_CACHE_PATH . $_SESSION['lizzy']['pagePath'] . "form-descr-$formInx.txt";
+            if (!file_exists($cacheFile)) {
+                return null;
+            }
+            $str = file_get_contents($cacheFile);
+            if (strpos($str, $formHash) === 0) {
+                break;
+            }
+        }
+        return unserialize(base64_decode( substr($str, 9 )));
+    } // restoreFormDescr
 
 
     private function get_request_data($varName) {
