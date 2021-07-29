@@ -10,6 +10,7 @@
 
 // variables and default values:
 $form-width: 30em;      // --lzy-form-width
+// Note: if changing $label-width, you need to adapt htmltables.css accordingly:
 $label-width: 7em;      // --lzy-label-width
 $form-box-width: 7em;   // --lzy-form-box-width
 $form-grid-gap: 10px;   // --lzy-form-grid-gap
@@ -766,7 +767,7 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
     }
 }
 .lzy-large-screen .lzy-form-elem-comment {
-    margin-left: calc(var(--lzy-label-width, 6em) + 0.4em);
+    margin-left: calc(var(--lzy-label-width, 7em) + 0.4em);
 }
 .lzy-form-elem-comment {
     margin-top: 0.6em;

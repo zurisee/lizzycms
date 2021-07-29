@@ -1,9 +1,20 @@
 /* === Tables ====================== */
 
+.lzy-table-download ul {
+  padding-left: 0.5em;
+}
+.lzy-table-download li {
+  list-style: none;
+  padding-left: 0.3em;
+}
+.lzy-table-download li:before {
+  content: "\2192";
+  padding-right: 0.3em;
+}
 
 #lzy .lzy-recview-popup .lzy-form-field-placeholder.lzy-form-field-placeholder.lzy-form-field-placeholder {
 	width: 16em;
-	width: calc(100% - var(--lzy-label-width, 6em) - 10px);
+	width: calc(100% - var(--lzy-label-width, 7em) - 10px);
 	padding: 0.2em 0.4em;
 	display: inline-block;
 	line-height: 2em;
@@ -15,7 +26,7 @@
 }
 #lzy .lzy-recview-popup fieldset.lzy-form-label .lzy-form-field-placeholder.lzy-form-field-placeholder {
 	margin-left: 6px;
-	width: calc(100% - var(--lzy-label-width, 6em) - 26px);
+	width: calc(100% - var(--lzy-label-width, 7em) - 26px);
 	overflow: auto;
 }
 .lzy-recview-popup .lzy-form-field-type-textarea .lzy-form-field-placeholder {
@@ -23,7 +34,7 @@
 }
 .lzy-recview-popup fieldset.lzy-form-label legend {
 	float: left;
-	width: var(--lzy-label-width, 6em);
+	width: var(--lzy-label-width, 7em);
 }
 .lzy-recview-popup > div {
 	max-width: 34em;
