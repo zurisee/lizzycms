@@ -1,10 +1,13 @@
 <?php
 
 if (!defined ('DEFAULT_TICKETS_PATH')) {
-    define('DEFAULT_TICKETS_PATH', '.#tickets/');
+    define('DEFAULT_TICKETS_PATH', '.#sys-cache/');
 }
-define ('DEFAULT_TICKET_STORAGE_FILE', PATH_TO_APP_ROOT . DEFAULT_TICKETS_PATH.'tickets.json');
-//define ('DEFAULT_TICKET_STORAGE_FILE', PATH_TO_APP_ROOT . DEFAULT_TICKETS_PATH.'tickets.yaml');
+if ($_SESSION['lizzy']['debug']) {
+    define ('DEFAULT_TICKET_STORAGE_FILE', PATH_TO_APP_ROOT . DEFAULT_TICKETS_PATH.'tickets.yaml');
+} else {
+    define ('DEFAULT_TICKET_STORAGE_FILE', PATH_TO_APP_ROOT . DEFAULT_TICKETS_PATH.'tickets.json');
+}
 define ('DEFAULT_TICKET_HASH_SIZE', 6);
 define ('DEFAULT_TICKET_VALIDITY_TIME', 900); // 15 min
 define ('UNAMBIGUOUS_CHARACTERS', '3479ACDEFHJKLMNPQRTUVWXY'); // -> excludes '0O2Z1I5S6G8B'
