@@ -1084,3 +1084,13 @@ lzy-time-seconds:
     de: Sekunden
     _:  seconds
 
+
+
+
+#--- ?convert data -----------------------
+lzy-data-converted to:
+    de: 'Datei konvertiert nach:'
+    _:  'File converted to:'
+
+
+

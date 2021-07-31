@@ -393,6 +393,23 @@ class Lizzy
     //        $ed = new UserEditProfileBase( $this );
     //        $ed->render();
 
+        // handle response of ?convert data url-arg:
+        if ($_POST['_lzy-form-cmd'] === 'convert-data') {
+            preparePath('tmp/');
+            $srcFile = 'tmp/'.$_FILES['Input_File']['name'];
+            $rawFile = $_FILES['Input_File']['tmp_name'];
+            move_uploaded_file($rawFile, $srcFile);
+            $dstFormat = $_POST['Output_Format'];
+            if (file_exists($srcFile)) {
+                $dstFile = fileExt($srcFile, true) . ".$dstFormat";
+                $ds = new DataStorage2($srcFile);
+                $data = $ds->read();
+
+                $ds2 = new DataStorage2($dstFile);
+                $ds2->write($data);
+            }
+            $this->convertDataResponse = "{{ lzy-data-converted to }} $dstFile";
+        }
     } // handleTransactionalRequests
 
 
@@ -1455,7 +1472,11 @@ EOT;
         $userAdminInitialized = file_exists(CONFIG_PATH.$this->config->admin_usersFile);
         $editingPermitted = $this->auth->checkGroupMembership('editors');
         if ($editingPermitted || !$userAdminInitialized) {
-            if (isset($_GET['convert'])) {                                  // convert (pw to hash)
+            if (isset($_GET['convert'])) {                                  // convert between data formats
+                $this->renderDataConverter();
+            }
+
+            if (isset($_GET['pw'])) {                                       // convert (pw to hash)
                 $this->renderPasswordConverter();
             }
 
@@ -1562,6 +1583,52 @@ EOT;
         $this->page->setOverlayMdCompile( false );
 
     } // renderPasswordConverter
+
+
+
+    private function renderDataConverter()
+    {
+        $response = '';
+        if (@$this->convertDataResponse) {
+            $response = "\t\t<div class='lzy-convert-data-response'>$this->convertDataResponse</div>\n";
+        }
+        $html = <<<EOT
+
+<h1>{{ Convert Between Data Formats }}</h1>
+
+	<div class='lzy-form-wrapper lzy-form-colored'>
+	  <form id='lizzy-form1' class='lizzy-form1 lzy-form lzy-encapsulated' method='post' enctype="multipart/form-data">
+		<input type='hidden' name='_lzy-form-cmd' value='convert-data' class='lzy-form-cmd' />
+		<div class='lzy-form-field-wrapper lzy-form-field-wrapper-1 lzy-form-field-type-text'>
+                <span class='lzy-label-wrapper'>
+                    <label for='fld_input_file_1'>Input File</label>
+                </span>
+			<input type='file' id='fld_input_file_1' name='Input_File' accept='.yaml,.json,.csv' />
+		</div>
+		<div class='lzy-form-field-wrapper lzy-form-field-wrapper-2 lzy-form-field-type-dropdown'>
+                <span class='lzy-label-wrapper'>
+                    <label for='fld_output_format_1'>Output Format</label>
+                </span>
+			<select id='fld_output_format_1' name='Output_Format'>
+				<option value='yaml'>yaml</option>
+				<option value='json'>json</option>
+				<option value='csv'>csv</option>
+			</select>
+		</div>
+		<div class='lzy-form-field-type-buttons'>
+		<input type='reset' id='btn_lizzy-form1_cancel' value='Cancel'  class='lzy-form-button lzy-form-button-cancel' />
+		<input type='submit' id='btn_lizzy-form1_submit' value='Convert'  class='lzy-form-button lzy-form-button-submit' />
+		</div>
+	  </form>
+$response	</div><!-- /lzy-form-wrapper -->
+
+
+
+EOT;
+
+        $this->page->addOverlay( ['text' => $html, 'closable' => 'reload'] );
+        $this->page->setOverlayMdCompile( false );
+    } // renderDataConverter
 
 
 
@@ -2189,18 +2256,19 @@ Available URL-commands:
 
 <a href='?help'>?help</a>		    this message
 <a href='?config'>?config</a>		    list configuration-items in the config-file
-<a href='?convert'>?convert</a>	    convert password to hash
 <a href='?debug'>?debug</a>		    activates DevMode and adds 'debug' class to page on non-local host *)
 <a href='?gitstat'>?gitstat</a>		displays the Lizzy-s GIT-status
+<a href='?pw'>?pw</a>	            convert password to hash
 <a href='?hash'>?hash</a>		    create a hash value e.g. for accessCodes
 <a href='?accesscode'>?accesscode=user</a> create an accessCode forgiven user
 <a href='?ticket'>?ticket</a>		    create a user-access-ticket
-<a href='?notranslate'>?notranslate</a>    show untranslated variables
+<a href='?convert'>?convert</a>	    convert between table-data formats
 <a href='?edit'>?edit</a>		    start editing mode *)
 <a href='?iframe'>?iframe</a>		    show code for embedding as iframe
 <a href='?info'>?info</a>		    list debug-info
 <a href='?lang=xy'>?lang=</a>	        switch to given language (e.g. '?lang=en')  *)
 <a href='?list'>?list</a>		    list <samp>transvars</samp> and <samp>macros()</samp>
+<a href='?notranslate'>?notranslate</a>    show untranslated variables
 <a href='?log'>?log</a>		    displays log files in overlay
 <a href='?login'>?login</a>		    login
 <a href='?logout'>?logout</a>		    logout
