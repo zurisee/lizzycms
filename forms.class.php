@@ -627,6 +627,7 @@ EOT;
                 $elem = $this->renderMonth();
                 break;
 
+            case 'numeric':
             case 'number':
                 $elem = $this->renderNumber();
                 break;
