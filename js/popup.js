@@ -481,6 +481,7 @@ function lzyPopupClose( that ) {
             $(this).hide();
         }
     });
+    $('.tooltipstered').tooltipster( 'close' );
 } // lzyPopupClose
 
 
