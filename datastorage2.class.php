@@ -632,7 +632,7 @@ class DataStorage2
 
 
 
-    public function writeElement($key, $value, $locking = true, $blocking = true, $logModifTimes = false, $dataKeyOverrideHash)
+    public function writeElement($key, $value, $locking = true, $blocking = true, $logModifTimes = false, $dataKeyOverrideHash = false)
     {
         if (strpos($key, ',') === false) {
             return $this->writeRecord($key, $value, $locking, $blocking, $logModifTimes);
