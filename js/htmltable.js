@@ -52,7 +52,8 @@ function HTMLtable( tableObj ) {
 			return;
 		}
 		this.formInx = formId.replace(/\D/g, '');
-		this.$form = $( formId ).closest('.lzy-edit-rec-form');
+		this.$form = $( formId ).closest('.lzy-edit-rec-form-wrapper');
+		// this.$form = $( formId ).closest('.lzy-edit-rec-form');
 		this.recViewPopupId = 'lzy-recview-popup-' + this.formInx;
 		this.recEditPopupId = 'lzy-recedit-popup-' + this.formInx;
 
@@ -109,7 +110,7 @@ function HTMLtable( tableObj ) {
 			'<div></div>' +
 			'</div>' +
 			'<div class="lzy-popup-container lzy-scroll-hints">\n' +
-			'<div id="inner-rec-edit-form">\n' +
+			'<div id="lzy-edit-rec-form-container">\n' +
 			formHtml +
 			'</div></div></div></div>\n';
 		$( 'body' ).append( popupHtml );
