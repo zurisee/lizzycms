@@ -1278,6 +1278,7 @@ EOT;
             'dynamicFormSupport' => true,
             'splitChoiceElemsInDb' => $splitChoiceElemsInDb,
             'lockRecWhileFormOpen' => @$this->options['lockRecWhileFormOpen'],
+            'translateLabels' => true,
         ];
         if ($this->editFormArgs) {
             $args = array_merge($args, $this->editFormArgs);
@@ -1329,8 +1330,10 @@ EOT;
         $out = rtrim($out);
         $out = <<<EOT
 
-  <div id='lzy-edit-rec-form-{$this->tableCounter}' class='lzy-edit-rec-form lzy-edit-rec-form-{$this->tableCounter}' style='display:none'>
+  <div id='lzy-edit-rec-form-{$this->tableCounter}' class='lzy-edit-rec-form-wrapper' style='display:none'>
+    <div class="lzy-edit-rec-form lzy-edit-rec-form-{$this->tableCounter}">
 $out
+    </div>
   </div><!-- /lzy-edit-rec-form -->
 
 EOT;
@@ -1496,8 +1499,10 @@ EOT;
             $out = compileMarkdownStr( $out );
             $out = <<<EOT
 
-<div class='lzy-edit-rec-form lzy-edit-rec-form-{$this->tableCounter}' style='display:none'>
+<div class='lzy-edit-rec-form-wrapper' style='display:none'>
+    <div class='lzy-edit-rec-form lzy-edit-rec-form-{$this->tableCounter}'>
 $out
+    </div>
 </div><!-- /lzy-edit-rec-form -->
 
 
@@ -2187,8 +2192,8 @@ EOT;
             $this->strToAppend = <<<EOT
 
     <div style='display:none;'> <!-- text resources: -->
-        <div id="lzy-edit-form-rec">{{ lzy-edit-form-rec }}</div>
-        <div id="lzy-edit-form-new-rec">{{ lzy-edit-form-new-rec }}</div>
+        <div id="lzy-edit-form-rec">{{ lzy-edit-user-form-header }}</div>
+        <div id="lzy-edit-form-new-rec">{{ lzy-edit-new-user-form-header }}</div>
         <div id="lzy-edit-form-submit">{{ lzy-edit-form-submit }}</div>
         <div id="lzy-edit-form-close">{{ lzy-edit-form-close }}</div>
         <div id="lzy-recview-header">{{ lzy-recview-header }}</div>
