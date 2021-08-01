@@ -1110,7 +1110,7 @@ EOT;
                 continue;
             }
             if (preg_match('/^(\s+)(.*)/', $l, $m)) {
-                $l = str_repeat('    ', strlen($m[1])) . $m[2];
+                $l = '    '.$m[2];
             }
             $source .= "\t$l\n";
         }
