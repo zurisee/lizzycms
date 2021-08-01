@@ -968,6 +968,12 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
 {
     global $globalParams;
     $path = trim($path);
+
+    // nothing to do, if first char is not '~', unless relativeToCurrPage was requested:
+    if ((@$path[0] !== '~') && !$relativeToCurrPage) {
+        return $path;
+    }
+
     if (!$path) {
         if ($relativeToCurrPage) {
             $path = '~page/';
