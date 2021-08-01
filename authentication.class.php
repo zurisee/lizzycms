@@ -471,6 +471,7 @@ class Authentication
 		} elseif ($this->config->admin_autoAdminOnLocalhost && $this->config->isLocalhost) {
 		    $res = 'autoadmin';
             $GLOBALS['globalParams']['isAdmin'] = true;
+            $_SESSION['lizzy']['isAdmin'] = true;
             $rec = false;
         }
 
