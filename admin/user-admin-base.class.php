@@ -34,6 +34,8 @@ class UserAdminBase
         $GLOBALS['lizzy']['adminFormsCounter']++;
         $this->inx = $GLOBALS['lizzy']['adminFormsCounter'];
 
+        // for security: make sure user admin widgets may not be used within an iframe (or similar):
+        header("content-security-policy:  frame-ancestors 'none'");
     } // __construct
 
 
