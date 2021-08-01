@@ -1857,7 +1857,7 @@ EOT;
                 $this->getData();
             }
         }
-        if (!$rawData['structure'] || @$this->structureDef) {
+        if (!$rawData['structure'] || @$this->structureFile || @$this->structureDef) {
             $this->determineStructure();
             $this->lowLevelWriteStructure();
         } else {
@@ -2150,7 +2150,7 @@ EOT;
         }
         $structure = false;
         if ($this->structureFile) {
-            $structureFile = resolvePath($this->structureFile, true);
+            $structureFile = resolvePath($this->structureFile);
         } else {
             $structureFile = fileExt($this->dataFile, true) . '_structure.yaml';
         }
