@@ -2026,35 +2026,6 @@ function mb_str_pad ($input, $pad_length, $pad_string, $pad_style=STR_PAD_RIGHT,
 
 
 
-function stripNewlinesWithinTransvars($str)
-{
-    $p1 = strpos($str, '{{');
-	if ($p1 === false) {
-		return $str;
-	}
-    do {
-        list($p1, $p2) =  strPosMatching($str, '{{',  '}}',$p1);
-
-        if ($p1 === false) {
-            break;
-        }
-        $s = substr($str, $p1, $p2-$p1+2);
-        // macro call may be on multiple lines, if so flatten.
-        // -> if so, a newline terminates an argument, even if ',' is missing:
-        $s = preg_replace("/,\s*\n/ms", ',↵ ',$s);
-        $s = preg_replace("/\n\s*/ms", ',↵ ',$s);
-        $s = str_replace("(,↵", '(↵ ',$s);
-//        $s = preg_replace("/\n\s*/ms", '↵ ',$s);
-
-        $str = substr($str, 0, $p1) . $s . substr($str, $p2+2);
-        $p1 += strlen($s);
-    } while (strpos($str, '{{', $p1) !== false);
-	
-    return $str;
-} // stripNewlinesWithinTransvars
-
-
-
 function stripHtml( $str )
 {
     $str = preg_replace('/(<.*?>)/', '', $str);
