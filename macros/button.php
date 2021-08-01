@@ -19,6 +19,8 @@ $this->addMacro($macroName, function () {
 
     if ($text === 'help') {
         return '';
+    } elseif (!$text) {
+        $text = 'Button';
     }
 
     if ($icon) {
@@ -27,7 +29,8 @@ $this->addMacro($macroName, function () {
 
     if (!$id) {
         $id = "lzy-button-$inx";
-    } else {
+    } elseif ($id[0] === '#') {
+        $id = substr($id, 1);
 //        $id = str_replace(['&#34;', '&#39;', '"', "'"], '', $callbackCode); //???
     }
     if (!$class) {
