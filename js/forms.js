@@ -128,7 +128,7 @@ function LzyForms() {
             this.handleException( data );
         }
         for (let key in data.data) {
-            if ((typeof key === 'string') && (key.charAt(0) === '_')) {
+            if (!key || ((typeof key === 'string') && (key.charAt(0) === '_'))) {
                 continue;
             }
             let val = data.data[ key ];
