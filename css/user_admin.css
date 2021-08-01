@@ -93,7 +93,7 @@ body {
     padding: 20px;
     max-width: 28em;
 }
-.lzy-invite-user-wrapper .lzy-reveal-controller {
+.lzy-useradmin-wrapper .lzy-reveal-controller {
     margin-top: 2em;
     border: 1px solid orange;
 }
@@ -371,6 +371,18 @@ input.lzy-login-email[type=email]:valid {
   padding-right: 4px;
   font-size: 90%;
 }
+
+
+
+/* === Edit Users Table ==================== */
+#lzy .lzy-edit-rec-form {
+    --lzy-label-width: 11em;
+}
+#lzy .lzy-form .lzy-form-field-type-hash input,
+#lzy .lzy-form.lzy-encapsulated .lzy-form-field-type-hash input {
+    width: 8em;
+}
+
 
 
 

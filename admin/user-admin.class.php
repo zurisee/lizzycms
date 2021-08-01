@@ -25,6 +25,13 @@ class UserAdmin extends UserAdminBase
 
         } elseif (strpos($mode, 'signup') !== false) {
             $html = $this->renderUserSignupForm();
+
+        } elseif (strpos($mode, 'login') !== false) {
+            $accForm = new UserLoginBase( $this->lzy );
+            $html = $accForm->render(true, '');
+
+        } elseif (strpos($mode, 'table') !== false) {
+            $html = $this->renderUserAdminTable();
         }
         return $html;
     } // render
@@ -306,7 +313,50 @@ EOT;
         $hash    = isset($tickRec['hash'])? $tickRec['hash']: '';
         $email   = isset($tickRec['email'])? $tickRec['email']: '';
 
+        $defaultOptions = [
+            'mode' => 'signup',
+            'formName' => 'Sign-up-form',
+            'class' => 'lzy-sign-up-form lzy-form lzy-encapsulated',
+            'customResponseEvaluationFunction' => 'lzySignupCallback',
+            'action' => '~/' . $GLOBALS['globalParams']['pagePath'],
+            'next' => '~/',
+            'E-Mail' => [
+                'required' => true,
+                'info' => '{{ lzy-signup-email-info-text }}',
+                'type' => 'email',
+                'name' => 'email',
+            ],
+
+            'Passwort' => [
+                'required' => true,
+                'info' => '{{ lzy-signup-pw-info-text }}',
+                'type' => 'password',
+                'name' => 'password',
+            ],
+
+            'Benutzername' => [
+                'type' => 'text',
+                'info' => '{{ lzy-signup-username-info-text }}',
+                'name' => 'username',
+            ],
+
+            'reset' => [
+                'type' => 'reset',
+                'label' => '{{ cancel }}',
+            ],
+
+            'submit' => [
+                'type' => 'submit',
+                'label' => '{{ lzy-sign-up-now }}',
+            ],
+        ];
         $formOptions = $this->options;
+        foreach ($defaultOptions as $key => $value) {
+            if (!isset( $formOptions[$key] )) {
+                $formOptions[$key] = $value;
+            }
+        }
+
         unset($formOptions['mode']);
         $formOptions['group'] = ['type' => 'bypassed', 'value' => $group];
         $formOptions['hash'] = ['type' => 'bypassed', 'value' => $hash];
@@ -388,6 +438,38 @@ EOT;
 
         return $str;
     } // renderNewPwForm
+
+
+
+    // === Edit Users as Table ================================
+    private function renderUserAdminTable()
+    {
+        require_once SYSTEM_PATH.'htmltable.class.php';
+        $structFile = 'config/users_structure.yaml';
+        if (!file_exists($structFile)) {
+            $structFile = EXTENSIONS_PATH . 'useradmin/config/users_structure.yaml';
+        }
+        $options = [
+            'dataSource' => CONFIG_PATH . 'users.yaml',
+            'structureFile' => $structFile,
+            'class' => 'lzy-table lzy-table-default',
+            'headers' => true,
+            'includeKeys' => 'hash',
+            'includeTimestamp' => true,
+            'sort' => 'start',
+            'editableBy' => true,
+            'editMode' => 'form',
+            'labelColons' => true,
+            'activityButtons' => 'delete-rec|new-rec',
+            'splitChoiceElemsInDb' => false,
+            'lockRecWhileFormOpen' => true,
+        ];
+        $tbl = new HtmlTable( $this->lzy, $options );
+        $table = $tbl->render();
+        return $table;
+    } // renderUserAdminTable
+
+
 } // UserAdmin
 
 

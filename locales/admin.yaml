@@ -1,5 +1,77 @@
 # Transvar Definition for Admin
 
+
+
+### UserAdmin Table
+username:
+    de: Benutzername
+    _:  Username
+
+displayName:
+    de: Anzeigename
+    _:  Display Name
+
+email:
+    de: E-Mail
+    _:  E-Mail
+
+password:
+    de: Passwort
+    _:  Password
+
+lzy-groups:
+    de: Gruppen
+    _:  Groups
+
+accessCode:
+    de: Zugangs-Code
+    _:  Access-Code
+
+inactive:
+    de: Deaktiviert
+    _:  Inactive
+
+lzy-generate-hash:
+    de: Neu
+    _:  New
+
+lzy-edit-user-form-header:
+    de: Benutzer bearbeiten
+    _:  Edit User
+
+lzy-edit-new-user-form-header:
+    de: Neuer Benutzer
+    _:  New User
+
+lzy-edit-user-username-info:
+    de: 'Muss einmalig sein. Darf nur Zeichen enthalten, die in einer E-Mail-Adresse vorkommen können.'
+    _:  'Must be unique and may contain only characters as permitted e-mail addresses.'
+
+lzy-edit-user-email-info:
+    de: 'Gültige E-Mail Adresse. Kann gleich sein wie {{ username }}.'
+    _:  'Valid e-mail address. May be equal to {{ username }}.'
+
+lzy-edit-user-groups-info:
+    de: 'Bestimmt die Zugehörigkeit zu Benutzergruppen.'
+    _:  'Defines membership to user groups.'
+
+lzy-edit-user-password-info:
+    de: 'Passwörter sollten normalerweise durch die Benutzer selbst definiert werden.<br>&rarr; Benutzer einladen'
+    _:  'Usually, password should be defined by users themselves.<br>&rarr; Invite user'
+
+lzy-edit-user-displayname-info:
+    de: 'Anzeigename wird zur Darstellung verwendet.'
+    _:  'Display name is only used in user-interfaces'
+
+lzy-edit-user-accesscode-info:
+    de: 'Zugangscode, welcher der Benutzer an die URL anfügen kann, um sich leicht per Link anmelden zu können (Gewisses Sicherheits-Risiko!). '
+    _:  'Access-Code, which the user can append to the URL for simplified login by link ()'
+
+lzy-edit-user-inactive-info:
+    de: 'Mit dieser Option lässt sich ein Konto deaktivieren, ohne es zu löschen.'
+    _:  'This option lets you disable an account, without deleting it.'
+
+
 # Login by password:
 
 #lzy-email-change-successful:
@@ -94,7 +166,7 @@ lzy-login-username-info-text:
     de: |
         <p>Geben Sie hier Ihren <em>Benutzernamen</em> ein. Meist entspricht dies Ihrer E-Mail Adresse.</p>
     de2: |
-        <p>Gibe hier deinen <em>Benutzernamen</em> ein. Meist entspricht dies deiner E-Mail Adresse.</p>
+        <p>Gib hier deinen <em>Benutzernamen</em> ein. Meist entspricht dies deiner E-Mail Adresse.</p>
     en: |
         <p>Enter your <em>username</em> here. Usually, this is your e-mail address.</p>
 
@@ -299,6 +371,13 @@ lzy-invite-user-mail-preview:
 #    de: "<p>Weitere Informationen finden Sie unter: <a href='https://getlizzy.net' target='_blank'>getlizzy.net</a></p>"
 #    _:  "<p>For further information goto:  <a href='https://getlizzy.net' target='_blank'>getlizzy.net</a></p>"
     
+
+
+
+# Sign-up Form
+lzy-signup-pw-info:
+    de: Bestimmen Sie hier Ihr neues Passwort und merken Sie sich dieses.
+    _:  Define your new password - and make sure to remember it for later.
 
 
 
@@ -1242,6 +1321,7 @@ lzy-signup-email-label:
 
 lzy-signup-email-info-text:
     de: 'Ihre E-Mail Adresse'
+    de2: 'Deine E-Mail Adresse'
     _: 'Your e-mail address'
 
 lzy-signup-pw-label:
@@ -1250,11 +1330,12 @@ lzy-signup-pw-label:
 
 lzy-signup-pw-info-text:
     de: 'Bestimmen Sie hier Ihr neues Passwort und merken Sie sich dieses.'
-    _: 'Define your new password, please remember it for later use.'
+    de2: 'Bestimme hier dein neues Passwort und merke es dir für später.'
+    _:  'Define your new password, please remember it for later use.'
 
 lzy-signup-username-label:
     de: 'Benutzername'
-    _: 'Username'
+    _:  'Username'
 
 lzy-signup-username-info-text:
     de: |
