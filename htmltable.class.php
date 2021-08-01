@@ -2152,7 +2152,7 @@ EOT;
                 }
 
                 // Handle special button names "new-rec" and "delete-rec":
-                if (strcasecmp($button, 'new-rec') === 0) {
+                if ((strcasecmp($button, 'new-rec') === 0) || (strcasecmp($button, 'add-rec') === 0)) {
                     list($button, $class, $attributes) = $this->appendNewRecButton($attributes);
 
                 } elseif (strcasecmp($button, 'delete-rec') === 0) {
