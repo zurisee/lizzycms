@@ -1626,10 +1626,13 @@ function is_legal_email_address($email)
 
 
 
-function isValidUrl( $url )
+function isValidUrl( $url, $checkExists = false )
 {
-    return preg_match("/(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]".
-        "+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))/", $url);
+    if ($checkExists) {
+        return (preg_match("#^https?://.+#", $url) and @fopen($url,"r"));
+    } else {
+        return preg_match("/\b(?:(?:https?|ftp):\/\/|www\.)[-a-z0-9+&@#\/%?=~_|!:,.;]*[-a-z0-9+&@#\/%=~_|]/i", $url);
+    }
 } // isValidUrl
 
 
