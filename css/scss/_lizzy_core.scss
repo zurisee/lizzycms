@@ -897,7 +897,7 @@ body {
 		content: '–';
     }
     .lzy-reveal-controller label {
-		width: calc(100% - 2.5em);
+        width: calc(100% - 2em - 4px);
 		padding-left: 0.4em;
 		cursor: pointer;
     }
