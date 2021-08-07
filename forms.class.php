@@ -1949,6 +1949,7 @@ EOT;
 
         // check required entries:
         if (!$this->checkSuppliedDataEntries()) {
+            $this->cacheUserSuppliedData($formInx, $userSuppliedData);
             return false;
         }
         if ( @$this->errorDescr[$formInx] ) {
@@ -2286,7 +2287,8 @@ EOT;
 
                 $usrDataFldName = false;
                 foreach ($currForm->formElements as $i => $formElemDescr) {
-                    if ($formElemDescr->dataKey === $dbFldKey) {
+                    if ($formElemDescr->name === $dbFldKey) {
+//                    if ($formElemDescr->dataKey === $dbFldKey) {
                         $usrDataFldName = $formElemDescr->name;
                         break;
                     }
@@ -3055,7 +3057,7 @@ EOT;
     {
         $isHtml = false;
         if ($this->currForm->confirmationEmail === true) {
-            $emailFieldName = 'e-mail';
+            $emailFieldName = 'E-mail';
             $to = $this->getUserSuppliedValue( $emailFieldName, true );
         } else {
             $to = $this->getUserSuppliedValue( $this->currForm->confirmationEmail );
