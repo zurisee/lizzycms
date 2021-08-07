@@ -2385,6 +2385,9 @@ EOT;
         if ($_REQUEST) {
             return;
         }
+        if ($_REQUEST) {
+            return;
+        }
 
         $requestedPage = $this->getCacheFilename( false );
         preparePath($requestedPage);
