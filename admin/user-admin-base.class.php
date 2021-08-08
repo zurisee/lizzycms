@@ -6,7 +6,6 @@ if (!defined('SHOW_PW_INFO_ICON')) {
     define('NOTI', 'lzy-account-form-notification');
 }
 $GLOBALS['lizzy']['adminFormsCounter'] = 0;
-//$GLOBALS['lizzy']['adminFormsInitialized'] = false;
 
 
 class UserAdminBase
@@ -42,6 +41,16 @@ class UserAdminBase
 
     public function handleRequests()
     {
+        // add first-user:
+        if (@$_POST['_lzy-form-cmd'] === 'lzy-adduser') {
+            return $this->handleAddFirstUserRequest();
+
+        } elseif ($cmd = $_GET['admin']) {
+            if ($cmd === 'add-user') {
+                return $this->renderAddFirstUserForm();
+            }
+        }
+
         // check action requests related to EditProfile:
         $editProfileCmds = [
             'lzy-change-password',
@@ -64,6 +73,222 @@ class UserAdminBase
             $this->usrEd = new UserEditProfileBase($this->lzy);
         }
     } // handleRequests
+
+
+
+    private function renderAddFirstUserForm()
+    {
+        $this->trans->readTransvarsFromFile('~sys/'.LOCALES_PATH.'/admin.yaml', false, true);
+        $presetGroup = @$_GET['lzy-preset-groups'];
+        if ($presetGroup) {
+            $presetGroup = " value='$presetGroup'";
+        }
+        $html = <<<EOT
+
+<div class="lzy-add-first-user-wrapper">
+    <h1>{{ lzy-adduser-header }}</h1>
+	<div class='lzy-form-wrapper lzy-form-colored'>
+	  <form class='lzy-form lzy-encapsulated' method='post'>
+		<input type='hidden' name='_lzy-form-cmd' value='lzy-adduser' class='lzy-form-cmd' />
+
+		<div class='lzy-form-field-wrapper lzy-form-field-type-text'>
+                <span class='lzy-label-wrapper'>
+                    <label for='lzy-adduser-username'>{{ username }}<span class='lzy-form-required-marker' aria-hidden='true'>*</span></label>
+                    
+                </span><!-- /lzy-label-wrapper -->
+			<input type='text' id='lzy-adduser-username' name='lzy-username' required aria-required='true' class='lzy-form-input-elem' />
+		</div><!-- /field-wrapper -->
+
+
+		<div class='lzy-form-field-wrapper lzy-form-field-type-text'>
+                <span class='lzy-label-wrapper'>
+                    <label for='lzy-adduser-email'>{{ email }}<span class='lzy-form-required-marker' aria-hidden='true'>*</span></label>
+                    
+                </span><!-- /lzy-label-wrapper -->
+			<input type='text' id='lzy-adduser-email' name='lzy-email' required aria-required='true' class='lzy-form-input-elem' />
+		</div><!-- /field-wrapper -->
+
+
+		<div class='lzy-form-field-wrapper lzy-form-field-type-text'>
+                <span class='lzy-label-wrapper'>
+                    <label for='lzy-adduser_requested-groups'>{{ lzy-groups }}</label>
+                    
+                </span><!-- /lzy-label-wrapper -->
+			<input type='text' id='lzy-adduser_requested-groups' name='requested-groups' class='lzy-form-input-elem'$presetGroup />
+		</div><!-- /field-wrapper -->
+
+
+		<div class='lzy-form-field-wrapper lzy-form-field-type-password'>
+                <span class='lzy-label-wrapper'>
+		                    <label for='lzy-adduser-password'>{{ password }}</label>
+		                    
+		                </span><!-- /lzy-label-wrapper -->
+		            <div class='lzy-form-input-elem'>
+                <input type='password' class='lzy-form-password' id='lzy-adduser-password' name='lzy-password' aria-invalid='false' />
+                    <label class='lzy-form-pw-toggle' for="lzy-form-show-pw-1-4">
+                        <input type="checkbox" id="lzy-form-show-pw-1-4" class="lzy-form-show-pw">
+                        <img src="~sys/rsc/show.png" class="lzy-form-show-pw-icon" alt="{{ show password }}" title="{{ show password }}" />
+                    </label>
+
+            </div>
+		</div><!-- /field-wrapper -->
+
+
+		<div class='lzy-form-field-wrapper lzy-form-field-type-text'>
+                <span class='lzy-label-wrapper'>
+                    <label for='lzy-adduser_displayname'>{{ displayName }}</label>
+                    
+                </span><!-- /lzy-label-wrapper -->
+			<input type='text' id='lzy-adduser_displayname' name='lzy-displayname' class='lzy-form-input-elem' />
+		</div><!-- /field-wrapper -->
+
+
+		<div class='lzy-form-field-wrapper lzy-form-field-type-hash'>
+                <span class='lzy-label-wrapper'>
+                    <label for='lzy-adduser-accesscode'>{{ accessCode }}</label>
+                    
+                </span><!-- /lzy-label-wrapper -->
+			<input type='text' class='lzy-input-hash '  name='lzy-accesscode' />
+			<button id='lzy-adduser-create-hash' class='lzy-button lzy-generate-hash' type='button'>{{ lzy-generate-hash }}</button>
+		</div><!-- /field-wrapper -->
+
+		<div class='lzy-form-required-comment'>{{ lzy-form-required-comment }}</div>
+
+		<div class='lzy-form-field-type-buttons'>
+		<input type='reset' id='btn_lizzy-form1_cancel' value='Cancel'  class='lzy-form-button lzy-form-button-cancel' />
+		<input type='submit' id='btn_lizzy-form1_submit' value='Submit'  class='lzy-form-button lzy-form-button-submit' />
+		</div><!-- /field-wrapper -->
+
+	  </form>
+	</div><!-- /lzy-form-wrapper -->
+</div>
+
+EOT;
+        $this->lzy->page->addModules('~sys/css/user_admin.css');
+        $jq = <<<'EOT'
+			$('#lzy-adduser-create-hash').click(function() {
+			    let $wrapper = $(this).closest('.lzy-form-field-wrapper');
+			    let $input = $('.lzy-input-hash', $wrapper);
+			    const newHash = createHash( 8, false ); // unambiguous
+			    $input.val( newHash );
+			});
+			$('.lzy-form .lzy-form-pw-toggle').click(function(e) {
+			    e.preventDefault();
+			    let $form = $(this).closest('.lzy-form');
+			    let $pw = $('.lzy-form-password', $form);
+			    let rcsPath = systemPath + 'rsc/';
+			    if ($pw.attr('type') === 'text') {
+			        $pw.attr('type', 'password');
+			        $('.lzy-form-show-pw-icon', $form).attr('src', rcsPath + 'show.png');
+			    } else {
+			        $pw.attr('type', 'text');
+			        $('.lzy-form-show-pw-icon', $form).attr('src', rcsPath +'hide.png');
+			    }
+			});
+EOT;
+        $this->lzy->page->addJq($jq);
+        $this->lzy->page->addOverlay($html);
+
+        return true;
+    } // renderAddFirstUserForm
+
+
+
+    private function handleAddFirstUserRequest()
+    {
+        // security check: action only allowed if a) config/users.yaml not existing
+        if (file_exists(CONFIG_PATH.'users.yaml')) {
+            return false;
+        }
+        $username = @$_POST['lzy-username'];
+        $email = @$_POST['lzy-email'];
+        $password = @$_POST['lzy-password'];
+        if ($password) {
+            $password = password_hash( $password, PASSWORD_DEFAULT );
+        }
+        $requestedGroups = @$_POST['requested-groups'];
+        $displayName = @$_POST['lzy-displayname'];
+        $accessCode = @$_POST['lzy-accesscode'];
+
+        $newUser = <<<EOT
+# User DB
+#==========
+
+# Initial admin user:
+$username:
+    email: $email
+    password: $password
+    groups: $requestedGroups
+    username: $username
+    accessCode: $accessCode
+    displayName: $displayName
+
+
+#--------------------------------------------------------------------------------------
+# See https://getlizzy.net/misc/access_control/ for reference
+# Options:
+# ========
+# password:
+#       A hash code of the password is stored, not the original password.
+#       -> use convert tool '<url>?convert' to create hashed password.
+# groups:
+#       Only members of a group here get access. 
+#       Predefined groups: admins, editors, fileadmins. 
+#       In the sitemap file (config/sitemap.txt) pages may be designated as 
+#       restricted:group
+# email:
+#       (optional) permits logging in withough a password: the user enters that (or 
+#       the username) and Lizzy will a one-time access code to that address. Clicking 
+#       on the contained link will log the user in.
+# emailList:
+#       (optional) points to a file containing a list of email-address. Owners of these 
+#       addresses are permitted to log in using the one-time access code mechanism.
+# displayName:
+#       (optional) if set, that name will be shown in the webpage (e.g. in the 
+#       'Logged in as…' link)
+# maxSessionTime:
+#       (optional), if set, it defines the time in seconds that the user can access 
+#       the page without logging in again.
+# accessCodeEnabled:
+#       (optional) permits to disable the one-time access code mechanism for a 
+#       particular user.
+# accessCodeValidyTime:
+#       (optional) defines the time during whith a one-time access code (or link) 
+#       is valid. Maximum time possible is 60 minutes.
+# accessCode:
+#       (optional) a password-like string consisting of 6 uppercase letters and digits
+#       (plain or hashed) that can be used to build a custom link: append to the URL
+#       like a subfolder, e.g. https://getlizzy.net/mypage/U8KDF2
+#       Any user who knows this link can automatically log in and access otherwise
+#       restricted pages. Not very secure but convenient.
+# accessCodeValidUntil:
+#       (optional) defines the date and time until an accessCode (see above) expires.
+# inactive:
+#       (optional) If true, the owner of this account cannot log in.
+#--------------------------------------------------------------------------------------
+
+
+# The sample password below is 'insecure-pw' - do not use in production!
+
+# author:
+#     password:     $2a$10\$nvgug7wDF/.ErP5lVzKnY.977FaZP0kedf4UQkwk7BCpVCrgZrHD6
+#     groups:       editors
+#     email:        name@domain.net
+
+
+# user:
+#     password:     $2a$10\$nvgug7wDF/.ErP5lVzKnY.977FaZP0kedf4UQkwk7BCpVCrgZrHD6
+#     groups:       members, vips
+#     email:        user@domain.net
+#     displayName:  John Doe
+
+
+EOT;
+        file_put_contents(CONFIG_PATH.'users.yaml', $newUser);
+
+        reloadAgent(false, '{{ lzy-first-user-added }}');
+    } // handleAddFirstUserRequest
+
 
 
 

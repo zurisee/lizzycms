@@ -376,7 +376,7 @@ class Lizzy
     //            }
     //            exit( $msg );
     //        }
-
+ //
     //ToDo: 
     //        if (!getUrlArg('edit-profile')) {
     //            return;
@@ -394,7 +394,7 @@ class Lizzy
     //        $ed->render();
 
         // handle response of ?convert data url-arg:
-        if ($_POST['_lzy-form-cmd'] === 'convert-data') {
+        if (@$_POST['_lzy-form-cmd'] === 'convert-data') {
             preparePath('tmp/');
             $srcFile = 'tmp/'.$_FILES['Input_File']['name'];
             $rawFile = $_FILES['Input_File']['tmp_name'];
@@ -409,6 +409,12 @@ class Lizzy
                 $ds2->write($data);
             }
             $this->convertDataResponse = "{{ lzy-data-converted to }} $dstFile";
+
+        // Add First User:
+        } elseif (@$_POST['_lzy-form-cmd'] === 'lzy-adduser') {
+            $uadm = new UserAdminBase( $this );
+            $res = $uadm->handleRequests();
+            return $res;
         }
     } // handleTransactionalRequests
 

@@ -1,5 +1,14 @@
 # Transvar Definition for Admin
 
+### Add-First-User
+lzy-adduser-header:
+    de: Ersten Benutzer anlegen
+    _:  Define First User
+
+lzy-first-user-added:
+    de: Erster Benutzer angelegt
+    _:  New user successfully defined
+
 
 
 ### UserAdmin Table
