@@ -26,7 +26,7 @@ define('ELEM_ATTRIBUTES', 	    ',label,type,id,class,wrapperClass,name,required,
 define('UNARY_ELEM_ATTRIBUTES', ',required,translateLabel,splitOutput,autocomplete,');
 
 define('SUPPORTED_TYPES', 	    ',text,readonly,password,email,textarea,radio,checkbox,'.
-    'dropdown,button,url,date,time,datetime,month,number,range,tel,toggle,file,'.
+    'dropdown,button,url,date,time,datetime,month,number,range,tel,toggle,file,hash,'.
     'fieldset,fieldset-end,reveal,hidden,literal,bypassed,');
 
  // types to ignore in output:
@@ -1322,7 +1322,7 @@ EOT;
         $out .= $this->getLabel(); // includes infoIcon
         $value = $this->getValueAttr();
 
-        $out .= "\t\t\t<input type='string' class='lzy-input-hash {$this->currRec->class}' {$this->currRec->inpAttr}$value />\n";
+        $out .= "\t\t\t<input type='text' class='lzy-input-hash {$this->currRec->class}' {$this->currRec->inpAttr}$value />\n";
         $out .= "\t\t\t<button id='lzy-input-hash-{$this->inx}' class='lzy-button lzy-generate-hash' type='button'>{{ lzy-generate-hash }}</button>\n";
 
         if (isset($this->currRec->option)) {
