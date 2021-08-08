@@ -1,4 +1,21 @@
 
+/* === hash ============================== */
+.lzy-add-first-user-wrapper {
+    --lzy-label-width: 8em;
+}
+.lzy-input-hash {
+    width: var(--lzy-form-hash-width, 8em);
+}
+.lzy-generate-hash {
+    max-width: calc(100% - var(--lzy-form-hash-width, 8em) - var(--lzy-label-width, #{$label-width}) - 1em);
+}
+.lzy-add-first-user-wrapper {
+    width: 30em;
+    max-width: 100%;
+    margin: 5% auto;
+}
+
+
 /* --- Authentication ----- */
 body {
     --lzy-login-txt-color: black;
