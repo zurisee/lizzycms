@@ -1,3 +1,10 @@
-# {{ Unknown Page Title }}
+---
+css: |
+	.this {
+		width: 28em;
+		margin: 10% auto;
+	}
+---
+# {{ lzy-page-unkown-title }}
 
-{{ Page unknown }}
+{{ lzy-page-unkown-text }} {{ pagePath }}

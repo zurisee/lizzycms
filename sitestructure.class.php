@@ -75,6 +75,7 @@ class SiteStructure
             $this->currPage = '_unknown/';
             $this->currPageRec = $this->recTemplate;
             $this->currPageRec['isCurrPage'] = true;
+            $this->currPageRec['folder'] = $this->currPage;
             http_response_code(404);
             return;
         }

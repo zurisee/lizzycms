@@ -803,13 +803,13 @@ of:
     de: von
     en: of
     
-Unknown Page Title:
+lzy-page-unkown-title:
     de: Unbekannte Seite
-    en: Unknown Page
+    en: Page Unknown
 
-Page unknown:
-    de: Die gesuchte Seite existiert nicht in dieser Website.
-    en: Sorry, the page you asked for could not be found within this website.
+lzy-page-unkown-text:
+    de: 'Die gesuchte Seite existiert nicht: '
+    en: 'Sorry, the page you requested does not exist: '
 
 Yes:
     de: Ja
