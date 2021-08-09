@@ -374,7 +374,7 @@ function checkYamlCache($filename)
     }
 
     $data = false;
-    $cacheFile = CACHE_PATH.'yaml/'.fileExt($filename,true).'.json';
+    $cacheFile = SYSTEM_CACHE_PATH.'yaml/'.fileExt($filename,true).'.json';
     if (file_exists($cacheFile)) {
         $t = filemtime($cacheFile);
         $t0 = filemtime($filename);
@@ -394,7 +394,7 @@ function writeYamlCache($filename, $data)
     if (strpos($filename, 'config/users.yaml') !== false) {
         return;
     }
-    $cacheFile = CACHE_PATH.'yaml/'.fileExt($filename,true).'.json';
+    $cacheFile = SYSTEM_CACHE_PATH.'yaml/'.fileExt($filename,true).'.json';
     if (!file_exists($cacheFile)) {
         preparePath($cacheFile);
     }

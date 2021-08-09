@@ -5,6 +5,7 @@
 
 define('EXTENSIONS_PATH', 	    SYSTEM_PATH.'extensions/');
 define('DATA_PATH', 		    'data/');
+define('SYSTEM_CACHE_PATH',     '.#sys-cache/');
 define('CACHE_PATH',            '.cache/');
 define('LOG_PATH',              '.#logs/');
 define('DEFAULT_TICKETS_PATH',  '.#sys-cache/');

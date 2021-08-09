@@ -31,7 +31,6 @@ define('USER_VAR_DEF_FILE',     USER_CODE_PATH.'var-definitions.php');
 define('ICS_PATH',              'ics/'); // where .ics files are located
 
 define('DEFAULT_TICKETS_PATH', SYSTEM_CACHE_PATH);
-//define('DEFAULT_TICKETS_PATH', '.#tickets/');
 define('DAILY_PURGE_FILE',      CONFIG_PATH.'daily-purge.txt');
 define('USER_DAILY_CODE_FILE',  USER_CODE_PATH.'@daily-task.php');
 define('CACHE_DEPENDENCY_FILE', '.#page-cache.dependency.txt');
@@ -54,7 +53,7 @@ define('FAILED_LOGIN_FILE',     CACHE_PATH.'_failed-logins.yaml');
 define('HACK_MONITORING_FILE',  CACHE_PATH.'_hack_monitoring.yaml');
 define('ONETIME_PASSCODE_FILE', CACHE_PATH.'_onetime-passcodes.yaml');
 define('HACKING_THRESHOLD',     10);
-define('HOUSEKEEPING_FILE',     CACHE_PATH.'_housekeeping.txt');
+define('HOUSEKEEPING_FILE',     SYSTEM_CACHE_PATH.'_housekeeping.txt');
 define('IMG_DEFAULT_MAX_DIM',   '1920x1024');
 define('MIN_SITEMAP_INDENTATION', 4);
 define('REC_KEY_ID', 	        '_key');
@@ -66,8 +65,7 @@ define('TRANSVAR_ARG_QUOTES', 	'!@#$%&:?');    // Special quotes to enclose tran
 define('MKDIR_MASK',            0700); // permissions for file access by Lizzy
 define('MKDIR_MASK_WEBACCESS',  0755); // permissions for files cache
 
-$files = ['config/user_variables.yaml', SYSTEM_PATH.LOCALES_PATH.'*'];
-//$files = ['config/user_variables.yaml', SYSTEM_PATH.LOCALES_PATH.'*', '_lizzy/macros/'.LOCALES_PATH.'*'];
+$localeFiles = ['config/user_variables.yaml', SYSTEM_PATH.LOCALES_PATH.'*'];
 
 
 use Symfony\Component\Yaml\Yaml;
@@ -92,7 +90,6 @@ $globalParams = array(
 
 class Lizzy
 {
-//	private $currPage;
 	private $systemPath = SYSTEM_PATH;
 	public  $pathToRoot;
 	public  $pagePath;
@@ -585,7 +582,6 @@ class Lizzy
             $forceUpdate = getVersionCode( true );
             unset($_SESSION['lizzy']['reset']);
 
-//        } elseif ($this->config->debug_forceBrowserCacheUpdate) {
         } elseif (($this->config->debug_forceBrowserCacheUpdate === 'mobile') && $this->isMobile) {
             $forceUpdate = getVersionCode( true );
 
@@ -989,6 +985,7 @@ EOT;
             $this->trans->addVariable('lzy-fileadmin-button', "", false);
         }
 
+        $this->trans->addVariable('pagePath', $this->reqPagePath);
         $this->trans->addVariable('pageUrl', $this->pageUrl);
         $this->trans->addVariable('appRoot', $this->pathToRoot);			// e.g. '../'
         $this->trans->addVariable('absAppRoot', $GLOBALS['globalParams']['appRoot']);
@@ -1719,7 +1716,7 @@ EOT;
 
         if (getUrlArg('reset-unused')) {                           // restart monitoring of unused variables
             if ($this->config->debug_monitorUnusedVariables && $this->auth->isAdmin()) {
-                $this->trans->reset($GLOBALS['files']);
+                $this->trans->reset($GLOBALS['localeFiles']);
             }
         }
 
@@ -2339,7 +2336,6 @@ EOT;
     {
         global $globalParams;
         $this->siteStructure = new SiteStructure($this, $this->reqPagePath);
-//        $this->currPage = $this->reqPagePath = $this->siteStructure->currPage;
 
         $this->pagePath = $this->siteStructure->getPagePath();
         $this->pathToPage = PAGES_PATH . $this->pagePath;   //  includes pages/
@@ -2380,7 +2376,7 @@ EOT;
     {
         if (@$GLOBALS['globalParams']['toCache']) {
             $toCache = $GLOBALS['globalParams']['toCache'];
-            file_put_contents(CACHE_PATH.'_cachedParams.json', json_encode($toCache));
+            file_put_contents(SYSTEM_CACHE_PATH.'_cachedParams.json', json_encode($toCache));
         }
 
         if (!$this->config->site_enableCaching || !$GLOBALS['globalParams']['cachingActive']) {
@@ -2436,8 +2432,8 @@ EOT;
             purgePageCache();
         }
 
-        if (file_exists(CACHE_PATH.'_cachedParams.json')) {
-            $json = file_get_contents(CACHE_PATH.'_cachedParams.json');
+        if (file_exists(SYSTEM_CACHE_PATH.'_cachedParams.json')) {
+            $json = file_get_contents(SYSTEM_CACHE_PATH.'_cachedParams.json');
             $params = json_decode( $json, true );
             $GLOBALS['globalParams'] = array_merge($GLOBALS['globalParams'], $params);
         }
