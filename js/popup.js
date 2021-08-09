@@ -296,7 +296,7 @@ function LzyPopup( options, index ) {
             var id = '#' + parent.id;
             var $triggerElem = $( this.trigger );
             if (!$triggerElem.length) {
-                alert(`Error in lzyPopup: DOM element '${this.trigger}' not found.`);
+                alert('Error in lzyPopup: DOM element "' + this.trigger + '" not found.');
             } else {
                 $triggerElem.attr('data-lzy-inx', this.inx);
             }
