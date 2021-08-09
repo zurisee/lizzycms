@@ -4,6 +4,9 @@
 RewriteEngine on
 
 ## Preventive Measures:
+# Block spedific folders starting with .#:
+RewriteRule (^\.#|/\.#) - [F]
+
 # Block out any script trying to base64_encode data within the URL.
 RewriteCond %{QUERY_STRING} base64_encode[^(]*\([^)]*\) [OR]
 # Block out any script trying to set a PHP GLOBALS variable via URL.
@@ -32,24 +35,19 @@ RewriteRule ^(.*)$		%{REQUEST_URI}/ [R=301,L]
 # Pass through specific service files:
 RewriteCond %{REQUEST_URI} !(_ajax_server|_live_data_service|_upload_server|backend).php
 
-# Path through resource files, such as CSS, graphics etc.:
+# Pass through resource files, such as CSS, graphics etc.:
 RewriteCond %{REQUEST_URI} !\.(?:css|js|jpe?g|gif|png|pdf|mp3|vtt|webm|m4v|mp4|ogv|svg|eot|ttf|woff2?|map|csv)(\?.*)?$ [NC]
 
-# Path through specific files:
-RewriteCond %{REQUEST_URI} !(robots.txt|browserconfig.xml|manifest.json) [NC]
+# Pass through specific files:
+RewriteCond %{REQUEST_URI} !(robots.txt|browserconfig.xml) [NC]
 
 # Pass through spedific folders:
-RewriteCond %{REQUEST_URI} !(/assets|/download|/ics)
+RewriteCond %{REQUEST_URI} !(.cache|/assets|/download)
 
-# Path through any folders starting with '/-'
+# Pass through any folders starting with '/-'
 RewriteCond %{REQUEST_URI} !^-
 
 # Any requests not caught above are sent to index.php:
 RewriteRule ^(.*)$		index.php [L]
 
 
-# BEGIN GZIP
-<ifmodule mod_deflate.c>
-AddOutputFilterByType DEFLATE text/text text/html text/plain text/xml text/css application/x-javascript application/javascript
-</ifmodule>
-# END GZIP
