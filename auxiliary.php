@@ -2293,9 +2293,11 @@ function getGitTag($shortForm = true)
 {
     if (isset($GLOBALS['globalParams']['gitTag'])) {
         $str = $GLOBALS['globalParams']['gitTag'];
-    } else {
+    } elseif (is_callable('shell_exec') && false === stripos(ini_get('disable_functions'), 'shell_exec')) {
         $str = shell_exec('cd _lizzy; git describe --tags --abbrev=0; git log --pretty="%ci" -n1 HEAD');
         $GLOBALS['globalParams']['toCache']['gitTag'] = $str;
+    } else {
+        $GLOBALS['globalParams']['toCache']['gitTag'] = 'unknown';
     }
     if ($shortForm) {
         return preg_replace("/\n.*/", '', $str);
