@@ -5,7 +5,10 @@
 var debug = false;
 var windowTimeout = false;
 
-function freezeWindowAfter( delay, onClick, retrigger = false ) {
+function freezeWindowAfter( delay, onClick, retrigger ) {
+    if (typeof retrigger === 'undefined') {
+        retrigger = false;
+    }
     let t = 0;
     if (typeof delay === 'number') {
         t = delay;

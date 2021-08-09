@@ -1468,7 +1468,7 @@ EOT;
 
         if (isset($_REQUEST) && $_REQUEST && $this->auth->isLoggedIn()) {
             $uadm = new UserAdminBase( $this );
-            $res = $uadm->handleRequests();
+            $uadm->handleRequests();
         }
 
         //====================== the following is restricted to editors and admins:

@@ -184,7 +184,7 @@ EOT;
 EOT;
         $this->lzy->page->addJq($jq);
         $this->lzy->page->addOverlay($html);
-
+        mylog('rendering First-User Form');
         return true;
     } // renderAddFirstUserForm
 
@@ -194,6 +194,7 @@ EOT;
     {
         // security check: action only allowed if a) config/users.yaml not existing
         if (file_exists(CONFIG_PATH.'users.yaml')) {
+            mylog('First-User: file config/users.yaml already exists -> skipped');
             return false;
         }
         $username = @$_POST['lzy-username'];
@@ -207,10 +208,6 @@ EOT;
         $accessCode = @$_POST['lzy-accesscode'];
 
         $newUser = <<<EOT
-# User DB
-#==========
-
-# Initial admin user:
 $username:
     email: $email
     password: $password
@@ -218,7 +215,15 @@ $username:
     username: $username
     accessCode: $accessCode
     displayName: $displayName
+EOT;
+        mylog('First-User created: '.preg_replace("/\n\s*/", '; ', $newUser));
 
+        $newUser = <<<EOT
+# User DB
+#==========
+
+# Initial admin user:
+$newUser
 
 #--------------------------------------------------------------------------------------
 # See https://getlizzy.net/misc/access_control/ for reference
