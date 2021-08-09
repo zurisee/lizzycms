@@ -46,7 +46,7 @@ class UserAdminBase
             return $this->handleAddFirstUserRequest();
 
         } elseif ($cmd = $_GET['admin']) {
-            if ($cmd === 'add-user') {
+            if ($cmd === 'first-user') {
                 return $this->renderAddFirstUserForm();
             }
         }
@@ -79,10 +79,6 @@ class UserAdminBase
     private function renderAddFirstUserForm()
     {
         $this->trans->readTransvarsFromFile('~sys/'.LOCALES_PATH.'/admin.yaml', false, true);
-        $presetGroup = @$_GET['lzy-preset-groups'];
-        if ($presetGroup) {
-            $presetGroup = " value='$presetGroup'";
-        }
         $html = <<<EOT
 
 <div class="lzy-add-first-user-wrapper">
@@ -114,7 +110,7 @@ class UserAdminBase
                     <label for='lzy-adduser_requested-groups'>{{ lzy-groups }}</label>
                     
                 </span><!-- /lzy-label-wrapper -->
-			<input type='text' id='lzy-adduser_requested-groups' name='requested-groups' class='lzy-form-input-elem'$presetGroup />
+			<input type='text' id='lzy-adduser_requested-groups' name='requested-groups' class='lzy-form-input-elem' value='admins' />
 		</div><!-- /field-wrapper -->
 
 
