@@ -1541,6 +1541,11 @@ EOT;
         }
         $this->rawData = $this->lowlevelReadRawData();
 
+        if ($this->structure === null) {
+            $this->structure = $this->deriveStructureFromData();
+            $this->lowLevelWriteStructure();
+        }
+
         $this->exportRequired = true;
         return $res;
     } // lowLevelWrite
