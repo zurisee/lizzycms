@@ -2225,7 +2225,7 @@ EOT;
             // try to figure out keyType:
             if (!isset($structure['key']) || ($structure['key'] === false)) {
                 if (isset($rawData['origFile'])) {
-                    $rawData = getFile($rawData['origFile'], 'all', true);
+                    $rawData = getFile( PATH_TO_APP_ROOT.$rawData['origFile'], 'all', true);
                 }
                 if ($rawData) {
                     if ((($this->format === 'yaml') && ($rawData[0] === '-')) ||
