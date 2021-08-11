@@ -9,13 +9,12 @@
 
 define('SYSTEM_PATH', 		'');		                            // same directory
 define('PATH_TO_APP_ROOT', 	'../');		                            // root folder of web app
-define('SYSTEM_CACHE_PATH', PATH_TO_APP_ROOT.'.#sys-cache/');		                // system-cache directory
 define('LOCK_TIMEOUT', 		120);	                                // max time till field is automatically unlocked
 define('MAX_URL_ARG_SIZE',  255);
 
 ob_start();
 if (!session_start()) {
-    $this->mylog("ERROR in __construct(): failed to start session");
+    $sessionError = true;
 }
 
 require_once 'vendor/autoload.php';
@@ -26,6 +25,10 @@ require_once 'ticketing.class.php';
 
 use Symfony\Component\Yaml\Yaml;
 
+if (@$sessionError) {
+    mylog("ERROR: failed to start session");
+}
+
  // prevent "PHPSESSID"-Cookie warning:
 session_set_cookie_params(["SameSite" => "Strict"]); //none, lax, strict
 session_set_cookie_params(["Secure" => "true"]); //false, true
@@ -35,6 +38,7 @@ session_set_cookie_params(["HttpOnly" => "true"]); //false, true
 if (isset($_GET['abort'])) {
     $_SESSION['lizzy']['ajaxServerAbort'] = time();
     session_write_close();
+    mylog("_ajax_server initiating abort", false);
     exit();
 }
 
@@ -55,7 +59,7 @@ class AjaxServer
 
 
         if (!isset($_SESSION['lizzy']['userAgent'])) {
-            $this->mylog("*** Fishy request from {$_SERVER['HTTP_USER_AGENT']} (no valid session)");
+            mylog("*** Fishy request from {$_SERVER['HTTP_USER_AGENT']} (no valid session)");
             exit('restart');
         }
 
@@ -108,7 +112,7 @@ class AjaxServer
         if (isset($_GET['log'])) {                                // remote log, write to backend's log
             $msg = $this->get_request_data('text');
             $file = $this->get_request_data('file');
-            $this->mylog("Client: $msg", $file);
+            writeLog("Client: $msg", false, $file);
             lzyExit();
         }
         if ($this->get_request_data('info') !== null) {    // respond with info-msg
@@ -464,7 +468,7 @@ class AjaxServer
             $newFilename = dirname($filename)."/$newName0";
             if (file_exists($filename) &&
                 rename($filename, $newFilename)) {
-                $this->mylog( "rename($filename, $newFilename)");
+                mylog( "rename($filename, $newFilename)");
                 lzyExit('Ok');
             }
         }
@@ -619,26 +623,7 @@ class AjaxServer
 
 
 
-
-    private function mylog($str, $file = false)
-    {
-        if (!is_string( $str )) {
-            $str = var_r($str);
-        }
-        if ($file) {
-            $file = LOG_PATH.$file;
-        } else {
-            $file = SERVICE_LOG;
-        }
-        if (!file_exists(dirname($file))) {
-            mkdir(dirname($file), MKDIR_MASK, true);
-        }
-        file_put_contents($file, $this->timestamp()." {$this->clientID}{$this->user}:  $str\n\n", FILE_APPEND);
-    } // mylog
-
-
-
-
+    
     /**
      * http://php.net/manual/de/function.session-start.php
      * Every time you call session_start(), PHP adds another
