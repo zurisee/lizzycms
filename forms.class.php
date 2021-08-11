@@ -2287,8 +2287,8 @@ EOT;
 
                 $usrDataFldName = false;
                 foreach ($currForm->formElements as $i => $formElemDescr) {
-                    if ($formElemDescr->name === $dbFldKey) {
-//                    if ($formElemDescr->dataKey === $dbFldKey) {
+                    if (($formElemDescr->name === $dbFldKey) ||
+                        ($formElemDescr->dataKey === $dbFldKey)) {
                         $usrDataFldName = $formElemDescr->name;
                         break;
                     }
