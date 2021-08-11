@@ -1653,6 +1653,8 @@ EOT;
 		// printing support:
         if (getUrlArg('print-preview')) {              // activate Print-Preview
 
+            $this->config->site_ContentSecurityPolicy = false; // need to disable CSP because of paged.polyfill.js
+
             $url = './?print';
             unset($_GET['print-preview']);
             foreach ($_GET as $k => $v) {   // make sure all other url-args are preserved:
