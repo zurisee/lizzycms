@@ -356,6 +356,7 @@ class Lizzy
         $transactionalRequests = [
             'lzy-onetimelogin-request-email',
             'lzy-change-password',
+            'edit-profile',
         ];
         $reqs = array_intersect($transactionalRequests, array_keys($_REQUEST));
         if ($reqs) {
@@ -373,22 +374,6 @@ class Lizzy
     //            }
     //            exit( $msg );
     //        }
- //
-    //ToDo: 
-    //        if (!getUrlArg('edit-profile')) {
-    //            return;
-    //        }
-    //        if (isset($_REQUEST['login']) ||
-    //            isset($_REQUEST['lzy-change-email-request']) ||
-    //            isset($_REQUEST['lzy-change-email-confirm']) ||
-    //            isset($_REQUEST['lzy-create-accesslink']) ||
-    //            isset($_REQUEST['lzy-delete-account']) ||
-    //            isset($_REQUEST['lzy-onetimelogin-request-email'])) { // skip if change-email-request pending
-    //            return;
-    //        }
-    //        require_once ADMIN_PATH.'user-edit-profile.class.php';
-    //        $ed = new UserEditProfileBase( $this );
-    //        $ed->render();
 
         // handle response of ?convert data url-arg:
         if (@$_POST['_lzy-form-cmd'] === 'convert-data') {
@@ -424,6 +409,12 @@ class Lizzy
                 case 'lzy-onetimelogin-request-email':
                     $accForm = new UserLoginBase($this);
                     $res = $accForm->handleOnetimeLoginRequest( getPostData('lzy-onetimelogin-request-email'));
+                    break;
+
+                case 'edit-profile':
+                    require_once ADMIN_PATH.'user-edit-profile.class.php';
+                    $uep = new UserEditProfileBase($this);
+                    $html = $uep->render();
                     break;
 
                 case 'lzy-change-password':
