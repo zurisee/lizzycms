@@ -48,12 +48,13 @@ class UserEditProfileBase extends UserAdminBase
 
     public function handleChangeEMailRequest( $email )
     {
+        $this->trans->readTransvarsFromFile('~sys/'.LOCALES_PATH.'/admin.yaml', false, true);
         if ($this->auth->findUserRecKey($email, '*')) {
             $str = "{{ lzy-email-changed-email-in-use }}: $email";
             $res = [false, $str, 'Error', '#lzy-profile-edit-3'];
         } else {
             $str = $this->sendChangeMailAddress_Mail($email);
-            $res = [false, $str, 'Override'];
+            $res = [false, $str, 'Overlay'];
         }
         return $res;
     } // handleChangeEMailRequest
@@ -83,7 +84,7 @@ class UserEditProfileBase extends UserAdminBase
                 $userRec['accessCode'] = $hash;
                 parent::updateDbUserRec($user, $userRec);
                 $link = $GLOBALS['globalParams']['pageUrl'].$hash;
-                $link = "<div><a href='#' onclick=\"lzyInvokeAccessLink('$link')\">$link</a></div>";
+                $link = "<div><a href='#' id='lzy-invoke-access-link'>$link</a></div>";
                 $msg = $this->trans->translateVariable('lzy-create-accesslink-response1');
                 $msg2 = $this->trans->translateVariable('lzy-create-accesslink-response2');
                 $msg = "<div>$msg</div>$link<div>$msg2</div>";
@@ -236,7 +237,6 @@ class UserEditProfileBase extends UserAdminBase
             $this->auth->setUserAsLoggedIn($newUsername, true);
         }
         return $res;
-//        return $str;
     } // doChangeUsername
 
 
@@ -249,6 +249,7 @@ class UserEditProfileBase extends UserAdminBase
 
         $userRec = $this->auth->getLoggedInUser(true);
         $html = $this->renderEditProfileForm($userRec, $notification);
+        $html = "<div class='lzy-edit-profile-wrapper'>\n$html</div>\n";
         $this->page->addModules('PANELS');
         $jq = "initLzyPanel('.lzy-panels-widget', 1);";
         $this->page->addJq( $jq );

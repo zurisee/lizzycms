@@ -60,7 +60,7 @@ define('REC_KEY_ID', 	        '_key');
 define('TIMESTAMP_KEY_ID', 	    '_timestamp');
 define('PASSWORD_PLACEHOLDER', 	'●●●●');
 define('TRANSVAR_ARG_QUOTES', 	'!@#$%&:?');    // Special quotes to enclose transvar args: e.g. %% xy %%
-// Note: special case '!!' -> skips translation to HTML-quotes
+ // Note: special case '!!' -> skips translation to HTML-quotes
 
 define('MKDIR_MASK',            0700); // permissions for file access by Lizzy
 define('MKDIR_MASK_WEBACCESS',  0755); // permissions for files cache
@@ -293,7 +293,7 @@ class Lizzy
 
         $this->injectPageSwitcher();
 
-//        $this->warnOnErrors();
+ //        $this->warnOnErrors();
 
         $this->setTransvars2();
 
@@ -355,7 +355,6 @@ class Lizzy
         // requests in POST / GET:
         $transactionalRequests = [
             'lzy-onetimelogin-request-email',
-            'lzy-change-password',
             'edit-profile',
         ];
         $reqs = array_intersect($transactionalRequests, array_keys($_REQUEST));
@@ -414,12 +413,9 @@ class Lizzy
                 case 'edit-profile':
                     require_once ADMIN_PATH.'user-edit-profile.class.php';
                     $uep = new UserEditProfileBase($this);
-                    $html = $uep->render();
-                    break;
-
-                case 'lzy-change-password':
-                    require_once ADMIN_PATH.'user-edit-profile.class.php';
-                    new UserEditProfileBase($this);
+                    if (!isset($_REQUEST['lzy-change-email-request'])) {
+                        $html = $uep->render();
+                    }
                     break;
 
                 default:
@@ -864,7 +860,6 @@ EOT;
 		}
         $this->page->addModules('POPUPS');
 		require_once SYSTEM_PATH.'content-editor.class.php';
-//		require_once SYSTEM_PATH.'editor.class.php';
         require_once SYSTEM_PATH.'page-source.class.php';
 
         $this->config->editingMode = $this->editingMode;

@@ -473,3 +473,9 @@ input.lzy-login-email[type=email]:valid {
     padding: 1em;
     border: 1px solid green;
 }
+
+
+/* === Edit User Form ===================== */
+#lzy .lzy-edit-profile-wrapper .lzy-panels-widget.lzy-account-form {
+    font-size: 9pt;
+}

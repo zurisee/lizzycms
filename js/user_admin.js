@@ -127,3 +127,13 @@ $('.lzy-invite-user-form').submit(function () {
     $('#lzy-textarea2').val( txt );
 });
 
+
+// user-edit-profile.class.php -> handleCreateAccesslinkRequest()
+$('body').on('click', '#lzy-invoke-access-link', function() {
+    let url = $('#lzy-invoke-access-link').text();
+    $.ajax({
+        url: './?logout'
+    }).done(function() {
+        window.location = url;
+    });
+});

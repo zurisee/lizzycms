@@ -684,7 +684,7 @@ lzy-email-change-mail-up1:
         Guten Tag\n\nSie haben bei der Website {{ appRootUrl }} die Änderung Ihrer E-Mail Adresse beantragt.
         Bitte bestätigen Sie jetzt Ihre neue E-Mail Adresse. Klicken Sie hierzu auf folgenden Link: \n\t
     de2: |
-        Guten Tag\n\nDu habst bei der Website {{ appRootUrl }} die Änderung deiner E-Mail Adresse beantragt.
+        Guten Tag\n\nDu hast bei der Website {{ appRootUrl }} die Änderung deiner E-Mail Adresse beantragt.
         Bitte bestätige jetzt deine neue E-Mail Adresse. Klicke hierzu auf folgenden Link: \n\t
     _:  |
         Hello\n\nYou have requested to register a new e-mail address at website {{ appRootUrl }}.\n\n
@@ -692,7 +692,7 @@ lzy-email-change-mail-up1:
     
 lzy-email-change-mail-up2:
     de: "\n\nAlternativ können Sie den folgenden Code ins Eingabefeld in der Website eintragen:"
-    de: "\n\nAlternativ kannst du den folgenden Code ins Eingabefeld in der Website eintragen:"
+    de2: "\n\nAlternativ kannst du den folgenden Code ins Eingabefeld in der Website eintragen:"
     _:  "\n\nAlternatively, you can enter the following code into the entry field in the webpage:"
 
 lzy-email-change-mail-up3:
@@ -701,7 +701,7 @@ lzy-email-change-mail-up3:
         Sollten nicht Sie die Änderung Ihrer E-Mail Adresse beantragt haben, ignorieren Sie diese Mail.
     de2: |
         \n\nBeachte bitte, dass der Link und der Code nur einmal innerhalb der nächsten 15 Minuten funktioniert.\n\n
-        Falls nicht du die Änderung Ihrer E-Mail Adresse beantragt hast, kannst du diese Mail ignorieren.
+        Falls nicht du die Änderung deiner E-Mail Adresse beantragt hast, kannst du diese Mail ignorieren.
     _:  |
         \n\nPlease note that this link and this code only works once within the next 15 minutes.
         In case it wasn't you who requested this modification, you may ignore this e-mail.
