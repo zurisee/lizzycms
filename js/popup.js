@@ -109,19 +109,24 @@ function LzyPopup( options, index ) {
         if (typeof this.buttons === 'undefined') {
             return;
         }
+        let parent = this;
         for ( i in this.buttons) {
             k = parseInt(i) + 1;
             id = 'lzy-popup-btn-' + this.inx + '-' + k;
             bCl = (typeof this.buttonClasses[ i ] !== 'undefined')? this.buttonClasses[ i ]: this.buttonClasses[ 0 ];
 
-            if (typeof this.callbacks[i] !== 'undefined') {
-                callback = ' onclick="return ' + this.callbacks[i] + '(this);"';
-            } else {
-                callback = ' onclick="lzyPopupClose()"';
-            }
-
             button = (typeof this.buttons[ i ] !== 'undefined')? this.buttons[ i ].trim(): '';
-            buttonHtml += '<button id="'+ id +'" class="lzy-popup-btn lzy-popup-btn-' + k + ' ' + bCl + '"' + callback + '>' + button + '</button> ';
+            buttonHtml += '<button id="'+ id +'" class="lzy-popup-btn lzy-popup-btn-' + k + ' ' + bCl + '">' + button + '</button> ';
+
+            if (typeof this.callbacks[i] !== 'undefined') {
+                $('body').on('click','#'+ id, function() {
+                    window[ parent.callbacks[i] ](this);
+                });
+            } else {
+                $('#'+ id).click(function() {
+                    lzyPopupClose();
+                });
+            }
         }
         if (buttonHtml) {
             this.buttonHtml = '<div class="lzy-popup-buttons">' + buttonHtml + '</div>';
