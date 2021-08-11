@@ -149,7 +149,7 @@ class HtmlTable
 
         // for "active tables": load modules and set class:
         if ($this->editingActive || $this->activityButtons || $this->recViewButtonsActive) {
-            $this->page->addModules('POPUPS,HTMLTABLE,~sys/css/htmltables.css');
+            $this->page->addModules('POPUPS,HTMLTABLE,TOOLTIPSTER,~sys/css/htmltables.css');
             $this->includeCellRefs = true;
             require_once SYSTEM_PATH.'forms.class.php';
             new Forms( $this->lzy, true );
@@ -164,7 +164,7 @@ class HtmlTable
         $this->applyProcessingToData();
 
         $this->injectEditFormRef();
-        $out = $this->injectEditingFeatures();
+        $out = '';
         $this->convertLinks();
         $this->convertTimestamps();
         $this->export();
@@ -2136,7 +2136,7 @@ EOT;
 
     private function renderTableActionButtons()
     {
-        $buttons = $class = '';
+        $out = $buttons = $class = '';
         $this->jq = '';
 
         if ($this->activityButtons) {
@@ -2153,6 +2153,9 @@ EOT;
 
                 // Handle special button names "new-rec" and "delete-rec":
                 if ((strcasecmp($button, 'new-rec') === 0) || (strcasecmp($button, 'add-rec') === 0)) {
+                    $this->editingActive = checkPermission('loggedin', $this->lzy);
+                    $this->editMode = 'form';
+                    $out = $this->injectEditingFeatures();
                     list($button, $class, $attributes) = $this->appendNewRecButton($attributes);
 
                 } elseif (strcasecmp($button, 'delete-rec') === 0) {
@@ -2173,7 +2176,7 @@ EOT;
             }
         }
 
-        $out = <<<EOT
+        $out .= <<<EOT
     
   <div class="lzy-table-action-btns">
 $buttons  </div>
@@ -2267,15 +2270,20 @@ EOT;
         $file = $this->getDownloadFilename();
         $this->injectSelectionCol = true;
         $button = 'lzy-table-download-btn';
-        $this->jq .= <<<EOT
+        $appRoot = $GLOBALS['globalParams']['appRoot'];
+        $jq = <<<EOT
 
 $('.lzy-table-download-btn').click(function() {
     mylog('open table download popup', false);
     const \$tableWrapper = $(this).closest('.lzy-table-wrapper');
     const \$table = $('.lzy-table', \$tableWrapper);
     const tableInx = \$table.data('inx');
-    const popup = '<p>{{ lzy-table-download-text }}</p><ul><li>{{^ lzy-table-download-prefix }}<a href="~/{$file}xlsx" download target="_blank">{{ lzy-table-download-excel }}</a>{{^ lzy-table-download-postfix }}</li><li>{{^ lzy-table-download-prefix }}<a href="~/{$file}ods" download target="_blank">{{ lzy-table-download-ods }}</a>{{^ lzy-table-download-postfix }}</li></ul>';
-    lzyPopup({ 
+    const popup = '<p>{{ lzy-table-download-text }}</p><ul><li>{{^ lzy-table-download-prefix }}'
+        +'<a href="$appRoot{$file}xlsx" download target="_blank">{{ lzy-table-download-excel }}</a>'
+        +'{{^ lzy-table-download-postfix }}</li><li>{{^ lzy-table-download-prefix }}'
+        +'<a href="$appRoot{$file}ods" download target="_blank">{{ lzy-table-download-ods }}</a>'
+        +'{{^ lzy-table-download-postfix }}</li></ul>';
+    lzyPopup({
         text: popup,
         header: '{{ lzy-table-download-header }}',
         wrapperClass: 'lzy-table-download',
@@ -2283,6 +2291,7 @@ $('.lzy-table-download-btn').click(function() {
     return;
 });
 EOT;
+        $this->jq .= $this->lzy->trans->translate($jq);
         $class = 'lzy-table-download-btn';
         $attributes = "$attributes title='{{ lzy-table-download-title }}'";
         return [$button, $class, $attributes];
