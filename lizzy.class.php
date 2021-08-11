@@ -2213,11 +2213,11 @@ EOT;
         }
         $nextTitle = $this->trans->getVariable('lzy-next-page-link-title');
         if ($nextTitle) {
-            $nextTitle = " title='$nextTitle' aria-label='$nextTitle'";
+            $nextTitle = " title='$nextTitle'";
         }
         $prevTitle = $this->trans->getVariable('lzy-prev-page-link-title');
         if ($prevTitle) {
-            $prevTitle = " title='$prevTitle' aria-label='$prevTitle'";
+            $prevTitle = " title='$prevTitle'";
         }
         $prevLink = '';
         if ($this->siteStructure->prevPage !== false) {
