@@ -456,7 +456,7 @@ EOT;
         }
 
         $out = <<<EOT
-    <nav id='lzy-nav-breadcrumb{$this->inx}' aria-label="$ariaLabel" class="lzy-nav-breadcrumb">
+    <nav id='lzy-nav-breadcrumb{$this->inx}' title="$ariaLabel" class="lzy-nav-breadcrumb">
       <ol class='lzy-nav-breadcrumb'>$out</ol>
     </nav>
 EOT;
