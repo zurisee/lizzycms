@@ -196,7 +196,7 @@ function HTMLtable( tableObj ) {
 		});
 
 		const $form = this.$recEditForm;
-		$form.data('recKey', this.recKey);
+		$form.data('reckey', this.recKey);
 		$('input[name=_rec-key]',$form).val( this.recKey );
 
 		if (this.recKey === 'new-rec') {
