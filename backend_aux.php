@@ -5,7 +5,7 @@
 
 define('EXTENSIONS_PATH', 	    SYSTEM_PATH.'extensions/');
 define('DATA_PATH', 		    'data/');
-define('SYSTEM_CACHE_PATH',     '.#sys-cache/');
+define('SYSTEM_CACHE_PATH',     PATH_TO_APP_ROOT . '.#sys-cache/');
 define('CACHE_PATH',            '.cache/');
 define('LOG_PATH',              '.#logs/');
 define('DEFAULT_TICKETS_PATH',  '.#sys-cache/');
@@ -643,4 +643,16 @@ function removeEmptyLines($str)
 
 
 
+
+function findArrayElementByAttribute( $array, $key, $value) {
+    $res = array_filter($array, function ($rec) use($key, $value) {
+        if (isset($rec[$key])) {
+            if (($value === null) || ($rec[$key] === $value)) {
+                return true;
+            }
+        }
+        return false;
+    });
+    return $res;
+} // findArrayElementByAttribute
 
