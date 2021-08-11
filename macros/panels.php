@@ -86,7 +86,7 @@ $this->addMacro($macroName, function () {
     }
 
     if ($closeButton) {
-        $this->page->addJs("var closeButton = '<button class=\"lzy-panel-close-btn\" aria-label=\"{{ lzy-close-panel }}\">×</button>';\n");
+        $this->page->addJs("var closeButton = '<button class=\"lzy-panel-close-btn\" title=\"{{ lzy-close-panel }}\">×</button>';\n");
     }
     if (!$omitScript) {
         $jq = <<<EOT

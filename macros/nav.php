@@ -85,7 +85,7 @@ function renderSmallScreenHeader($trans, $options)
 
     $out =  "<div class='lzy-mobile-page-header'>".
                 "$smallScreenHeaderText".
-                "<button id='lzy-nav-menu-icon' class='lzy-nav-menu-icon' tabindex='1' aria-label='{{ lzy-operate-menu }}'><span class='lzy-icon lzy-icon-menu'></span></button>".
+                "<button id='lzy-nav-menu-icon' class='lzy-nav-menu-icon' tabindex='1' title='{{ lzy-operate-menu }}'><span class='lzy-icon lzy-icon-menu'></span></button>".
             "</div>";
 
     return $out;
