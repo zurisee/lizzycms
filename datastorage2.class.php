@@ -19,7 +19,7 @@
 
  // PATH_TO_APP_ROOT must to be defined by the invoking module
  // *_PATH constants must only define path starting from app-root
-define('LIZZY_DB',  PATH_TO_APP_ROOT . SYSTEM_CACHE_PATH . '_lzy_db.sqlite');
+define('LIZZY_DB',  SYSTEM_CACHE_PATH . '_lzy_db.sqlite');
 
 if (!defined('LZY_LOCK_ALL_DURATION_DEFAULT')) {
     define('LZY_LOCK_ALL_DURATION_DEFAULT', 900.0); // 15 minutes
