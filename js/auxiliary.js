@@ -2,11 +2,13 @@
  *  Lizzy's auxiliary functions
 */
 
+"use strict";
+
 var debug = false;
 var windowTimeout = false;
 
-function freezeWindowAfter( delay, onClick, retrigger ) {
-    if (typeof retrigger === 'undefined') {
+function freezeWindowAfter( delay, onClick, onTimeout, retrigger ) {
+    if ((typeof retrigger === 'undefined') || (typeof retrigger === 'function')) {
         retrigger = false;
     }
     let t = 0;
@@ -41,6 +43,9 @@ function freezeWindowAfter( delay, onClick, retrigger ) {
     }
     windowTimeout = setTimeout(function () {
         $('body').append(overlay).addClass('lzy-overlay-background-frozen');
+        if (typeof onTimeout === 'function') {
+            onTimeout();
+        }
         $('.lzy-overlay-background').click(function () {
             $('body').removeClass('lzy-overlay-background-frozen');
             if (typeof onClick === 'function') {
@@ -87,7 +92,7 @@ function freezeWindowAfter( delay, onClick, retrigger ) {
 function isValidEmail(email) {
     let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     return re.test(String(email).toLowerCase());
-}
+} // isValidEmail
 
 
 
@@ -106,7 +111,7 @@ function unTransvar( str ) {
 } // unTransvar
 
 
-
+var ajaxHndl = null;
 function execAjax(payload, cmd, doneFun, url) {
 
     if (typeof url === 'undefined') {
@@ -150,7 +155,6 @@ function execAjaxPromise(cmd, options, url) {
                 resolve( json );
             });
     });
-
 } // execAjax
 
 
@@ -199,6 +203,7 @@ Date.prototype.addHours = function(h) {
 if ($('.lzy-msgbox').length) {
     setupMessageHandler(800);
 }
+var lzyMsgInitialized = null;
 function setupMessageHandler( delay) {
     setTimeout(function () {
         $('.lzy-msgbox').addClass('lzy-msg-show');
@@ -229,7 +234,7 @@ function appendToUrl(url, arg) {
     if (!arg) {
         return url;
     }
-    arg = arg.replace(/^[\?&]/, '');
+    arg = arg.replace(/^[?&]/, '');
     if (url.match(/\?/)) {
         url = url + '&' + arg;
     } else {
@@ -354,7 +359,7 @@ function timeStamp( long ) {
 	let out = time.join(':');
 	if (typeof long !== 'undefined') {
         let day = [ now.getFullYear(), now.getMonth() + 1, now.getDate() ];
-        for ( i = 1; i < 3; i++ ) {
+        for ( let i = 1; i < 3; i++ ) {
             if ( day[i] < 10 ) {
                 day[i] = '0' + day[i];
             }
@@ -415,7 +420,7 @@ function createHash( length, unambiguous ) {
         n2 = 24;
     }
     let hash = chars.charAt( Math.floor( Math.random() * n1 ) );  // first always a letter
-    for (i=1; i<length; i++) {
+    for (let i=1; i<length; i++) {
         hash += chars.charAt( Math.floor( Math.random() * n2 ) );
     }
     return hash;
