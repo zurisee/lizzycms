@@ -460,7 +460,7 @@ EOT;
             'editableBy' => true,
             'editMode' => 'form',
             'labelColons' => true,
-            'activityButtons' => 'delete-rec|new-rec',
+            'tableButtons' => 'delete-rec|new-rec',
             'splitChoiceElemsInDb' => false,
             'lockRecWhileFormOpen' => true,
         ];

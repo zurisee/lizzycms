@@ -24,7 +24,7 @@ class HtmlTable
     private $errMsg = '';
     private $dataTableObj = null;
     private $strToAppend = '';
-    private $liveDataSrcRef = '';
+    private $srcRef = '';
     private $ticketHash;
     private $jq;
     private $headerElems;
@@ -77,7 +77,11 @@ class HtmlTable
         $this->editMode             = $this->getOption('editMode', '[inline,form] Defines (Default: inline).', 'inline');
         $this->editFormArgs         = $this->getOption('editFormArgs', 'Arguments that will passed on to the forms-class.', false);
         $this->editFormTemplate     = $this->getOption('editFormTemplate', 'A markdown file that will be used for rendering the form.', false);
-        $this->activityButtons      = $this->getOption('activityButtons', 'Activates a row of activity buttons related to the form. If in editMode, a "New Record" button will be added.', false);
+        $this->tableButtons         = $this->getOption('tableButtons', 'Activates a row of activity buttons related to the form. If in editMode, a "New Record" button will be added.', false);
+        $activityButtons            = $this->getOption('activityButtons', 'Synonyme for "tableButtons".', false);
+        if ($activityButtons) {
+            $this->tableButtons = $activityButtons;
+        }
         $this->labelColons          = $this->getOption('labelColons', 'If false, trailing colon of labels in editing-forms are omitted.', true);
         $this->customRowButtons     = $this->getOption('customRowButtons', '(optional comma-separated-list) Prepends a column to each row containing custom buttons. Buttons can be defined as names of icons or HTML code. E.g. "send,trash"', null);
         $this->recViewButtonsActive = $this->getOption('showRecViewButton', '[true|false] If true, a button to open a popup is added to each row. The popup presents the data record in form view.', false);
@@ -148,11 +152,11 @@ class HtmlTable
 //        }
 
         // for "active tables": load modules and set class:
-        if ($this->editingActive || $this->activityButtons || $this->recViewButtonsActive) {
+        if ($this->editingActive || $this->tableButtons || $this->recViewButtonsActive) {
             $this->page->addModules('POPUPS,HTMLTABLE,TOOLTIPSTER,~sys/css/htmltables.css');
             $this->includeCellRefs = true;
-            require_once SYSTEM_PATH.'forms.class.php';
-            new Forms( $this->lzy, true );
+            require_once SYSTEM_PATH . 'forms.class.php';
+            new Forms($this->lzy, true);
             $this->tableClass .= ' lzy-active-table';
         }
 
@@ -169,13 +173,43 @@ class HtmlTable
         $this->convertTimestamps();
         $this->export();
         $out .= $this->renderHtmlTable() . $this->strToAppend;
+        if ($this->liveData) {
+            $this->activateLiveData();
+        }
+
+        if ($this->tableButtons && !$this->srcRef) {
+            $this->srcRef = $this->renderSrcRef();
+        }
+
         $out = <<<EOT
-  <div class='lzy-table-wrapper $this->wrapperClass'{$this->liveDataSrcRef}>
+  <div class='lzy-table-wrapper $this->wrapperClass'{$this->srcRef}>
 $out
   </div>
 EOT;
         return $out;
     } // render
+
+
+
+    private function renderSrcRef()
+    {
+        $tickRec = [];
+        $setId = "set$this->tableCounter";
+        $tickRec[ $setId ]['_dataSource'] = $this->dataSource;
+
+        $tck = new Ticketing(['defaultType' => 'htmltable', 'defaultMaxConsumptionCount' => false]);
+        if ($this->ticketHash && $tck->ticketExists($this->ticketHash)) {
+            $ticketHash = $tck->createHash(true);
+            $tck->updateTicket($this->ticketHash, $tickRec);
+        } else {
+            $ticketHash = $tck->createTicket($tickRec, false, 86400);
+        }
+        $dataSrcRef = "$ticketHash:$setId";
+
+        $str = " data-datasrc-ref='$dataSrcRef'";
+
+        return $str;
+    } // renderSrcRef()
 
 
 
@@ -391,15 +425,6 @@ EOT;
         require_once $file;
         $this->page->addModules('~ext/livedata/js/live_data.js');
 
-        $jq = <<<EOT
-
-if ($('[data-datasrc-ref]').length) {
-    liveDataInit( false ); // false = skipInitialUpdate
-}
-
-EOT;
-        $this->page->addJq($jq);
-
         $js = '';
         if ($this->dataTableObj) {
             foreach ($this->dataTableObj as $dataTableObj) {
@@ -418,8 +443,8 @@ EOT;
         $args = [
             'dataSource' => '~/'.$this->dataSource,
             'manual' => 'silent',
-            'initJs' => false,
-            //'pollingTime' => 10, // for testing
+            'initJs' => true,
+            'watchdog' => true,
         ];
 
         // if dataTables are active, make sure they are redrawn when new data arrives:
@@ -428,7 +453,7 @@ EOT;
         }
 
         $ld = new LiveData($this->lzy, $args);
-        $this->liveDataSrcRef = $ld->render();
+        $this->srcRef = $ld->render();
         return '';
     } // activateLiveData
 
@@ -498,7 +523,7 @@ EOT;
     private function renderHtmlTable()
     {
         $out = '';
-        if ($this->activityButtons) {
+        if ($this->tableButtons) {
             $out = $this->renderTableActionButtons();
         }
 
@@ -2139,8 +2164,8 @@ EOT;
         $out = $buttons = $class = '';
         $this->jq = '';
 
-        if ($this->activityButtons) {
-            $buttonArray = explodeTrim(',|', $this->activityButtons);
+        if ($this->tableButtons) {
+            $buttonArray = explodeTrim(',|', $this->tableButtons);
             foreach ($buttonArray as $button) {
                 if (!$button) { continue; }
 
@@ -2241,6 +2266,10 @@ EOT;
 $('.lzy-table-trash-btn, .lzy-table-delete-rec-btn').click(function() {
     const $table = $('.lzy-table', $(this).closest('.lzy-table-wrapper'));
     const ds = $table.closest('[data-datasrc-ref]').attr('data-datasrc-ref');
+    if (typeof ds === 'undefined') {
+        lzyPopup('Error: "data-datasrc-ref" is not defined');
+        return;
+    }
     var recs = '';
     $('.lzy-table-row-selector:checked', $table).each(function() {
         const recKey = $(this).closest('tr').attr('data-reckey');
@@ -2325,7 +2354,7 @@ EOT;
     private function injectEditFormRef(): void
     {
         // for "active tables": create ticket and set data-field:
-        if ($this->editingActive || $this->editableActive || $this->activityButtons || $this->recViewButtonsActive) {
+        if ($this->editingActive || $this->editableActive || $this->tableButtons || $this->recViewButtonsActive) {
             $this->page->addModules('MD5');
             $this->tableDataAttr .= " data-form-id='#lzy-edit-data-form-{$this->tableCounter}'";
 
@@ -2351,11 +2380,8 @@ EOT;
         if ($this->editingActive) {
             $out .= $this->activateEditingForm();
         } elseif ($this->editableActive) {
-            $this->liveDataSrcRef = $this->activateEditable();
+            $this->srcRef = $this->activateEditable();
         } else {
-            if ($this->liveData) {            // option liveData:
-                $out .= $this->activateLiveData();
-            }
             $this->editableBy = false;
         }
 
@@ -2363,21 +2389,8 @@ EOT;
             $out .= $this->renderForm();
         }
         if ($this->editingActive || $this->editableActive ||
-            $this->activityButtons || $this->recViewButtonsActive || @$this->showRecViewButton) {
+            $this->tableButtons || $this->recViewButtonsActive || @$this->showRecViewButton) {
             $this->renderTextResources();
-
-            if (!$this->liveDataSrcRef) {
-                $setId = "set$this->tableCounter";
-                $tickRec[$setId]['_dataSource'] = $this->dataSource;
-                $tck = new Ticketing(['defaultMaxConsumptionCount' => false, 'defaultType' => 'htmltable']);
-                if ($this->ticketHash && $tck->ticketExists($this->ticketHash)) {
-                    $tck->createHash(true);
-                    $tck->updateTicket($this->ticketHash, $tickRec);
-                } else {
-                    $this->ticketHash = $tck->createTicket($tickRec, false, 86400);
-                }
-                $this->liveDataSrcRef = " data-datasrc-ref='$this->ticketHash:$setId'";
-            }
         }
         return $out;
     } // injectEditingFeatures
