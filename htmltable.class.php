@@ -28,7 +28,7 @@ class HtmlTable
     private $ticketHash;
     private $jq;
     private $headerElems;
-    private $data, $dataBare, $data0;
+    private $data, $data0, $dataBare; // $dataBare = data without data-ref
     private $tableCounter, $nRows;
     private $textResourcesRendered;
     private $structure;
@@ -133,6 +133,32 @@ class HtmlTable
                 $this->editableActive = true;
             }
         }
+
+        if ($this->tableButtons) {
+            $buttonArray = explodeTrim(',|', $this->tableButtons);
+            $this->tableButtons = [];
+            foreach ($buttonArray as $button) {
+                if (!$button) { continue; }
+
+                // extract optinal attributes:
+                $attributes = '';
+                if (preg_match('/(.*?) \s* { (.*) }/x', $button, $m)) {
+                    $button = $m[1];
+                    $attributes = str_replace(['&#34;','&#39;'], ['"',"'"], $m[2]);
+                }
+
+                // Handle special button names "new-rec" and "delete-rec":
+                if ((strcasecmp($button, 'new-rec') === 0) || (strcasecmp($button, 'add-rec') === 0)) {
+                    $this->editingActive = checkPermission('loggedin', $this->lzy);
+                    $this->editMode = 'form';
+
+                } else {
+                    $class = translateToClassName($button);
+                }
+                $this->tableButtons[ $button ] = $attributes;
+            }
+        }
+
     } // __construct
 
 
@@ -250,6 +276,16 @@ EOT;
                         $this->data[$key][] = $this->data0[$key][REC_KEY_ID];
                     }
                 }
+            }
+        } else {
+            $header = &$this->dataBare[0];
+            $inx = array_search(REC_KEY_ID, $header);
+            if ($inx !== false) {
+                unset($header[ $inx ]);
+            }
+            $inx = array_search(TIMESTAMP_KEY_ID, $header);
+            if ($inx !== false) {
+                unset($header[ $inx ]);
             }
         }
 
@@ -1840,11 +1876,12 @@ EOT;
 
         // add meta-fields to excludes if requested:
         if ($this->hideMetaFields) {
-            $keyInx = array_search('_key', $this->headerElems);
+            $keys = array_keys( $this->structure['elements'] );
+            $keyInx = array_search(REC_KEY_ID, $keys);
             if (!in_array($keyInx, $colsToExclude)) {
                 $colsToExclude[] = $keyInx;
             }
-            $tsInx = array_search('_timestamp', $this->headerElems);
+            $tsInx = array_search(TIMESTAMP_KEY_ID, $keys);
             if (!in_array($tsInx, $colsToExclude)) {
                 $colsToExclude[] = $tsInx;
             }
@@ -1852,7 +1889,9 @@ EOT;
         // delete columns in reverse order:
         rsort($colsToExclude);
         foreach ($colsToExclude as $c) {
-            array_splice($this->headerElems, $c, 1);
+            if ($this->headers === true) {
+                array_splice($this->headerElems, $c, 1);
+            }
             foreach ($data as $r => $row) {
                 array_splice($data[$r], $c, 1);
             }
@@ -2069,9 +2108,18 @@ EOT;
                     $ic++;
                 }
             }
+        } elseif (is_string($this->headers)) {
+            $this->headerElems = explodeTrim(',|', $this->headers);
+        } else {
+            die("Error in getHeaders(): unknown type of argument 'headers'.");
         }
-        if ($this->includeKeys && !in_array('_key', $this->headerElems)) {
-            $this->headerElems[] = '_key';
+        if ($this->includeKeys) {
+            if (!in_array(REC_KEY_ID, $this->headerElems)) {
+                $this->headerElems[] = REC_KEY_ID;
+            }
+            if (!in_array(TIMESTAMP_KEY_ID, $this->headerElems)) {
+                $this->headerElems[] = TIMESTAMP_KEY_ID;
+            }
         }
     } // getHeaders
 
@@ -2165,21 +2213,9 @@ EOT;
         $this->jq = '';
 
         if ($this->tableButtons) {
-            $buttonArray = explodeTrim(',|', $this->tableButtons);
-            foreach ($buttonArray as $button) {
-                if (!$button) { continue; }
-
-                // extract optinal attributes:
-                $attributes = '';
-                if (preg_match('/(.*?) \s* { (.*) }/x', $button, $m)) {
-                    $button = $m[1];
-                    $attributes = str_replace(['&#34;','&#39;'], ['"',"'"], $m[2]);
-                }
-
+            foreach ($this->tableButtons as $button => $attributes) {
                 // Handle special button names "new-rec" and "delete-rec":
                 if ((strcasecmp($button, 'new-rec') === 0) || (strcasecmp($button, 'add-rec') === 0)) {
-                    $this->editingActive = checkPermission('loggedin', $this->lzy);
-                    $this->editMode = 'form';
                     $out = $this->injectEditingFeatures();
                     list($button, $class, $attributes) = $this->appendNewRecButton($attributes);
 
