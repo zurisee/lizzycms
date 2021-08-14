@@ -200,9 +200,6 @@ Date.prototype.addHours = function(h) {
 
 
 // === Message Box =================================
-if ($('.lzy-msgbox').length) {
-    setupMessageHandler(800);
-}
 var lzyMsgInitialized = null;
 function setupMessageHandler( delay) {
     setTimeout(function () {
@@ -218,6 +215,12 @@ function setupMessageHandler( delay) {
     });
     lzyMsgInitialized = true;
 } // setupMessageHandler
+
+
+
+if ($('.lzy-msgbox').length) {
+    setupMessageHandler(800);
+}
 
 
 
@@ -263,7 +266,7 @@ function mylog(txt, notDebugOnly ) {
             $('body').append("<div id='lzy-log-placeholder'></div><div id='lzy-log'></div>");
             $log = $('#lzy-log');
         }
-        text = String(txt).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const text = String(txt).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         $log.append('<p>'+timeStamp()+'&nbsp;&nbsp;'+text+'</p>').animate({ scrollTop: $log.prop("scrollHeight")}, 100);
 	}
 
@@ -378,14 +381,14 @@ function timeToStr( UNIX_timestamp ){
     } else {
         let a = new Date(UNIX_timestamp * 1000);
     }
-    let months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    let year = a.getFullYear();
-    let month = months[a.getMonth()];
-    let date = a.getDate();
-    let hour = a.getHours();
-    let min = a.getMinutes();
-    let sec = a.getSeconds();
-    let time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const year = a.getFullYear();
+    const month = months[a.getMonth()];
+    const date = a.getDate();
+    const hour = a.getHours();
+    const min = a.getMinutes();
+    const sec = a.getSeconds();
+    const time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
     return time;
 } // timeToStr
 
