@@ -12,6 +12,11 @@ define('PATH_TO_APP_ROOT', 	'../');		                            // root folder 
 define('LOCK_TIMEOUT', 		120);	                                // max time till field is automatically unlocked
 define('MAX_URL_ARG_SIZE',  255);
 
+// prevent "PHPSESSID"-Cookie warning:
+session_set_cookie_params(["SameSite" => "Strict"]);
+session_set_cookie_params(["Secure" => "true"]);
+session_set_cookie_params(["HttpOnly" => "true"]);
+
 ob_start();
 if (!session_start()) {
     $sessionError = true;
@@ -29,10 +34,6 @@ if (@$sessionError) {
     mylog("ERROR: failed to start session");
 }
 
- // prevent "PHPSESSID"-Cookie warning:
-session_set_cookie_params(["SameSite" => "Strict"]); //none, lax, strict
-session_set_cookie_params(["Secure" => "true"]); //false, true
-session_set_cookie_params(["HttpOnly" => "true"]); //false, true
 
 
 if (isset($_GET['abort'])) {
