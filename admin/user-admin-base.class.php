@@ -45,7 +45,7 @@ class UserAdminBase
         if (@$_POST['_lzy-form-cmd'] === 'lzy-adduser') {
             return $this->handleAddFirstUserRequest();
 
-        } elseif ($cmd = $_GET['admin']) {
+        } elseif ($cmd = @$_GET['admin']) {
             if ($cmd === 'first-user') {
                 return $this->renderAddFirstUserForm();
             }
