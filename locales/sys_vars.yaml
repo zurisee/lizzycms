@@ -911,6 +911,10 @@ lzy-invalid-email-address:
 
 
 #--- Edit Tables --------------------
+lzy-edit-user-form-header:
+    de: 'Datensatz bearbeiten'
+    _:  'Edit record'
+
 lzy-table-view-btn:
     de: 'Datensatz anzeigen'
     _:  'Show record'
