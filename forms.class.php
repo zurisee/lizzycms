@@ -3063,20 +3063,25 @@ EOT;
     {
         $isHtml = false;
         if ($this->currForm->confirmationEmail === true) {
-            $emailFieldName = 'E-mail';
-            $to = $this->getUserSuppliedValue( $emailFieldName, true );
+            $to = $this->getUserSuppliedValue( 'E-mail', true );
+            if (!$to) {
+                $to = $this->getUserSuppliedValue('e-mail', true);
+            }
         } else {
             $to = $this->getUserSuppliedValue( $this->currForm->confirmationEmail );
         }
         if (!$to) {
             return;
         }
+
+        // add variables for all form values, so they can be used in mail-template:
         foreach ($rec as $key => $value) {
             if (is_array($value)) {
                 $value = $value[0];
             }
             $value = $value? $value: '{{ lzy-confirmation-response-element-empty }}';
             $this->trans->addVariable("{$key}-value", $value);
+            $this->trans->addVariable("{$key}_value", $value);
         }
         if ($this->currForm->confirmationEmailTemplate === true) {
             $subject = '{{ lzy-confirmation-response-subject }}';
