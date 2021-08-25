@@ -196,6 +196,9 @@ function HTMLtable( tableObj ) {
 		});
 
 		const $form = this.$recEditForm;
+		if (!$form.length) {
+			return; // error case, should not occure
+		}
 		$form.data('reckey', this.recKey);
 		$('input[name=_rec-key]',$form).val( this.recKey );
 
