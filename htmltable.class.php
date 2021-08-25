@@ -179,7 +179,7 @@ class HtmlTable
 
         // for "active tables": load modules and set class:
         if ($this->editingActive || $this->tableButtons || $this->recViewButtonsActive) {
-            $this->page->addModules('POPUPS,HTMLTABLE,TOOLTIPSTER,~sys/css/htmltables.css');
+            $this->page->addModules('POPUPS,HTMLTABLE,TOOLTIPSTER,~sys/js/forms.js,~sys/css/htmltables.css');
             $this->includeCellRefs = true;
             require_once SYSTEM_PATH . 'forms.class.php';
             new Forms($this->lzy, true);
@@ -638,7 +638,12 @@ EOT;
 
                 }
                 if ($this->injectSelectionCol) {
-                    $tbody .= "\t\t\t<td class='lzy-table-row-selector'><input class='lzy-table-row-selector' type='checkbox'></td>\n";
+                    $empty = !sizeof( array_filter($rec, function ($v) { return boolval($v); }) );
+                    if ($empty) {
+                        $tbody .= "\t\t\t<td class='lzy-table-row-selector'></td>\n";
+                    } else {
+                        $tbody .= "\t\t\t<td class='lzy-table-row-selector'><input class='lzy-table-row-selector' type='checkbox'></td>\n";
+                    }
                 }
                 for ($c = 0; $c < $nCols; $c++) {
                     $tag = (($c === 0) && $this->headersLeft)? 'th': 'td';
@@ -728,7 +733,10 @@ EOT;
             $newCol = min(sizeof(reset( $data ))+1, max(1, $newCol));
         }
         $_newCol = $newCol - 1;     // starting at 0
+        $condition = $this->getArg('condition');
         $content = $this->getArg('content');
+        $condNotEmptyExceptFirst = ($condition === 'not-empty-except-first');
+        $condNotEmpty = ($condition === 'not-empty') || $condNotEmptyExceptFirst;
         $header = $this->getArg('header');
         $class = $this->getArg('class');
         $phpExpr = $this->getArg('phpExpr');
@@ -741,6 +749,14 @@ EOT;
 
         foreach ($data as $i => $row) {
             $content1 = $content;
+            $empty = !sizeof( array_filter($row, function ($v) { return boolval($v); }) );
+            if ($condNotEmpty && $empty) {
+                if ($condNotEmptyExceptFirst) {
+                    $condNotEmptyExceptFirst = false;
+                } else {
+                    $content1 = '';
+                }
+            }
             if (($i === 'hdr') && $header) {
                 $content1 = $header;
             }
@@ -1278,8 +1294,8 @@ EOT;
 
         $this->applySort();
 
-        $this->adjustTableSize();
         $this->insertCellAddressAttributes();
+        $this->adjustTableSize();
 
         $this->excludeColumns();
 
@@ -1500,7 +1516,7 @@ EOT;
 	'wrapperClass': "lzy-edit-rec-delete-checkbox",
 	'class': "lzy-edit-rec-delete-checkbox",
 	'label': 'Delete',
-	'name': '_delete',
+	'name': '_lzy-delete-rec',
 	'options': '{{ lzy-edit-rec-delete-option }}',
 	)
 }}
@@ -1619,6 +1635,7 @@ EOT;
             'column' => 1,
             'header' => '{{^ lzy-table-custom-row-header }}&nbsp;',
             'content' => $cellContent,
+            'condition' => 'not-empty-except-first',
         ];
         $this->addCol($cellInstructions);
     } // injectRowButtons
@@ -2048,6 +2065,7 @@ EOT;
         $this->data0 = $data0;
 
         // if structure is know -> apply structure-info:
+        $fields = [];
         if (isset($structure['key'])) {
             // special case: recKey is linked to a rec-element -> defined as "key => '=fieldname'":
             if (is_string($structure['key']) && $structure['key'] && $structure['key'][0] === '=') {
