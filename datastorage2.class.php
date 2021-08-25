@@ -344,6 +344,10 @@ class DataStorage2
             $recId = $this->createNewRecId(); // recId -> append rec
         }
 
+        if ((($recId === '') || ($recId === false)) && @$recData[REC_KEY_ID]) {
+            $recId = $recData[REC_KEY_ID];
+        }
+
         // if $blocking=false, _awaitRecLockEnd() performs isRecLocked():
         if (!$this->_awaitRecLockEnd($recId, $blocking, false)) {
             return false;
@@ -377,6 +381,10 @@ class DataStorage2
             return false;
         }
 
+        if ((($recId === '') || ($recId === false)) && @$recData[REC_KEY_ID]) {
+            $recId = $recData[REC_KEY_ID];
+        }
+
         $this->getData(true);
         if (($recId === false) || ($recId === 'new-rec')) { // create new ID if none supplied:
             $recId = $this->createNewRecId( $recId );
@@ -388,9 +396,7 @@ class DataStorage2
         }
 
         // copy recId into REC_KEY_ID field:
-        if (isset($recData[REC_KEY_ID])) {
-            $recData[REC_KEY_ID] = $recId;
-        }
+        $recData[REC_KEY_ID] = $recId;
 
         // write new rec to DB:
         $this->data[ $recId ] = $recData;
