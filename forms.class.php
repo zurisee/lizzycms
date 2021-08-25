@@ -761,6 +761,7 @@ EOT;
         }
 
         if ($this->skipRenderingForm) {
+            $this->page->addCss("\n.lzy-form-hide-when-completed { display: none; };");
             return "\t<div class='lzy-form-hide-when-completed'>\n";
         }
         $formId = $this->formId;
@@ -2138,7 +2139,7 @@ EOT;
             return false;
         }
         // check honey pot field (unless on local host):
-        if ($this->userSuppliedData["_lizzy-form-name"] !== '') {
+        if (@$this->userSuppliedData['_lzy-form-ref'] !== '') {
             $out = var_export($this->userSuppliedData, true);
             $out = str_replace("\n", ' ', $out);
             $out .= "\n[{$_SERVER['REMOTE_ADDR']}] {$_SERVER['HTTP_USER_AGENT']}\n";
@@ -2372,12 +2373,15 @@ EOT;
 
         // determine recKey:
         $this->recKey = @$this->userSuppliedData0['_rec-key'];
+
+        $this->isNewRec = true;
         if ((@$this->currForm->dataKey !== null) && (@$this->currForm->dataKey !== '')) {
             $this->recKey = $currForm->dataKey;
             $this->isNewRec = false;
         } elseif (!$this->recKey) {
             $this->recKey = createHash();
-            $this->isNewRec = true;
+        } else {
+            $this->isNewRec = false;
         }
 
         $this->prepareDataRec();
@@ -2961,6 +2965,8 @@ EOT;
             if (!$res) {
                 writeLogStr("Forms: data-rec '{$this->userSuppliedData0['_rec-key']}' deleted", FORM_LOG_FILE);
                 $this->page->addMessage('{{ lzy-form-rec-deleted }}');
+                unset($_POST['_lzy-delete-rec']);
+                unset($_POST['_lzy-form-ref']);
             } else {
                 $this->page->addPopup( $res );
                 writeLogStr("Forms:checkSuppliedDataEntries(): Delete rec '{$this->userSuppliedData0['_rec-key']}' failed", FORM_LOG_FILE);
