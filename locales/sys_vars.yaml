@@ -915,6 +915,10 @@ lzy-edit-user-form-header:
     de: 'Datensatz bearbeiten'
     _:  'Edit record'
 
+lzy-edit-new-user-form-header:
+    de: 'Neuer Datensatz'
+    _:  'New record'
+
 lzy-table-view-btn:
     de: 'Datensatz anzeigen'
     _:  'Show record'

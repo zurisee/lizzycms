@@ -627,40 +627,61 @@ a.lzy-button {
 
 /* === Tables =================================== */
 .lzy-table-default {
-	border-collapse:collapse;
+	border-collapse: collapse;
+
 	tr {
 		vertical-align: top;
 	}
+
 	td, th {
 		padding: 0.3em 0.6em;
 		border: 1px solid #ddd;
 		font-size: 90%;
 	}
+
 	.lzy-cell-no-overflow {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
+
 	.lzy-table-add-rec-btns {
 		margin-bottom: 0.5em;
 	}
-	&.lzy-table-editable .lzy-table { 
-		outline: 1px solid orange; 
+
+	&.lzy-table-editable .lzy-table {
+		outline: 1px solid orange;
 	}
+
 	.lzy-table-control-btn {
 		border: 1px solid #d1d1d1;
 		border-radius: 50%;
-		width: 2rem;
-		height: 1.9rem;
-    	display: inline-block;
-    	text-align: center;
+		width: 1.5rem;
+		height: 1.5rem;
+		display: inline-block;
+		text-align: center;
 		vertical-align: middle;
 		background: none;
+
 		a {
 			border-bottom: none;
 		}
+
 		.lzy-icon::before {
 			top: 48%;
+		}
+	}
+
+	.lzy-table-btn-col {
+		padding-top: 2px;
+		padding-bottom: 2px;
+	}
+
+	&.dataTable {
+		th.lzy-table-btn-col,
+		th.lzy-table-row-selector {
+			padding: 8px 10px;
+			width: 1rem !important;
 		}
 	}
 	.lzy-edit-rec-form .lzy-popup-wrapper {
@@ -669,7 +690,9 @@ a.lzy-button {
 	}
 	#lzy-edit-rec-delete-checkbox legend { display: none!important; }
 }
-
+#lzy .lzy-encapsulated.lzy-edit-data-form .lzy-edit-rec-delete-checkbox legend.lzy-legend {
+	display: none;
+}
 
 
 /* === Media Queries =================================== */

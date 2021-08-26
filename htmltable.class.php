@@ -520,7 +520,7 @@ EOT;
             $headers = $this->extractList($this->headers, true);
             $headers = array_pad ( $headers , sizeof(reset( $data )) , '' );
 
-            array_unshift($data, $headers);
+           $data = array_merge(['hdr' => $headers], $data);
             $this->nRows = sizeof($data);
         }
 
@@ -1242,6 +1242,18 @@ EOT;
             $pageLength = " pageLength: {$this->initialPageLength},";
         }
 
+        // if select-row or row-button columns exist, make them non-orderable:
+        $orderable = '';
+        if ($this->tableButtons) {
+            $orderable .= '{ orderable: false, targets: 1 },';
+        }
+        if (stripos($this->tableButtons, 'delete-rec') !== false) {
+            $orderable .= '{ orderable: false, targets: 0 },';
+        }
+        if ($orderable) {
+            $orderable = "columnDefs: [$orderable],";
+        }
+
         $dataTableObj = $this->dataTableObj[$this->tableCounter] = "lzyTable[{$this->tableCounter}]";
 
         // launch init code:
@@ -1249,7 +1261,7 @@ EOT;
 
 $dataTableObj = $('#{$this->id}').DataTable({
 'language':{'search':'{{ lzy-datatables-search-button }}:', 'info': '_TOTAL_ {{ lzy-datatables-records }}'},
-$order$paging$pageLength
+$order$paging$pageLength$orderable
 });
 
 EOT;
@@ -1376,8 +1388,13 @@ EOT;
             if (@$elemKey[0] === '_') {
                 continue;
             }
+            if (isset($this->headerElems[ $inx-1])) {
+                $label = $this->headerElems[ $inx-1];
+            } else {
+                $label = isset($rec['formLabel']) ? $rec['formLabel'] : $elemKey;
+            }
+            $rec['label'] = $label;
             $rec['dataKey'] = $elemKey;
-            $rec['label'] = isset($rec['formLabel']) ? $rec['formLabel'] : $elemKey;
             $rec['name'] = translateToIdentifier($elemKey, false, true, false);
             $rec['fieldWrapperAttr'] = "data-elem-inx='$inx'";
             $out .= $form->render($rec);
@@ -1636,6 +1653,7 @@ EOT;
             'header' => '{{^ lzy-table-custom-row-header }}&nbsp;',
             'content' => $cellContent,
             'condition' => 'not-empty-except-first',
+            'class' => 'lzy-table-btn-col',
         ];
         $this->addCol($cellInstructions);
     } // injectRowButtons
