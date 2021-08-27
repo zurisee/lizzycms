@@ -113,6 +113,7 @@ class AjaxServer
         if (isset($_GET['log'])) {                                // remote log, write to backend's log
             $msg = $this->get_request_data('text');
             $file = $this->get_request_data('file');
+            $file = PATH_TO_APP_ROOT . LOG_PATH . basename($file);
             writeLog("Client: $msg", false, $file);
             lzyExit();
         }
