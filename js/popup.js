@@ -90,7 +90,7 @@ function LzyPopup( options, index ) {
         var k, i, id, bCl, button, callback;
         var buttonHtml = '';
         if (this.closeButton) {
-            this.closeButton = '<button class="lzy-popup-close-button">&#x0D7;</button>';
+            this.closeButton = '<button class="lzy-close-button lzy-popup-close-button">&#x0D7;</button>';
         } else {
             this.closeButton = '';
         }
@@ -493,7 +493,7 @@ function lzyPopupClose( that ) {
 
 
 $('body')
-    .on('click', '.lzy-popup-close-button', function () {
+    .on('click', '.lzy-popup-close-button, .lzy-button-cancel', function () {
         lzyPopupClose(this);
     })
     .on('click', '.lzy-popup-bg.lzy-close-on-bg-click', function (e) {
