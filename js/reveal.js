@@ -70,16 +70,6 @@ $('body').on('click', '.lzy-reveal-controller-elem', function(e) {
 	e.stopImmediatePropagation();
 	e.stopPropagation();
 });
-//Todo: make operatable by clicking on .lzy-reveal-controller:
-// $('body').on('click', '.lzy-reveal-controller', function(e) {
-// 	e.stopImmediatePropagation();
-// 	e.stopPropagation();
-// 	let $checkbox = $('.lzy-reveal-controller-elem', $( this ));
-// 	mylog('click controller: ' + $checkbox.prop('checked'));
-// 	$checkbox.prop('checked', !$checkbox.prop('checked'));
-// 	mylog('click controller: ' + $checkbox.prop('checked'));
-// 	// return false;
-// });
 
 
 
