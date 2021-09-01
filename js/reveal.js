@@ -132,7 +132,7 @@ function lzyOperateRevealPanel( that )
 
 	} else { // close:
 		const boundingBox = $target[0].getBoundingClientRect();
-		const marginTop = (-10 - Math.round(boundingBox.height)) + 'px';
+		const marginTop = (-30 - Math.round(boundingBox.height)) + 'px';
 		$target.css({ marginTop: marginTop });
 
 		$revealController.attr('aria-expanded', 'false');
