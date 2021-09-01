@@ -821,7 +821,7 @@ class DataStorage2
             }
         } else {
             $this->determineStructure();
-            if ($this->includeKeys && !isset($this->structure['elements'][REC_KEY_ID])) {
+            if (($this->structure !== false) && $this->includeKeys && !isset($this->structure['elements'][REC_KEY_ID])) {
                 if ($this->includeTimestamp) {
                     $this->structure['elements'][TIMESTAMP_KEY_ID] = ['type' => 'string'];
                 }
@@ -2187,7 +2187,8 @@ EOT;
         if (!isset($structure['elements']) || !$structure['elements']) {
             // no struct info available - try to derive it from data:
             if (!$this->data) {
-                return; // no data, try again later...
+                $this->structure = false;
+                return false; // no data, try again later...
             }
             $structure = $this->deriveStructureFromData();
         }
