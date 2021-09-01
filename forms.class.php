@@ -10,7 +10,7 @@ define('SPAM_LOG_FILE', 	    LOG_PATH.'spam-log.txt');
 define ('FORMS_DEFAULT_TICKET_VALIDITY_TIME', 259200); // 3 days
 define ('DEFAULT_FORMS_TIMEOUT', 900); // 15 minutes
 
-define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,keyType,export,'.
+define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,mailto,mailfrom,mailTo,mailFrom,keyType,export,'.
     'legend,customResponseEvaluation,customResponseEvaluationFunction,next,file,confirmationText,formDataCaching,'.
     'encapsulate,formTimeout,avoidDuplicates,confirmationEmail,dynamicFormSupport,labelColons,'.
     'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,suppressFormFeedback,'.
@@ -843,7 +843,7 @@ EOT;
 
 		if ($currForm->antiSpam) {
             $out .= "\t\t<div class='fld-ch' aria-hidden='true'>\n";
-            $out .= "\t\t\t<label for='fld_ch{$this->formInx}{$this->inx}'>Name:</label><input id='fld_ch{$this->formInx}{$this->inx}' type='text' class='lzy-form-check' name='_lizzy-form-name' value=''$honeyPotRequired />\n";
+            $out .= "\t\t\t<label for='fld_ch{$this->formInx}{$this->inx}'>Name:</label><input id='fld_ch{$this->formInx}{$this->inx}' type='text' class='lzy-form-check' name='_lzy-form-name' value=''$honeyPotRequired />\n";
             $out .= "\t\t</div>\n";
         }
 		return $out;
@@ -1042,7 +1042,7 @@ EOT;
 
         $target = $this->currRec->target;
         if ($target) {
-            $rec->wrapperClass .= 'lzy-reveal-controller';
+            $rec->wrapperClass .= 'lzy-reveal-controller lzy-form-reveal-controller';
             $this->addRevealJs();
             $target = explodeTrim(',|', "|$target||||||||||||||||");
         }
@@ -1527,7 +1527,7 @@ EOT;
         $out .= "\n\t\t\t\t<input id='$id' class='lzy-reveal-controller-elem lzy-reveal-icon' type='checkbox' data-reveal-target='$target' />\n";
         $out .= "\t\t\t\t<label for='$id'>$label</label>\n";
 
-        $out = "\t\t\t<div class='lzy-reveal-controller'>$out\t\t\t</div>\n";
+        $out = "\t\t\t<div class='lzy-reveal-controller lzy-form-reveal-controller'>$out\t\t\t</div>\n";
 
         $this->addRevealJs();
         return $out;
@@ -2139,7 +2139,7 @@ EOT;
             return false;
         }
         // check honey pot field (unless on local host):
-        if (@$this->userSuppliedData['_lzy-form-ref'] !== '') {
+        if (@$this->userSuppliedData['_lzy-form-name'] !== '') {
             $out = var_export($this->userSuppliedData, true);
             $out = str_replace("\n", ' ', $out);
             $out .= "\n[{$_SERVER['REMOTE_ADDR']}] {$_SERVER['HTTP_USER_AGENT']}\n";
@@ -2623,7 +2623,9 @@ function initAntiSpamPopup() {
         buttonClass: 'lzy-button lzy-button-cancel, lzy-button lzy-button-submit',
         closeButton: false,
     });
-    $( '#lzy-popup-as-input-{$this->formInx}' ).focus();
+    setTimeout(function() {
+        $( '#lzy-popup-as-input-{$this->formInx}' ).focus();
+    }, 800);
 }
 
 EOT;
@@ -2701,7 +2703,7 @@ $('.lzy-form input[type=submit]').click(function(e) {
     }
     e.preventDefault();
     let data = JSON.stringify( $form.serializeArray() );
-    serverLog('suspicious form data: ' + data, '$logFile');
+    serverLog('suspicious form data: ' + data, 'form-log.txt');
     initAntiSpamPopup();
 });
 
@@ -3155,7 +3157,7 @@ EOT;
         $subject = $this->trans->translate($subject);
         $message = $this->trans->translate($message);
         if ($to) {
-            $mailfrom = @$this->mailfrom? $this->mailfrom: $this->trans->getVariable('webmaster_email');
+            $mailfrom = @$this->currForm->mailFrom? $this->currForm->mailFrom: $this->trans->getVariable('webmaster_email');
             $this->lzy->sendMail($to, $subject, $message, $mailfrom, $isHtml);
             $this->responseToClient = '{{ lzy-form-confirmation-email-sent }}';
         }
