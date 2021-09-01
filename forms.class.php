@@ -1158,7 +1158,7 @@ EOT;
         }
 
         // optionLabels = small text in background of widget -> defined by arg 'optionLabels':
-        $optionLabels = explodeTrim( ',', $this->currRec->optionLabels );
+        $optionLabels = explodeTrim( ',|', $this->currRec->optionLabels );
         $lblOff = '';
         $lblOn = '';
         if ($optionLabels) {
