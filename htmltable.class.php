@@ -270,10 +270,10 @@ EOT;
                     }
                 } else {
                     if ($includeTS) {
-                        $this->data[$key][] = $this->data0[$key][TIMESTAMP_KEY_ID];
+                        $this->data[$key][] = @$this->data0[$key][TIMESTAMP_KEY_ID];
                     }
                     if ($includeKey) {
-                        $this->data[$key][] = $this->data0[$key][REC_KEY_ID];
+                        $this->data[$key][] = @$this->data0[$key][REC_KEY_ID];
                     }
                 }
             }
@@ -362,14 +362,16 @@ EOT;
         $r = 1;
         foreach ($data as $rec) {
             $c = 0;
-            foreach ($rec as $v) {
-                $cell = preg_replace('/<{(.*?)}>/', '', $v);
-                $c1 = intval($c / 26);
-                $c1 = $c1 ? chr( 65 + $c1 ) : '';
-                $c2 = chr( 65 + $c % 26 );
-                $cellId = "$c1$c2$r";
-                $c++;
-                $sheet->setCellValue($cellId, $cell);
+            if (is_array($rec)) {
+                foreach ($rec as $v) {
+                    $cell = preg_replace('/<{(.*?)}>/', '', $v);
+                    $c1 = intval($c / 26);
+                    $c1 = $c1 ? chr(65 + $c1) : '';
+                    $c2 = chr(65 + $c % 26);
+                    $cellId = "$c1$c2$r";
+                    $c++;
+                    $sheet->setCellValue($cellId, $cell);
+                }
             }
             $r++;
         }
@@ -504,7 +506,7 @@ EOT;
         $data = &$this->data;
 
         // translate header elements:
-        if ($this->translateHeaders) {
+        if ($this->translateHeaders && is_array($this->headerElems)) {
             foreach ($this->headerElems as $i => $hdr) {
                 if (@$hdr[0] === '-') {
                     $hdr = substr($hdr, 1);
@@ -618,10 +620,12 @@ EOT;
                 if ($recId === '') {
                     $recId = 'new-rec';
                 }
-                $recHash = $rec[ $recKeyInx ];
+                $recHash = @$rec[ $recKeyInx ];
                 $recKey = '';
                 if (preg_match('/ <{< (.*?) ,/x', $recHash, $m)) {
                     $recKey = " data-reckey='{$m[1]}'";
+                } elseif ($recHash) {
+                    $recKey = " data-reckey='$recHash'";
                 }
                 $rowClass = str_replace('*', $rInx, $rowClass0);
                 if (isset($this->specificRowClasses[$r])) {
@@ -2102,7 +2106,7 @@ EOT;
 
         $data = $this->prepareData($data0, $fields);
 
-        if (!$data) {
+        if (!$data && $this->structure) {
             // add empty row:
             foreach (array_keys($structure['elements']) as $c => $label) {
                 $data['new-rec'][$c] = '';
@@ -2481,6 +2485,7 @@ EOT;
         }
         $ts = filemtime($this->dataSource);
         $ts = date('Ymd_Hi_', $ts);
+$ts = ''; //???
         if ($this->export === true) {
             $file = "download/$dlHash/$ts".base_name($this->dataSource, false).'.';
         } else {
