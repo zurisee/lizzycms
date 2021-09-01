@@ -6,16 +6,16 @@
 
 /*
     --lzy-form-focus-color
-    --lzy-form-hash-width: 8em;
  */
 
 // variables and default values:
-$form-width: 30em;      // --lzy-form-width
-// Note: if changing $label-width, you need to adapt htmltables.css accordingly:
-$label-width: 7em;      // --lzy-label-width
-$form-box-width: 7em;   // --lzy-form-box-width
-$form-grid-gap: 10px;   // --lzy-form-grid-gap
-
+$formWidth: 30em;      // --lzy-form-width
+$labelWidth: 6em;      // --lzy-label-width
+$formBoxWidth: 7em;   // --lzy-form-box-width
+$formGridGap: 10px;   // --lzy-form-grid-gap
+$formFieldBaseWidth: 2em; // --lzy-form-base-width
+$formFieldHeight: 2em; // --lzy-form-field-height
+$toggleBaseUnit: 1.6em; // --toggle-base-unit
 $formInputColor: #444;            // --lzy-form-input-color
 $formInputBgColor: #ffffed;       // --lzy-form-input-bg-color
 $formBorderStyle: 1px solid #ddd; // --lzy-form-border-style
@@ -40,7 +40,7 @@ $formElemCommentColor: gray;      // --form-elem-comment-color
 
 /* === Parametrization Arguments ======================= */
 .lzy-form {
-    max-width: var(--lzy-form-width, $form-width);
+    max-width: var(--lzy-form-width, $formWidth);
 }
 
 
@@ -173,9 +173,19 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
         }
     }
 
+    /* === reveal ====================================== */
     .lzy-reveal-container {
         margin: -1em 0 1em;
     }
+    .lzy-form-field-wrapper.lzy-reveal-controller {
+        .lzy-legend { display: none; }
+        .lzy-fieldset-body {
+            input { margin-top: calc( (var(--lzy-form-field-height, #{$formFieldHeight}) - 1em) / 2); }
+            label { line-height: var(--lzy-form-field-height, #{$formFieldHeight}); }
+            //label { line-height: var(--lzy-form-field-height, #{$formFieldHeight}) !important; }
+        }
+    }
+
 
     /* === form-field-wrapper ========================== */
     .lzy-form-field-wrapper {
@@ -202,28 +212,26 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
     }
     .lzy-form-readonly-elem,
     input {
-        line-height: 2em;
+        line-height: var(--lzy-form-field-height, #{$formFieldHeight});
     }
 
     .lzy-label-wrapper {
         display: inline-block;
-        width: $label-width;
-        width: var(--lzy-label-width, $label-width);
+        width: 7em;
+        width: var(--lzy-label-width, $labelWidth);
     }
     .lzy-form-field-type-textarea .lzy-label-wrapper {
         width: 100%;
     }
     .lzy-label-wrapper,
     label {
-//        width: 7em;
-//        width: var(--lzy-label-width, $label-width);
         display: inline-block;
         text-align: left;
     }
     .lzy-form-readonly-elem,
     input {
         width: 16em;
-        width: calc(100% - var(--lzy-label-width, #{$label-width}) - 0.4em);
+        width: calc(100% - var(--lzy-label-width, #{$labelWidth}) - 0.5em);
         padding: 0.2em 0.4em;
         display: inline-block;
     }
@@ -252,6 +260,10 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
     &.lzy-form-labels-above {
         @include lzy-form-labels-above;
     }
+    .lzy-form-required-comment {
+        padding-top: 1em;
+    }
+
 
 
     /* === Focus =================================== */
@@ -300,7 +312,7 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
         .lzy-form-input-elem {
             position: relative;
             display: inline-block;
-            width: calc(100% - var(--lzy-label-width, #{$label-width}) - 6px);
+            width: calc(100% - var(--lzy-label-width, #{$labelWidth}) - 6px);
         }
         input {
             width: 100%;
@@ -313,9 +325,9 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
             font-size: 80%;
             opacity: 0.5;
             img {
-                width: 2em;
+                width: var(--lzy-form-base-width, #{$formFieldBaseWidth});
             }
-            width: 2em;
+            width: var(--lzy-form-base-width, #{$formFieldBaseWidth});
             input {
                 position: absolute;
                 left: -1000vw;
@@ -336,12 +348,6 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
 
     /* === Text Area === */
     .lzy-form-field-type-textarea {
-        //label {
-        //    display: block;
-        //    margin: 1em 0 0.3em;
-        //    width: 100%;
-        //}
-
         textarea {
             display: block;
             margin: 0 0 0.5em;
@@ -385,14 +391,13 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
         label {
             display: inline-block;
             margin: 0;
-            width: var(--lzy-label-width, $label-width);
+            width: var(--lzy-label-width, $labelWidth);
         }
 
         textarea {
             display: inline-block;
             margin: 0 0 0.5em;
-//            width: calc(100% - var(--lzy-label-width, #{$label-width}));
-            width: calc(100% - var(--lzy-label-width, #{$label-width}) - 6px);
+            width: calc(100% - var(--lzy-label-width, #{$labelWidth}) - 0.4em);
             height: 5em;
         }
 
@@ -409,7 +414,7 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
     }
     .lzy-form-form-button {
         width: 7em;
-        min-height: 2em;
+        min-height: var(--lzy-form-field-height, #{$formFieldHeight});
     }
     .lzy-form-button {
         color: #666;
@@ -540,7 +545,8 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
             display: inline-block;
             cursor: pointer;
             padding: 0;
-            width: calc(100% - 2em - 6px);
+            width: calc(100% - var(--lzy-form-base-width, #{$formFieldBaseWidth}) - 6px);
+            //width: calc(100% - 2em - 6px);
         }
         input {
             -webkit-appearance: none;
@@ -597,7 +603,7 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
 
         .lzy-legend {
             width: 7em;
-            width: var(--lzy-label-width, $label-width);
+            width: var(--lzy-label-width, $labelWidth);
             margin: 0;
             line-height: 1.2em;
             float: left;
@@ -636,22 +642,19 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
             display: inline-block;
         }
         .lzy-fieldset-body {
-            width: calc(100% - var(--lzy-label-width, #{$label-width}) - 0.4em);
+            width: calc(100% - var(--lzy-label-width, #{$labelWidth}) - 0.4em);
         }
         &.lzy-form-field-type-choice .lzy-fieldset-body {
             margin-left: 0.4em;
         }
         .lzy-form-choice-elem label,
-        :not(.lzy-small-screen-vertical) {
-            .lzy-form-choice-elem label {
-                width: inherit;
-                margin-right: 2em;
-            }
+        :not(.lzy-small-screen-vertical) .lzy-form-choice-elem label {
+            width: inherit;
+            margin-right: 2em;
+        }
             .lzy-form-choice-elem:last-child label {
                 margin-right: 0;
             }
-
-        }
     }
     .lzy-horizontal:not(.lzy-small-screen-vertical) .lzy-form-choice-elem {
         display: inline-block;
@@ -702,8 +705,6 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
     input {
         background-color: $formInputBgColor;
         background-color:var(--lzy-form-input-bg-color, $formInputBgColor);
-//        color: $formInputColor;
-//        color: var(--lzy-form-input-color, $formInputColor);
         box-shadow: inset 0 0 0 1px #bbb;
     }
     textarea,
@@ -799,7 +800,7 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
         }
 
         input {
-            width: calc(100% - 2em - 10px);
+            width: calc(100% - var(--lzy-form-base-width, #{$formFieldBaseWidth}) - 10px);
         }
     }
 
@@ -807,8 +808,8 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
     // buttons
     .lzy-form-field-type-buttons {
         display: grid;
-        grid-gap: var(--lzy-form-grid-gap, $form-grid-gap);
-        grid-template-columns: repeat(auto-fill, minmax(var(--lzy-form-box-width, $form-box-width), 1fr));
+        grid-gap: var(--lzy-form-grid-gap, $formGridGap);
+        grid-template-columns: repeat(auto-fill, minmax(var(--lzy-form-box-width, $formBoxWidth), 1fr));
         grid-auto-flow: dense;
     }
 
