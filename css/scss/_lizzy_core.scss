@@ -816,9 +816,10 @@ dd {
 		padding: 1em 0;
 		transition: margin-top 0.3s;
 	}
-	input, button {
-		line-height: 2em;
-	}
+// conflicting with table-buttons
+//	input, button {
+//		line-height: 2em;
+//	}
 	.lzy-footer {
 		input, button, a.lzy-login-link {
 			line-height: 1em;
