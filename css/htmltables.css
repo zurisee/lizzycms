@@ -55,7 +55,7 @@
 
 .lzy-popup-container .lzy-form {
 	max-width: unset;
-	min-width: 32em;
+	min-width: min(100%, 32em);
 }
 
 .lzy-table-control-btn .lzy-icon {
@@ -64,6 +64,10 @@
 
 .lzy-edit-rec-form-container {
 	overflow-x: auto;
+}
+.lzy-table-action-btns > button {
+	min-width: 2em;
+	height: 2em;
 }
 .lzy-table-action-btns {
 	margin-bottom: 0.5em;
