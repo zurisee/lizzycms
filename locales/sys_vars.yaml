@@ -179,6 +179,9 @@ lzy-table-record-locked:
     de: 'Der gewünschte Datensatz ist derzeit gesperrt durch den Zugriff eines anderen Benutzers.'
     _:  'The requestes data record is currently locked by another user.'
 
+lzy-reveal-action-explanation:
+    de: 'Öffnet einen verdeckten Inhaltsbereich'
+    _:  'Opens a slide down region'
 
 
 #--- File Upload --------------------------

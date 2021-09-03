@@ -174,27 +174,19 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
     }
 
     /* === reveal ====================================== */
-    .lzy-form-field-wrapper.lzy-reveal-controller.lzy-reveal-controller {
-        .lzy-form-choice-elem {
-            display: flex;
-            flex-direction: row;
-            label {
-                order: 1;
-                width: var(--lzy-label-width, 7em);
-                line-height: 1.3em;
-                margin-top: calc( (var(--lzy-form-field-height, #{$formFieldHeight}) - 1.3em) / 2);
-            }
-            input {
-                order: 2;
-                margin-top: calc( (var(--lzy-form-field-height, #{$formFieldHeight}) - 1em) / 2);
-            }
+    .lzy-form-field-wrapper.lzy-reveal-controller {
+        label.lzy-form-choice-elem-empty-label.lzy-form-choice-elem-empty-label {
+            width: 2.4em;
+            height: 2.4em;
+            margin-left: -2.3em;
+            overflow: hidden;
         }
         .lzy-legend {
-            display: none;
             padding-top: calc( (var(--lzy-form-field-height, #{$formFieldHeight}) - 1em) / 2);
         }
         .lzy-fieldset-body {
-            margin-left: 0;
+            input { margin-top: calc( (var(--lzy-form-field-height, #{$formFieldHeight}) - 1em) / 2); }
+            label { line-height: var(--lzy-form-field-height, #{$formFieldHeight}); }
         }
     }
 
@@ -423,6 +415,7 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
             width: unset;
             padding: 0 1em;
         }
+        margin-top: 0.5em;
     }
     .lzy-form-form-button {
         width: 7em;

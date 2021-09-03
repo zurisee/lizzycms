@@ -58,6 +58,7 @@ $('.lzy-reveal-container').each(function() {
 	const boundingBox = $target[0].getBoundingClientRect();
 	const marginTop = (-100 - Math.round(boundingBox.height)) + 'px'; // incl. some safety margin
 	$target.css({ transition: 'margin-top 0', marginTop: marginTop });
+	$revealContainer.hide();
 });
 
 
@@ -115,6 +116,7 @@ function lzyOperateRevealPanel( that )
 	$target.css({ transition: 'margin-top 0.3s' });
 
 	if ( !$revealContainer.hasClass('lzy-elem-revealed') ) { // open:
+		$revealContainer.show();
 		setTimeout(function () {
 			$revealController.attr('aria-expanded', 'true');
 			$target.parent().addClass('lzy-elem-revealed');
@@ -148,5 +150,8 @@ function lzyOperateRevealPanel( that )
 			$this.data('tabindex', tabindex);
 			$this.attr('tabindex', -1);
 		});
+		setTimeout(function () {
+			$revealContainer.hide();
+		}, 300);
 	}
 } // lzyOperateRevealPanel

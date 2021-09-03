@@ -457,12 +457,22 @@ class Forms
             $this->infoInitialized = true;
             $jq = <<<EOT
 $('.lzy-formelem-show-info').tooltipster({
-    trigger: 'click',
+    trigger: 'custom',
     contentCloning: true,
     animation: 'fade',
     delay: 200,
     animation: 'grow',
     maxWidth: 420,
+}).focus(function(){ // show on focus
+    $(this).tooltipster('show');
+}).mouseover(function(){ // show on hover
+    $(this).tooltipster('show');
+}).blur(function(){ // on click it'll focuses, and will hide only on blur
+    $(this).tooltipster('hide');
+}).mouseout(function(){ // if user doesnt click, will hide on mouseout
+    if (document.activeElement !== this) {
+        $(this).tooltipster('hide');
+    }
 });
 
 EOT;
@@ -1033,6 +1043,10 @@ EOT;
     private function renderCheckbox()
     {
         $rec = $this->currRec;
+        if (($rec->options === ' ') || ($rec->options === '_')) {
+            $rec->optionLabels[1] = '&nbsp;';
+            $rec->optionNames[1] = 'true';
+        }
         $class = $this->currRec->class;
         $presetValues = isset($this->currRec->prefill)? $this->currRec->prefill: false;
         $groupName = translateToIdentifier($rec->name, false, true, false);
@@ -1040,14 +1054,18 @@ EOT;
         list($descrBy, $description) = $this->renderElemDescription();
         $wrapperId = @$rec->wrapperId ? " id='$rec->wrapperId'": '';
 
-        $target = $this->currRec->target;
-        if ($target) {
+        $aria = '';
+        $revealTarget = $this->currRec->target;
+        if ($revealTarget) {
             $rec->wrapperClass .= 'lzy-reveal-controller lzy-form-reveal-controller';
             $this->addRevealJs();
-            $target = explodeTrim(',|', "|$target||||||||||||||||");
+            $revealTarget = explodeTrim(',|', "|$revealTarget||||||||||||||||");
+            $aria = ' aria-expanded="false"';
+            $label .= " <span class='lzy-invisible'>{{ lzy-reveal-action-explanation }}</span>";
         }
 
-        $out = "\t\t\t<fieldset$wrapperId class='lzy-form-label lzy-form-checkbox-label'><legend class='lzy-legend'>$label</legend>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
+        $legendId = "lzy-chckb_legend-{$groupName}_{$this->formInx}";
+        $out = "\t\t\t<fieldset$wrapperId class='lzy-form-label lzy-form-checkbox-label'><legend id='$legendId' class='lzy-legend'>$label</legend>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
 
         foreach($rec->optionLabels as $i => $optionLabel) {
             if ($i === 0) { continue; } // skip group name
@@ -1061,16 +1079,22 @@ EOT;
                 }
             }
             $attr = '';
-            if (@$target[$i]) {
+            if (@$revealTarget[$i]) {
                 $cls = " class='$class lzy-reveal-controller-elem'";
-                $attr = " data-reveal-target='{$target[$i]}'";
+                $attr = " data-reveal-target='{$revealTarget[$i]}'";
             } else {
                 $cls = $class ? " class='$class'" : '';
             }
 
             $checked = (($presetValues !== false) && @$presetValues[$name]) || $preselectedValue ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-checkbox-elem lzy-form-choice-elem'>\n";
-            $out .= "\t\t\t\t<input id='$id' type='checkbox' name='${groupName}[]' value='$name'$checked$cls$attr$descrBy /><label for='$id'>$optionLabel</label>\n";
+
+            // special case: $optionLabel is empty -> instead of label, apply aria-labelledby referring to legend:
+            if ($optionLabel === '&nbsp;') {
+                $out .= "\t\t\t\t<input id='$id' type='checkbox' name='${groupName}[]' value='$name'$checked$cls$attr$descrBy$aria aria-labelledby='$legendId' aria-expanded='false' />\n";
+            } else {
+            $out .= "\t\t\t\t<input id='$id' type='checkbox' name='${groupName}[]' value='$name'$checked$cls$attr /><label for='$id' class='lzy-form-choice-elem-label'>$optionLabel</label>\n";
+            }
             $out .= "\t\t\t</div>\n";
         }
         $out .= "\t\t\t  </div><!--/lzy-fieldset-body -->\n\t\t\t</fieldset>\n";
@@ -1086,10 +1110,10 @@ EOT;
         $class = $this->currRec->class;
 
 
-        $target = $this->currRec->target;
-        if ($target) {
+        $revealTarget = $this->currRec->target;
+        if ($revealTarget) {
             $this->addRevealJs();
-            $target = explodeTrim(',|', "|$target||||||||||||||||");
+            $revealTarget = explodeTrim(',|', "|$revealTarget||||||||||||||||");
             $class .= ' lzy-reveal-controller-elem';
         }
         $cls = $class? " class='$class'": '';
@@ -1124,8 +1148,8 @@ EOT;
                 $selected = ($val === $selectedElem) || $preselectedValue ? ' selected' : '';
             }
             $attr = '';
-            if (@$target[$i]) {
-                $attr = " data-reveal-target='{$target[$i]}'";
+            if (@$revealTarget[$i]) {
+                $attr = " data-reveal-target='{$revealTarget[$i]}'";
             }
 
             $out .= "\t\t\t\t<option value='$val'$selected$attr>$optionLabel</option>\n";
@@ -1150,10 +1174,10 @@ EOT;
             $stateOn = '';
         }
         $reveal = $revealCls = '';
-        $target = $this->currRec->target;
-        if ($target) {
+        $revealTarget = $this->currRec->target;
+        if ($revealTarget) {
             $this->addRevealJs();
-            $reveal = " data-reveal-target='$target'";
+            $reveal = " data-reveal-target='$revealTarget'";
             $revealCls = ' lzy-reveal-controller-elem';
         }
 
@@ -1775,8 +1799,8 @@ EOT;
 
         $infoIconText = <<<EOT
 
-                    <span  class="lzy-invisible">
-                        <span id="{$this->currRec->infoId}" class="lzy-formelem-info-text lzy-formelem-info-text-$elemInx">$infoIconText</span>
+                    <span  class="lzy-dispno">
+                        <span id="{$this->currRec->infoId}" class="lzy-formelem-info-text lzy-formelem-info-text-$elemInx" aria-live="polite">$infoIconText</span>
                     </span>
             
 EOT;
@@ -1784,7 +1808,7 @@ EOT;
         $icon = '<span class="lzy-icon lzy-icon-info"></span>';
         $infoIcon = <<<EOT
 
-                <button class="lzy-formelem-show-info" aria-hidden="true" data-tooltip-content="#lzy-formelem-info-text-$elemInx" type="button">
+                <button class="lzy-formelem-show-info" data-tooltip-content="#{$this->currRec->infoId}" type="button">
                     $icon$infoIconText
                 </button>
 
@@ -1803,7 +1827,6 @@ EOT;
 
         } elseif ($this->currRec->info) {
             $descrId = $this->currRec->infoId;
-            $descrBy = " aria-describedby='{$this->currRec->infoId}'";
         }
         $description = '';
         if ($this->currRec->description) {
