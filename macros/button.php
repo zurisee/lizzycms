@@ -11,9 +11,11 @@ $this->addMacro($macroName, function () {
 	$icon = $this->getArg($macroName, 'icon', 'Icon on button', '');
 	$callbackCode = $this->getArg($macroName, 'callbackCode', '(optional) Defines JS code that will be executed when user clicks on button.', '');
 	$callbackFunction = $this->getArg($macroName, 'callbackFunction', '[name of js-function] If defined, the function with that name is called when the button is activated.', '');
-	$id = $this->getArg($macroName, 'id', '(optional) Defines the button\'s ID (default: lzy-button-N', '');
-	$class = $this->getArg($macroName, 'class', '(optional) Defines the class applied to the button (default: lzy-button', '');
-	$type = $this->getArg($macroName, 'type', '[toggle]', '');
+	$id = $this->getArg($macroName, 'id', '(optional) Defines the button\'s ID (default: lzy-button-N)', '');
+	$class = $this->getArg($macroName, 'class', '(optional) Defines the class applied to the button (default: lzy-button)', '');
+	$type = $this->getArg($macroName, 'type', '[toggle] Defines the button\'s type-attribute.<br>Special case "toggle": in '.
+        'this case JS is added to toggle class "lzy-button-active" and aria-attributes.<br>'.
+        '<strong>Note</strong>: you can provide an alternative label for the active state via "text" option, e.g. type:"Off-State|On-State".', 'button');
 
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
@@ -36,25 +38,28 @@ $this->addMacro($macroName, function () {
     if (!$class) {
         $class = 'lzy-button';
     }
+    $aria = '';
     if ($type === 'toggle') {
         $textActive = $text;
         if (strpos($text, '|') !== false) {
             list($text, $textActive) = explodeTrim('|', $text);
         }
         $class .= ' lzy-toggle-button';
+        $aria = ' aria-pressed="false"';
         $jq = <<<EOT
 
 $('#$id').click(function() {
     let \$this = $(this);
     if (\$this.hasClass('lzy-button-active')) {
-        \$this.removeClass('lzy-button-active').text('$text');
+        \$this.removeClass('lzy-button-active').text('$text').attr('aria-pressed', 'false');
     } else {
-        \$this.addClass('lzy-button-active').text('$textActive');
+        \$this.addClass('lzy-button-active').text('$textActive').attr('aria-pressed', 'true');
     }  
 });
 
 EOT;
         $this->page->addJq($jq);
+        $type = 'button';
     }
 
     if ($class) {
@@ -62,7 +67,7 @@ EOT;
     } elseif ($class !== false) {
         $class = " class='$class'";
     }
-	$str = "\t<button id='$id'$class>$text</button>\n";  // text rendered by macro
+	$str = "\t<button id='$id'$class type='$type'$aria>$text</button>\n";  // text rendered by macro
 
     if ($callbackCode) {
         $callbackCode = str_replace(['&#34;', '&#39;'], ['"', "'"], $callbackCode);

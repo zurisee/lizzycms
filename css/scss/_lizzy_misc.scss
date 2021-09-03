@@ -168,3 +168,9 @@
     color: gray;
   }
 }
+
+// ===  button() -> toggle
+#lzy.lzy-default-layout .lzy-encapsulated,
+#lzy.lzy-default-layout {
+  .lzy-button-active { box-shadow: 0 0 4px red; }
+}
