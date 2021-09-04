@@ -85,6 +85,13 @@ lzy-confirm:
     de: 'Ja'
     _:  'Yes'
 
+lzy-on:
+    de: 'Ein'
+    _:  'On'
+
+lzy-off:
+    de: 'Aus'
+    _:  'Off'
 
 lzy-combined-required-value-missing:
     de: 'Bitte mindestens eines dieser Felder ausfüllen:'

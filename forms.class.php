@@ -395,7 +395,7 @@ class Forms
         }
 
         $rec->target = @$args['target']? $args['target']: '';
-        if (strpos('radio,checkbox,dropdown', $type) !== false) {
+        if (strpos('radio,checkbox,dropdown,toggle', $type) !== false) {
             $rec->target = @$args['reveal']? $args['reveal']: $rec->target;
         }
 
@@ -691,7 +691,7 @@ EOT;
         }
 
         $type = $this->currRec->type;
-        if (($type === 'radio') || ($type === 'checkbox')) {
+        if (($type === 'radio') || ($type === 'checkbox') || ($type === 'toggle')) {
             $type .= ' lzy-form-field-type-choice';
         } elseif ($type === 'button') {
             $type = 'buttons';
@@ -1183,18 +1183,19 @@ EOT;
 
         // optionLabels = small text in background of widget -> defined by arg 'optionLabels':
         $optionLabels = explodeTrim( ',|', $this->currRec->optionLabels );
-        $lblOff = '';
-        $lblOn = '';
         if ($optionLabels) {
             $lblOff = "<span class='lzy-toggle-text'>{$optionLabels[0]}</span>";
-            $lblOn = "<span class='lzy-toggle-text'>{$optionLabels[1]}";
+            $lblOn = "<span class='lzy-toggle-text'>{$optionLabels[1]}</span>";
+        } else {
+            $lblOff = "<span class='lzy-toggle-text lzy-invisible'>{{ lzy-off }}</span>";
+            $lblOn = "<span class='lzy-toggle-text lzy-invisible'>{{ lzy-on }}</span>";
         }
 
         list($descrBy, $description) = $this->renderElemDescription();
 
         $out = <<<EOT
-            <div class="lzy-label-wrapper lzy-toggle-widget-label{$this->currRec->class}">$label</div>
-            <div class="lzy-formelem-toggle-wrapper$revealCls" {$this->currRec->inpAttr}$reveal>
+          <fieldset class='lzy-label-wrapper lzy-toggle-widget-label{$this->currRec->class}'><legend class='lzy-legend'>{$this->currRec->label}</legend>
+            <div class="lzy-fieldset-body lzy-formelem-toggle-wrapper$revealCls" $reveal>
               <input type="radio" name="{$this->currRec->name}" value="false" class="lzy-toggle-input-off" id='{$this->currRec->fldPrefix}{$this->currRec->elemId}-off' $stateOff$descrBy />
               <label class="lzy-form-label lzy-toggle-off" for="{$this->currRec->fldPrefix}{$this->currRec->elemId}-off">$lblOff</span></label>
 
@@ -1203,6 +1204,8 @@ EOT;
               
               <div class="lzy-toggle-handle"></div>
             </div>
+          </fieldset>
+
 EOT;
 
         $out .= $description;

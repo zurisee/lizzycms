@@ -55,13 +55,13 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
         vertical-align: top;
         line-height: var(--toggle-base-unit, #{$toggleBaseUnit});
     }
-    .lzy-formelem-toggle-wrapper {
-        display: inline-block;;
+    .lzy-formelem-toggle-wrapper.lzy-formelem-toggle-wrapper.lzy-formelem-toggle-wrapper {
+        position: relative;
+        display: inline-block;
         width: calc( var(--toggle-base-unit, #{$toggleBaseUnit}) * 2.3);
         height: var(--toggle-base-unit, #{$toggleBaseUnit});
         background: #ffffed;
         background: var(--lzy-form-input-bg-color, #ffffed);
-        position: relative;
         border-radius: var(--toggle-base-unit, #{$toggleBaseUnit});
         user-select: none;
         box-shadow: inset 0 0 2px #999;
@@ -122,8 +122,14 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
                 right: -10px;
             }
         }
-        input {
-            display: none;
+        &.lzy-formelem-toggle-wrapper.lzy-formelem-toggle-wrapper input {
+            position: absolute;
+            z-index: -1;
+            width: 80%;
+            left: 10%;
+            top: 10%;
+            height: 80%;
+            outline-offset: 8px;
         }
         input:checked + label {
             color: #555;
@@ -137,7 +143,8 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
                 background: linear-gradient(to bottom, #ddd, #bbb);
             }
             & ~ .lzy-toggle-off .lzy-toggle-text {
-                display: none;
+                position: absolute;
+                left: -10000px;
             }
         }
         .lzy-toggle-input-on:checked {
@@ -145,7 +152,8 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
                 margin-left: calc(100% - var(--toggle-base-unit, #{$toggleBaseUnit}) + 3px);
             }
             & ~ .lzy-toggle-on .lzy-toggle-text {
-                display: none;
+                position: absolute;
+                left: -10000px;
             }
         }
     } // Toggle
