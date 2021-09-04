@@ -93,6 +93,14 @@ lzy-off:
     de: 'Aus'
     _:  'Off'
 
+lzy-value-true:
+    de: 'Ein'
+    _:  'On'
+
+lzy-value-false:
+    de: 'Aus'
+    _:  'Off'
+
 lzy-combined-required-value-missing:
     de: 'Bitte mindestens eines dieser Felder ausfüllen:'
     _:  'Please fill in at least one of these fields:'
