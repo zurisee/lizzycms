@@ -705,6 +705,8 @@ EOT;
                 $this->currRec->wrapperClass = isset($this->currRec->wrapperClass)? "{$this->currRec->wrapperClass} lzy-horizontal": 'lzy-horizontal';
             }
         }
+        $this->currRec->layout = @$args['layout']? $args['layout']: '';
+
         if (isset($this->currRec->wrapperClass) && ($this->currRec->wrapperClass)) {
 	        $class = "$wrapperClass lzy-form-field-type-$type {$this->currRec->wrapperClass}";
 		} else {
@@ -1189,6 +1191,10 @@ EOT;
         } else {
             $lblOff = "<span class='lzy-toggle-text lzy-invisible'>{{ lzy-off }}</span>";
             $lblOn = "<span class='lzy-toggle-text lzy-invisible'>{{ lzy-on }}</span>";
+        }
+
+        if (!$this->currRec->layout) {
+            $this->currRec->wrapperClass .= ' lzy-horizontal';
         }
 
         list($descrBy, $description) = $this->renderElemDescription();
