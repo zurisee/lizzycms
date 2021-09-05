@@ -208,6 +208,8 @@ class Forms
         $currForm->labelColons = (isset($args['labelColons'])) ? $args['labelColons'] : null; // default: colon if explicitly provided
         $currForm->labelWidth = (isset($args['labelWidth'])) ? $args['labelWidth'] : false;
 
+        $this->exportStructure = (isset($args['exportStructure'])) ? $args['exportStructure'] : true;
+
         if (!$currForm->file) {
             $currForm->file = "~data/form-$formId.yaml";
         }
@@ -310,7 +312,8 @@ class Forms
         if (($type === 'button') && (strpos(@$args['options'], 'submit') !== false)) {
             $name = '';
         }
-        $name = str_replace(' ', '_', $name);
+        $name = trim( str_replace(['*', ':'], '', $name) );
+        $name = str_replace(' ','_', $name);
         $name = preg_replace("/[^[:alnum:]_-]/m", '', $name);	// remove any non-letters, except _ and -
 
         // check that $name is unique:
@@ -1193,7 +1196,7 @@ EOT;
             $lblOn = "<span class='lzy-toggle-text lzy-invisible'>{{ lzy-on }}</span>";
         }
 
-        if (!$this->currRec->layout) {
+        if (!@$this->currRec->layout) {
             $this->currRec->wrapperClass .= ' lzy-horizontal';
         }
 
@@ -1697,6 +1700,9 @@ EOT;
         // save form data to DB:
         $this->saveFormDescr();
 
+        // update db-structure file:
+        $this->updateDbStructure();
+
         // append possible text from user-data evaluation:
         $msgToClient = '';
 
@@ -2197,9 +2203,6 @@ EOT;
 
         $ds = $this->openDB();
 
-        // check meta-fields '_timestamp' and '_key', add if necessary:
-        $this->updateDbStructure();
-
         $struc = $ds->getStructure();
         if (!@$struc['key']) {
             $struc['key'] = 'index';
@@ -2495,7 +2498,6 @@ EOT;
                             $rec[$key][$option] = ($option === $value);
                         }
                     }
-                    $rec[$key]['_splitOutput'] = $elemDef->splitOutput;
                 } else {
                     if (is_array($value)) {
                         $rec[$key] = implode(',', $value);
@@ -3224,40 +3226,37 @@ EOT;
 
 
 
-    private function updateDbStructure()
-    {
-        if (!$this->currForm->keyType) {
-            return false;
+    private function updateDbStructure() {
+	    if (!$this->exportStructure) {
+	        return;
         }
-        $ds = $this->openDB();
-        $struct = $ds->getStructure();
-        if (isset($struct['key']) && ($struct['key'] === $this->currForm->keyType)) {
-            return false;
+	    $formElements = $this->currForm->formElements;
+	    $dbFile = $this->currForm->file;
+	    $dbStructFile = fileExt($dbFile, true) . '_structure.yaml';
+	    if (file_exists($dbStructFile)) {
+	        return false;
         }
 
-        $struct['key'] = $this->currForm->keyType;
-
-        foreach ($this->currForm->formElements as $element) {
-            if (!$element->name[0] || ($element->name[0] === '_')) {
-                continue;
+        $structure = [];
+        $structure['key'] = 'hash';
+	    foreach ($formElements as $key => $rec) {
+	        if ($rec->name[0] === '_') {
+	            continue;
             }
-            $elemKey = $element->dataKey;
-            $struct['elements'][$elemKey]['type'] = @$element->type? $element->type: 'string';
-            $struct['elements'][$elemKey]['name'] = translateToIdentifier($elemKey, false, true, false);
-            $struct['elements'][$elemKey]['formLabel'] = @$element->formLabel? $element->formLabel: $elemKey;
+            $newRec = [];
+            $recKey = $rec->dataKey;
+            $newRec['name'] = $rec->dataKey;
+            $newRec['type'] = $rec->type;
+            $newRec['formLabel'] = $rec->label;
+            if ($rec->splitOutput) {
+                $newRec['_splitOutput'] = true;
+            }
+            $structure['elements'][$recKey] = $newRec;
         }
-        unset($struct['elements'][REC_KEY_ID]);
-        $struct['elements'][TIMESTAMP_KEY_ID] = ['type' => 'string'];
-        $struct['elements'][REC_KEY_ID] = ['type' => 'string'];
-        $ds->setStructure($struct);
-        $data = $ds->read();
-        foreach ($data as $recKey => $rec) {
-            unset($data[$recKey][REC_KEY_ID]);
-            $data[$recKey][TIMESTAMP_KEY_ID] = 0;
-            $data[$recKey][REC_KEY_ID] = $recKey;
-        }
-        $ds->write($data);
-        return true;
+
+	    preparePath($dbStructFile);
+        writeToYamlFile($dbStructFile, $structure);
+	    return true;
     } // updateDbStructure
 
 

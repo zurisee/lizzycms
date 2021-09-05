@@ -16,6 +16,7 @@ $formGridGap: 10px;   // --lzy-form-grid-gap
 $formFieldBaseWidth: 2em; // --lzy-form-base-width
 $formFieldHeight: 2em; // --lzy-form-field-height
 $toggleBaseUnit: 1.6em; // --toggle-base-unit
+$shortFieldWidth: 6em; // --lzy-form-short-field-width
 $formInputColor: #444;            // --lzy-form-input-color
 $formInputBgColor: #ffffed;       // --lzy-form-input-bg-color
 $formBorderStyle: 1px solid #ddd; // --lzy-form-border-style
@@ -50,6 +51,9 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
 #lzy .lzy-form.lzy-encapsulated,
 .lzy-form {
 
+    .lzy-form-short-field {
+        max-width: var(--lzy-form-short-field-width, $shortFieldWidth);
+    }
     /* === Toggle ============================= */
     .lzy-toggle-widget-label {
         vertical-align: top;
