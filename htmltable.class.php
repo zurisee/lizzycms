@@ -169,13 +169,6 @@ class HtmlTable
         if ($help) {
             return $this->helpText;
         }
-        //??? conflicting with forms->showData
-        //   --> is possible here that form eval is missed, ie that ($this->editingActive || $this->activityButtons || $this->recViewButtonsActive) false?
-//        if (isset($_POST['_lizzy-form'])) {
-//            require_once SYSTEM_PATH.'forms.class.php';
-//            new Forms( $this->lzy, true );
-//            unset($_POST['_lizzy-form']);
-//        }
 
         // for "active tables": load modules and set class:
         if ($this->editingActive || $this->tableButtons || $this->recViewButtonsActive) {
@@ -1915,7 +1908,11 @@ EOT;
 
         // add meta-fields to excludes if requested:
         if ($this->hideMetaFields) {
-            $keys = array_keys( $this->structure['elements'] );
+            if ($this->headerElems) {
+                $keys = $this->headerElems;
+            } else {
+                $keys = array_keys($this->structure['elements']);
+            }
             $keyInx = array_search(REC_KEY_ID, $keys);
             if (!in_array($keyInx, $colsToExclude)) {
                 $colsToExclude[] = $keyInx;
@@ -2131,10 +2128,11 @@ EOT;
             $rec0 = reset($data0);
             $ic = 0;
             if ($rec0) {
-                foreach ($rec0 as $item) {
+                foreach ($rec0 as $k => $item) {
                     if (is_array($item)) {
                         // handle splitOutput of composite elements if directive is embedded in field description:
-                        if (isset($item['_splitOutput']) && $item['_splitOutput']) {
+                        $splitOutput = @$this->structure['elements'][$k]['_splitOutput'] || @$item['_splitOutput'];
+                        if ($splitOutput) {
                             foreach ($item as $k => $v) {
                                 if (($k === 0) || ($k[0] === '_')) { // skip special elems
                                     unset($item[$k]);
@@ -2205,7 +2203,8 @@ EOT;
                 $item = isset($rec[$c]) ? $rec[$c] : (isset($rec[$ic]) ? $rec[$ic] : '');
                 if (is_array($item)) {
                     // handle splitOutput of composite elements if directive is embedded in field description:
-                    if (isset($item['_splitOutput']) && $item['_splitOutput']) {
+                    $splitOutput = @$this->structure['elements'][$c]['_splitOutput'] || @$item['_splitOutput'];
+                    if ($splitOutput) {
                         foreach ($item as $k => $v) {
                             if (($k === 0) || ($k[0] === '_')) {
                                 continue;
