@@ -11,6 +11,7 @@ define('LOG_PATH',              '.#logs/');
 define('DEFAULT_TICKETS_PATH',  '.#sys-cache/');
 
 define('SERVICE_LOG',           PATH_TO_APP_ROOT . LOG_PATH.'backend-log.txt');
+define('LOG_FILE',              PATH_TO_APP_ROOT . LOG_PATH.'log.txt');
 define('ERROR_LOG',             PATH_TO_APP_ROOT . LOG_PATH.'errlog.txt');
 
 define('RECYCLE_BIN',           '.#recycleBin/');
