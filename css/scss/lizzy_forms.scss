@@ -51,9 +51,16 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
 #lzy .lzy-form.lzy-encapsulated,
 .lzy-form {
 
+    /* === Misc =========================== */
+    .lzy-button-disabled.lzy-button-disabled {
+        background: #ddd;
+        color: #888;
+    }
+
     .lzy-form-short-field {
         max-width: var(--lzy-form-short-field-width, $shortFieldWidth);
     }
+
     /* === Toggle ============================= */
     .lzy-toggle-widget-label {
         vertical-align: top;
