@@ -16,6 +16,9 @@ $this->addMacro($macroName, function () {
 	$this->invocationCounter[$macroName] = (!isset($this->invocationCounter[$macroName])) ? 0 : ($this->invocationCounter[$macroName]+1);
 
     $dataSource = $this->getArg($macroName, 'dataSource', '(optional if nCols is set) Name of file containing data. Format may be .cvs or .yaml and is expected be local to page folder.', '');
+    if (!$dataSource) {
+        $dataSource = $this->getArg($macroName, 'file', 'Synonym for "dataSource"', '');
+    }
     if ($dataSource === 'help') {
         return renderTableHelp($this, $macroName);
     }
