@@ -443,10 +443,6 @@ function LzyForms() {
         $('.lzy-form input[type=submit]').click(function(e) {
             let $form = $(this).closest('.lzy-form');
             $(this).prop('disabled', true).addClass('lzy-button-disabled');
-            setTimeout(function () {
-                // lzyPopup("{{ lzy-form-submit-failure-warning }}")
-                lzyPopup('{{ lzy-form-submit-failure-warning }}')
-            }, 3000);
 
             if (debugLogging) {
                 const dataStr = JSON.stringify( $form.serializeArray() );
@@ -454,7 +450,6 @@ function LzyForms() {
             }
             $form.submit();
         });
-
     }; // setupOnSubmitHandler
 
 
@@ -482,6 +477,10 @@ function LzyForms() {
 
     this._openForm = function( recKey, $form ) {
         let parent = this;
+
+        // (re-)enable submit key:
+        $('input[type=submit]', $form).prop('disabled', false).removeClass('lzy-button-disabled');
+
         this.clearForm($form);
         this.presetValues($form, 'default');
         if ((recKey === false) || (recKey === 'new-rec')) {
