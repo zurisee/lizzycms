@@ -73,8 +73,9 @@ class HtmlTable
         $this->liveData             = $this->getOption('liveData', '[true|false] If true, Lizzy\'s "liveData" mechanism is activated. If the dataSource is modified on the server, changes are immediately mirrored in the webpage.');
         $this->dataSelector         = $this->getOption('dataSelector', '(optional string) If defined and "liveData" is activated, this option defines how to access data elements from the DB. (Default: \'*,*\')', '*,*');
         $this->targetSelector       = $this->getOption('targetSelector', '(optional string) If defined and "liveData" is activated, this option defines how to assign data elements to DOM-elements. (Default: \'[data-ref="*,*"]\')', '[data-ref="*,*"]');
+        $this->editable             = $this->getOption('editable', '[false,true,loggedin,privileged,admins,editors] Shortcut that enables full table editing and downloading (Default: false).');
         $this->editableBy           = $this->getOption('editableBy', '[false,true,loggedin,privileged,admins,editors] Defines who may edit data. Default: false. (only available when using option "dataSource")');
-        $this->editMode             = $this->getOption('editMode', '[inline,form] Defines (Default: inline).', 'inline');
+        $this->editMode             = $this->getOption('editMode', '[inline,form] Defines (Default: form).', 'form');
         $this->editFormArgs         = $this->getOption('editFormArgs', 'Arguments that will passed on to the forms-class.', false);
         $this->editFormTemplate     = $this->getOption('editFormTemplate', 'A markdown file that will be used for rendering the form.', false);
         $this->tableButtons         = $this->getOption('tableButtons', 'Activates a row of activity buttons related to the form. If in editMode, a "New Record" button will be added.', false);
@@ -125,12 +126,18 @@ class HtmlTable
 
         $this->handleDatatableOption($this->page);
         $this->handleCaption();
+        if ($this->editable) {
+            $this->editableBy = $this->editable;
+            $this->tableButtons = 'delete-rec|add-rec|download-table';
+        }
+
         $this->editingActive = checkPermission($this->editableBy, $this->lzy);
         $this->editableActive = false;
         if ($this->editingActive) {
             if (strpos($this->editMode, 'form') === false) {
                 $this->editingActive = false;
                 $this->editableActive = true;
+                $this->interactive = true;
             }
         }
 
@@ -149,7 +156,9 @@ class HtmlTable
 
                 // Handle special button names "new-rec" and "delete-rec":
                 if ((strcasecmp($button, 'new-rec') === 0) || (strcasecmp($button, 'add-rec') === 0)) {
-                    $this->editingActive = checkPermission('loggedin', $this->lzy);
+                    if (!$this->editingActive) {
+                        $this->editingActive = checkPermission('loggedin', $this->lzy);
+                    }
                     $this->editMode = 'form';
 
                 } else {
@@ -394,7 +403,7 @@ EOT;
         $page = $this->page;
         require_once SYSTEM_PATH.'extensions/editable/code/editable.class.php';
 
-        $this->lzy->trans->readTransvarsFromFile( SYSTEM_PATH.'extensions/editable/config/vars.yaml', false, true);
+        $this->lzy->trans->readTransvarsFromFile( SYSTEM_PATH.'extensions/editable/locales/vars.yaml', false, true);
 
         $GLOBALS['lizzy']['editableLiveDataInitialized'] = false;
         $page->addModules('EDITABLE');
@@ -1612,15 +1621,14 @@ EOT;
         if (!is_string( $this->customRowButtons )) {
             $this->customRowButtons = '';
         }
-        $this->customRowButtons = str_replace(' ', '', $this->customRowButtons);
+        $this->customRowButtons = str_replace([' ','|'], ['',','], $this->customRowButtons);
         $customRowButtons = ",$this->customRowButtons,";
-        if ($this->editingActive && (strpos($customRowButtons, 'edit') === false)) {
+        if ($this->editingActive && (strpos($customRowButtons, ',edit,') === false)) {
             $this->customRowButtons = 'edit,'.$this->customRowButtons;
         }
         if ($this->recViewButtonsActive && (strpos(",$customRowButtons,", ',view,') === false)) {
             $this->customRowButtons = $customRowButtons = ',view,'.$this->customRowButtons;
         }
-
         if (!$this->customRowButtons) {
             return;
         }
