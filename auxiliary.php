@@ -2237,7 +2237,7 @@ function isAdmin()
 
 function isLocalhost()
 {
-    return $GLOBALS['globalParams']['isLocalhost'];
+    return @$GLOBALS['globalParams']['isLocalhost'];
 } // isLocalhost
 
 
