@@ -79,6 +79,8 @@ class Forms
         $GLOBALS['globalParams']['forms_skipRenderingForm'][$this->formInx] = false;
         $this->skipRenderingForm = &$GLOBALS['globalParams']['forms_skipRenderingForm'][$this->formInx];
 
+        $this->page->addModules('POPUPS');
+
         if ($userDataEval !== false) {
             if (isset($_POST['_lzy-form-ref'])) {    // we received data for curr form:
                 $this->evaluateUserSuppliedData();
@@ -1939,6 +1941,12 @@ EOT;
         $this->userSuppliedData0 = $_POST;
 
         $userSuppliedData = &$this->userSuppliedData;
+
+        if ($this->lzy->config->debug_debugLogging) {
+            $log = json_encode($userSuppliedData);
+            writeLogStr("Server: Forms received: $log", FORM_LOG_FILE);
+        }
+
 		if (!isset($userSuppliedData['_lzy-form-ref'])) {
 			$this->clearCache();
 			return false;
@@ -2567,10 +2575,6 @@ EOT;
 
     private function initFormJs()
     {
-        if (!$this->currForm->dynamicFormSupport) {
-            return;
-        }
-
         $this->page->addModules('MOMENT,~sys/js/forms.js');
         $lockRecWhileFormOpen = $this->currForm->lockRecWhileFormOpen ? 'true': 'false';
         $jq = "lzyForms.init( $lockRecWhileFormOpen );";

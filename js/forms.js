@@ -17,6 +17,7 @@ function LzyForms() {
             this.lockRecWhileFormOpen = true;
         }
         this.setupOnChangeHandler();
+        this.setupOnSubmitHandler();
         this.onOpen();
         mylog('lzyForms initialized');
     }; // init
@@ -435,6 +436,26 @@ function LzyForms() {
             }
         });
     }; // setupOnChangeHandler
+
+
+
+    this.setupOnSubmitHandler = function() {
+        $('.lzy-form input[type=submit]').click(function(e) {
+            let $form = $(this).closest('.lzy-form');
+            $(this).prop('disabled', true).addClass('lzy-button-disabled');
+            setTimeout(function () {
+                // lzyPopup("{{ lzy-form-submit-failure-warning }}")
+                lzyPopup('{{ lzy-form-submit-failure-warning }}')
+            }, 3000);
+
+            if (debugLogging) {
+                const dataStr = JSON.stringify( $form.serializeArray() );
+                serverLog('Form will submit: ' + dataStr, 'form-log.txt');
+            }
+            $form.submit();
+        });
+
+    }; // setupOnSubmitHandler
 
 
 

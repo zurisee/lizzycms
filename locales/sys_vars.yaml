@@ -198,6 +198,10 @@ lzy-reveal-action-explanation:
     de: 'Öffnet einen verdeckten Inhaltsbereich'
     _:  'Opens a slide down region'
 
+lzy-form-submit-failure-warning:
+    de: "Achtung:<br>Es ist ein Fehler aufgetreten während des Abspeichern Ihrer Eingaben.<br>Bitte versuchen Sie es noch einmal.<br>Falls es auch dann nicht klappt, kontaktieren uns bitte: {{ webmaster_email }}"
+    de2: "Achtung:<br>Es ist ein Fehler aufgetreten während des Abspeichern Ihrer Eingaben.<br>Bitte versuche es noch einmal.<br>Falls es auch dann nicht klappt, kontaktiere uns bitte: {{ webmaster_email }}"
+    _:  "Warning:<br>an error occured while submitting your data.<br>Please try again.<br>If that doesn't help, contact {{ webmaster_email }}."
 
 #--- File Upload --------------------------
 lzy-fileadmin-button-tooltip:
