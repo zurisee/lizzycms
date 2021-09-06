@@ -2429,6 +2429,13 @@ EOT;
 
     private function loadFile()
     {
+        if (!file_exists($this->dataFile)) {
+            if (isLocalhost()) {
+                die("Error in datastorage loadFile(): file '$this->dataFile' not found.");
+            } else {
+                return false;
+            }
+        }
         $lines = file($this->dataFile);
         $rawData = '';
         foreach ($lines as $line) {
