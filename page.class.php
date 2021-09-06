@@ -927,6 +927,7 @@ EOT;
         var screenSizeBreakpoint = $screenSizeBreakpoint
         var pagePath = '{$this->lzy->pagePath}';
 EOT;
+        $rootJs .= "\n        const debugLogging = " . ($this->config->debug_debugLogging? 'true':'false') . ";";
 
         $assembledJs = '';
         if ($rootJs.$this->assembledJs) {
