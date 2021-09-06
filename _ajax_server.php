@@ -111,16 +111,9 @@ class AjaxServer
     private function handleGenericRequests()
     {
         if (isset($_GET['log'])) {                                // remote log, write to backend's log
-            $msg = $this->get_request_data('text');
-            $file = $this->get_request_data('file');
-            if (!$file) {
-                $file = SERVICE_LOG;
-            } else {
-                $file = PATH_TO_APP_ROOT . LOG_PATH . basename($file);
-            }
-            writeLog("Client: $msg", false, $file);
-            lzyExit();
+            $this->handleClientLogRequest();
         }
+
         if ($this->get_request_data('info') !== null) {    // respond with info-msg
             $this->info();
         }
@@ -704,6 +697,21 @@ class AjaxServer
 EOT;
         lzyExit($msg);
     } // info
+
+
+
+    private function handleClientLogRequest(): void
+    {
+        $msg = $this->get_request_data('text');
+        $file = $this->get_request_data('file');
+        if (!$file) {
+            $file = SERVICE_LOG;
+        } else {
+            $file = PATH_TO_APP_ROOT . LOG_PATH . basename($file);
+        }
+        writeLog("Client: $msg", false, $file);
+        lzyExit();
+    } // handleClientLogRequest
 
 } // class AjaxServer
 
