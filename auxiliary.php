@@ -12,8 +12,11 @@ use Symfony\Component\Yaml\Yaml;
 function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
 {
     $str0 = $str;
-    $str = trim($str, '↵ ');
-    $str = str_replace("\t", '    ', $str);
+    if (strpos($str, '↵') !== false) {
+        $str = trim($str, '↵ ');
+        $str = preg_replace('|\s//.*?↵|', '', $str); // remove inline comments
+        $str = str_replace("\t", '    ', $str);
+    }
     if (!($str = trim($str))) {
         return [];
     }
@@ -1582,6 +1585,16 @@ function preparePath($path0, $accessRights = false)
     if ($path0 && ($path0[0] === '~')) {
         $path0 = resolvePath($path0);
     }
+
+    // check for inappropriate path:
+    if (strpos($path0, '../') !== false) {
+        $path0 = normalizePath($path0);
+        if (strpos($path0, '../') !== false) {
+            mylog("=== Warning: preparePath() trying to access inappropriate location: '$path0'");
+            return;
+        }
+    }
+
 	$path = dirname($path0.'x');
     if (!file_exists($path)) {
         $accessRights1 = $accessRights ? $accessRights : MKDIR_MASK;
@@ -1600,7 +1613,7 @@ function preparePath($path0, $accessRights = false)
         }
     }
 
-    if (!file_exists($path0)) {
+    if ($path0 && !file_exists($path0)) {
         touch($path0);
     }
 
