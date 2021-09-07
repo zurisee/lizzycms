@@ -2048,6 +2048,8 @@ EOT;
     private function loadDataFromFile()
     {
         if (!$this->dataSource) {
+            $this->data0 = [];
+            $this->data = [];
             return;
         }
 
