@@ -24,6 +24,9 @@
 #lzy .lzy-recview-popup fieldset.lzy-form-label legend.lzy-legend.lzy-legend.lzy-legend.lzy-legend {
 	margin-top: 0.6em;
 }
+.lzy-recview-container {
+	width: 24em;
+}
 #lzy .lzy-recview-popup fieldset.lzy-form-label .lzy-form-field-placeholder.lzy-form-field-placeholder {
 	margin-left: 6px;
 	width: calc(100% - var(--lzy-label-width, 7em) - 26px);

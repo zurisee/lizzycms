@@ -3,23 +3,22 @@
 "use strict";
 
 var lzyActiveTables = [];
+$( document ).ready(function() {
+	$('.lzy-active-table').each(function () {
+		var tableInx = $(this).data('inx');
+		lzyActiveTables[tableInx] = new HTMLtable(this);
+	});
 
-$('.lzy-active-table').each(function() {
-	var tableInx = $( this ).data('inx');
-	lzyActiveTables[tableInx] = new HTMLtable( this );
+	$('.lzy-active-table').on('click', '.lzy-table-view-btn', function () {
+		var tableInx = $(this).closest('.lzy-active-table').data('inx');
+		lzyActiveTables[tableInx].openViewRecPopup(this);
+	});
+
+	$('.lzy-active-table').on('click', '.lzy-table-edit-btn', function () {
+		var tableInx = $(this).closest('.lzy-active-table').data('inx');
+		lzyActiveTables[tableInx].openFormPopup(this);
+	});
 });
-
-$('.lzy-active-table').on('click', '.lzy-table-view-btn', function() {
-	var tableInx = $( this ).closest('.lzy-active-table').data('inx');
-	lzyActiveTables[tableInx].openViewRecPopup( this );
-});
-
-$('.lzy-active-table').on('click', '.lzy-table-edit-btn', function() {
-	var tableInx = $( this ).closest('.lzy-active-table').data('inx');
-	lzyActiveTables[tableInx].openFormPopup( this );
-});
-
-
 
 
 function HTMLtable( tableObj ) {
@@ -53,7 +52,6 @@ function HTMLtable( tableObj ) {
 		}
 		this.formInx = formId.replace(/\D/g, '');
 		this.$form = $( formId ).closest('.lzy-edit-rec-form-wrapper');
-		// this.$form = $( formId ).closest('.lzy-edit-rec-form');
 		this.recViewPopupId = 'lzy-recview-popup-' + this.formInx;
 		this.recEditPopupId = 'lzy-recedit-popup-' + this.formInx;
 
@@ -88,7 +86,7 @@ function HTMLtable( tableObj ) {
 				'<button class="lzy-popup-close-button">×</button>' +
 			'</div>' +
 			'<div class="lzy-popup-container lzy-scroll-hints">\n' +
-			'<div id="inner-recview">\n' +
+			'<div class="lzy-recview-container">\n' +
 				formHtml +
 			'</div></div></div></div>\n';
 		$( 'body' ).append( popupHtml );
@@ -115,7 +113,6 @@ function HTMLtable( tableObj ) {
 			'</div></div></div></div>\n';
 		$( 'body' ).append( popupHtml );
 		this.$recEditForm = $( '#' + this.recEditPopupId + ' form');
-
 	}; // initEditFormPopup
 
 

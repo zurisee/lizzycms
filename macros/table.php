@@ -41,9 +41,6 @@ $this->addMacro($macroName, function () {
         unset($options['disableCaching']);
     }
     $options['dataSource'] = $file;
-    if (!isset($options['tableClass'])) {
-        $options['tableClass'] = 'lzy-table-default';
-    }
 
     $dataTable = new HtmlTable($this->lzy, $options);
 	$table = $dataTable->render();
