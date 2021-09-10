@@ -51,7 +51,7 @@ class Authentication
                 $res = [null, "{{ lzy-login-failed }}", 'Message'];
             }
         }
-        // note: if user sent an accessCode, it will be handled by lzy->handleReceivedHashes()
+        // note: if user sent an accessCode, it will be handled by this->validateAccessCode()
 
         if ($res === null) {        // no login attempt detected -> check whether already logged in:
             if (isset($_GET['logout'])) {
@@ -294,6 +294,9 @@ class Authentication
             $codeCandidate = $codeCandidate['password'];
         }
         foreach ($this->knownUsers as $user => $rec) {
+            if ($rec['inactive']) {
+                continue;
+            }
             if (isset($rec['accessCode'])) {
                 $code = $rec['accessCode'];
                 if (password_verify($codeCandidate, $code) || ($codeCandidate === $code)) {
