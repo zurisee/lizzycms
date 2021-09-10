@@ -1904,6 +1904,9 @@ function logError($str)
 
 function explodeTrim($sep, $str, $excludeEmptyElems = false)
 {
+    if (!is_string($str)) {
+        return [];
+    }
     $str = trim($str);
     if ($str === '') {
         return [];
