@@ -2,7 +2,12 @@
 
 "use strict";
 
-var lzyForms = new LzyForms();
+var lzyForms = null;
+
+$( document ).ready(function() {
+    lzyForms = new LzyForms();
+});
+
 
 function LzyForms() {
     this.liveUpdateActive = true;
@@ -44,7 +49,7 @@ function LzyForms() {
 
             // toggle type:
             } else if ((type === 'radio') && ($this.closest('.lzy-form-field-type-toggle').length)) {
-                $this.prop('checked', $this.hasClass('lzy-toggle-input-off'));
+                // nothing to do, except skip following cases
 
             // choice types:
             } else if ((type === 'radio') || (type === 'checkbox')) {
@@ -133,6 +138,9 @@ function LzyForms() {
                 continue;
             }
             let val = data.data[ key ];
+            if ((typeof val === 'undefined') || (val === null)) {
+                val = '';
+            }
             let sel ='[name=' + key + ']';
             let $el = $( sel, formId );
             if (!$el.length) {
@@ -146,7 +154,16 @@ function LzyForms() {
                 }
             }
 
-            if (',radio,checkbox,'.includes(type)) {
+            if ($el.closest('.lzy-formelem-toggle-wrapper').length) {
+                if (val) {
+                    $( $el[0] ).prop('checked', false);
+                    $( $el[1] ).prop('checked', true);
+                } else if ((typeof data.data[ key ] !== 'undefined') && (data.data[ key ] !== null)) {
+                    $( $el[0] ).prop('checked', true);
+                    $( $el[1] ).prop('checked', false);
+                }
+
+            } else if (',radio,checkbox,'.includes(type)) {
                 if ((typeof val === 'object') && (typeof val[0] !== 'undefined')) {
                     val = val[0];
                 }
@@ -155,13 +172,6 @@ function LzyForms() {
                     let v = $(this).val();
                     $(this).prop('checked', val.includes(',' + v + ',') );
                 });
-            } else if (type === 'toggle') {
-                if (val) {
-                    $('.lzy-toggle-input-on', $el).prop('checked', true);
-                } else {
-                    $('.lzy-toggle-input-off', $el).prop('checked', true);
-                }
-
             } else if (type === 'password') {
                 $el.val( '●●●●' );
             } else {

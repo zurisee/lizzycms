@@ -571,6 +571,7 @@ a.lzy-button:visited,
 a.lzy-button {
 	color: black;
 }
+#lzy .lzy-encapsulated .lzy-button-lean,
 .lzy-button-lean {
 	padding: 0.3em 0.5em;
 }
@@ -651,6 +652,9 @@ a.lzy-button {
 
 	&.lzy-table-editable .lzy-table {
 		outline: 1px solid orange;
+		td.lzy-editable {
+			background: #fffff1;
+		}
 	}
 
 	.lzy-table-control-btn {
@@ -932,6 +936,14 @@ body {
 		margin-left: -0.1em;
 		cursor: pointer;
     }
+	.lzy-reveal-frame.lzy-reveal-frame {
+		border: 1px solid #ddd;
+	}
+	.lzy-reveal-frame + .lzy-reveal-container > div {
+		padding: 1em;
+		border: 1px solid #ddd;
+		border-top: none;
+	}
 }
 
 .lzy-reveal-container {

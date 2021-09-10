@@ -44,6 +44,9 @@ $this->addMacro($macroName, function () {
         $this->getArg($macroName, 'layout', 'For radio and checkbox: If true, options will be dispayed in one row, '.
             'rather than below each other.', '');
 
+        $this->getArg($macroName, 'shortLabel', 'If true, adds class "lzy-form-short-field" to the field, which is '.
+            'defined as limited width (i.e. 6em).', '');
+
         $this->getArg($macroName, 'info', '[string] If defined, an info-icon will appear next to the field label. '.
             'Clicking on that icon will show given text in a tooltip.', '');
 

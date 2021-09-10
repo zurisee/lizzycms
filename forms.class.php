@@ -484,6 +484,11 @@ EOT;
             $this->page->addJq( $jq );
             $this->page->addModules( 'TOOLTIPSTER' );
         }
+
+        if (@$args['shortLabel']) {
+            $rec->class = $rec->class? "$rec->class lzy-form-short-field ": 'lzy-form-short-field ';
+        }
+
         $rec->comment =  (isset($args['comment']))? $args['comment']: '';
         $rec->fldPrefix =  (isset($args['elemPrefix']) && ($args['elemPrefix'] !== false))? $args['elemPrefix']: 'fld_';
 
@@ -1171,7 +1176,7 @@ EOT;
 
     private function renderToggle()
     {
-        $label = $this->getLabel();
+        $label = $this->getLabel( false, false);
         $value = $this->getValueAttr('toggle');
         if ($value) {
             $stateOn = ' checked';
@@ -1205,7 +1210,7 @@ EOT;
         list($descrBy, $description) = $this->renderElemDescription();
 
         $out = <<<EOT
-          <fieldset class='lzy-label-wrapper lzy-toggle-widget-label{$this->currRec->class}'><legend class='lzy-legend'>{$this->currRec->label}</legend>
+          <fieldset class='lzy-label-wrapper lzy-toggle-widget-label{$this->currRec->class}'><legend class='lzy-legend'>$label</legend>
             <div class="lzy-fieldset-body lzy-formelem-toggle-wrapper$revealCls" $reveal>
               <input type="radio" name="{$this->currRec->name}" value="false" class="lzy-toggle-input-off" id='{$this->currRec->fldPrefix}{$this->currRec->elemId}-off' $stateOff$descrBy />
               <label class="lzy-form-label lzy-toggle-off" for="{$this->currRec->fldPrefix}{$this->currRec->elemId}-off">$lblOff</span></label>
@@ -1362,7 +1367,7 @@ EOT;
         $value = $this->getValueAttr();
 
         $out .= "\t\t\t<input type='text' class='lzy-input-hash {$this->currRec->class}' {$this->currRec->inpAttr}$value />\n";
-        $out .= "\t\t\t<button id='lzy-input-hash-{$this->inx}' class='lzy-button lzy-generate-hash' type='button'>{{ lzy-generate-hash }}</button>\n";
+        $out .= "\t\t\t<button id='lzy-input-hash-{$this->inx}' class='lzy-button lzy-generate-hash lzy-button-lean' type='button'>{{ lzy-generate-hash }}</button>\n";
 
         if (isset($this->currRec->option)) {
             $unambiguous = (strpos($this->currRec->option, 'unambiguous') !== false) ? 'true' : 'false';
@@ -1381,7 +1386,7 @@ $('#lzy-input-hash-{$this->inx}').click(function() {
 EOT;
         $this->page->addJq($jq);
         return $out;
-    } // renderNumber
+    } // renderHash
 
 
 
@@ -2444,12 +2449,12 @@ EOT;
             }
         }
 
-        foreach ($elemDefs as $elemDef) {
+        foreach ($elemDefs as $inx => $elemDef) {
             $key = $elemDef->name;
             $type = $elemDef->type;
 
             // skip elements of pseudo type:
-            if (strpos(PSEUDO_TYPES, $type) !== false) {
+            if ((strpos(PSEUDO_TYPES, $type) !== false) || ($key[0] === '_')) {
                 continue;
             }
 
@@ -2488,7 +2493,12 @@ EOT;
             // handle element types 'radio,checkbox,dropdown':
             if (strpos('radio,checkbox,dropdown', $type) !== false) {
                 $value = $rec[$key];
-                if ($this->currForm->splitChoiceElemsInDb) {
+                if (isset($this->currForm->formElements[$inx]->splitChoiceElemsInDb)) {
+                    $splitChoiceElemsInDb = $this->currForm->formElements[$inx]->splitChoiceElemsInDb;
+                } else {
+                    $splitChoiceElemsInDb = $this->currForm->splitChoiceElemsInDb;
+                }
+                if ($splitChoiceElemsInDb) {
                     $rec[$key] = [];
                     if (is_array($value)) {
                         $rec[$key][0] = implode(',', $value);
@@ -2516,6 +2526,8 @@ EOT;
             } elseif ($type === 'password') {
                 if ($rec[$key] && ($rec[$key] !== PASSWORD_PLACEHOLDER)) {
                     $rec[$key] = password_hash($rec[$key], PASSWORD_DEFAULT);
+                } else {
+                    $rec[$key] = '';
                 }
 
             // toggle switch:
@@ -2861,8 +2873,8 @@ EOT;
             if (@$this->currRec->prefill) {
                 $value = $this->currRec->prefill;
             }
-        } else {
-            $value = @$this->currRec->prefill;
+        } elseif (@$this->currRec->prefill) {
+            $value = $this->currRec->prefill;
         }
 
         // skip non-strings and acive values (which start with '='):
