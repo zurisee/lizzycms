@@ -12,6 +12,7 @@ $this->addMacro($macroName, function () {
     $target = $this->getArg($macroName, 'target', '[css selector] CSS selector of the DIV that shall be revealed, e.g. "#box"', '');
     $class = $this->getArg($macroName, 'class', '(optional) A class that will be applied to the controlling element.', '');
     $symbol = $this->getArg($macroName, 'symbol', '(triangle) If defined, the symbol on the left hand side of the label will be modified. (currently just "triangle" implemented.)', '');
+    $frame = $this->getArg($macroName, 'frame', '(true, class) If true, class "lzy-reveal-frame" is added, painting a frame around the element by default.', '');
 
     if ($label === 'help') {
         return '';
@@ -19,6 +20,9 @@ $this->addMacro($macroName, function () {
 
     $id = "lzy-reveal-controller-$inx";
 
+    if ($frame) {
+        $class = $class? "$class lzy-reveal-frame": 'lzy-reveal-frame';
+    }
     if (stripos($symbol, 'tri') !== false) {
         $class .= ' lzy-reveal-triangle';
     }
