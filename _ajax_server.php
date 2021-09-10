@@ -198,8 +198,11 @@ class AjaxServer
         $structure = $this->db->getStructure();
         if (is_array($structure['elements']) ) {
             foreach ($structure['elements'] as $label => $element) {
-                $out[$label] = $rec[$label];
-//                $out[$element['name']] = $rec[$label];
+                if (isset($rec[$label])) {
+                    $out[$label] = $rec[$label];
+                } else {
+                    $out[$label] = null;
+                }
             }
         }
         return $out;
