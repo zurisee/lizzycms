@@ -449,6 +449,7 @@ EOT;
         if (!file_exists($structFile)) {
             $structFile = EXTENSIONS_PATH . 'useradmin/config/users_structure.yaml';
         }
+        $formTemplate = '~/'. EXTENSIONS_PATH . 'useradmin/config/table_edit_form_template.md';
         $options = [
             'dataSource' => CONFIG_PATH . 'users.yaml',
             'structureFile' => $structFile,
@@ -457,12 +458,14 @@ EOT;
             'includeKeys' => 'hash',
             'includeTimestamp' => true,
             'sort' => 'start',
-            'editableBy' => true,
+            'editableBy' => 'admins',
             'editMode' => 'form',
             'labelColons' => true,
             'tableButtons' => 'delete-rec|new-rec',
             'splitChoiceElemsInDb' => false,
             'lockRecWhileFormOpen' => true,
+            'excludeColumns' => '7-11',
+            'editFormTemplate' => $formTemplate,
         ];
         $tbl = new HtmlTable( $this->lzy, $options );
         $table = $tbl->render();

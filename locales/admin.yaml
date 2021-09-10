@@ -12,19 +12,19 @@ lzy-first-user-added:
 
 
 ### UserAdmin Table
-username:
+lzy-username:
     de: Benutzername
     _:  Username
 
-displayName:
+lzy-display-name:
     de: Anzeigename
     _:  Display Name
 
-email:
+lzy-email:
     de: E-Mail
     _:  E-Mail
 
-password:
+lzy-password:
     de: Passwort
     _:  Password
 
@@ -32,13 +32,29 @@ lzy-groups:
     de: Gruppen
     _:  Groups
 
-accessCode:
+lzy-access-code:
     de: Zugangs-Code
     _:  Access-Code
 
-inactive:
-    de: Deaktiviert
-    _:  Inactive
+lzy-extended-settings:
+    de: Erweiterte Einstellungen
+    _:  Extended Settings
+
+lzy-access-code-enabled:
+    de: Zugangs-Code aktiviert
+    _:  Access-Code Enabled
+
+lzy-access-code-valid-until:
+    de: Zugangs-Code gültig bis
+    _:  Access-Code Valid Until
+
+lzy-email-list:
+    de: E-Mail-Liste
+    _:  E-Mail-List
+
+lzy-inactive:
+    de: Konto deaktiviert
+    _:  Account inactive
 
 lzy-generate-hash:
     de: Neu
@@ -51,6 +67,10 @@ lzy-edit-user-form-header:
 lzy-edit-new-user-form-header:
     de: Neuer Benutzer
     _:  New User
+
+lzy-cal-catetory-permission:
+    de: 'Kalender-Berechtigung'
+    _:  'Calendar permission'
 
 lzy-edit-user-username-info:
     de: 'Muss einmalig sein. Darf nur Zeichen enthalten, die in einer E-Mail-Adresse vorkommen können.'
@@ -72,14 +92,29 @@ lzy-edit-user-displayname-info:
     de: 'Anzeigename wird zur Darstellung verwendet.'
     _:  'Display name is only used in user-interfaces'
 
+lzy-access-code-enabled-info:
+    de: 'Erlaubt einen Zugangscode zu deaktivieren, ohne ihn zu löschen.'
+    _:  'Lets you disable an access-code without deleting it.'
+
+lzy-access-code-valid-until-info:
+    de: 'Definiert, bis wann der Zugangscode gütig ist.'
+    _:  'Defines until when the access-code is valid.'
+
+lzy-cal-catetory-permission-info:
+    de: 'Definierte wessen Kalender-Einträge der Benutzer bearbeiten darf.<br>&rarr; Liste von Benutzernamen; "self" steht für den Benutzer selbst.'
+    _:  'Defines whose calendar entries the user may edit.<br>&rarr; list of usernames; "self" means the userʹs own entries.'
+
 lzy-edit-user-accesscode-info:
-    de: 'Zugangscode, welcher der Benutzer an die URL anfügen kann, um sich leicht per Link anmelden zu können (Gewisses Sicherheits-Risiko!). '
-    _:  'Access-Code, which the user can append to the URL for simplified login by link ()'
+    de: 'Zugangscode, welcher der Benutzer an die URL anfügen kann, um sich leicht per Link anmelden zu können.<br> &rarr; -> Sicherheitsrisiko beachten.'
+    _:  'Access-Code, which the user can append to the URL for simplified login by link.<br>&rarr; Be aware of the security risk.'
 
 lzy-edit-user-inactive-info:
-    de: 'Mit dieser Option lässt sich ein Konto deaktivieren, ohne es zu löschen.'
-    _:  'This option lets you disable an account, without deleting it.'
+    de: 'Deaktiviert das Konto, ohne es zu löschen.'
+    _:  'Disabels the account, without deleting it.'
 
+lzy-email-list-info:
+    de: '(komma-separierte) Liste von E-Mailadressen, die zum Konto gehören.<br>&rarr; Mit all diesen Adressen kann man sich anmelden.'
+    _:  '(comma-separated) list of e-mail addresses, which belong to the account.<br>&rarr; login is possible with all these addresses.'
 
 # Login by password:
 

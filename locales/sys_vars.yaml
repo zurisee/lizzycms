@@ -27,14 +27,25 @@ lzy-nexttime-no-event-found:
 
 
 #--- Forms -----------------------------------------------
-Username:
-    de: Benutzername
-    en: Username
+# Username:
+#     de: Benutzername
+#     _:  Username
 
-Password:
-    de: Passwort
-    en: Password
+# lzy-username:
+#     de: Benutzername
+#     _:  Username
 
+# Password:
+#     de: Passwort
+#     _:  Password
+
+# Groups:
+#     de: Gruppen
+#     _:  Groups
+
+# Display-Name:
+#     de: Anzeigename
+#     _:  Display-Name
 
 cancel:
     de: abbrechen
