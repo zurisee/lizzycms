@@ -167,38 +167,6 @@ class Authentication
 
 
 
-//??? obsolete? delete?
-//    public function handleAccessCodeInUrl($codeCandidate, $oneTimeOnly = false)
-//    {
-//        $res = $this->validateOnetimeAccessCode($codeCandidate);    // reloads on success, returns on failure
-//        if ($res === 'ok') {
-//            return '';
-//        }
-//        if ($oneTimeOnly) {
-//            $this->handleFailedLoginAttempts($codeCandidate);
-//            return $res;
-//        }
-//
-//        if ($this->validateAccessCode($codeCandidate)) {   // check access code in user records and log in if found
-//            return '';
-//        }
-//
-//        writeLogStr($this->lastLogMsg, LOGIN_LOG_FILENAME);
-//        $this->handleFailedLoginAttempts($codeCandidate);
-//
-//        $path = $GLOBALS['globalParams']['host'].$_SERVER['REQUEST_URI'];
-//        $html = <<<EOT
-//        <h1>{{ lzy-link-expired }}</h1>
-//        <p>{{ lzy-link-expired-explanation }}</p>
-//        <p style="padding: 1em 2em;">$path</p>
-//
-//EOT;
-//        $this->lzy->page->addOverride($html);
-//        return '';
-//    } // handleAccessCodeInUrl
-
-
-
     public function validateOnetimeAccessCode($code, $forceDefinePW = false)
     {
         $user = $this->readOneTimeAccessCode($code);
@@ -237,43 +205,6 @@ class Authentication
             return false;
         }
     } // readOneTimeAccessCode
-
-
-
-//??? obsolete? delete?
-//    private function handleOneTimeCodeActions($oneTimeRec)
-//    {
-//        $getArg = false;
-//        $mode = isset($oneTimeRec['mode']) ? $oneTimeRec['mode'] : false;
-//
-//        if (($mode === 'email-signup') && isset($oneTimeRec['user'])) {
-//            die("admintasks depricated ".__FILE__.':'>__LINE__);
-////            require_once SYSTEM_PATH.'admintasks.class.php';
-////            $adm = new AdminTasks($this->lzy);
-////            if (!$adm->createGuestUserAccount($oneTimeRec['user'])) {
-////                $this->lzy->page->addMessage('lzy-user-account-creation-failed');
-////            }
-////
-//
-//        } elseif (($mode === 'user-signup-invitation') && isset($oneTimeRec['email'])) {
-//            die("admintasks depricated ".__FILE__.':'>__LINE__);
-////            require_once SYSTEM_PATH.'admintasks.class.php';
-////            $adm = new AdminTasks($this->lzy);
-////            $html = $adm->renderCreateUserForm( $oneTimeRec );
-////            $this->lzy->page->addOverride($html);
-////            return 'ok';
-//
-//        } elseif ($mode === 'sign-up-invited-user') {
-//            $signUp = true;
-//            die("admintasks depricated ".__FILE__.':'>__LINE__);
-////            require_once SYSTEM_PATH.'admintasks.class.php';
-////            $adm = new AdminTasks($this->lzy);
-////            $html = $adm->signupUser( $oneTimeRec );
-////            $this->lzy->page->addOverride($html);
-////            return 'ok';
-//        }
-//        return $getArg;
-//    } // handleOneTimeCodeActions
 
 
 
@@ -384,8 +315,6 @@ class Authentication
         $this->userRec = $rec;
 
         $this->loginTimes[$user] = time();
-// problem of changing sessionId in datastorage/rec-locking:
-//        session_regenerate_id();
         $this->loggedInUser = $user;
         $_SESSION['lizzy']['user'] = $user;
         $_SESSION['lizzy']['userRec'] = $rec;
@@ -395,6 +324,17 @@ class Authentication
         $_SESSION['lizzy']['isAdmin'] = $isAdmin;
         $_SESSION['lizzy']['isPrivileged'] = $isPrivileged;
         $_SESSION['lizzy']['loginTimes'] = serialize($this->loginTimes);
+
+        // determine permission for datastorage access to files in 'config/':
+        $_SESSION['lizzy']['configDbPermission'] = false;
+        if ($this->config->admin_configDbPermission) {
+            $configDbPermissionAry = explodeTrim(':', $this->config->admin_configDbPermission);
+            $perm = $this->checkGroupMembership($configDbPermissionAry[1]);
+            if ($perm && $configDbPermissionAry[0]) {
+                $_SESSION['lizzy']['configDbPermission'] = ($configDbPermissionAry[0] === $user);
+            }
+            $_SESSION['lizzy']['configDbPermission'] = $perm;
+        }
 
         $GLOBALS['globalParams']['user'] = $user;
         $GLOBALS['globalParams']['isLoggedin'] = boolval( $user );
