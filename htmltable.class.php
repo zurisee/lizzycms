@@ -2039,7 +2039,7 @@ EOT;
             $this->options['includeKeys'] = true;
         }
         $this->options['includeTimestamp'] = $this->options['includeKeys'];
-        $ds = new DataStorage2($this->options);
+        $ds = new DataStorage2($this->options, $this->lzy);
         $this->ds = $ds;
 
         if ($this->preselectData) {

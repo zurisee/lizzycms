@@ -14,7 +14,7 @@ class UserAdmin extends UserAdminBase
 
 
 
-    // entry point for rending forms: 'invite', 'signup'
+    // entry point for rending forms: invite, signup, login, table
     public function render( $options )
     {
         $this->options      = $options;
@@ -31,7 +31,17 @@ class UserAdmin extends UserAdminBase
             $html = $accForm->render(true, '');
 
         } elseif (strpos($mode, 'table') !== false) {
-            $html = $this->renderUserAdminTable();
+            // skip rendering in case of insufficient privileges:
+            $permission = @$_SESSION['lizzy']['configDbPermission'];
+            if (!$permission && @$_SESSION['lizzy']['isLocalhost']) {
+                $permission = true;
+                // warning to user generated in datastorage:initDbTable()
+            }
+            if (!$permission) {
+                $html = '{{ lzy-useradmin-insufficient-permission }}';
+            } else {
+                $html = $this->renderUserAdminTable();
+            }
         }
         return $html;
     } // render

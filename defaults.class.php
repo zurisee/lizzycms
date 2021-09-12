@@ -35,6 +35,9 @@ private $userConfigurableSettingsAndDefaults      = [
     'admin_userAllowSelfAccessLink'     => [false, 'If true, user can create an "access-link"', 3 ],
     'admin_enableFileManager'           => [false, 'If true, the file-manager (upload, rename, delete) is enabled for privileged users.', 2 ],
     'admin_minPasswordLength'           => [10, '[integer] Minimum length of passwords if "admin_enforcePasswordQuality" is enabled.', 3 ],
+    'admin_configDbPermission'          => [':admins', '[user:group] Defines permission to modify (.yaml) files inside '.
+                                            '"config/" folder via Lizzy\'s Datastorage module. Omit "user" to give all members of "group" permission. '.
+                                            'Default: ":admins".', 3 ],
 
     'custom_relatedGitProjects'         => ['', "Git Project(s) to be included in ?gitstat command", 3 ],
     'custom_permitUserCode'             => [false, "Only if true, user-provided code can be executed. And only if located in '".USER_CODE_PATH."'", 1 ],
@@ -334,25 +337,25 @@ private $userConfigurableSettingsAndDefaults      = [
         }
 
         $this->isLocalhost = $this->localHost = $localHost;
-
     } // getConfigValues
 
 
 
-    private function determineIsLocalhost()
+    public function determineIsLocalhost()
     {
         $serverName = (isset($_SERVER['SERVER_NAME'])) ? $_SERVER['SERVER_NAME'] : 'localhost';
         $remoteAddress = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : '';
-        if (($state = getStaticVariable('localHost')) !== null) {
-            return $state;
-        }
         if (($serverName === 'localhost') || ($remoteAddress === '::1')) {
-            return true;
+            // url-arg 'localhost=false' may override result:
+            if (getUrlArg('localhost') === false) {
+                return false;
+            } else {
+                return true;
+            }
         } else {
             return false;
         }
     } // determineIsLocalhost
-
 
 
 
@@ -473,7 +476,6 @@ EOT;
 
 
 
-
     public function renderConfigOverlay()
     {
         $configCmd = getUrlArg('config', true);
@@ -560,7 +562,6 @@ EOT;
 
         return $out;
     } // renderConfigOverlay
-
 
 
 

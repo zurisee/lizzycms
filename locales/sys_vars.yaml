@@ -939,7 +939,9 @@ lzy-invalid-email-address:
     de: 'Ungültige E-Mail Adresse'
     _: 'Invalid e-mail address'
 
-
+lzy-useradmin-insufficient-permission:
+    de: 'Benutzeradministration: fehlende Berechtigung.'
+    _:  'User-Admin: insufficient privileges.'
 
 
 
@@ -1056,6 +1058,9 @@ lzy-form-error-formhash-lost:
     de: 'Interner Fehler (Formular-Referenz fehlt)'
     _:  'Internal error (form-reference missing)'
 
+lzy-config-db-permission-localhost-warning:
+    de: 'Achtung: Zugang zu Dateien in "config/" nur auf Localhost gewährt. Auf anderen Hosts wird Admin-Berechtigung benötigt.'
+    _:  'Note: access to file in "config/" only granted on localhost. On remote host you&quote;ll need admin privileges.'
 
 #--- DataTables ----------------------
 lzy-datatables-search-button:

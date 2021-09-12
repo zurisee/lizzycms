@@ -59,8 +59,9 @@ class DataStorage2
     private $includeTimestamp;
 
 
-    public function __construct($args)
+    public function __construct($args, $lzy = null)
     {
+        $this->lzy = $lzy;
         if ( session_status() !== PHP_SESSION_ACTIVE ) {
             session_start();
         }
@@ -1802,12 +1803,22 @@ EOT;
         // each dataFile is copied into a table within the lizzyDB
 
         // access to files in config/ are risky -> restrict access to admins:
-        if ($this->secure && (strpos($this->dataFile, 'config/') !== false) && !@$_SESSION['lizzy']['isAdmin']) {
-            mylog("DataStorage: access to DB '$this->dataFile' in config/ folder denied. User would need to be admin.");
-            if ($GLOBALS['globalParams']['isLocalhost']) {
-                die("DataStorage: access to DB '$this->dataFile' in config/ folder denied. You'd have to be admin.");
-            } else {
-                return null;
+        if ($this->secure && (strpos($this->dataFile, 'config/') !== false)) {
+            $permission = @$_SESSION['lizzy']['configDbPermission'];
+            if (!$permission && @$_SESSION['lizzy']['isLocalhost']) {
+                $permission = true;
+                if ($this->lzy) {
+                    $this->lzy->page->addMessage('{{ lzy-config-db-permission-localhost-warning }}');
+                }
+            }
+            if (!$permission) {
+                $who = @$this->config->admin_configDbPermission;
+                mylog("DataStorage: access to DB '$this->dataFile' in config/ folder denied. User would need to be '$who'.");
+                if ($GLOBALS['globalParams']['isLocalhost']) {
+                    die("DataStorage: access to DB '$this->dataFile' in config/ folder denied. You'd have to be '$who'.");
+                } else {
+                    return null;
+                }
             }
         }
 

@@ -208,6 +208,9 @@ class Lizzy
         $GLOBALS['globalParams']['activityLoggingEnabled'] = $this->config->admin_activityLogging;
         $GLOBALS['globalParams']['errorLoggingEnabled'] = $this->config->debug_errorLogging;
 
+        $_SESSION['lizzy']['isLocalhost'] = $this->localHost;
+        $_SESSION['lizzy']['configDbPermission'] = false;
+
         $this->trans = new Transvar($this);
         $this->setTransvars0();
         $this->page = new Page($this);
@@ -1676,16 +1679,34 @@ EOT;
         }
 
         //=== beyond this point only localhost or logged in as editor/admin group
-        if (!$this->auth->checkGroupMembership('editors')) {
-            $this->trans->addVariable('lzy-toggle-edit-mode', "");
-            $cmds = ['help','unused','reset-unused','remove-unused','log','info','list','mobile','touch','notouch','auto','config'];
-            foreach ($cmds as $cmd) {
-                if (isset($_GET[$cmd])) {
-                    $this->page->addMessage("{{ lzy-insufficient-privilege }} '?$cmd'");
-                    break;
-                }
-            }
+        if (!$_GET) {
             return;
+        }
+        $requestedCmd = false;
+        $cmds = ',help,unused,reset-unused,remove-unused,log,info,list,mobile,touch,notouch,auto,config,localhost,';
+        foreach ($_GET as $cmd => $value) {
+            if (stripos($cmds, ",$cmd,") !== false) {
+                $requestedCmd = $cmd;
+                break;
+            }
+        }
+        if (!$requestedCmd) {
+            return;
+        }
+
+        $permisson = $this->auth->checkGroupMembership('editors');
+        $warning = false;
+        if (!$permisson && $this->config->determineIsLocalhost()) {
+            $permisson = true;
+            $warning = "<strong>Warning</strong>:<br>URL-command '$requestedCmd' granted on Localhost.<br>Admin privileges would be required on remote host.";
+        }
+        if (!$permisson) {
+            $this->trans->addVariable('lzy-toggle-edit-mode', "");
+            $this->page->addMessage("{{ lzy-insufficient-privilege }} '?$requestedCmd'");
+            return;
+        }
+        if ($warning) {
+            $this->page->addMessage( $warning );
         }
 
         if ($filename = getUrlArg('reorg-css', true)) {         // reorg-css
@@ -2245,32 +2266,33 @@ EOT;
 <pre class="pre">
 Available URL-commands:
 
-<a href='?help'>?help</a>		    this message
-<a href='?config'>?config</a>		    list configuration-items in the config-file
-<a href='?debug'>?debug</a>		    activates DevMode and adds 'debug' class to page on non-local host *)
-<a href='?gitstat'>?gitstat</a>		displays the Lizzy-s GIT-status
-<a href='?pw'>?pw</a>	            convert password to hash
-<a href='?hash'>?hash</a>		    create a hash value e.g. for accessCodes
-<a href='?accesscode'>?accesscode=user</a> create an accessCode forgiven user
-<a href='?ticket'>?ticket</a>		    create a user-access-ticket
-<a href='?convert'>?convert</a>	    convert between table-data formats
-<a href='?edit'>?edit</a>		    start editing mode *)
-<a href='?iframe'>?iframe</a>		    show code for embedding as iframe
-<a href='?info'>?info</a>		    list debug-info
-<a href='?lang=xy'>?lang=</a>	        switch to given language (e.g. '?lang=en')  *)
-<a href='?list'>?list</a>		    list <samp>transvars</samp> and <samp>macros()</samp>
-<a href='?notranslate'>?notranslate</a>    show untranslated variables
-<a href='?log'>?log</a>		    displays log files in overlay
-<a href='?login'>?login</a>		    login
-<a href='?logout'>?logout</a>		    logout
+<a href='?help'>?help</a>		    	this message
+<a href='?config'>?config</a>		    	list configuration-items in the config-file
+<a href='?debug'>?debug</a>		    	activates DevMode and adds 'debug' class to page on non-local host *)
+<a href='?localhost=false'>?localhost=false</a>	For testing: simulates running on remote host
+<a href='?gitstat'>?gitstat</a>			displays the Lizzy-s GIT-status
+<a href='?pw'>?pw</a>	            	convert password to hash
+<a href='?hash'>?hash</a>		    	create a hash value e.g. for accessCodes
+<a href='?accesscode'>?accesscode=user</a> 	create an accessCode forgiven user
+<a href='?ticket'>?ticket</a>		    	create a user-access-ticket
+<a href='?convert'>?convert</a>	    	convert between table-data formats
+<a href='?edit'>?edit</a>		    	start editing mode *)
+<a href='?iframe'>?iframe</a>		    	show code for embedding as iframe
+<a href='?info'>?info</a>		    	list debug-info
+<a href='?lang=xy'>?lang=</a>	        	switch to given language (e.g. '?lang=en')  *)
+<a href='?list'>?list</a>		    	list <samp>transvars</samp> and <samp>macros()</samp>
+<a href='?notranslate'>?notranslate</a>    	show untranslated variables
+<a href='?log'>?log</a>		    	displays log files in overlay
+<a href='?login'>?login</a>		    	login
+<a href='?logout'>?logout</a>		    	logout
 <a href='?mobile'>?mobile</a>,<a href='?touch'>?touch</a>,<a href='?notouch'>?notouch</a>	emulate modes  *)
-<a href='?nc'>?nc</a>		        supress caching (?nc=false to enable caching again)  *)
-<a href='?print'>?print</a>		    starts printing mode and launches the printing dialog
-<a href='?print-preview'>?print-preview</a>  presents the page in print-view mode    
-<a href='?timer'>?timer</a>		    switch timer on or off  *)
+<a href='?nc'>?nc</a>		        	supress caching (?nc=false to enable caching again)  *)
+<a href='?print'>?print</a>		    	starts printing mode and launches the printing dialog
+<a href='?print-preview'>?print-preview</a>  	presents the page in print-view mode    
+<a href='?timer'>?timer</a>		    	switch timer on or off  *)
 
-<a href='?reset'>?reset</a>		    resets all state-defining information: caches, tickets, session-vars.
-<a href='?purge-all'>?purge-all</a>		purges all files generated by Lizzy, so they will be recreated from scratch
+<a href='?reset'>?reset</a>		    	resets all state-defining information: caches, tickets, session-vars.
+<a href='?purge-all'>?purge-all</a>			purges all files generated by Lizzy, so they will be recreated from scratch
 
 *) these options are persistent, they keep their value for further page requests. 
 Unset individually as ?xy=false or globally as ?reset
