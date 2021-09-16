@@ -61,7 +61,11 @@ class DataStorage2
 
     public function __construct($args, $lzy = null)
     {
-        $this->lzy = ($lzy !== null)? $lzy: @$GLOBALS['lzy'];
+        if ($lzy !== null) {
+            $this->lzy = $lzy;
+        } else {
+            $this->lzy = &$GLOBALS['lzy'];
+        }
         if ( session_status() !== PHP_SESSION_ACTIVE ) {
             session_start();
         }
