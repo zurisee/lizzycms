@@ -59,7 +59,7 @@ class Ticketing
     {
         $this->type = $type? $type : $this->defaultType;
         $maxConsumptionCount = $maxConsumptionCount ?$maxConsumptionCount : $this->defaultMaxConsumptionCount;
-        $pathToPage = @$GLOBALS['globalParams']['pathToPage'];
+        $pathToPage = @$GLOBALS['lizzy']['pathToPage'];
 
         if ($validityPeriod !== null) {
             if ($validityPeriod > 0) {
@@ -110,8 +110,8 @@ class Ticketing
             $ticketRec['_maxConsumptionCount'] = intval($ticketRec['_maxConsumptionCount']);
         }
         $ticketRec['_ticketType'] = $type ? $type : $this->defaultType;
-        $ticketRec['_currPage'] = $GLOBALS['globalParams']['pageFolder'];
-        $ticketRec['_dataPath'] = $GLOBALS['globalParams']['dataPath'];
+        $ticketRec['_currPage'] = $GLOBALS['lizzy']['pageFolder'];
+        $ticketRec['_dataPath'] = $GLOBALS['lizzy']['dataPath'];
 
         if ($validityPeriod === null) {
             $this->validityPeriod = $this->defaultValidityPeriod;
@@ -147,7 +147,7 @@ class Ticketing
         // finds a ticket that matches the given hash
         // if $key is provided, it finds a ticket that contains given data (i,e, key and value match)
         if ($value === null) {
-            $pathToPage = @$GLOBALS['globalParams']['pathToPage'];
+            $pathToPage = @$GLOBALS['lizzy']['pathToPage'];
             $type = $key? $key : $this->defaultType;
             return getStaticVariable( "$pathToPage.tickets.$type" );
         }
@@ -164,19 +164,26 @@ class Ticketing
     public function updateTicket($ticketHash, $data = null, $overwrite = false)
     {
         $ticketRec = $this->ds->readRecord($ticketHash);
-        if ($data === null) {
-            $data = $ticketRec;
-        } elseif (!$overwrite && $ticketRec) {
-            $data = array_merge($ticketRec, $data);
+        // merge with existing data:
+        if (($data !== null) && !$overwrite && $ticketRec) {
+            foreach ($data as $key => $value) {
+                if (is_array($value)) {
+                    foreach ($value as $k => $v ) {
+                        $ticketRec[$key][$k] = $v;
+                    }
+                } else {
+                    $ticketRec[$key] = $value;
+                }
+            }
         }
 
         // update _ticketValidTill:
         if ($this->validityPeriod) {
-            $data['_ticketValidTill'] = time() + $this->validityPeriod;
+            $ticketRec['_ticketValidTill'] = time() + $this->validityPeriod;
         } else {
-            $data['_ticketValidTill'] = false;
+            $ticketRec['_ticketValidTill'] = false;
         }
-        $this->ds->writeRecord($ticketHash, $data);
+        $this->ds->writeRecord($ticketHash, $ticketRec);
     } // updateTicket
 
 
@@ -219,9 +226,9 @@ class Ticketing
                 $_SESSION['lizzy']['ticket'] = $ticketRec;
             }
         }
-        if (isset( $GLOBALS['globalParams']['isBackend'])) {
-            $GLOBALS['globalParams']['pageFolder'] = $ticketRec['_currPage'];
-            $GLOBALS['globalParams']['dataPath'] = $ticketRec['_dataPath'];
+        if (isset( $GLOBALS['lizzy']['isBackend'])) {
+            $GLOBALS['lizzy']['pageFolder'] = $ticketRec['_currPage'];
+            $GLOBALS['lizzy']['dataPath'] = $ticketRec['_dataPath'];
 
         }
         unset($ticketRec['_currPage']);
@@ -271,7 +278,7 @@ class Ticketing
         // supply type in $checkExistingOfType if desired
         if ($checkExistingOfType) {
             $type = ($checkExistingOfType !== true)? $checkExistingOfType : $this->defaultType;
-            $pathToPage = @$GLOBALS['globalParams']['pathToPage'];
+            $pathToPage = @$GLOBALS['lizzy']['pathToPage'];
             $ticketHash = getStaticVariable( "$pathToPage.tickets.$type" );
             if ($ticketHash && $this->ticketExists( $ticketHash )) {
                 return $ticketHash;
