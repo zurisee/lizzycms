@@ -75,3 +75,7 @@
 .lzy-table-action-btns {
 	margin-bottom: 0.5em;
 }
+
+.lzy-table-default .dataTables_filter {
+	margin-bottom: 4px;
+}

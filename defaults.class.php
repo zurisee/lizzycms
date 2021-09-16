@@ -161,7 +161,8 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->loadModules['TABBABLE']              = array('module' => 'third-party/tabbable/jquery.tabbable.min.js', 'weight' => 126);
         $this->loadModules['NAV']                   = array('module' => 'js/nav.js', 'weight' => 125);
 
-        $this->loadModules['HTMLTABLE']             = array('module' => 'js/htmltable.js', 'weight' => 123);
+        $this->loadModules['FORMS']                 = array('module' => 'js/forms.js', 'weight' => 124);
+        $this->loadModules['HTMLTABLE']             = array('module' => 'js/htmltable.js,css/htmltables.css', 'weight' => 123);
 
         $this->loadModules['LIVE_DATA']             = array('module' => 'extensions/livedata/js/live_data.js', 'weight' => 121);
         $this->loadModules['EDITABLE']              = array('module' => 'extensions/livedata/js/live_data.js,extensions/editable/js/editable.js,'.
@@ -233,7 +234,7 @@ private $userConfigurableSettingsAndDefaults      = [
 
     private function getConfigValues($append = false)
     {
-        global $globalParams;
+        global $lizzy;
 
         if (!$append) {
             $configValues = getYamlFile($this->configFile);
@@ -287,7 +288,7 @@ private $userConfigurableSettingsAndDefaults      = [
         foreach ($configValues as $key => $val) {
             if (strpos($key, 'my_') === 0) {
                 $this->$key = $val;
-                $globalParams[$key] = $val;
+                $lizzy[$key] = $val;
             }
         }
 
@@ -489,7 +490,7 @@ EOT;
             case 2: $level2Class = ' class="lzy-config-viewer-hl"'; break;
             case 3: $level3Class = ' class="lzy-config-viewer-hl"'; break;
         }
-        $url = $GLOBALS['globalParams']['pageUrl'];
+        $url = $GLOBALS['lizzy']['pageUrl'];
 
         if (isset($_POST) && $_POST) {
             $this->updateConfigValues( $_POST, $this->configFile );

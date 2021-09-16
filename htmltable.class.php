@@ -1,6 +1,6 @@
 <?php
 
-$GLOBALS['globalParams']['tableCounter'][ $GLOBALS['globalParams']['pagePath'] ] = 0;
+$GLOBALS['lizzy']['tableCounter'][ $GLOBALS['lizzy']['pagePath'] ] = 0;
 
 define('FORM_TYPES',
     ',string,text,password,email,textarea,radio,checkbox,'.
@@ -40,87 +40,89 @@ class HtmlTable
 
     public function __construct($lzy, $options)
     {
-        $this->options      = $options;
-        $this->lzy 		    = $lzy;
-        $this->page 		= $lzy->page;
-        $this->tableCounter = &$GLOBALS['globalParams']['tableCounter'][ $GLOBALS['globalParams']['pagePath'] ];
+        $this->options = $options;
+        $this->lzy = $lzy;
+        $this->page = $lzy->page;
+        $this->tableCounter = &$GLOBALS['lizzy']['tableCounter'][$GLOBALS['lizzy']['pagePath']];
         $this->tableCounter++;
-        $this->helpText     = false;
-        $this->ticketHash     = false;
-        $this->specificRowClasses     = [];
+        $this->helpText = false;
+        $this->ticketHash = false;
+        $this->specificRowClasses = [];
         if ($options === 'help') {
             $this->helpText = [];
             $options = [];
         }
         $this->editFormRendered = false;
 
-        $this->dataSource	        = $this->getOption('dataSource', '(optional if nCols is set) Name of file containing data. Format may be .cvs or .yaml and is expected be local to page folder.');
-        $this->preselectData	    = $this->getOption('preselectData', 'If set, pre-selects data from dataSource before rendering (only makes sense for higher dimensional data).');
-        $this->inMemoryData	        = $this->getOption('data', 'Alternative to "dataSource": provide data directly as array. E.g. data: $array,');
-        $this->id 			        = $this->getOption('id', '(optional) Id applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
-        $this->wrapperClass 	    = $this->getOption('wrapperClass', '(optional) Class applied to the DIV around the table tag (resp. wrapping div tag if renderAsDiv is set). (Default: "lzy-table-default" which applies default styling).', 'lzy-table-default');
-        $this->tableClass 	        = $this->getOption('tableClass', '(optional) Class applied to the table tag (resp. wrapping div tag if renderAsDiv is set). Use "lzy-table-default" to apply default styling.');
-        $this->tableClass 	        = $this->getOption('class', 'Synonyme for tableClass', $this->tableClass);
-        $this->cellClass 	        = $this->getOption('cellClass', '(optional) Class applied to each table cell');
-        $this->cellWrapper 	        = $this->getOption('cellWrapper', '(optional) If true, each cell is wrapped in a DIV element; if it\'s a string, the cell is wrapped in a tag of given name.');
-        $this->rowClass 	        = $this->getOption('rowClass', '(optional) Class applied to each table row', 'lzy-row-*');
-        $this->cellIds 	            = $this->getOption('cellIds', '(optional) If true, each cell gets an ID which is derived from the cellClass');
-        $this->nRowsReq 		    = $this->getOption('nRows', '(optional) Number of rows: if set the table is forced to this number of rows');
-        $this->minRows 		        = $this->getOption('minRows', '(optional) Minimum Number of rows: if set the table contains at least that many rows.');
-        $this->nColsReq 		    = $this->getOption('nCols', '(optional) Number of columns: if set the table is forced to this number of columns');
-        $this->includeKeys          = $this->getOption('includeKeys', '[true|false] If true and not a .csv source: key elements will be included in data.', true);
-        $this->interactive          = $this->getOption('interactive', '[true|false] If true, module "Datatables" is activated, providing for interactive features such as sorting, searching etc.');
-        $this->liveData             = $this->getOption('liveData', '[true|false] If true, Lizzy\'s "liveData" mechanism is activated. If the dataSource is modified on the server, changes are immediately mirrored in the webpage.');
-        $this->dataSelector         = $this->getOption('dataSelector', '(optional string) If defined and "liveData" is activated, this option defines how to access data elements from the DB. (Default: \'*,*\')', '*,*');
-        $this->targetSelector       = $this->getOption('targetSelector', '(optional string) If defined and "liveData" is activated, this option defines how to assign data elements to DOM-elements. (Default: \'[data-ref="*,*"]\')', '[data-ref="*,*"]');
-        $this->editable             = $this->getOption('editable', '[false,true,loggedin,privileged,admins,editors] Shortcut that enables full table editing and downloading (Default: false).');
-        $this->editableBy           = $this->getOption('editableBy', '[false,true,loggedin,privileged,admins,editors] Defines who may edit data. Default: false. (only available when using option "dataSource")');
-        $this->editMode             = $this->getOption('editMode', '[inline,form] Defines (Default: form).', 'form');
-        $this->editFormArgs         = $this->getOption('editFormArgs', 'Arguments that will passed on to the forms-class.', false);
-        $this->editFormTemplate     = $this->getOption('editFormTemplate', 'A markdown file that will be used for rendering the form.', false);
-        $this->tableButtons         = $this->getOption('tableButtons', 'Activates a row of activity buttons related to the form. If in editMode, a "New Record" button will be added.', false);
-        $activityButtons            = $this->getOption('activityButtons', 'Synonyme for "tableButtons".', false);
+        $this->dataSource               = $this->getOption('dataSource', '(optional if nCols is set) Name of file containing data. Format may be .cvs or .yaml and is expected be local to page folder.');
+        $this->preselectData            = $this->getOption('preselectData', 'If set, pre-selects data from dataSource before rendering (only makes sense for higher dimensional data).');
+        $this->inMemoryData             = $this->getOption('data', 'Alternative to "dataSource": provide data directly as array. E.g. data: $array,');
+        $this->id                       = $this->getOption('id', '(optional) Id applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
+        $this->wrapperClass             = $this->getOption('wrapperClass', '(optional) Class applied to the DIV around the table tag (resp. wrapping div tag if renderAsDiv is set). (Default: "lzy-table-default" which applies default styling).', 'lzy-table-default');
+        $this->tableClass               = $this->getOption('tableClass', '(optional) Class applied to the table tag (resp. wrapping div tag if renderAsDiv is set). Use "lzy-table-default" to apply default styling.');
+        $this->tableClass               = $this->getOption('class', 'Synonyme for tableClass', $this->tableClass);
+        $this->cellClass                = $this->getOption('cellClass', '(optional) Class applied to each table cell');
+        $this->cellWrapper              = $this->getOption('cellWrapper', '(optional) If true, each cell is wrapped in a DIV element; if it\'s a string, the cell is wrapped in a tag of given name.');
+        $this->rowClass                 = $this->getOption('rowClass', '(optional) Class applied to each table row', 'lzy-row-*');
+        $this->cellIds                  = $this->getOption('cellIds', '(optional) If true, each cell gets an ID which is derived from the cellClass');
+        $this->nRowsReq                 = $this->getOption('nRows', '(optional) Number of rows: if set the table is forced to this number of rows');
+        $this->minRows                  = $this->getOption('minRows', '(optional) Minimum Number of rows: if set the table contains at least that many rows.');
+        $this->nColsReq                 = $this->getOption('nCols', '(optional) Number of columns: if set the table is forced to this number of columns');
+        $this->includeKeys              = $this->getOption('includeKeys', '[true|false] If true and not a .csv source: key elements will be included in data.', true);
+        $this->interactive              = $this->getOption('interactive', '[true|false] If true, module "Datatables" is activated, providing for interactive features such as sorting, searching etc.');
+        $this->liveData                 = $this->getOption('liveData', '[true|false] If true, Lizzy\'s "liveData" mechanism is activated. If the dataSource is modified on the server, changes are immediately mirrored in the webpage.');
+        $this->dataSelector             = $this->getOption('dataSelector', '(optional string) If defined and "liveData" is activated, this option defines how to access data elements from the DB. (Default: \'*,*\')', '*,*');
+        $this->targetSelector           = $this->getOption('targetSelector', '(optional string) If defined and "liveData" is activated, this option defines how to assign data elements to DOM-elements. (Default: \'[data-ref="*,*"]\')', '[data-ref="*,*"]');
+        $this->editable                 = $this->getOption('editable', '[false,true,loggedin,privileged,admins,editors] Shortcut that enables full table editing and downloading (Default: false).');
+        $this->editableBy               = $this->getOption('editableBy', '[false,true,loggedin,privileged,admins,editors] Defines who may edit data. Default: false. (only available when using option "dataSource")', null);
+        $this->editMode                 = $this->getOption('editMode', '[inline,form] Defines (Default: form).', 'form');
+        $this->editFormArgs             = $this->getOption('editFormArgs', 'Arguments that will passed on to the forms-class.', false);
+        $this->editFormTemplate         = $this->getOption('editFormTemplate', 'A markdown file that will be used for rendering the form.', false);
+        $this->tableButtons             = $this->getOption('tableButtons', 'Activates a row of activity buttons related to the form. If in editMode, a "New Record" button will be added.', false);
+        $activityButtons                = $this->getOption('activityButtons', 'Synonyme for "tableButtons".', false);
         if ($activityButtons) {
             $this->tableButtons = $activityButtons;
         }
-        $this->labelColons          = $this->getOption('labelColons', 'If false, trailing colon of labels in editing-forms are omitted.', true);
-        $this->rowButtons           = $this->getOption('rowButtons', '(optional comma-separated-list) Prepends a column to each row containing custom buttons. Buttons can be defined as names of icons or HTML code. E.g. "send,trash"', null);
-        $this->recViewButtonsActive = $this->getOption('showRecViewButton', '[true|false] If true, a button to open a popup is added to each row. The popup presents the data record in form view.', false);
-        $this->paging               = $this->getOption('paging', '[true|false] When using "Datatables": turns paging on or off (default is on)');
-        $this->initialPageLength    = $this->getOption('initialPageLength', '[int] When using "Datatables": defines the initial page length (default is 10)');
-        $this->excludeColumns       = $this->getOption('excludeColumns', '(optional) Allows to exclude specific columns, e.g. "excludeColumns:2,4-5"');
-        $this->sort 		        = $this->getOption('sort', '(optional) Allows to sort the table on a given columns, e.g. "sort:3"');
-        $this->sortExcludeHeader    = $this->getOption('sortExcludeHeader', '(optional) Allows to exclude the first row from sorting');
- //        $this->filter               = $this->getOption('filter', '(optional) Allows to filter data. Filter value is exected to be a PHP expression. Data is referenced as "[[elemKey]]", where elemKey is column-index or header-string.');
-        $this->autoConvertLinks     = $this->getOption('autoConvertLinks', '(optional) If true, all data is scanned for patterns of URL, mail address or telephone numbers. If found the value is wrapped in a &lt;a> tag');
-        $this->autoConvertTimestamps= $this->getOption('autoConvertTimestamps', '(optional) If true, integer values that could be timestamps (= min. 10 digits) are converted to time strings.');
-        $this->caption	            = $this->getOption('caption', '(optional) If set, a caption tag is added to the table. The caption text may contain the pattern "##" which will be replaced by a number.');
-        $this->captionIndex         = $this->getOption('captionIndex', '(optional) If set, will override the automatically applied table counter');
-        $this->headers	            = $this->getOption('headers', '(optional) Column headers may be supplied in the form [A|B|C...]', true);
+        $this->tableButtons = str_replace('new-rec', 'add-rec', $this->tableButtons); // synonyme
+
+        $this->labelColons              = $this->getOption('labelColons', 'If false, trailing colon of labels in editing-forms are omitted.', true);
+        $this->rowButtons               = $this->getOption('rowButtons', '(optional comma-separated-list) Prepends a column to each row containing custom buttons. Buttons can be defined as names of icons or HTML code. E.g. "send,trash"', null);
+        $this->recViewButtonsActive     = $this->getOption('showRecViewButton', '[true|false] If true, a button to open a popup is added to each row. The popup presents the data record in form view.', false);
+        $this->paging                   = $this->getOption('paging', '[true|false] When using "Datatables": turns paging on or off (default is on)');
+        $this->initialPageLength        = $this->getOption('initialPageLength', '[int] When using "Datatables": defines the initial page length (default is 10)');
+        $this->excludeColumns           = $this->getOption('excludeColumns', '(optional) Allows to exclude specific columns, e.g. "excludeColumns:2,4-5"');
+        $this->sort                     = $this->getOption('sort', '(optional) Allows to sort the table on a given columns, e.g. "sort:3"');
+        $this->sortExcludeHeader        = $this->getOption('sortExcludeHeader', '(optional) Allows to exclude the first row from sorting');
+        //        $this->filter               = $this->getOption('filter', '(optional) Allows to filter data. Filter value is exected to be a PHP expression. Data is referenced as "[[elemKey]]", where elemKey is column-index or header-string.');
+        $this->autoConvertLinks         = $this->getOption('autoConvertLinks', '(optional) If true, all data is scanned for patterns of URL, mail address or telephone numbers. If found the value is wrapped in a &lt;a> tag');
+        $this->autoConvertTimestamps    = $this->getOption('autoConvertTimestamps', '(optional) If true, integer values that could be timestamps (= min. 10 digits) are converted to time strings.');
+        $this->caption                  = $this->getOption('caption', '(optional) If set, a caption tag is added to the table. The caption text may contain the pattern "##" which will be replaced by a number.');
+        $this->captionIndex             = $this->getOption('captionIndex', '(optional) If set, will override the automatically applied table counter');
+        $this->headers                  = $this->getOption('headers', '(optional) Column headers may be supplied in the form [A|B|C...]', true);
         if (!$this->headers) {
-            $this->headers          = $this->getOption('headersTop');   // synonyme for 'headers'
+            $this->headers = $this->getOption('headersTop');   // synonyme for 'headers'
         }
-        $this->headersLeft          = $this->getOption('headersLeft', '(optional) Row headers may be supplied in the form [A|B|C...]');
-        $this->translateHeaders     = $this->getOption('translateHeaders', '(optional) If true, header elements will be translated if definition exists.');
-        $this->showRowNumbers       = $this->getOption('showRowNumbers', '(optional) Adds a left most column showing row numbers.');
-        $this->injectSelectionCol   = $this->getOption('injectSelectionCol', '(optional) Adds a column showing row selection checkboxes.');
-        $this->hideMetaFields       = $this->getOption('hideMetaFields', '(optional) If true, system (or "meta") fields are not rendered (default: true).', true);
- //        $this->renderAsDiv	        = $this->getOption('renderAsDiv', '(optional) If set, the table is rendered as &lt;div> tags rather than &lt;table>');
-        $this->renderAsDiv = false; // disabled for the time being...
-        $this->tableDataAttr	    = $this->getOption('tableDataAttr', '(optional) ');
- //        $this->renderDivRows        = $this->getOption('renderDivRows', '(optional) If set, each row is wrapped in an additional &lt;div> tag. Omitting this may be useful in conjunction with CSS grid.');
-        $this->includeCellRefs	    = $this->getOption('includeCellRefs', '(optional) If set, data-source and cell-coordinates are added as \'data-xy\' attributes');
+        $this->headersLeft              = $this->getOption('headersLeft', '(optional) Row headers may be supplied in the form [A|B|C...]');
+        $this->translateHeaders         = $this->getOption('translateHeaders', '(optional) If true, header elements will be translated if definition exists.');
+        $this->showRowNumbers           = $this->getOption('showRowNumbers', '(optional) Adds a left most column showing row numbers.');
+        $this->injectSelectionCol       = $this->getOption('injectSelectionCol', '(optional) Adds a column showing row selection checkboxes.');
+        $this->hideMetaFields           = $this->getOption('hideMetaFields', '(optional) If true, system (or "meta") fields are not rendered (default: true).', true);
+        //        $this->renderAsDiv	        = $this->getOption('renderAsDiv', '(optional) If set, the table is rendered as &lt;div> tags rather than &lt;table>');
+        $this->renderAsDiv              = false; // disabled for the time being...
+        $this->tableDataAttr            = $this->getOption('tableDataAttr', '(optional) ');
+        //        $this->renderDivRows        = $this->getOption('renderDivRows', '(optional) If set, each row is wrapped in an additional &lt;div> tag. Omitting this may be useful in conjunction with CSS grid.');
+        $this->includeCellRefs          = $this->getOption('includeCellRefs', '(optional) If set, data-source and cell-coordinates are added as \'data-xy\' attributes');
         //        $this->cellMask 	        = $this->getOption('cellMask', '(optional) Lets you define regions that a masked and thus will not get the cellClass. Selection code: rY -> row, cX -> column, eX,Y -> cell element.');
         //        $this->cellMaskedClass      = $this->getOption('cellMaskedClass', '(optional) Class that will be applied to masked cells');
-        $this->cellMask 	        = false;
-        $this->cellMaskedClass      = false;
-        $this->process	            = $this->getOption('process', '(optional) Provide name of a frontmatter variable to activate this feature. In the frontmatter area define an array containing instructions for manipulating table data. See <a href="https://getlizzy.net/macros/extensions/table/" target="_blank">Doc</a> for further details.');
-        $this->processInstructionsFile	= $this->getOption('processInstructionsFile', 'The same as \'process\' except that instructions are retrieved from a .yaml file');
-        $this->suppressError        = $this->getOption('suppressError', '(optional) Suppresses the error message in case dataSource is not available.');
-        $this->enableTooltips       = $this->getOption('enableTooltips', '(optional) Enables tooltips, e.g. for cells containing too much text. To use, apply a class-name containing "tooltip" to the targeted cell, e.g. "tooltip1".');
-        $this->export               = $this->getOption('export', '(optional) .');
-        $this->exportMetaElements   = $this->getOption('exportMetaElements', '(optional) .');
-        $this->prefill              = $this->getOption('prefill', '(optional) .');
+        $this->cellMask                 = false;
+        $this->cellMaskedClass          = false;
+        $this->process                  = $this->getOption('process', '(optional) Provide name of a frontmatter variable to activate this feature. In the frontmatter area define an array containing instructions for manipulating table data. See <a href="https://getlizzy.net/macros/extensions/table/" target="_blank">Doc</a> for further details.');
+        $this->processInstructionsFile  = $this->getOption('processInstructionsFile', 'The same as \'process\' except that instructions are retrieved from a .yaml file');
+        $this->suppressError            = $this->getOption('suppressError', '(optional) Suppresses the error message in case dataSource is not available.');
+        $this->enableTooltips           = $this->getOption('enableTooltips', '(optional) Enables tooltips, e.g. for cells containing too much text. To use, apply a class-name containing "tooltip" to the targeted cell, e.g. "tooltip1".');
+        $this->export                   = $this->getOption('export', '(optional) .');
+        $this->exportMetaElements       = $this->getOption('exportMetaElements', '(optional) .');
+        $this->prefill                  = $this->getOption('prefill', '(optional) .');
 
         $this->checkArguments();
 
@@ -129,40 +131,59 @@ class HtmlTable
 
         $this->formEditing = false;
         $this->inlineEditing = false;
-        $this->editingActive = checkPermission($this->editableBy, $this->lzy);
+
+        // determine editing permission:
+        // first check explicit permission 'editableBy':
+        if ($this->editableBy !== null) {
+            $this->editingActive = checkPermission($this->editableBy, $this->lzy) ||
+                (@$GLOBALS['_SESSION']['lizzy']['debug'] && @$_SESSION['lizzy']['isLocalhost']);
+
+        // second implicit permission for edit, delete, add:
+        } else {
+            if ($this->editable) {
+                $this->editingActive = $this->editable = checkPermission($this->editable, $this->lzy);
+
+            } elseif ((strpos($this->tableButtons, 'edit') !== false) ||
+                    (strpos($this->tableButtons, 'add-rec') !== false) ||
+                    (strpos($this->tableButtons, 'delete-rec') !== false) ||
+                    (strpos($this->rowButtons, 'edit') === false)) {
+                $this->editingActive = checkPermission('loggedin', $this->lzy) || isLocalhost();
+            }
+        }
 
         // short-hand 'editable: permission':
         if ($this->editable) {
-            $this->editingActive = checkPermission($this->editable, $this->lzy); // permission
-            if ($this->editingActive) {
-                $this->tableButtons = 'delete-rec|add-rec|download-table'; // table buttons
+                $this->tableButtons = 'delete-rec|add-rec|download'; // table buttons
                 $this->editMode = 'form';
                 $this->rowButtons = 'edit';
-            }
         }
 
         if ($this->editingActive) {
-                // check editing options:
-            if ($this->editMode) {
-                if ($this->editMode[0] === 'f') {
-                    $this->formEditing = true;
-                } else {
-                    $this->inlineEditing = true;
+            if (strpos($this->tableButtons, 'edit') !== false) {
+                $this->inlineEditing = true;
+                $this->editMode = 'inline';
+                $this->inlineEditingActive = false;
+
+            } elseif (($this->editMode) && ($this->editMode[0] === 'i')) {
+                $this->inlineEditing = true;
+                $this->inlineEditingActive = true;
+                if (strpos($this->editMode, 'inactive')) {
+                    $this->inlineEditingActive = false;
                 }
-                $this->includeCellRefs = true;
+
+            } elseif (($this->editMode) && ($this->editMode[0] === 'f')) {
+                $this->formEditing = true;
             }
         }
 
+        if (($this->inlineEditing) && (!$this->editingActive)) {
+            $this->tableButtons = str_replace('edit', '', $this->tableButtons);
+        }
         if (strpos($this->rowButtons, 'view') !== false) {
             $this->recViewButtonsActive = true;
+
         } elseif ($this->recViewButtonsActive) {
             $this->rowButtons = $this->rowButtons? $this->rowButtons.',view' : 'view';
-        } elseif ($this->formEditing) {
-            if (!$this->rowButtons) {
-                $this->rowButtons = 'edit';
-            } elseif (substr($this->rowButtons, 'edit') === false) {
-                $this->rowButtons .= ',edit';
-            }
         }
 
         if ($this->tableButtons) {
@@ -177,13 +198,7 @@ class HtmlTable
                     $button = $m[1];
                     $attributes = str_replace(['&#34;','&#39;'], ['"',"'"], $m[2]);
                 }
-
-                // Handle special button names "new-rec/add-rec" and "delete-rec":
-                if ((strcasecmp($button, 'new-rec') === 0) || (strcasecmp($button, 'add-rec') === 0)) {
-                    // check permission for buttons: either defined by editableBy or 'loggedin' by default:
-                    if (!$this->editingActive) {
-                        $this->editingActive = checkPermission('loggedin', $this->lzy);
-                    }
+                if ((strpos($button, 'add-rec') !== false) || $this->inlineEditing) {
                     if ($this->editingActive) {
                         $this->formEditing = true;
                     }
@@ -191,7 +206,6 @@ class HtmlTable
                 $this->tableButtons[ $button ] = $attributes;
             }
         }
-
     } // __construct
 
 
@@ -204,11 +218,14 @@ class HtmlTable
 
         // for "active tables": load modules and set class:
         if ($this->editingActive || $this->tableButtons || $this->recViewButtonsActive) {
-            $this->page->addModules('POPUPS,HTMLTABLE,TOOLTIPSTER,~sys/js/forms.js,~sys/css/htmltables.css');
+            $this->page->addModules('POPUPS,HTMLTABLE,TOOLTIPSTER');
             $this->includeCellRefs = true;
+            $this->tableClass .= ' lzy-active-table';
+        }
+        if ($this->formEditing || $this->recViewButtonsActive) {
+            $this->page->addModules('FORMS');
             require_once SYSTEM_PATH . 'forms.class.php';
             new Forms($this->lzy, true);
-            $this->tableClass .= ' lzy-active-table';
         }
 
         $this->loadData();
@@ -583,25 +600,25 @@ EOT;
             $this->tableClass .= " lzy-editable-auto-show-button";
         }
 
-        $initEditable = true;
-        if (isset( $this->options['init'] )) {
-            $initEditable = $this->options['init'];
-            $this->cellClass .= " lzy-editable-inactive";
-        } else {
+        if ( $this->inlineEditingActive ) {
             $this->cellClass .= " lzy-editable";
+            $this->wrapperClass .= ' lzy-table-editable';
+        } else {
+            $this->cellClass .= " lzy-editable-inactive";
+            $this->wrapperClass .= ' lzy-table-editable-inactive';
         }
-        $edbl = new Editable( $this->lzy, [
+
+        $this->edbl = new Editable( $this->lzy, [
             'dataSource' => '~/'. $this->dataSource,
             'dataSelector' => '*,*',
             'targetSelector' => $this->targetSelector,
             'output' => false,
-            'init' => $initEditable,
+            'init' => $this->inlineEditingActive,
             'editableBy' => $this->editableBy,
             'liveData' => $this->liveData,
             'execInitialDataUpload' => false,
         ] );
 
-        $this->wrapperClass .= ' lzy-table-editable';
         $jq = "$('.lzy-table-editable').closest('.dataTables_wrapper').addClass('lzy-datatable-editable');\n";
         $this->page->addJq($jq);
 
@@ -609,7 +626,10 @@ EOT;
             $this->wrapperClass .= ' lzy-table-livedata';
         }
 
-        $out = $edbl->render();
+        $out = $this->edbl->render();
+        if (preg_match("/'(.*):/", $out, $m)) {
+            $this->ticketHash = $m[1];
+        }
         return $out;
     } // activateInlineEditing
 
@@ -617,12 +637,14 @@ EOT;
 
     private function activateLiveData()
     {
-        $file = SYSTEM_PATH.'extensions/livedata/code/live-data.class.php';
-        if (!file_exists($file)) {
-            die("Error: HTMLtables with activated liveData option requires Lizzy Extensions to be installed.");
+        if (!@$this->edbl) {
+            $file = SYSTEM_PATH.'extensions/livedata/code/live-data.class.php';
+            if (!file_exists($file)) {
+                die("Error: HTMLtables with activated liveData option requires Lizzy Extensions to be installed.");
+            }
+            require_once $file;
+            $this->page->addModules('~ext/livedata/js/live_data.js');
         }
-        require_once $file;
-        $this->page->addModules('~ext/livedata/js/live_data.js');
 
         $js = '';
         if ($this->dataTableObj) {
@@ -638,22 +660,20 @@ EOT;
             $this->page->addJs($js);
         }
 
-
         $args = [
             'dataSource' => '~/'.$this->dataSource,
             'manual' => 'silent',
             'initJs' => true,
             'watchdog' => true,
+            'ticketHash' => @$this->ticketHash,
         ];
 
         // if dataTables are active, make sure they are redrawn when new data arrives:
         if ($this->interactive) {
             $args['postUpdateCallback'] = 'redrawTables';
         }
-
-        $ld = new LiveData($this->lzy, $args);
-        $this->srcRef = $ld->render();
-        return '';
+        $this->edbl = new LiveData($this->lzy, $args);
+        $this->srcRef = $this->edbl->render();
     } // activateLiveData
 
 
@@ -1371,7 +1391,6 @@ EOT;
             'id' => 'lzy-edit-data-form-' . $this->tableCounter,
             'class' => 'lzy-form lzy-edit-data-form',
             'file' => '~/'.$this->dataSource,
-            'warnLeavingPage' => false, //???
             'ticketHash' => $this->ticketHash,
             'cancelButtonCallback' => false,
             'validate' => true,
@@ -1380,6 +1399,7 @@ EOT;
             'splitChoiceElemsInDb' => $splitChoiceElemsInDb,
             'lockRecWhileFormOpen' => @$this->options['lockRecWhileFormOpen'],
             'translateLabels' => true,
+            'skipConfirmation' => true,
         ];
         if ($this->editFormArgs) {
             $args = array_merge($args, $this->editFormArgs);
@@ -1492,9 +1512,6 @@ EOT;
 }}
 
 EOT;
-    //	warnLeavingPage: false, //???
-
-
         // Placeholder for rec-key:
         $out .= <<<EOT
 
@@ -1507,7 +1524,6 @@ EOT;
 }}
 
 EOT;
-
 
         // Form Fields:
         foreach ($recStructure['elements'] as $elemKey => $rec) {
@@ -2238,19 +2254,29 @@ EOT;
         $this->jq = '';
 
         if ($this->tableButtons) {
-            $this->editingActive = true;
-            $this->formEditing =  true;
-
             foreach ($this->tableButtons as $button => $attributes) {
-                // Handle special button names "new-rec" and "delete-rec":
-                if ((strcasecmp($button, 'new-rec') === 0) || (strcasecmp($button, 'add-rec') === 0)) {
-                    $this->formEditing = true;
-                    list($button, $class, $attributes) = $this->appendNewRecButton($attributes);
+                // Handle special button names "add-rec" and "delete-rec":
+                if (strcasecmp($button, 'add-rec') === 0) {
+                    if ($this->editingActive) {
+                        $this->formEditing = true;
+                        list($button, $class, $attributes) = $this->appendNewRecButton($attributes);
+                    } else {
+                        $button = false;
+                    }
 
                 } elseif (strcasecmp($button, 'delete-rec') === 0) {
-                    list($button, $class, $attributes) = $this->appendDeleteButton($attributes);
+                    if ($this->editingActive) {
+                        list($button, $class, $attributes) = $this->appendDeleteButton($attributes);
+                    } else {
+                        $button = false;
+                    }
 
-                } elseif (strcasecmp($button, 'download-table') === 0) {
+                } elseif (strcasecmp($button, 'edit') === 0) {
+                    if ($this->editingActive) {
+                        list($button, $class, $attributes) = $this->appendEditButton($attributes);
+                    }
+
+                } elseif (stripos($button, 'download') === 0) {
                     $this->export = true;
                     list($button, $class, $attributes) = $this->appendDownloadButton($attributes);
                     $this->export();
@@ -2258,10 +2284,13 @@ EOT;
                 } else {
                     $class = translateToClassName($button);
                 }
-                $buttons .= <<<EOT
+
+                if ($button) {
+                    $buttons .= <<<EOT
     <button id='$class-{$this->id}' class='lzy-button lzy-button-lean $class' $attributes type="button"><span class="lzy-table-activity-btn">{{ $button }}</span></button>
 
 EOT;
+                }
             }
         }
 
@@ -2353,11 +2382,38 @@ EOT;
 
 
 
+    private function appendEditButton($attributes)
+    {
+        $this->jq .= <<<EOT
+
+$('.lzy-table-edit-btn').click(function() {
+    mylog('activating inline editing table');
+    const \$tableWrapper = $(this).closest('.lzy-table-wrapper');
+    const \$table = $('.lzy-table', \$tableWrapper);
+    const tableInx = \$table.data('inx');
+    let \$this = $(this);
+    if (\$this.hasClass('lzy-button-active')) {
+        \$this.removeClass('lzy-button-active').attr('aria-pressed', 'false');
+        lzyActiveTables[ tableInx ].activateInlineEditing( this );
+    } else {
+        \$this.addClass('lzy-button-active').attr('aria-pressed', 'true');
+        lzyActiveTables[ tableInx ].activateInlineEditing( this );
+    }  
+});
+EOT;
+        $button = 'lzy-table-edit-btn';
+        $class = 'lzy-table-edit-btn';
+        $attributes = "$attributes title='{{ lzy-table-edit-title }}'";
+        return [$button, $class, $attributes];
+    } // appendEditButton
+
+
+
     private function appendDownloadButton( $attributes )
     {
         $file = $this->getDownloadFilename();
         $button = 'lzy-table-download-btn';
-        $appRoot = $GLOBALS['globalParams']['appRoot'];
+        $appRoot = $GLOBALS['lizzy']['appRoot'];
         $jq = <<<EOT
 
 $('.lzy-table-download-btn').click(function() {
