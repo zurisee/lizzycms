@@ -6,6 +6,7 @@
 
 var debug = false;
 var windowTimeout = false;
+var abortWatchdogs = false;
 
 function freezeWindowAfter( delay, onClick, onTimeout, retrigger ) {
     if ((typeof retrigger === 'undefined') || (typeof retrigger === 'function')) {
@@ -45,6 +46,8 @@ function freezeWindowAfter( delay, onClick, onTimeout, retrigger ) {
         $('body').append(overlay).addClass('lzy-overlay-background-frozen');
         if (typeof onTimeout === 'function') {
             onTimeout();
+        // } else {
+        //     abortWatchdogs = true; // globally signal that all watchdogs shall stop
         }
         $('.lzy-overlay-background').click(function () {
             $('body').removeClass('lzy-overlay-background-frozen');
