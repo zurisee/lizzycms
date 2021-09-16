@@ -55,6 +55,7 @@ function HTMLtable( tableObj ) {
 		this.recViewPopupId = 'lzy-recview-popup-' + this.formInx;
 		this.recEditPopupId = 'lzy-recedit-popup-' + this.formInx;
 
+
 		if (this.$form.length) {
 			this.formHtml = this.$form.html();
 			this.$form.remove();
@@ -62,7 +63,27 @@ function HTMLtable( tableObj ) {
 			this.initEditFormPopup();
 			this.setupEventHandlers();
 		}
+		this.initDataTables();
 	}; // init
+
+
+
+	this.initDataTables = function () {
+		// Check for each table, whether DataTable is active and TableButtons are present.
+		// If so, move them into DataTable's own toolbar for aesthetic reasons.
+		$('.lzy-table').each(function () {
+			const $table = $( this ).closest('.lzy-table');
+			$table.on('init.dt', function () {
+				const $tableWrapper = $table.closest('.lzy-table-wrapper');
+				const $tableButtons = $('.lzy-table-action-btns', $tableWrapper);
+				if ($tableButtons.length) {
+					const html = $tableButtons.html();
+					$tableButtons.remove();
+					$('.fg-toolbar:first-child', $tableWrapper).prepend( html );
+				}
+			});
+		});
+	}; // initDataTables
 
 
 
@@ -211,7 +232,8 @@ function HTMLtable( tableObj ) {
 
 		$('[type=submit]', $form).val( $('#lzy-edit-form-submit').text() );
 		$('#lzy-edit-rec-delete-checkbox input[type=checkbox]').prop('checked', false);
-		lzyForms.onOpen( this.recKey, $form );
+
+		lzyForms.onOpen( this.recKey, $form, true );
 	}; // openFormPopup
 
 
@@ -280,50 +302,40 @@ function HTMLtable( tableObj ) {
 
 
 
-	this.makeReadonly = function ( $srcElem ) {
-		$('.lzy-form-field-wrapper', $srcElem).each(function () {
-			const $formEl = $( this );
-			var type = $('input', $formEl).attr('type');
-			if (typeof type === 'undefined') {
-				type = 'undefined';
-			}
-			var name = $('input', $formEl).attr('name');
-			if ((typeof name !== 'undefined') && (name.charAt(0) === '_')) {
-				return;
-			}
-			if ('hidden,button,submit,reset'.match(type)) {
-				return;
-			}
-			if ('radio,checkbox'.match(type)) {
-				$('.lzy-fieldset-body', $formEl).remove();
-				$('fieldset',$formEl).append('<div class="lzy-form-field-placeholder">&nbsp;</div>');
-
-			} else if ($formEl.hasClass('lzy-form-field-type-dropdown')) {
-				$('select', $formEl).remove();
-				$formEl.append('<div class="lzy-form-field-placeholder">&nbsp;</div>');
-			} else if ($('.lzy-textarea-autogrow', $formEl).length) {
-				$('.lzy-textarea-autogrow', $formEl).remove();
-				$formEl.append('<div class="lzy-form-field-placeholder">&nbsp;</div>');
-			} else if ($('textarea', $formEl).length) {
-				$('textarea', $formEl).remove();
-				$formEl.append('<div class="lzy-form-field-placeholder">&nbsp;</div>');
-			} else {
-				$('input', $formEl).remove();
-				$('.lzy-form-pw-toggle', $formEl).remove();
-				$formEl.append('<div class="lzy-form-field-placeholder">&nbsp;</div>');
-			}
-		});
+	this.makeReadonly = function ( $form ) {
+		if (typeof lzyForms !== 'undefined') {
+			lzyForms.makeReadonly( $form );
+		} else {
+			lzyPopup('Error: forms.js not loaded.');
+		}
 	}; // makeReadonly
 
 
 
 	this.unlockRecord = function () {
-		const req = '?unlock-rec&ds=' + this.dataRef + ':form' + this.formInx + '&recKey=' + this.recKey;
+		const req = '?unlock-rec&ds=' + this.dataRef + '&recKey=' + this.recKey;
 		execAjax(false, req, function(json) {
 			mylog( json );
 		});
 	}; // unlockRecord
 
+
+
+	this.activateInlineEditing = function ( elem ) {
+		const $btn = $( elem );
+		const $wrapper = this.$table.closest('.lzy-table-wrapper');
+		if (!$btn.hasClass('lzy-button-active')) {	// turn off
+			lzyReload();
+// $wrapper.removeClass('lzy-table-editable').addClass('lzy-table-editable-inactive');
+// $('.lzy-editable', $wrapper).removeClass('lzy-editable').addClass('lzy-editable-inactive');
+
+		} else {	// turn on
+			$wrapper.addClass('lzy-table-editable').removeClass('lzy-table-editable-inactive');
+			$('.lzy-editable-inactive', $wrapper).addClass('lzy-editable').removeClass('lzy-editable-inactive');
+			editables.init();
+		}
+
+	}; // activateInlineEditing
 
 
 	this.init();
