@@ -30,7 +30,7 @@ class ImageTag
 
     public function render($id)
     {
-        global $globalParams;
+        global $lizzy;
         // load late-loading code if not done yet:
         if ($this->lateImgLoading && (!isset($this->lateImgLoadingCodeLoaded))) {
             $this->lateImgLoadingCodeLoaded = true;
@@ -54,7 +54,7 @@ class ImageTag
 
         $genericAttibs = $this->imgTagAttributes ? "\n\t\t".$this->imgTagAttributes : '';
 
-        $src = $globalParams["appRoot"].$globalParams["pageFolder"].'_/'.base_name($this->src);
+        $src = $lizzy["appRoot"].$lizzy["pageFolder"].'_/'.base_name($this->src);
 
         $style = "\n\t\tstyle='width: {$this->w}px; height: {$this->h}px;'";
 
@@ -114,7 +114,7 @@ EOT;
 
         $basename = '_/'.base_name($srcFile, false);
         $ext = '.'.fileExt($srcFile);
-        $path = $GLOBALS['globalParams']['appRoot'].$GLOBALS['globalParams']['pageFilePath']; // absolute path from app root
+        $path = $GLOBALS['lizzy']['appRoot'].$GLOBALS['lizzy']['pageFilePath']; // absolute path from app root
 
         if ($this->srcset) {   // activate only if source file is largen than 50kb
             $w1 = ($this->w && ($this->w < $this->imgFullsizeWidth)) ? $this->w : $this->feature_SrcsetDefaultStepSize;

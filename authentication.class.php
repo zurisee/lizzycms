@@ -22,9 +22,9 @@ class Authentication
         setStaticVariable('lastLoginMsg', '');
 
         $this->userInitialized = false;
-        $GLOBALS['globalParams']['isLoggedin'] = false;
-        $GLOBALS['globalParams']['isPrivileged'] = false;
-        $GLOBALS['globalParams']['isAdmin'] = false;
+        $GLOBALS['lizzy']['isLoggedin'] = false;
+        $GLOBALS['lizzy']['isPrivileged'] = false;
+        $GLOBALS['lizzy']['isAdmin'] = false;
     } // __construct
 
 
@@ -254,7 +254,7 @@ class Authentication
                         return $user;
                     } else {
                         $msg = '';
-                        $requestedUrl = $GLOBALS['globalParams']['requestedUrl'];
+                        $requestedUrl = $GLOBALS['lizzy']['requestedUrl'];
                         $requestedUrl = preg_replace('|/[A-Z][A-Z0-9]{4,}/?|', '/', $requestedUrl);
                         if (isset($_GET['login'])) {
                             $msg = $this->lzy->trans->translate('{{ lzy-login-successful-as }}') . ": $user";
@@ -336,10 +336,10 @@ class Authentication
             $_SESSION['lizzy']['configDbPermission'] = $perm;
         }
 
-        $GLOBALS['globalParams']['user'] = $user;
-        $GLOBALS['globalParams']['isLoggedin'] = boolval( $user );
-        $GLOBALS['globalParams']['isPrivileged'] = $isPrivileged;
-        $GLOBALS['globalParams']['isAdmin'] = $isAdmin;
+        $GLOBALS['lizzy']['user'] = $user;
+        $GLOBALS['lizzy']['isLoggedin'] = boolval( $user );
+        $GLOBALS['lizzy']['isPrivileged'] = $isPrivileged;
+        $GLOBALS['lizzy']['isAdmin'] = $isAdmin;
 
         if (isset($rec['displayName'])) {
             $displayName = $rec['displayName']; // displayName from user rec
@@ -389,9 +389,9 @@ class Authentication
             } else {                    // user is logged in
                 $res = $user;
                 $isAdmin = $this->isAdmin(true);
-                $GLOBALS['globalParams']['isLoggedin'] = boolval( $user );
-                $GLOBALS['globalParams']['isPrivileged'] = $this->checkAdmission('admins,editors');
-                $GLOBALS['globalParams']['isAdmin'] = $isAdmin;
+                $GLOBALS['lizzy']['isLoggedin'] = boolval( $user );
+                $GLOBALS['lizzy']['isPrivileged'] = $this->checkAdmission('admins,editors');
+                $GLOBALS['lizzy']['isAdmin'] = $isAdmin;
 
                 $lastLogin = (isset($this->loginTimes[$user])) ? $this->loginTimes[$user] : 0;  // check maxSessionTime
                 if (isset($this->knownUsers[$user]['validity-period'])) {
@@ -413,7 +413,7 @@ class Authentication
             }
 		} elseif ($this->config->admin_autoAdminOnLocalhost && $this->config->isLocalhost) {
 		    $res = 'autoadmin';
-            $GLOBALS['globalParams']['isAdmin'] = true;
+            $GLOBALS['lizzy']['isAdmin'] = true;
             $_SESSION['lizzy']['isAdmin'] = true;
             $rec = false;
         }
@@ -612,9 +612,9 @@ class Authentication
         $_SESSION['lizzy']['userDisplayName'] = false;
         $isAdmin = ($this->localHost && $this->config->admin_autoAdminOnLocalhost);
         $_SESSION['lizzy']['isAdmin'] = $isAdmin ;
-        $GLOBALS['globalParams']['isAdmin'] = $isAdmin;
-        $GLOBALS['globalParams']['isLoggedin'] = false;
-        $GLOBALS['globalParams']['isPrivileged'] = false;
+        $GLOBALS['lizzy']['isAdmin'] = $isAdmin;
+        $GLOBALS['lizzy']['isLoggedin'] = false;
+        $GLOBALS['lizzy']['isPrivileged'] = false;
         $this->lzy->unCachePage();
     } // unsetLoggedInUser
 
@@ -725,7 +725,7 @@ class Authentication
 
     public function isAdmin($thorough = false)
     {
-        if (!$thorough && $GLOBALS['globalParams']['isAdmin']) {
+        if (!$thorough && $GLOBALS['lizzy']['isAdmin']) {
             return true;
         }
         return $this->checkAdmission('admins');

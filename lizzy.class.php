@@ -74,7 +74,7 @@ use Symfony\Component\DomCrawler\Crawler;
 
 require_once SYSTEM_PATH.'auxiliary.php';
 
-$globalParams = array(
+$lizzy = array(
                                     // example: URL='xy/', folder='pages/xy/'
 	'pathToRoot' => null,			// ../
 	'filepathToRoot' => null,		// ../../
@@ -112,13 +112,13 @@ class Lizzy
     public function __construct()
     {
         session_start();
-        $GLOBALS['globalParams'] = [];
+        $GLOBALS['lizzy'] = [];
         if (isset($_SESSION['lizzy']['user']) && $_SESSION['lizzy']['user']) {
             $user = $_SESSION['lizzy']['user'];
-            $GLOBALS['globalParams']['user'] = $user;
+            $GLOBALS['lizzy']['user'] = $user;
         } else {
             $_SESSION['lizzy']['user'] = '';
-            $GLOBALS['globalParams']['user'] = '';
+            $GLOBALS['lizzy']['user'] = '';
             $user = 'anon';
         }
 
@@ -204,9 +204,9 @@ class Lizzy
 
         $this->config->appBaseName = base_name(rtrim(trunkPath(__FILE__, 1), '/'));
 
-        $GLOBALS['globalParams']['isAdmin'] = false;
-        $GLOBALS['globalParams']['activityLoggingEnabled'] = $this->config->admin_activityLogging;
-        $GLOBALS['globalParams']['errorLoggingEnabled'] = $this->config->debug_errorLogging;
+        $GLOBALS['lizzy']['isAdmin'] = false;
+        $GLOBALS['lizzy']['activityLoggingEnabled'] = $this->config->admin_activityLogging;
+        $GLOBALS['lizzy']['errorLoggingEnabled'] = $this->config->debug_errorLogging;
 
         $_SESSION['lizzy']['isLocalhost'] = $this->localHost;
         $_SESSION['lizzy']['configDbPermission'] = false;
@@ -230,7 +230,7 @@ class Lizzy
 
         $this->handleTransactionalRequests(); // Entry point for requests from users
 
-        $GLOBALS['globalParams']['auth-message'] = $this->auth->message;
+        $GLOBALS['lizzy']['auth-message'] = $this->auth->message;
 
         $this->config->isPrivileged = false;
         if ($this->auth->isPrivileged()) {
@@ -254,8 +254,8 @@ class Lizzy
                 }
             }
         }
-        $GLOBALS['globalParams']['cachingActive'] = $this->config->site_enableCaching;
-        $GLOBALS['globalParams']['site_title'] = $this->trans->translateVariable('site_title');
+        $GLOBALS['lizzy']['cachingActive'] = $this->config->site_enableCaching;
+        $GLOBALS['lizzy']['site_title'] = $this->trans->translateVariable('site_title');
     } // init
 
 
@@ -519,9 +519,9 @@ class Lizzy
 
     public function resolveAllPaths( $html )
     {
-        global $globalParams;
-        $appRoot = $globalParams['appRootUrl'];
-        $pagePath = $globalParams['pagePath'];
+        global $lizzy;
+        $appRoot = $lizzy['appRootUrl'];
+        $pagePath = $lizzy['pagePath'];
 
         if (!$this->config->admin_useRequestRewrite) {
             resolveHrefs($html);
@@ -546,7 +546,7 @@ class Lizzy
         ];
         $to = [
             $appRoot,
-            $appRoot.$globalParams['dataPath'],
+            $appRoot.$lizzy['dataPath'],
             $appRoot.SYSTEM_PATH,
             $appRoot.EXTENSIONS_PATH,
             $p,   // for page accesses
@@ -594,11 +594,11 @@ class Lizzy
 
     private function setupErrorHandling()
     {
-        global $globalParams;
+        global $lizzy;
         if ($this->config->debug_errorLogging) {
-            $globalParams['errorLogFile'] = LOG_FILE;
+            $lizzy['errorLogFile'] = LOG_FILE;
         } else {
-            $globalParams['errorLogFile'] = '';
+            $lizzy['errorLogFile'] = '';
         }
 
         if ($this->auth->checkGroupMembership('editors') || $this->localHost) {     // set displaying errors on screen:
@@ -670,7 +670,7 @@ class Lizzy
 
     private function analyzeHttpRequest()
     {
-        global $globalParams;
+        global $lizzy;
 
         $requestUri         = (isset($_SERVER['REQUEST_URI'])) ? rawurldecode($_SERVER['REQUEST_URI']) : '';
         $requestedPath      = $requestUri;
@@ -748,26 +748,26 @@ EOT;
         */
 
         // set global variables:
-        $globalParams['host'] = $docRootUrl;
-        $globalParams['requestedUrl'] = $requestUri;
-        $globalParams['pageFolder'] = null;
-        $globalParams['pagePath'] = null;
-        $globalParams['pathToPage'] = null; // needs to be set after determining actually requested page
-        $globalParams['pageUrl'] = $pageUrl;
-        $globalParams['pagesFolder'] = PAGES_PATH;
-        $globalParams['filepathToRoot'] = $pathToAppRoot;
-        $globalParams['absAppRoot'] = $absAppRootPath;  // path from FS root to base folder of app, e.g. /Volumes/...
-        $globalParams['absAppRootUrl'] = $globalParams['host'] . substr($appRoot, 1);  // path from FS root to base folder of app, e.g. /Volumes/...
-        $globalParams['appRootUrl'] = $appRootUrl;  //
-        $globalParams['appRoot'] = $appRoot;  // path from docRoot to base folder of app, e.g. 'on/'
-        $globalParams['redirectedAppRootUrl'] = $redirectedAppRootUrl;  // the part that has been skipped by .htaccess
+        $lizzy['host'] = $docRootUrl;
+        $lizzy['requestedUrl'] = $requestUri;
+        $lizzy['pageFolder'] = null;
+        $lizzy['pagePath'] = null;
+        $lizzy['pathToPage'] = null; // needs to be set after determining actually requested page
+        $lizzy['pageUrl'] = $pageUrl;
+        $lizzy['pagesFolder'] = PAGES_PATH;
+        $lizzy['filepathToRoot'] = $pathToAppRoot;
+        $lizzy['absAppRoot'] = $absAppRootPath;  // path from FS root to base folder of app, e.g. /Volumes/...
+        $lizzy['absAppRootUrl'] = $lizzy['host'] . substr($appRoot, 1);  // path from FS root to base folder of app, e.g. /Volumes/...
+        $lizzy['appRootUrl'] = $appRootUrl;  //
+        $lizzy['appRoot'] = $appRoot;  // path from docRoot to base folder of app, e.g. 'on/'
+        $lizzy['redirectedAppRootUrl'] = $redirectedAppRootUrl;  // the part that has been skipped by .htaccess
 
-        $globalParams['filepathToDocroot'] = preg_replace('|[^/]+|', '..', $appRoot);;
+        $lizzy['filepathToDocroot'] = preg_replace('|[^/]+|', '..', $appRoot);;
 
-        $globalParams['localHost'] = $this->localHost;
-        $globalParams['isLocalhost'] = $this->localHost;
-        $globalParams['pagePath'] = $pagePath;   // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
-        $globalParams['urlArgs'] = $urlArgs;     // all url-args received
+        $lizzy['localHost'] = $this->localHost;
+        $lizzy['isLocalhost'] = $this->localHost;
+        $lizzy['pagePath'] = $pagePath;   // for _upload_server.php -> temporaty, corrected later in rendering when sitestruct has been analyzed
+        $lizzy['urlArgs'] = $urlArgs;     // all url-args received
 
         // security option: permit only regular text in requests, discard Special characters:
         if ($this->config->feature_filterRequestString) {
@@ -797,7 +797,7 @@ EOT;
         // check whether to support legacy browsers -> load jQ version 1
         if ($this->config->feature_supportLegacyBrowsers) {
             $this->config->isLegacyBrowser = true;
-            $globalParams['legacyBrowser'] = true;
+            $lizzy['legacyBrowser'] = true;
             writeLog("Legacy-Browser Support activated.");
 
         } else {
@@ -808,7 +808,7 @@ EOT;
                 $this->config->isLegacyBrowser = $overrideLegacy;
             }
         }
-        $globalParams['legacyBrowser'] = $this->config->isLegacyBrowser;
+        $lizzy['legacyBrowser'] = $this->config->isLegacyBrowser;
     } // analyzeHttpRequest
 
 
@@ -818,7 +818,7 @@ EOT;
         $this->config = new Defaults( $this );
         $this->config->pathToRoot = $this->pathToRoot;
 
-        $GLOBALS['globalParams']['logPath'] = $this->config->path_logPath;
+        $GLOBALS['lizzy']['logPath'] = $this->config->path_logPath;
 
         if (!isset($_SESSION['lizzy']['lang'])) {
             if ($this->config->site_multiLanguageSupport) {
@@ -935,13 +935,13 @@ EOT;
             } else {
 	            // login icon when not logged in:
 	            $login = <<<EOT
-<div class='lzy-login-link'><a href='{$GLOBALS['globalParams']['pageUrl']}?login' class='lzy-login-link'>{{ lzy-login-icon }}<span class='lzy-invisible'>{{ lzy-login-button-label }}</span></a></div>
+<div class='lzy-login-link'><a href='{$GLOBALS['lizzy']['pageUrl']}?login' class='lzy-login-link'>{{ lzy-login-icon }}<span class='lzy-invisible'>{{ lzy-login-button-label }}</span></a></div>
 
 EOT;
             }
         }
-        if ($GLOBALS['globalParams']['user']) {
-            $userName = $GLOBALS['globalParams']['user'];
+        if ($GLOBALS['lizzy']['user']) {
+            $userName = $GLOBALS['lizzy']['user'];
             // Note: 'lzy-logged-in-as' defined in sys_vars.yaml
 
         } elseif ($this->localHost && $this->config->admin_autoAdminOnLocalhost) {
@@ -961,7 +961,7 @@ EOT;
 
         $configBtn = '';
         if ($this->auth->isAdmin()) {
-            $url = $GLOBALS['globalParams']['pageUrl'];
+            $url = $GLOBALS['lizzy']['pageUrl'];
             $configBtn = "<a class='lzy-config-button' href='$url?config'>{{ lzy-config-button }}</a>";
         }
         $this->trans->addVariable('lzy-config--open-button', $configBtn, false);
@@ -977,7 +977,7 @@ EOT;
         $this->trans->addVariable('pagePath', $this->reqPagePath);
         $this->trans->addVariable('pageUrl', $this->pageUrl);
         $this->trans->addVariable('appRoot', $this->pathToRoot);			// e.g. '../'
-        $this->trans->addVariable('absAppRoot', $GLOBALS['globalParams']['appRoot']);
+        $this->trans->addVariable('absAppRoot', $GLOBALS['lizzy']['appRoot']);
         $this->trans->addVariable('systemPath', $this->systemPath);		// -> file access path
         $this->trans->addVariable('lang', $this->config->lang);
 
@@ -1078,9 +1078,9 @@ EOT;
 
         $rec = [
             'uploadPath' => PAGES_PATH.$filePath,
-            'pagePath' => $GLOBALS['globalParams']['pageFolder'],
-            'pathToPage' => $GLOBALS['globalParams']['pathToPage'],
-            'appRootUrl' => $GLOBALS['globalParams']['absAppRootUrl'],
+            'pagePath' => $GLOBALS['lizzy']['pageFolder'],
+            'pathToPage' => $GLOBALS['lizzy']['pathToPage'],
+            'appRootUrl' => $GLOBALS['lizzy']['absAppRootUrl'],
             'user'      => $_SESSION['lizzy']['user'],
         ];
         $tick = new Ticketing();
@@ -1095,10 +1095,10 @@ EOT;
 
 	private function warnOnErrors()
     {
-        global $globalParams;
+        global $lizzy;
         if ($this->config->admin_enableEditing && ($this->auth->checkGroupMembership('editors'))) {
-            if ($globalParams['errorLogFile'] && file_exists($globalParams['errorLogFile'])) {
-                $logFileName = $globalParams['errorLogFile'];
+            if ($lizzy['errorLogFile'] && file_exists($lizzy['errorLogFile'])) {
+                $logFileName = $lizzy['errorLogFile'];
                 $logMsg = file_get_contents($logFileName);
                 $logArchiveFileName = str_replace('.txt', '', $logFileName)."_archive.txt";
                 file_put_contents($logArchiveFileName, $logMsg, FILE_APPEND);
@@ -1192,7 +1192,7 @@ EOT;
 
     private function loadFile()
 	{
-        global $globalParams;
+        global $lizzy;
 		$page = &$this->page;
 
 		if (!$this->siteStructure->currPageRec) {
@@ -1245,7 +1245,7 @@ EOT;
                 continue;
             }
 
-            $globalParams['lastLoadedFile'] = $f;
+            $lizzy['lastLoadedFile'] = $f;
 			$ext = fileExt($f);
 
             if ($handleEditions) {
@@ -1419,7 +1419,7 @@ EOT;
     private function disableCaching()
     {
         $this->config->site_enableCaching = false;
-        $GLOBALS['globalParams']['cachingActive'] = false;
+        $GLOBALS['lizzy']['cachingActive'] = false;
     } // disableCaching
 
 
@@ -1904,7 +1904,7 @@ EOT;
         }
         $lang = preg_replace('/\d+/','', $lang);
         $this->config->lang = $lang;
-        $GLOBALS['globalParams']['lang'] = $lang;
+        $GLOBALS['lizzy']['lang'] = $lang;
         setStaticVariable('lang', $lang);
         setStaticVariable('subLang', $subLang);
     } // setLanguage
@@ -1949,17 +1949,17 @@ EOT;
 
     private function getBrowser()
     {
-        global $globalParams;
+        global $lizzy;
         $ua = new UaDetector( $this->config->debug_collectBrowserSignatures );
 
-        $globalParams['userAgent'] = $ua->get();
+        $lizzy['userAgent'] = $ua->get();
         $this->isLegacyBrowser = $ua->isLegacyBrowser();
-        $_SESSION['lizzy']['userAgent'] = $globalParams['userAgent'];
-        $globalParams['HTTP_USER_AGENT'] = @$_SERVER['HTTP_USER_AGENT'];
+        $_SESSION['lizzy']['userAgent'] = $lizzy['userAgent'];
+        $lizzy['HTTP_USER_AGENT'] = @$_SERVER['HTTP_USER_AGENT'];
 
         $this->isMobile = $ua->isMobile();
 
-        return  $globalParams['userAgent'];
+        return  $lizzy['userAgent'];
     } // browserDetection
 
 
@@ -2012,7 +2012,7 @@ EOT;
         $onairDataPath = $this->config->site_dataPath;
         $devDataPath = $this->config->site_devDataPath;
         if (!$devDataPath) {
-            $GLOBALS['globalParams']['dataPath'] = $onairDataPath;
+            $GLOBALS['lizzy']['dataPath'] = $onairDataPath;
             $_SESSION['lizzy']['dataPath'] = $onairDataPath;
             $this->trans->addVariable('dataPath', $onairDataPath);
             return;
@@ -2032,7 +2032,7 @@ EOT;
                 $this->page->addDebugMsg("\"&#126;data/\" points to \"$devDataPath\" for debugging.");
             }
             $this->config->site_dataPath = $devDataPath;
-            $GLOBALS['globalParams']['dataPath'] = $devDataPath;
+            $GLOBALS['lizzy']['dataPath'] = $devDataPath;
             $_SESSION['lizzy']['dataPath'] = $devDataPath;
             $this->trans->addVariable('dataPath', $devDataPath);
             return;
@@ -2042,7 +2042,7 @@ EOT;
                 $this->page->addDebugMsg("\"&#126;data/\" points to productive path \"$onairDataPath\"!.");
             }
             $this->config->site_dataPath = $onairDataPath;
-            $GLOBALS['globalParams']['dataPath'] = $onairDataPath;
+            $GLOBALS['lizzy']['dataPath'] = $onairDataPath;
             $_SESSION['lizzy']['dataPath'] = $onairDataPath;
             $this->trans->addVariable('dataPath', $onairDataPath);
         }
@@ -2191,9 +2191,9 @@ EOT;
             $this->page->addJq($jq);
 
             if (getUrlArg('iframe')) {
-                $pgUrl = $GLOBALS['globalParams']['pageUrl'];
-                $host = $GLOBALS['globalParams']['host'];
-                $jsUrl = $host . $GLOBALS['globalParams']['appRoot'];
+                $pgUrl = $GLOBALS['lizzy']['pageUrl'];
+                $host = $GLOBALS['lizzy']['host'];
+                $jsUrl = $host . $GLOBALS['lizzy']['appRoot'];
                 $html = <<<EOT
 
 <div id="iframe-info">
@@ -2344,19 +2344,19 @@ EOT;
 
     private function initializeSiteInfrastructure()
     {
-        global $globalParams;
+        global $lizzy;
         $this->siteStructure = new SiteStructure($this, $this->reqPagePath);
 
         $this->pagePath = $this->siteStructure->getPagePath();
         $this->pathToPage = PAGES_PATH . $this->pagePath;   //  includes pages/
         $pageFilePath = PAGES_PATH . $this->siteStructure->getPageFolder();      // excludes pages/, may differ from path if page redirected
 
-        $globalParams['pageFolder'] = $pageFilePath;      // excludes pages/, may differ from path if page redirected
-        $globalParams['pageFilePath'] = $pageFilePath;      // excludes pages/, may differ from path if page redirected
-        $globalParams['pagePath'] = $this->pagePath;        // excludes pages/, takes not showThis into account
-        $globalParams['pathToPage'] = $this->pathToPage;
-        $_SESSION['lizzy']['pageFolder'] = $globalParams['pageFolder'];     // for _ajax_server.php and _upload_server.php
-        $_SESSION['lizzy']['pagePath'] = $globalParams['pagePath']; // for _ajax_server.php and _upload_server.php
+        $lizzy['pageFolder'] = $pageFilePath;      // excludes pages/, may differ from path if page redirected
+        $lizzy['pageFilePath'] = $pageFilePath;      // excludes pages/, may differ from path if page redirected
+        $lizzy['pagePath'] = $this->pagePath;        // excludes pages/, takes not showThis into account
+        $lizzy['pathToPage'] = $this->pathToPage;
+        $_SESSION['lizzy']['pageFolder'] = $lizzy['pageFolder'];     // for _ajax_server.php and _upload_server.php
+        $_SESSION['lizzy']['pagePath'] = $lizzy['pagePath']; // for _ajax_server.php and _upload_server.php
         $_SESSION['lizzy']['pathToPage'] = $this->pathToPage;
 
 
@@ -2384,12 +2384,12 @@ EOT;
 
     private function storeToCache($html)
     {
-        if (@$GLOBALS['globalParams']['toCache']) {
-            $toCache = $GLOBALS['globalParams']['toCache'];
+        if (@$GLOBALS['lizzy']['toCache']) {
+            $toCache = $GLOBALS['lizzy']['toCache'];
             file_put_contents(SYSTEM_CACHE_PATH.'_cachedParams.json', json_encode($toCache));
         }
 
-        if (!$this->config->site_enableCaching || !$GLOBALS['globalParams']['cachingActive']) {
+        if (!$this->config->site_enableCaching || !$GLOBALS['lizzy']['cachingActive']) {
             return;
         }
 
@@ -2445,7 +2445,7 @@ EOT;
         if (file_exists(SYSTEM_CACHE_PATH.'_cachedParams.json')) {
             $json = file_get_contents(SYSTEM_CACHE_PATH.'_cachedParams.json');
             $params = json_decode( $json, true );
-            $GLOBALS['globalParams'] = array_merge($GLOBALS['globalParams'], $params);
+            $GLOBALS['lizzy'] = array_merge($GLOBALS['lizzy'], $params);
         }
 
         if (isset($_GET['nc'])) {  // nc = no-caching

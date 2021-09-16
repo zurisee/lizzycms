@@ -74,7 +74,7 @@ $this->addMacro($macroName, function () {
         }
 
     } elseif ($path) {
-        $currPath = getcwd().'/'.$GLOBALS['globalParams']['pathToPage'];
+        $currPath = getcwd().'/'.$GLOBALS['lizzy']['pathToPage'];
         $res = (strpos($currPath, $path) !== false);
 
     } elseif ($urlArg) {

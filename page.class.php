@@ -921,9 +921,9 @@ EOT;
     {
         $screenSizeBreakpoint = $this->config->feature_screenSizeBreakpoint;
         $rootJs  = <<<EOT
-        var appRoot = '{$GLOBALS['globalParams']['appRoot']}';
-        var absAppRoot = '{$GLOBALS['globalParams']['appRoot']}';
-        var systemPath = '{$GLOBALS['globalParams']['appRoot']}{$this->config->systemPath}';
+        var appRoot = '{$GLOBALS['lizzy']['appRoot']}';
+        var absAppRoot = '{$GLOBALS['lizzy']['appRoot']}';
+        var systemPath = '{$GLOBALS['lizzy']['appRoot']}{$this->config->systemPath}';
         var screenSizeBreakpoint = $screenSizeBreakpoint
         var pagePath = '{$this->lzy->pagePath}';
 EOT;
@@ -1097,19 +1097,19 @@ EOT;
 
     private function exportCachedModule( $type )
     {
-        $pagePath = $GLOBALS['globalParams']['pagePath'];
+        $pagePath = $GLOBALS['lizzy']['pagePath'];
         if ($type === 'css') {
             $filename = MODULES_CACHE_PATH . "{$pagePath}styles.css";
-            $href = $GLOBALS['globalParams']['appRootUrl'] . $filename;
+            $href = $GLOBALS['lizzy']['appRootUrl'] . $filename;
 
             // make sure target folder has sufficient access permissions:
             preparePath($filename, MKDIR_MASK_WEBACCESS);
             file_put_contents($filename, $this->assembledCssFiles);
 
         } else { // js
-            $lang = $GLOBALS['globalParams']['lang'];
+            $lang = $GLOBALS['lizzy']['lang'];
             $filename = MODULES_CACHE_PATH. "{$pagePath}scripts.{$lang}.js";
-            $href = $GLOBALS['globalParams']['appRootUrl'] . $filename;
+            $href = $GLOBALS['lizzy']['appRootUrl'] . $filename;
 
             // make sure target folder has sufficient access permissions:
             preparePath($filename, MKDIR_MASK_WEBACCESS);
@@ -1138,7 +1138,7 @@ EOT;
         // in CSS files we need to adapt 'url()' rules to reflect new file location:
         if ($isCss) {
             $path = dirname($filename) . '/';
-            $cachePath = MODULES_CACHE_PATH . $GLOBALS['globalParams']['pagePath'];
+            $cachePath = MODULES_CACHE_PATH . $GLOBALS['lizzy']['pagePath'];
             $upPath = preg_replace('|.*?/|', '../', $cachePath);
             $corrPath = $upPath . $path;
             $content = preg_replace('/url\( (["\']?) /x', "url($1$corrPath", $content);
@@ -1420,10 +1420,10 @@ EOT;
 
     public function renderDebugInfo()
     {
-        global $globalParams;
+        global $lizzy;
         $debugInfo = var_r($_SESSION, '$_SESSION');
-        $globalParams['whoami'] = trim(shell_exec('whoami')).':'.trim(shell_exec('groups'));
-        $debugInfo .= var_r($globalParams, '$globalParams');
+        $lizzy['whoami'] = trim(shell_exec('whoami')).':'.trim(shell_exec('groups'));
+        $debugInfo .= var_r($lizzy, '$lizzy');
 
 
         if (file_exists(ERROR_LOG)) {
@@ -1502,7 +1502,7 @@ EOT;
 
     private function renderRelLinks()
     {
-        $home = rtrim($GLOBALS['globalParams']['host'], '/') . $GLOBALS['globalParams']['appRoot'];
+        $home = rtrim($GLOBALS['lizzy']['host'], '/') . $GLOBALS['lizzy']['appRoot'];
         $headInjections = "\t<link rel='home' title='Home' href='$home' >\n";
         if ($this->lzy->siteStructure->prevPage) {
             $headInjections .= "\t<link rel='prev' title='Previous' href='~/{$this->lzy->siteStructure->prevPage}' >\n";
@@ -1536,7 +1536,7 @@ EOT;
                 // special case 'dataPath': activate immediately (i.e. copy to S_SESSION and $GLOBALS):
                 if ($k === 'dataPath') {
                     $_SESSION['lizzy']['dataPath'] = $hdr['dataPath'];
-                    $GLOBALS['globalParams']['dataPath'] = $hdr['dataPath'];
+                    $GLOBALS['lizzy']['dataPath'] = $hdr['dataPath'];
                 }
             }
         }
@@ -1568,8 +1568,8 @@ EOT;
             if ($phpFile[0] === '-') {
                 $phpFile = substr($phpFile, 1);
             }
-            if (!isset($GLOBALS['globalParams']['runPHPonce'][$phpFile])) {
-                $GLOBALS['globalParams']['runPHPonce'][$phpFile] = true;
+            if (!isset($GLOBALS['lizzy']['runPHPonce'][$phpFile])) {
+                $GLOBALS['lizzy']['runPHPonce'][$phpFile] = true;
                 $phpFile = SERVICE_CODE_PATH . $phpFile;
                 if (file_exists($phpFile)) {
                     require $phpFile;

@@ -232,7 +232,7 @@ class Transvar
             $val = $this->executeMacro($macro);
 
             if ($this->disablePageCaching) {
-                $GLOBALS['globalParams']['cachingActive'] = false;
+                $GLOBALS['lizzy']['cachingActive'] = false;
             }
 
             if (($val !== null) && ($this->config->isLocalhost || $this->config->isPrivileged) && !$this->optionAddNoComment) {

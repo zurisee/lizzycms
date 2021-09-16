@@ -285,7 +285,7 @@ EOT;
                 $path = (isset($elem['folder'])) ? $elem['folder'] : '';
             }
             if ($path === '') {
-                $path = $GLOBALS['globalParams']['host'].substr($GLOBALS['globalParams']['appRoot'],1);
+                $path = $GLOBALS['lizzy']['host'].substr($GLOBALS['lizzy']['appRoot'],1);
 
             } elseif ((($r=strpos($path, '~/')) !== 0) && ($r !== false)) {
                 // theoretical case: ~/ appears somewhere within the path -> remove everything before
@@ -470,7 +470,7 @@ EOT;
     //....................................................
     private function addNoScriptCode($navClass)
     {
-        if (isset($GLOBALS['globalParams']['noScriptAdded'])) {
+        if (isset($GLOBALS['lizzy']['noScriptAdded'])) {
             return;
         }
         if ((strpos($navClass, 'lzy-nav-accordion') === false) &&
@@ -489,7 +489,7 @@ EOT;
 
 EOT;
 
-        $GLOBALS['globalParams']['noScriptAdded'] = true;
+        $GLOBALS['lizzy']['noScriptAdded'] = true;
         $this->page->addHead($noscript);
     }
 } // class

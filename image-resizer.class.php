@@ -24,7 +24,7 @@ class ImageResizer
         $modified = false;
         // find all img-tags in html:
         $p = strpos($html, '<img');
-        $appRoot = $GLOBALS['globalParams']['appRoot'];
+        $appRoot = $GLOBALS['lizzy']['appRoot'];
         $l = strlen($appRoot);
         $imgTypes = '|'.IMAGE_TYPES.'|';
         while ($p !== false) {
@@ -320,8 +320,8 @@ EOT;
         if (!file_exists($manifestFilename)) {
             $manifest = <<<EOT
 {
-    "name": "{$GLOBALS['globalParams']['site_title']}",
-    "short_name": "{$GLOBALS['globalParams']['site_title']}",
+    "name": "{$GLOBALS['lizzy']['site_title']}",
+    "short_name": "{$GLOBALS['lizzy']['site_title']}",
     "icons": [
 $manifestStr
     ],
@@ -333,7 +333,7 @@ $manifestStr
 EOT;
             file_put_contents($manifestFilename, $manifest);
         }
-        $manifestFilename = $GLOBALS['globalParams']['appRootUrl'] . $manifestFilename;
+        $manifestFilename = $GLOBALS['lizzy']['appRootUrl'] . $manifestFilename;
         $out = rtrim($out) . "\n\t<link rel='manifest' href='$manifestFilename'>";
         return $out;
     } // createFavicons

@@ -33,9 +33,9 @@ class UserAdmin extends UserAdminBase
         } elseif (strpos($mode, 'table') !== false) {
             // skip rendering in case of insufficient privileges:
             $permission = @$_SESSION['lizzy']['configDbPermission'];
-            if (!$permission && @$_SESSION['lizzy']['isLocalhost']) {
+            if (!$permission && @$GLOBALS['_SESSION']['lizzy']['debug'] && @$_SESSION['lizzy']['isLocalhost']) {
                 $permission = true;
-                // warning to user generated in datastorage:initDbTable()
+                // warning to user will be generated in datastorage:initDbTable()
             }
             if (!$permission) {
                 $html = '{{ lzy-useradmin-insufficient-permission }}';
@@ -92,7 +92,7 @@ class UserAdmin extends UserAdminBase
         $res = $this->addUserToDB($username, $tickRec);
         if ($res === true) {
             // success -> create a ot-ticket which reloads the browser, opening the right page and logging in:
-            $landingPage = $GLOBALS['globalParams']['pageUrl'];
+            $landingPage = $GLOBALS['lizzy']['pageUrl'];
             $hash = $this->createOneTimeTicket( $username, $landingPage );
             reloadAgent("./$hash", '{{ lzy-signup-success }}');
 
@@ -152,8 +152,8 @@ class UserAdmin extends UserAdminBase
     private function processInvitationMail($hash, $email, $name, $time, $sendImmediately)
     {
         $until = strftime('%x %R', $time);
-        $host = $GLOBALS['globalParams']['host'];
-        $url = "{$GLOBALS['globalParams']['absAppRootUrl']}$hash";
+        $host = $GLOBALS['lizzy']['host'];
+        $url = "{$GLOBALS['lizzy']['absAppRootUrl']}$hash";
         $subject = "{{ lzy-email-sign-up-subject }}{$host}";
         $subject = $this->trans->translate($subject);
         $subject1 = htmlentities( $subject );
@@ -221,8 +221,8 @@ EOT;
         }
 
         $until = strftime('%x %R', time() + $registrationPeriod);
-        $host = $GLOBALS['globalParams']['host'];
-        $url = "{$GLOBALS['globalParams']['absAppRootUrl']}XXXXXX";
+        $host = $GLOBALS['lizzy']['host'];
+        $url = "{$GLOBALS['lizzy']['absAppRootUrl']}XXXXXX";
         $subject = "{{ lzy-email-sign-up-subject }}{$host}";
         $subject = $this->trans->translate($subject);
         $message = "{{ lzy-email-sign-up1 }} → $url {{ lzy-email-sign-up2 }}{{ lzy-email-sign-up3 }}$until. {{ lzy-email-sign-up-greeting }} \n";
@@ -328,7 +328,7 @@ EOT;
             'formName' => 'Sign-up-form',
             'class' => 'lzy-sign-up-form lzy-form lzy-encapsulated',
             'customResponseEvaluationFunction' => 'lzySignupCallback',
-            'action' => '~/' . $GLOBALS['globalParams']['pagePath'],
+            'action' => '~/' . $GLOBALS['lizzy']['pagePath'],
             'next' => '~/',
             'E-Mail' => [
                 'required' => true,
@@ -457,7 +457,8 @@ EOT;
         require_once SYSTEM_PATH.'htmltable.class.php';
         $structFile = 'config/users_structure.yaml';
         if (!file_exists($structFile)) {
-            $structFile = EXTENSIONS_PATH . 'useradmin/config/users_structure.yaml';
+            $origStructFile = EXTENSIONS_PATH . 'useradmin/config/users_structure.yaml';
+            copy($origStructFile, $structFile);
         }
         $formTemplate = '~/'. EXTENSIONS_PATH . 'useradmin/config/table_edit_form_template.md';
         $options = [
@@ -511,7 +512,7 @@ function lzySignupCallback($lzy, $form, $userSuppliedData )
         $res = $ua->addUserToDB($username, $newUser);
         if ($res === true) {
             // success -> create a ot-ticket which reloads the browser, opening the right page and logging in:
-            $landingPage = $GLOBALS['globalParams']['pageUrl'];
+            $landingPage = $GLOBALS['lizzy']['pageUrl'];
             $hash = $ua->createOneTimeTicket( $username, $landingPage, $verifiedEmail );
             reloadAgent("./$hash", '{{ lzy-signup-success }}');
 
@@ -522,8 +523,8 @@ function lzySignupCallback($lzy, $form, $userSuppliedData )
         // user modified email, so we need to verify it:
         $tck = new Ticketing();
         $hash = $tck->createTicket($newUser, 1, false, 'lzy-confirm-email');
-        $link = "{$GLOBALS['globalParams']['absAppRootUrl']}$hash";
-        $host = $GLOBALS['globalParams']['host'];
+        $link = "{$GLOBALS['lizzy']['absAppRootUrl']}$hash";
+        $host = $GLOBALS['lizzy']['host'];
         $subject = '{{ lzy-email-confirm-subject }}';
         $subject = $lzy->trans->translate($subject);
         $message = '{{ lzy-email-confirm-body }}';

@@ -394,7 +394,7 @@ class SiteStructure
 
     private function getBranchFromFolders( $listInx, $parentLevel, $path )
     {
-        $path1 = "{$GLOBALS['globalParams']['pagesFolder']}$path";
+        $path1 = "{$GLOBALS['lizzy']['pagesFolder']}$path";
         $dir = getDirDeep( "$path1*.md" );
         $tmp = [];
         foreach ($dir as $i => $elem) {
@@ -679,7 +679,7 @@ class SiteStructure
     public function getListOfPages( $asLink = false, $inclFolder = false)
     {
         $pages = [];
-        $appRootUrl = $GLOBALS['globalParams']['appRootUrl'];
+        $appRootUrl = $GLOBALS['lizzy']['appRootUrl'];
         foreach ($this->list as $rec) {
             if ($asLink) {
                 $path = ($rec['urlpath'] !== false) ? $rec['urlpath']: $rec['folder'];

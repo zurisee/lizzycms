@@ -20,7 +20,7 @@ $this->addMacro($macroName, function () {
     }
 
     if (!$counterName) {
-        $counterName = "{$GLOBALS['globalParams']['pagePath']}counter-$inx";
+        $counterName = "{$GLOBALS['lizzy']['pagePath']}counter-$inx";
     }
 
     $filename = resolvePath(DEFAULT_COUNTER_FILENAME, true);

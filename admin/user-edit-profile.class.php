@@ -83,7 +83,7 @@ class UserEditProfileBase extends UserAdminBase
                 $hash = createHash();
                 $userRec['accessCode'] = $hash;
                 parent::updateDbUserRec($user, $userRec);
-                $link = $GLOBALS['globalParams']['pageUrl'].$hash;
+                $link = $GLOBALS['lizzy']['pageUrl'].$hash;
                 $link = "<div><a href='#' id='lzy-invoke-access-link'>$link</a></div>";
                 $msg = $this->trans->translateVariable('lzy-create-accesslink-response1');
                 $msg2 = $this->trans->translateVariable('lzy-create-accesslink-response2');

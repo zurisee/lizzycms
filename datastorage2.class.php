@@ -61,7 +61,7 @@ class DataStorage2
 
     public function __construct($args, $lzy = null)
     {
-        $this->lzy = $lzy;
+        $this->lzy = ($lzy !== null)? $lzy: @$GLOBALS['lzy'];
         if ( session_status() !== PHP_SESSION_ACTIVE ) {
             session_start();
         }
@@ -858,8 +858,8 @@ class DataStorage2
     private function exportStructure()
     {
         // skip ticket DB or invoked from backend process or not on localhost:
-        if (!isset($GLOBALS['globalParams']['isLocalhost']) ||
-            !$GLOBALS['globalParams']['isLocalhost'] ||
+        if (!isset($GLOBALS['lizzy']['isLocalhost']) ||
+            !$GLOBALS['lizzy']['isLocalhost'] ||
             !function_exists('convertToYaml') ||
             (strpos($this->dataFile, '.#tickets') !== false)) {
             return;
@@ -1129,6 +1129,9 @@ class DataStorage2
         } else {
             $timeout = min(LZY_LOCK_ALL_DURATION_DEFAULT, $timeout);
         }
+        if (@$this->lzy->config->debug_debugLogging && $this->_isDbLocked( $checkOnLockedRecords )) {
+            mylog('datastorage:_awaitDbLockEnd()');
+        }
         $till = microtime(true) + $timeout;
         while (($locked = $this->_isDbLocked( $checkOnLockedRecords )) && $timeout && (microtime(true) < $till)) {
             usleep($this->defaultPollingSleepTime);
@@ -1287,6 +1290,9 @@ class DataStorage2
         // wait for DB to be unlocked:
         if (!$this->_awaitDbLockEnd($timeout, false)) {
             return false;
+        }
+        if (@$this->lzy->config->debug_debugLogging && $this->_isDbLocked( $checkOnLockedRecords )) {
+            mylog('datastorage:_awaitRecLockEnd()');
         }
         $till = microtime(true) + $timeout;
         while (($locked = $this->_isRecLocked($recId)) && (microtime(true) < $till)) {
@@ -1814,7 +1820,7 @@ EOT;
             if (!$permission) {
                 $who = @$this->config->admin_configDbPermission;
                 mylog("DataStorage: access to DB '$this->dataFile' in config/ folder denied. User would need to be '$who'.");
-                if ($GLOBALS['globalParams']['isLocalhost']) {
+                if ($GLOBALS['lizzy']['isLocalhost']) {
                     die("DataStorage: access to DB '$this->dataFile' in config/ folder denied. You'd have to be '$who'.");
                 } else {
                     return null;

@@ -27,7 +27,7 @@ define('PASSWORD_PLACEHOLDER', 	'●●●●');
 use Symfony\Component\Yaml\Yaml;
 
 
-$GLOBALS['globalParams']['isBackend'] = true;
+$GLOBALS['lizzy']['isBackend'] = true;
 $appRoot = getcwd().'/';
 if (strpos($appRoot, '_lizzy/') !== false) {
     $appRoot = preg_replace('/_lizzy\/.*$/', '', $appRoot);
@@ -423,9 +423,9 @@ function resolvePath($path)
         return $path;
     }
     $path = trim($path);
-    $dataPath = isset($GLOBALS['globalParams']['dataPath'])? $GLOBALS['globalParams']['dataPath'] :
+    $dataPath = isset($GLOBALS['lizzy']['dataPath'])? $GLOBALS['lizzy']['dataPath'] :
         (isset($_SESSION['lizzy']['dataPath'])? $_SESSION['lizzy']['dataPath']: 'data/');
-    $pageFolder = isset($GLOBALS['globalParams']['pageFolder'])? $GLOBALS['globalParams']['pageFolder'] :
+    $pageFolder = isset($GLOBALS['lizzy']['pageFolder'])? $GLOBALS['lizzy']['pageFolder'] :
         (isset($_SESSION['lizzy']['pageFolder'])? $_SESSION['lizzy']['pageFolder']: '');
 
     $from = [
@@ -515,10 +515,10 @@ function var_r($var, $varName = '', $flat = false, $asHtml = true)
 
 function getFile($pat, $removeComments = false, $removeEmptyLines = false)
 {
-    global $globalParams;
+    global $lizzy;
     $pat = str_replace('~/', '', $pat);
     if (strpos($pat, '~page/') === 0) {
-        $pat = str_replace('~page/', $globalParams['pageFolder'], $pat);
+        $pat = str_replace('~page/', $lizzy['pageFolder'], $pat);
     }
     if (file_exists($pat)) {
         $file = file_get_contents($pat);

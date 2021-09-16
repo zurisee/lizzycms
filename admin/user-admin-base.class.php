@@ -325,7 +325,7 @@ EOT;
 
     public function sendCodeByMail($submittedEmail, $ticketType, $accessCodeValidyTime, $userRec = false)
     {
-        global $globalParams;
+        global $lizzy;
 
         $message = '';
         $validUntil = time() + $accessCodeValidyTime;
@@ -343,11 +343,11 @@ EOT;
         $otRec = ['username' => $user, 'email' => $submittedEmail];
         $hash = $tick->createTicket($otRec, 1, $accessCodeValidyTime);
 
-        $url = $globalParams['pageUrl'] . $hash . '/';
+        $url = $lizzy['pageUrl'] . $hash . '/';
 
         // --- lzy-ot-access
         if ($ticketType === 'lzy-ot-access') {
-            $subject = "[{{ site_title }}] {{ lzy-email-access-link-subject }} {$globalParams['host']}";
+            $subject = "[{{ site_title }}] {{ lzy-email-access-link-subject }} {$lizzy['host']}";
             $message = "{{ lzy-email-access-link0 }}$displayName{{ lzy-email-access-link1 }}    ".
                 "→ $url {{ lzy-email-access-link2 }}{{ lzy-email-access-link3 }}{{ lzy-email-access-greeting }}\n";
             $message = $this->trans->translate( $message );
@@ -361,7 +361,7 @@ EOT;
 
         // --- email-signup
         } elseif ($ticketType === 'email-signup') {
-            $subject = "[{{ site_title }}] {{ lzy-email-sign-up-subject }} {$globalParams['host']}";
+            $subject = "[{{ site_title }}] {{ lzy-email-sign-up-subject }} {$lizzy['host']}";
             $message = "{{ lzy-email-sign-up1 }} → $url {{ lzy-email-sign-up2 }}{{ lzy-email-sign-up3 }}$validUntilStr. {{ lzy-email-sign-up-greeting }} \n";
 
             $this->sendMail($submittedEmail, $subject, $message);
@@ -377,7 +377,7 @@ EOT;
             if ($res) {
                 reloadAgent( false, $res );
             }
-            $subject = "[{{ site_title }}] {{ lzy-email-change-mail-subject }} {$globalParams['host']}";
+            $subject = "[{{ site_title }}] {{ lzy-email-change-mail-subject }} {$lizzy['host']}";
             $message = "{{ lzy-email-change-mail-up1 }} $url {{ lzy-email-change-mail-up2 }} $hash {{ lzy-email-change-mail-up3 }} \n";
 
             $this->sendMail($submittedEmail, $subject, $message);
@@ -386,7 +386,7 @@ EOT;
 
         // --- request-email-verification
         } elseif ($ticketType === 'request-email-verification') {
-            $subject = "[{{ site_title }}] {{ lzy-request-email-verification-subject }} {$globalParams['host']}";
+            $subject = "[{{ site_title }}] {{ lzy-request-email-verification-subject }} {$lizzy['host']}";
             $message = "{{ lzy-request-email-verification-up1 }} $url {{ lzy-request-email-verification-up2 }} $hash {{ lzy-request-email-verification-up3 }}$validUntilStr. \n";
 
             $this->sendMail($submittedEmail, $subject, $message);
@@ -497,7 +497,7 @@ EOT;
             $page = get_post_data('lzy-landing-page');
             $pgRec = $this->lzy->siteStructure->findSiteElem( $page, true, true );
             $folder = ($pgRec['urlpath'] !== false) ? $pgRec['urlpath']: $pgRec['folder'];
-            $link = $GLOBALS['globalParams']['absAppRootUrl'];
+            $link = $GLOBALS['lizzy']['absAppRootUrl'];
             if (@$_POST['util']) {
                 $accessCodeValidyTime = strtotime($_POST['util']) - time();
 
@@ -800,12 +800,12 @@ EOT;
 
     protected function checkInsecureConnection()
     {
-        global $globalParams;
+        global $lizzy;
         $relaxedHosts = str_replace('*', '', $this->config->site_allowInsecureConnectionsTo);
 
         if (!$this->config->isLocalhost && !(isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] === 'on')) {
-            $url = str_ireplace('http://', 'https://', $globalParams['pageUrl']);
-            $url1 = preg_replace('|https?://|i', '', $globalParams['pageUrl']);
+            $url = str_ireplace('http://', 'https://', $lizzy['pageUrl']);
+            $url1 = preg_replace('|https?://|i', '', $lizzy['pageUrl']);
             if (strpos($url1, $relaxedHosts) !== 0) {
                 $this->page->addMessage("{{ Warning insecure connection }}<br />{{ Please switch to }}: <a href='$url'>$url</a>");
             }
@@ -818,8 +818,8 @@ EOT;
 
     protected function wrapTag($className, $str)
     {
-        if (($className === MSG) && isset($GLOBALS['globalParams']['auth-message'])) {
-            $str .= ' '.$GLOBALS['globalParams']['auth-message'];
+        if (($className === MSG) && isset($GLOBALS['lizzy']['auth-message'])) {
+            $str .= ' '.$GLOBALS['lizzy']['auth-message'];
         }
         $str = trim($str);
         if ($str) {

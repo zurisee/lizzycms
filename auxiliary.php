@@ -111,14 +111,14 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
             $val = false;
         } elseif (is_string($val)) {
             if (preg_match('/^ (!?) (isLoggedin|isPrivileged|isAdmin) $/x', $val, $m)) {
-                $GLOBALS['globalParams']['cachingActive'] = false;
+                $GLOBALS['lizzy']['cachingActive'] = false;
                 $val = false;
                 if ($m[2] === 'isAdmin') {
-                    $val = $GLOBALS['globalParams']['isAdmin'];
+                    $val = $GLOBALS['lizzy']['isAdmin'];
                 } elseif ($m[2] === 'isPrivileged') {
-                    $val = $GLOBALS['globalParams']['isPrivileged'];
+                    $val = $GLOBALS['lizzy']['isPrivileged'];
                 } elseif ($m[2] === 'isLoggedin') {
-                    $val = $GLOBALS['globalParams']['isLoggedin'];
+                    $val = $GLOBALS['lizzy']['isLoggedin'];
                 } elseif ($cc !== '\!\!') {
                     $val = str_replace(['"', "'"], ['&#34;', '&#39;'], $val);
                 }
@@ -516,10 +516,10 @@ function findFileDeep($pattern, $flags = 0) {
 
 function getFile($pat, $removeComments = false, $removeEmptyLines = false)
 {
-    global $globalParams;
+    global $lizzy;
 	$pat = str_replace('~/', '', $pat);
 	if (strpos($pat, '~page/') === 0) {
-	    $pat = str_replace('~page/', $globalParams['pageFolder'], $pat);
+	    $pat = str_replace('~page/', $lizzy['pageFolder'], $pat);
     }
     if (file_exists($pat)) {
         $file = file_get_contents($pat);
@@ -569,10 +569,10 @@ function zapFileEND($file)
 
 function fileExists($file)
 {
-    global $globalParams;
+    global $lizzy;
     $file = str_replace('~/', '', $file);
     if (strpos($file, '~page/') === 0) {
-        $file = str_replace('~page/', $globalParams['pageFolder'], $file);
+        $file = str_replace('~page/', $lizzy['pageFolder'], $file);
     }
     return file_exists($file);
 
@@ -935,7 +935,7 @@ function makePathDefaultToPage($path)
 
 function convertFsToHttpPath($path)
 {
-    $pagesPath = $GLOBALS['globalParams']['pathToPage'];
+    $pagesPath = $GLOBALS['lizzy']['pathToPage'];
     if ($path && ($path[0] !== '~') && (strpos($path, $pagesPath) === 0)) {
         $path = '~page/'.substr($path, strlen($pagesPath));
     }
@@ -950,7 +950,7 @@ function resolvePathSecured($path, $relativeToCurrPage = false, $httpAccess = fa
 {
     $path1 = resolvePath($path, $relativeToCurrPage, $httpAccess, $absolutePath, $isResource);
 
-    $adminPermit = $GLOBALS['globalParams']['isLocalhost'] || $GLOBALS['globalParams']['isAdmin'];
+    $adminPermit = $GLOBALS['lizzy']['isLocalhost'] || $GLOBALS['lizzy']['isAdmin'];
     if ($adminPermit || !preg_match('/\b(code|config|.cache|\.#tickets|_lizzy)\b/', $path1)) {
         return [$path1, false]; // path is ok
     }
@@ -958,7 +958,7 @@ function resolvePathSecured($path, $relativeToCurrPage = false, $httpAccess = fa
     mylog("=== Warning: suspicious path request in $caller(): '$path'");
     $path = str_replace('~', '&#126;', $path);
     $msg = '';
-    if ($GLOBALS['globalParams']['isLocalhost']) {
+    if ($GLOBALS['lizzy']['isLocalhost']) {
         $msg = "<strong>Warning: suspicious path request in $caller(): '$path'</strong>";
     }
     return [$path1, $msg];
@@ -969,7 +969,7 @@ function resolvePathSecured($path, $relativeToCurrPage = false, $httpAccess = fa
 
 function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $absolutePath = false, $isResource = null)
 {
-    global $globalParams;
+    global $lizzy;
     $path = trim($path);
 
     // nothing to do, if first char is not '~', unless relativeToCurrPage was requested:
@@ -1009,12 +1009,12 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
         }
     }
 
-	$host  = isset($globalParams['host']) ? $globalParams['host'] : '';
-	$appRoot  = isset($globalParams['appRoot']) ? $globalParams['appRoot'] : '';
-	$pagePath  = isset($globalParams['pagePath']) ? $globalParams['pagePath'] : '';
-	$pageFolder  = isset($globalParams['pageFolder']) ? $globalParams['pageFolder'] : '';
-	$pathToPage  = isset($globalParams['pathToPage']) ? $globalParams['pathToPage'] : '';
-	$absAppRoot = isset($globalParams['absAppRoot']) ? $globalParams['absAppRoot'] : '';
+	$host  = isset($lizzy['host']) ? $lizzy['host'] : '';
+	$appRoot  = isset($lizzy['appRoot']) ? $lizzy['appRoot'] : '';
+	$pagePath  = isset($lizzy['pagePath']) ? $lizzy['pagePath'] : '';
+	$pageFolder  = isset($lizzy['pageFolder']) ? $lizzy['pageFolder'] : '';
+	$pathToPage  = isset($lizzy['pathToPage']) ? $lizzy['pathToPage'] : '';
+	$absAppRoot = isset($lizzy['absAppRoot']) ? $lizzy['absAppRoot'] : '';
 
 
     if (preg_match('|^(~.*?/)(.*)|', $path, $m)) {
@@ -1044,7 +1044,7 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
                     }
                     break;
                 case '~data/':
-                    $path = $appRoot . $globalParams['dataPath'] . $path;
+                    $path = $appRoot . $lizzy['dataPath'] . $path;
                     if ($absolutePath) {
                         $path = "$host$path";
                     }
@@ -1084,7 +1084,7 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
                     }
                     break;
                 case '~data/':
-                    $path = $globalParams['dataPath'] . $path;
+                    $path = $lizzy['dataPath'] . $path;
                     if ($absolutePath) {
                         $path = "$absAppRoot$path";
                     }
@@ -1105,7 +1105,7 @@ function resolvePath($path, $relativeToCurrPage = false, $httpAccess = false, $a
                     if ($absolutePath) {
                         $path = $_SERVER["DOCUMENT_ROOT"] . '/' . $path;
                     } else {
-                        $path = "{$globalParams["filepathToDocroot"]}$path";
+                        $path = "{$lizzy["filepathToDocroot"]}$path";
                     }
                     break;
             }
@@ -1163,7 +1163,7 @@ function makePathRelativeToPage($path, $resolvePath = false)
 
 function resolveHrefs( &$html )
 {
-    $appRoot = $GLOBALS['globalParams']['appRoot'];
+    $appRoot = $GLOBALS['lizzy']['appRoot'];
     $prefix = $appRoot.'?lzy=';
     $p = strpos($html, '~/');
     while ($p !== false) {
@@ -1543,13 +1543,13 @@ function getClientIP($normalize = false)
 
 function reloadAgent($target = false, $getArg = false)
 {
-    global $globalParams;
+    global $lizzy;
     if ($target === true) {
-        $target = $globalParams['requestedUrl'];
+        $target = $lizzy['requestedUrl'];
     } elseif ($target) {
         $target = resolvePath($target, false, true);
     } else {
-        $target = $globalParams['pageUrl'];
+        $target = $lizzy['pageUrl'];
         $target = preg_replace('|/[A-Z][A-Z0-9]{4,}/?$|', '/', $target);
     }
     if ($getArg) {
@@ -1863,27 +1863,27 @@ function writeLog()
 
 function writeLogStr($str, $errlog = false)
 {
-    global $globalParams;
+    global $lizzy;
 
     $user = isset($_SESSION['lizzy']['user']) && $_SESSION['lizzy']['user'] ? $_SESSION['lizzy']['user'] : 'anon';
     if (is_array($str)) {
         $str = json_encode($str);
     }
     if (!$errlog) {
-        if ((@$globalParams['activityLoggingEnabled'] !== null) && !@$globalParams['activityLoggingEnabled']) {
+        if ((@$lizzy['activityLoggingEnabled'] !== null) && !@$lizzy['activityLoggingEnabled']) {
             return;
         }
         file_put_contents(LOG_FILE, timestamp()."  $str\n\n", FILE_APPEND);
 
     } else {
-        if (($errlog === true) && ($globalParams['errorLoggingEnabled'] !== null) && !$globalParams['errorLoggingEnabled']) {
+        if (($errlog === true) && ($lizzy['errorLoggingEnabled'] !== null) && !$lizzy['errorLoggingEnabled']) {
             return;
         }
         if (is_string($errlog)) {
             // only allow files in LOGS_PATH and only with extension .txt or .log:
             $destination = LOGS_PATH . basename( $errlog );
         } else {
-            $destination = $globalParams['errorLogFile'];
+            $destination = $lizzy['errorLogFile'];
         }
         if ($destination) {
             file_put_contents($destination, timestamp() . " [$user]: $str\n\n", FILE_APPEND);
@@ -2245,7 +2245,7 @@ function shieldMD($md)
 
 function isAdmin()
 {
-    return $GLOBALS['globalParams']['isAdmin'];
+    return $GLOBALS['lizzy']['isAdmin'];
 } // isAdmin
 
 
@@ -2253,13 +2253,16 @@ function isAdmin()
 
 function isLocalhost()
 {
-    return @$GLOBALS['globalParams']['isLocalhost'];
+    return @$GLOBALS['lizzy']['isLocalhost'];
 } // isLocalhost
 
 
 
 
 function checkPermission($str0, $lzy = false, $and = false) {
+    if ($str0 === null) {
+        return null;
+    }
     if (is_bool($str0)) {
         return $str0;
     }
@@ -2278,9 +2281,9 @@ function checkPermission($str0, $lzy = false, $and = false) {
         } elseif (($str === false) || ($str === 'false')) {
             $res = false;
         } elseif (preg_match('/privileged/i', $str)) {
-            $res = $GLOBALS['globalParams']['isPrivileged'];
+            $res = $GLOBALS['lizzy']['isPrivileged'];
         } elseif (preg_match('/loggedin/i', $str)) {
-            $res = $GLOBALS['globalParams']['isLoggedin'] || $GLOBALS['globalParams']['isAdmin'];
+            $res = $GLOBALS['lizzy']['isLoggedin'] || $GLOBALS['lizzy']['isAdmin'];
         } elseif (($str !== 'true') && !is_bool($str)) {
             if ($lzy) {
                 // if not 'true', it's interpreted as a group
@@ -2307,13 +2310,13 @@ function checkPermission($str0, $lzy = false, $and = false) {
 
 function getGitTag($shortForm = true)
 {
-    if (isset($GLOBALS['globalParams']['gitTag'])) {
-        $str = $GLOBALS['globalParams']['gitTag'];
+    if (isset($GLOBALS['lizzy']['gitTag'])) {
+        $str = $GLOBALS['lizzy']['gitTag'];
     } elseif (is_callable('shell_exec') && false === stripos(ini_get('disable_functions'), 'shell_exec')) {
         $str = shell_exec('cd _lizzy; git describe --tags --abbrev=0; git log --pretty="%ci" -n1 HEAD');
-        $GLOBALS['globalParams']['toCache']['gitTag'] = $str;
+        $GLOBALS['lizzy']['toCache']['gitTag'] = $str;
     } else {
-        $GLOBALS['globalParams']['toCache']['gitTag'] = 'unknown';
+        $GLOBALS['lizzy']['toCache']['gitTag'] = 'unknown';
     }
     if ($shortForm) {
         return preg_replace("/\n.*/", '', $str);
@@ -2329,19 +2332,19 @@ function getGitTag($shortForm = true)
 function fatalError($msg, $origin = '', $offendingFile = '')
  // $origin =, 'File: '.__FILE__.' Line: '.__LINE__;
 {
-    global $globalParams;
+    global $lizzy;
     $out = '';
     $problemSrc = '';
     if ($offendingFile) {
         $problemSrc = "problemSrc: $offendingFile, ";
-    } elseif (isset($globalParams['lastLoadedFile'])) {
-        $offendingFile = $globalParams['lastLoadedFile'];
+    } elseif (isset($lizzy['lastLoadedFile'])) {
+        $offendingFile = $lizzy['lastLoadedFile'];
         $problemSrc = "problemSrc: $offendingFile, ";
     }
     if ($origin) {
         if (preg_match('/File:\s*(.*)\s*Line:(.*)/', $origin, $m)) {
             $file = trim($m[1]);
-            $l = (isset($globalParams['absAppRoot'])) ? $globalParams['absAppRoot']: 0;
+            $l = (isset($lizzy['absAppRoot'])) ? $lizzy['absAppRoot']: 0;
             $file = substr($file, strlen($l));
             $line = trim($m[2]);
             $origin = "$file::$line";

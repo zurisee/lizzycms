@@ -263,7 +263,7 @@ EOT;
 
     public function renderLoginLink( $userRec )
     {
-        $linkToThisPage = $GLOBALS['globalParams']['pageUrl'];
+        $linkToThisPage = $GLOBALS['lizzy']['pageUrl'];
         if ($this->loggedInUser) {
             $logInVar = $this->renderLoginAccountLink( $userRec );
 
@@ -331,7 +331,7 @@ EOT;
 
     private function renderLoginAccountMenu( $userRec )
     {
-        $pageUrl = $GLOBALS['globalParams']['pageUrl'];
+        $pageUrl = $GLOBALS['lizzy']['pageUrl'];
         $username = $this->loggedInUser;
         $locked = isset($userRec['locked']) && $userRec['locked'];
         $groups = $userRec['groups'];
@@ -343,10 +343,10 @@ EOT;
         }
 
         // for admins: invite-new-user option:
-        if ($GLOBALS['globalParams']['isAdmin']) {
+        if ($GLOBALS['lizzy']['isAdmin']) {
             if ($this->config->admin_enableSelfSignUp) {
                 $option .= "\t\t\t<li><a href='$pageUrl?admin=invite-new-user'>{{ lzy-adm-invite-new-user }}</a></li>\n";
-            } elseif ($GLOBALS['globalParams']['localHost']) {
+            } elseif ($GLOBALS['lizzy']['localHost']) {
                 $option .= "\t\t\t<li><span class='lzy-inactive tooltipster' title='Modify config option \"admin_enableSelfSignUp\" to enable'>{{ lzy-adm-invite-new-user }}</span></li>\n";
             }
         }

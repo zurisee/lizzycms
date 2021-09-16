@@ -8,7 +8,7 @@ class NextInTimeSequence
     {
         $this->lzy = $lzy;
         $this->parseArgs( $options );
-        $this->persistant = &$GLOBALS['globalParams']['nextEvent'][$this->id];
+        $this->persistant = &$GLOBALS['lizzy']['nextEvent'][$this->id];
     } // __construct
 
 
@@ -274,8 +274,8 @@ class NextInTimeSequence
         $excludeCondition = @$options['excludeCondition'];
         $id = $this->id = isset($options['id']) ? $options['id'] : 0;
 
-        if (isset($GLOBALS['globalParams']['nextEvent'][$id]['excludeCondition']) && ($this->source || $this->data)) {
-            unset($GLOBALS['globalParams']['nextEvent'][$id]['excludeCondition']);
+        if (isset($GLOBALS['lizzy']['nextEvent'][$id]['excludeCondition']) && ($this->source || $this->data)) {
+            unset($GLOBALS['lizzy']['nextEvent'][$id]['excludeCondition']);
         }
 
         if ($excludeCondition) {
@@ -284,9 +284,9 @@ class NextInTimeSequence
                 $excludeCondition = 'return '.$excludeCondition;
             }
             $excludeCondition = trim($excludeCondition, ';') . ';';
-            $GLOBALS['globalParams']['nextEvent'][$id]['excludeCondition'] = $excludeCondition;
-        } elseif (isset($GLOBALS['globalParams']['nextEvent'][$id]['excludeCondition'])) {
-            $excludeCondition = $GLOBALS['globalParams']['nextEvent'][$id]['excludeCondition'];
+            $GLOBALS['lizzy']['nextEvent'][$id]['excludeCondition'] = $excludeCondition;
+        } elseif (isset($GLOBALS['lizzy']['nextEvent'][$id]['excludeCondition'])) {
+            $excludeCondition = $GLOBALS['lizzy']['nextEvent'][$id]['excludeCondition'];
         }
         $this->excludeCondition = $excludeCondition;
     } // parseArgs

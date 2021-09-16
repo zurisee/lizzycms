@@ -15,7 +15,7 @@ $this->addMacro($macroName, function () {
 	$class = $this->getArg($macroName, 'class', '(optional) Defines the class applied to the button (default: lzy-button)', '');
 	$type = $this->getArg($macroName, 'type', '[toggle] Defines the button\'s type-attribute.<br>Special case "toggle": in '.
         'this case JS is added to toggle class "lzy-button-active" and aria-attributes.<br>'.
-        '<strong>Note</strong>: you can provide an alternative label for the active state via "text" option, e.g. type:"Off-State|On-State".', 'button');
+        '<strong>Note</strong>: you can provide an alternative label for the active state via "text" option, e.g. text:"Off-State|On-State".', 'button');
 
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
 
