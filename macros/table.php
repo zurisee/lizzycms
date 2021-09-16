@@ -26,11 +26,16 @@ $this->addMacro($macroName, function () {
     $suppressError = $this->getArg($macroName, 'suppressError', '', false);
     $file = resolvePath($dataSource, true);
     if ($dataSource && !file_exists($file)) {
+        $path = dir_name($file);
         if ($suppressError) {
             return '';
         } else {
-            preparePath($file);
-            touch($file);
+            preparePath($path);
+            if (is_writable($path)) {
+                touch($file);
+            } else {
+                die("Error in table(): designated file '$dataSource' is not accessible.");
+            }
         }
     }
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
