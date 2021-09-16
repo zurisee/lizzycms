@@ -36,11 +36,11 @@ define('PSEUDO_TYPES', ',form-head,form-tail,reveal,literal,fieldset,fieldset-en
 mb_internal_encoding("utf-8");
 
 
-$GLOBALS['globalParams']['lzyFormsCount'] = 0;
-$GLOBALS['globalParams']['formDataCachingInitialized'] = false;
-$GLOBALS['globalParams']['formTooltipsInitialized'] = false;
-$GLOBALS['globalParams']['forms_skipRenderingForm'] = [];
-$GLOBALS['globalParams']['forms_responseToClient'] = [];
+$GLOBALS['lizzy']['lzyFormsCount'] = 0;
+$GLOBALS['lizzy']['formDataCachingInitialized'] = false;
+$GLOBALS['lizzy']['formTooltipsInitialized'] = false;
+$GLOBALS['lizzy']['forms_skipRenderingForm'] = [];
+$GLOBALS['lizzy']['forms_responseToClient'] = [];
 
 class Forms
 {
@@ -69,15 +69,15 @@ class Forms
 		$this->trans = $lzy->trans;
 		$this->page = $lzy->page;
 		$this->inx = -1;    // = elemInx
-        $GLOBALS['globalParams']['lzyFormsCount']++;
-		$this->formInx = $GLOBALS['globalParams']['lzyFormsCount'];
+        $GLOBALS['lizzy']['lzyFormsCount']++;
+		$this->formInx = $GLOBALS['lizzy']['lzyFormsCount'];
         $this->currForm = new FormDescriptor; // object as will be saved in DB
-        $this->infoInitialized = &$GLOBALS['globalParams']['formTooltipsInitialized'];
+        $this->infoInitialized = &$GLOBALS['lizzy']['formTooltipsInitialized'];
 
-        $GLOBALS['globalParams']['forms_responseToClient'][$this->formInx] = false;
-        $this->responseToClient = &$GLOBALS['globalParams']['forms_responseToClient'][$this->formInx];
-        $GLOBALS['globalParams']['forms_skipRenderingForm'][$this->formInx] = false;
-        $this->skipRenderingForm = &$GLOBALS['globalParams']['forms_skipRenderingForm'][$this->formInx];
+        $GLOBALS['lizzy']['forms_responseToClient'][$this->formInx] = false;
+        $this->responseToClient = &$GLOBALS['lizzy']['forms_responseToClient'][$this->formInx];
+        $GLOBALS['lizzy']['forms_skipRenderingForm'][$this->formInx] = false;
+        $this->skipRenderingForm = &$GLOBALS['lizzy']['forms_skipRenderingForm'][$this->formInx];
 
         $this->page->addModules('POPUPS');
 
@@ -86,7 +86,7 @@ class Forms
                 $this->evaluateUserSuppliedData();
             }
             if ($userDataEval === true) {
-                $GLOBALS['globalParams']['lzyFormsCount']--;
+                $GLOBALS['lizzy']['lzyFormsCount']--;
             }
         }
 	} // __construct
@@ -241,7 +241,7 @@ class Forms
 
         // activate 'prevent multiple submits':
         $currForm->preventMultipleSubmit = isset($args['preventMultipleSubmit'])? $args['preventMultipleSubmit'] : false;
-        $GLOBALS['globalParams']['preventMultipleSubmit'] = $currForm->preventMultipleSubmit;
+        $GLOBALS['lizzy']['preventMultipleSubmit'] = $currForm->preventMultipleSubmit;
 
         $currForm->replaceQuotes = (isset($args['replaceQuotes'])) ? $args['replaceQuotes'] : true;
         $currForm->antiSpam = (isset($args['antiSpam'])) ? $args['antiSpam'] : false;
@@ -862,6 +862,7 @@ EOT;
         $out .= "\t  <form$id$_class$_method$_action$novalidate>\n";
 		$out .= "\t\t<input type='hidden' name='_lzy-form-ref' value='{$this->formHash}' />\n";
 		$out .= "\t\t<input type='hidden' name='_lzy-form-cmd' value='' class='lzy-form-cmd' />\n";
+		$out .= "\t\t<input type='hidden' name='_lzy-form-pg' value='{$GLOBALS['lizzy']['pagePath']}' />\n";
 
 		if ($currForm->antiSpam) {
             $out .= "\t\t<div class='fld-ch' aria-hidden='true'>\n";
@@ -1416,9 +1417,9 @@ EOT;
 //
 //        $rec = [
 //            'uploadPath' => $targetFilePath,
-//            'pagePath' => $GLOBALS['globalParams']['pageFolder'], //??? -> rename subsequently
-//            'pathToPage' => $GLOBALS['globalParams']['pathToPage'],
-//            'appRootUrl' => $GLOBALS['globalParams']['absAppRootUrl'],
+//            'pagePath' => $GLOBALS['lizzy']['pageFolder'], //??? -> rename subsequently
+//            'pathToPage' => $GLOBALS['lizzy']['pathToPage'],
+//            'appRootUrl' => $GLOBALS['lizzy']['absAppRootUrl'],
 //            'user'      => $_SESSION["lizzy"]["user"],
 //        ];
 //        $tick = new Ticketing(['defaultType' => 'lzy-upload']);
@@ -1645,10 +1646,10 @@ EOT;
         if (strpos(','.$this->currRec->option, ',delete-rec') === false) {
             return '';
         }
-        if (@$GLOBALS['globalParams']['formsDeleteRecRendered']) {
+        if (@$GLOBALS['lizzy']['formsDeleteRecRendered']) {
             return '';
         }
-        $GLOBALS['globalParams']['formsDeleteRecRendered'] = true;
+        $GLOBALS['lizzy']['formsDeleteRecRendered'] = true;
 
         $out = <<<EOT
 
@@ -1876,7 +1877,7 @@ EOT;
             $form->dataKey = $form->prefillRec['dataKey'];
         }
 
-        $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['globalParams']['pagePath'] . "form-descr-{$this->formInx}.txt";
+        $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['lizzy']['pagePath'] . "form-descr-{$this->formInx}.txt";
         if (file_exists($cacheFile)) {
             return;
         }
@@ -1889,7 +1890,7 @@ EOT;
 
     protected function getFormHash()
     {
-        $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['globalParams']['pagePath'] . "form-descr-$this->formInx.txt";
+        $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['lizzy']['pagePath'] . "form-descr-$this->formInx.txt";
         if (file_exists($cacheFile)) {
             $str = file_get_contents($cacheFile);
             $formHash = substr($str, 0, 8);
@@ -1904,7 +1905,7 @@ EOT;
     protected function restoreFormDescr( $formHash )
 	{
         for ($formInx=1; true; $formInx++) {
-            $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['globalParams']['pagePath'] . "form-descr-$formInx.txt";
+            $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['lizzy']['pagePath'] . "form-descr-$formInx.txt";
             if (!file_exists($cacheFile)) {
                 return null;
             }
@@ -1921,7 +1922,7 @@ EOT;
 
 	private function cacheUserSuppliedData($formInx, $userSuppliedData)
 	{
-        $pathToPage = $GLOBALS['globalParams']['pathToPage'];
+        $pathToPage = $GLOBALS['lizzy']['pathToPage'];
         $_SESSION['lizzy']['formData'][ $pathToPage ][ $formInx ] = serialize($userSuppliedData);
 	} // cacheUserSuppliedData
 
@@ -1929,7 +1930,7 @@ EOT;
 
 	private function getUserSuppliedDataFromCache( $formInx )
 	{
-        $pathToPage = $GLOBALS['globalParams']['pathToPage'];
+        $pathToPage = $GLOBALS['lizzy']['pathToPage'];
 		return (isset($_SESSION['lizzy']['formData'][ $pathToPage ][ $formInx ])) ?
             unserialize($_SESSION['lizzy']['formData'][ $pathToPage ][ $formInx ]) : null;
 	} // getUserSuppliedDataFromCache
@@ -2081,14 +2082,14 @@ EOT;
             $res = $customResponseEvaluationFunction($this->lzy, $this, $userSuppliedData); // $res = false -> everything ok
             if (is_string($res)) {
                 $this->clearCache();
-                $GLOBALS['globalParams']['forms_skipRenderingForm'][$this->formInx] = true;
+                $GLOBALS['lizzy']['forms_skipRenderingForm'][$this->formInx] = true;
                 $this->responseToClient = $res;
                 return '';
             } elseif(is_array($res)) {
                 // second elem of $res set => means skip rendering form and override output:
                 if (isset($res[1])) {
                     $this->errorDescr[ 'generic' ]['_override_'] = $res[1];
-                    $GLOBALS['globalParams']['forms_skipRenderingForm'][$this->formInx] = true;
+                    $GLOBALS['lizzy']['forms_skipRenderingForm'][$this->formInx] = true;
 
                 } else {
                     $this->errorDescr[$currForm->formInx]['_announcement_'] = $res[0];
@@ -2194,10 +2195,10 @@ EOT;
             $out = var_export($this->userSuppliedData, true);
             $out = str_replace("\n", ' ', $out);
             $out .= "\n[{$_SERVER['REMOTE_ADDR']}] {$_SERVER['HTTP_USER_AGENT']}\n";
-            $logState = $GLOBALS['globalParams']['errorLoggingEnabled'];
-            $GLOBALS['globalParams']['errorLoggingEnabled'] = true;
+            $logState = $GLOBALS['lizzy']['errorLoggingEnabled'];
+            $GLOBALS['lizzy']['errorLoggingEnabled'] = true;
             writeLog($out, SPAM_LOG_FILE);
-            $GLOBALS['globalParams']['errorLoggingEnabled'] = $logState;
+            $GLOBALS['lizzy']['errorLoggingEnabled'] = $logState;
             return true;
         }
         return false;
@@ -2570,7 +2571,7 @@ EOT;
 	public function clearCache()
 	{
 	    $formInx = @$this->currForm->formInx;
-        $pathToPage = $GLOBALS['globalParams']['pathToPage'];
+        $pathToPage = $GLOBALS['lizzy']['pathToPage'];
 	    if ($formInx) {
             unset($_SESSION['lizzy']['formData'][ $pathToPage ][$formInx]);
             unset($_SESSION['lizzy']['formErrDescr'][$formInx]);
@@ -2696,10 +2697,10 @@ EOT;
 
     private function initButtonHandlers()
     {
-        if (@$GLOBALS['globalParams']['formsButtonHandlersInitialized']) {
+        if (@$GLOBALS['lizzy']['formsButtonHandlersInitialized']) {
             return;
         }
-        $GLOBALS['globalParams']['formsButtonHandlersInitialized'] = true;
+        $GLOBALS['lizzy']['formsButtonHandlersInitialized'] = true;
 
         $js = <<<EOT
 
@@ -2957,7 +2958,7 @@ EOT;
 
     protected function renderDataTable()
     {
-        global $globalParams;
+        global $lizzy;
 
         $out = '';
         $currForm = $this->currForm;
@@ -2970,7 +2971,7 @@ EOT;
                 case 'logged-in':
                 case 'loggedin':
                 case 'loggedIn':
-                    $continue = (bool)$_SESSION["lizzy"]["user"] || $globalParams["isAdmin"];
+                    $continue = (bool)$_SESSION["lizzy"]["user"] || $lizzy["isAdmin"];
                     break;
 
                 case 'privileged':
@@ -2978,7 +2979,7 @@ EOT;
                     break;
 
                 case 'localhost':
-                    $continue = $globalParams["localHost"];
+                    $continue = $lizzy["localHost"];
                     break;
 
                 default:
@@ -3104,6 +3105,17 @@ EOT;
         if (@$this->errorDescr[$this->formInx]) {
             $log .= "\nError Msg: ".str_replace(["\n", '  '], ' ', var_export($this->errorDescr[$this->formInx], true));
             writeLogStr("Form-Error [{$currForm->formName}]:\n$log\n", FORM_LOG_FILE);
+
+            // skipConfirmation means user doesn't get error feedback within form, so inform by message:
+            if ($this->currForm->skipConfirmation) {
+                $errMsg = '';
+                foreach ($this->errorDescr[$this->formInx] as $key => $value) {
+                    $errMsg .= "$value $key<br>";
+                }
+                $errMsg = substr($errMsg, 0, -4);
+                $this->page->addMessage("$errMsg");
+                unset($_POST['_lzy-form-ref']);
+            }
             return false;
         }
         return true;
@@ -3143,7 +3155,7 @@ EOT;
             $file = resolvePath($this->currForm->confirmationEmailTemplate, true);
             if (!file_exists($file)) {
                 $this->responseToClient = '';
-                if ($this->lzy->localHost || $GLOBALS['globalParams']['isLoggedin']) {
+                if ($this->lzy->localHost || $GLOBALS['lizzy']['isLoggedin']) {
                     $this->lzy->page->addPopup("{{ lzy-form-response-email-template-not-found }}:<br>$file");
                 }
                 return;

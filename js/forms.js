@@ -77,9 +77,13 @@ function LzyForms() {
 
 
 
-    this.fetchValuesFromHost = function( $form, recKey ) {
-        let formRef = $('[name=_lzy-form-ref]', $form).val();
-        let url = appRoot + '_lizzy/_ajax_server.php?get-rec&ds=' + formRef + '&keyType=name&recKey=' + recKey;
+    this.fetchValuesFromHost = function( $form, recKey, lockRec ) {
+        const formRef = $('[name=_lzy-form-ref]', $form).val();
+        const pgPath = $('[name=_lzy-form-pg]', $form).val();
+        let url = appRoot + '_lizzy/_ajax_server.php?get-rec&ds=' + formRef + '&keyType=name&recKey=' + recKey + '&pg=' + pgPath;
+        if (lockRec) {
+            url = url + '&lock';
+        }
         if (this.lockRecWhileFormOpen) {
             url += '&lock'; // include '&lock'
         }
@@ -464,7 +468,7 @@ function LzyForms() {
 
 
 
-    this.onOpen = function ( recKey, $form ) {
+    this.onOpen = function ( recKey, $form, lockRec ) {
         let parent = this;
         if (typeof recKey === 'undefined') {
             recKey = false;
@@ -472,20 +476,20 @@ function LzyForms() {
 
         // case $form explicitly provided:
         if (typeof $form !== 'undefined') {
-            this._openForm( recKey, $form );
+            this._openForm( recKey, $form, lockRec );
 
         // case apply to any $form:
         } else {
             $('.lzy-form').each(function () {
                 let $form = $(this);
-                parent._openForm( recKey, $form );
+                parent._openForm( recKey, $form, lockRec );
             });
         }
     }; // openForm
 
 
 
-    this._openForm = function( recKey, $form ) {
+    this._openForm = function( recKey, $form, lockRec ) {
         let parent = this;
 
         // (re-)enable submit key:
@@ -498,7 +502,7 @@ function LzyForms() {
             this.presetValues($form, 'derived');
             this.updateLiveValues($form);
         } else {
-            this.fetchValuesFromHost($form, recKey).then(function (json) {
+            this.fetchValuesFromHost($form, recKey, lockRec).then(function (json) {
                 parent.setRecKey( $form, recKey );
                 parent.updateForm($form, recKey, json);
                 parent.presetValues($form, 'derived');
@@ -509,8 +513,7 @@ function LzyForms() {
 
 
 
-    this.setRecKey = function( $form, recKey )
-    {
+    this.setRecKey = function( $form, recKey ) {
         let $recKey = $('[name=_rec-key]', $form);
         if (!$recKey.length) {
             $form.append('<input type="hidden" name="_rec-key" value="' + recKey + '">');
@@ -536,6 +539,42 @@ function LzyForms() {
         return value;
     }; // resolveInputVars
 
+
+
+    this.makeReadonly = function ( $form ) {
+        $('.lzy-form-field-wrapper', $form).each(function () {
+            const $formEl = $( this );
+            var type = $('input', $formEl).attr('type');
+            if (typeof type === 'undefined') {
+                type = 'undefined';
+            }
+            var name = $('input', $formEl).attr('name');
+            if ((typeof name !== 'undefined') && (name.charAt(0) === '_')) {
+                return;
+            }
+            if ('hidden,button,submit,reset'.match(type)) {
+                return;
+            }
+            if ('radio,checkbox'.match(type)) {
+                $('.lzy-fieldset-body', $formEl).remove();
+                $('fieldset',$formEl).append('<div class="lzy-form-field-placeholder">&nbsp;</div>');
+
+            } else if ($formEl.hasClass('lzy-form-field-type-dropdown')) {
+                $('select', $formEl).remove();
+                $formEl.append('<div class="lzy-form-field-placeholder">&nbsp;</div>');
+            } else if ($('.lzy-textarea-autogrow', $formEl).length) {
+                $('.lzy-textarea-autogrow', $formEl).remove();
+                $formEl.append('<div class="lzy-form-field-placeholder">&nbsp;</div>');
+            } else if ($('textarea', $formEl).length) {
+                $('textarea', $formEl).remove();
+                $formEl.append('<div class="lzy-form-field-placeholder">&nbsp;</div>');
+            } else {
+                $('input', $formEl).remove();
+                $('.lzy-form-pw-toggle', $formEl).remove();
+                $formEl.append('<div class="lzy-form-field-placeholder">&nbsp;</div>');
+            }
+        });
+    }; // makeReadonly
 
 } // LzyForms
 
