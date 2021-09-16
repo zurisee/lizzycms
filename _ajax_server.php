@@ -12,7 +12,7 @@ define('PATH_TO_APP_ROOT', 	'../');		                            // root folder 
 define('LOCK_TIMEOUT', 		120);	                                // max time till field is automatically unlocked
 define('MAX_URL_ARG_SIZE',  255);
 
-// prevent "PHPSESSID"-Cookie warning:
+ // prevent "PHPSESSID"-Cookie warning:
 session_set_cookie_params(["SameSite" => "Strict"]);
 session_set_cookie_params(["Secure" => "true"]);
 session_set_cookie_params(["HttpOnly" => "true"]);
@@ -72,9 +72,6 @@ class AjaxServer
 		if (!isset($_SESSION['lizzy']['lastUpdated'])) {
 			$_SESSION['lizzy']['lastUpdated'] = 0;
 		}
-        if (!isset($_SESSION['lizzy']['pagePath'])) {
-		    die('Fatal Error: $_SESSION[\'lizzy\'][\'pagePath\'] not defined');
-        }
 
         $this->db = false;
         $this->user = '';
@@ -89,7 +86,7 @@ class AjaxServer
 		$this->hash = $_SESSION['lizzy']['hash'];
 		session_write_close();
 
-		$this->remoteAddress = isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : 'REMOTE_ADDR';
+		$this->remoteAddress = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'REMOTE_ADDR';
 		$this->userAgent = isset($_SESSION['lizzy']['userAgent']) ? $_SESSION['lizzy']['userAgent'] : $_SERVER["HTTP_USER_AGENT"];
 		$this->isLocalhost = (($this->remoteAddress === 'localhost') || (strpos($this->remoteAddress, '192.') === 0) || ($this->remoteAddress === '::1'));
 		$this->handleUrlArguments();
@@ -543,8 +540,11 @@ class AjaxServer
         }
 
         // if primary method didn't work, try default DB in page folder
-        $pagePath = isset($GLOBALS['globalParams']['pageFolder'])? $GLOBALS['globalParams']['pageFolder'] :
-            (isset($_SESSION['lizzy']['pageFolder'])? $_SESSION['lizzy']['pageFolder']: '');
+        $pagePath = $this->get_request_data('pg');
+        if (!$pagePath) {
+            $pagePath = isset($GLOBALS['lizzy']['pageFolder']) ? $GLOBALS['lizzy']['pageFolder'] :
+                (isset($_SESSION['lizzy']['pageFolder']) ? $_SESSION['lizzy']['pageFolder'] : '');
+        }
 
         if (!$this->dataFile && $pagePath) {
             $this->dataFile = PATH_TO_APP_ROOT . $pagePath . DEFAULT_EDITABLE_DATA_FILE;
@@ -577,8 +577,9 @@ class AjaxServer
 
     private function restoreFormDescr( $formHash )
     {
+        $pagePath = isset($_GET['pg']) ? $_GET['pg'] : @$_SESSION['lizzy']['pagePath'];
         for ($formInx=1; true; $formInx++) {
-            $cacheFile = SYSTEM_CACHE_PATH . $_SESSION['lizzy']['pagePath'] . "form-descr-$formInx.txt";
+            $cacheFile = SYSTEM_CACHE_PATH . "{$pagePath}form-descr-$formInx.txt";
             if (!file_exists($cacheFile)) {
                 return null;
             }
@@ -589,6 +590,7 @@ class AjaxServer
         }
         return unserialize(base64_decode( substr($str, 9 )));
     } // restoreFormDescr
+
 
 
     private function get_request_data($varName) {
