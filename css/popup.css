@@ -116,8 +116,8 @@ body {
 	display: inline-block;
 	font-family: arial, sans-serif;
 	position: absolute;
-	top: 0;
-	right: 0;
+	top: -6px;
+	right: -6px;
 	font-size: 30px;
 	line-height: 40px;
 	width: 40px;
