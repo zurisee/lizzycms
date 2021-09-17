@@ -1746,7 +1746,6 @@ function dateFormatted($date = false, $format = false)
 function touchFile($file, $time = false)
 {	// work-around: PHP's touch() fails if http-user is not owner of file
 	if ($time) {
-//        shell_exec("touch -t ".date("YmdHi.s", $time)." $file");
         touch($file, $time);
 	} else {
 		touch($file);
@@ -1988,19 +1987,22 @@ function createDebugOutput($msg) {
 
 
 
-$timer = 0;
+$lzyRenderingTimer = 0;
 
 function startTimer() {
-	global $timer;
-	$timer = microtime(true);
+	$GLOBALS['lzyRenderingTimer'] = microtime(true);
 } // startTimer
 
 
 
 
-function readTimer() {
-	global $timer;
-	return "Time: ".(round((microtime(true) - $timer)*1000000) / 1000 - 0.005).' ms';
+function readTimer( $verbose = false ) {
+    $t = (round((microtime(true) - $GLOBALS['lzyRenderingTimer'])*1000000) / 1000 - 0.005);
+    if ($verbose) {
+        return "Time: {$t}ms";
+    } else {
+        return $t;
+    }
 } // readTimer
 
 
