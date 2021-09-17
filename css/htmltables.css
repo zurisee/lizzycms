@@ -45,9 +45,12 @@
 .lzy-recview-popup .lzy-form-field-placeholder {
 	white-space: pre-wrap;
 }
-.lzy-recview-popup .lzy-popup-container .lzy-form-show-pw-icon,
-.lzy-recview-popup .lzy-popup-container .lzy-form-field-type-buttons,
-.lzy-recview-popup .lzy-popup-container .lzy-edit-rec-delete-checkbox {
+#lzy .lzy-recview-popup .lzy-popup-container .lzy-encapsulated .lzy-form-show-pw-icon,
+#lzy .lzy-recview-popup .lzy-popup-container .lzy-encapsulated .lzy-form-field-type-buttons,
+#lzy .lzy-recview-popup .lzy-popup-container .lzy-encapsulated .lzy-edit-rec-delete-checkbox,
+#lzy .lzy-recview-popup .lzy-popup-container .lzy-form-show-pw-icon,
+#lzy .lzy-recview-popup .lzy-popup-container .lzy-form-field-type-buttons,
+#lzy .lzy-recview-popup .lzy-popup-container .lzy-edit-rec-delete-checkbox {
 	display: none;
 }
 /*.lzy-popup-container .lzy-form-show-pw-icon,*/

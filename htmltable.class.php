@@ -75,7 +75,8 @@ class HtmlTable
         $this->targetSelector           = $this->getOption('targetSelector', '(optional string) If defined and "liveData" is activated, this option defines how to assign data elements to DOM-elements. (Default: \'[data-ref="*,*"]\')', '[data-ref="*,*"]');
         $this->editable                 = $this->getOption('editable', '[false,true,loggedin,privileged,admins,editors] Shortcut that enables full table editing and downloading (Default: false).');
         $this->editableBy               = $this->getOption('editableBy', '[false,true,loggedin,privileged,admins,editors] Defines who may edit data. Default: false. (only available when using option "dataSource")', null);
-        $this->editMode                 = $this->getOption('editMode', '[inline,form] Defines (Default: form).', 'form');
+        $this->editMode                 = $this->getOption('editMode', '[inline,form,permanent] Selects how table data shall be editable: either inline or via a form. By default the form pops up in an overlay, '.
+                                                                  'unless "permanent" is specified, then it\' permanently visible. (Default: form).', null);
         $this->editFormArgs             = $this->getOption('editFormArgs', 'Arguments that will passed on to the forms-class.', false);
         $this->editFormTemplate         = $this->getOption('editFormTemplate', 'A markdown file that will be used for rendering the form.', false);
         $this->tableButtons             = $this->getOption('tableButtons', 'Activates a row of activity buttons related to the form. If in editMode, a "New Record" button will be added.', false);
@@ -154,8 +155,14 @@ class HtmlTable
         // short-hand 'editable: permission':
         if ($this->editable) {
                 $this->tableButtons = 'delete-rec|add-rec|download'; // table buttons
-                $this->editMode = 'form';
-                $this->rowButtons = 'edit';
+            $this->rowButtons = 'edit';
+        }
+
+        if (!$this->editMode === null) {
+            $this->editMode = 'form';
+        } elseif (strpos($this->editMode, 'permanent') !== false) {
+            $this->editMode = "form,$this->editMode";
+            $this->wrapperClass .= ' lzy-table-permanent-form';
         }
 
         if ($this->editingActive) {
@@ -241,8 +248,9 @@ class HtmlTable
         $this->convertTimestamps();
         $this->export();
 
+        $tableButtonCode = '';
         if ($this->tableButtons) {
-            $out .= $this->renderTableActionButtons();
+            $tableButtonCode = $this->renderTableActionButtons();
         }
 
         if ($this->formEditing || $this->recViewButtonsActive) {
@@ -251,6 +259,8 @@ class HtmlTable
         if ($this->inlineEditing) {
             $this->srcRef = $this->activateInlineEditing();
         }
+
+        $out .= $tableButtonCode;
 
         $out .= $this->renderHtmlTable() . $this->strToAppend;
         if ($this->liveData) {
@@ -2431,7 +2441,6 @@ $('.lzy-table-download-btn').click(function() {
         header: '{{ lzy-table-download-header }}',
         wrapperClass: 'lzy-table-download',
     });
-    return;
 });
 EOT;
         $this->jq .= $this->lzy->trans->translate($jq);

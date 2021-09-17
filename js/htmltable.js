@@ -16,7 +16,8 @@ $( document ).ready(function() {
 
 	$('.lzy-active-table').on('click', '.lzy-table-edit-btn', function () {
 		var tableInx = $(this).closest('.lzy-active-table').data('inx');
-		lzyActiveTables[tableInx].openFormPopup(this);
+		lzyActiveTables[tableInx].openForm(this);
+		// lzyActiveTables[tableInx].openFormPopup(this);
 	});
 });
 
@@ -26,6 +27,7 @@ function HTMLtable( tableObj ) {
 	if (typeof this.$table[0] === 'undefined') {
 		this.$table = $( tableObj );
 	}
+	this.$tableWrapper = this.$table.closest('.lzy-table-wrapper');
 	this.tableInx = this.$table.data('inx');
 	this.dataRef = this.$table.closest('[data-datasrc-ref]').data('datasrc-ref');
 	this.formHtml = null;
@@ -55,12 +57,17 @@ function HTMLtable( tableObj ) {
 		this.recViewPopupId = 'lzy-recview-popup-' + this.formInx;
 		this.recEditPopupId = 'lzy-recedit-popup-' + this.formInx;
 
-
 		if (this.$form.length) {
-			this.formHtml = this.$form.html();
-			this.$form.remove();
-			this.initViewRecPopup();
-			this.initEditFormPopup();
+			this.permanentForm = this.$tableWrapper.hasClass('lzy-table-permanent-form');
+			if (this.permanentForm) {
+				$('.lzy-edit-rec-form-wrapper', this.$tableWrapper).show();
+				$('.lzy-edit-rec-delete-checkbox', this.$tableWrapper).hide();
+			} else {
+				this.formHtml = this.$form.html();
+				this.$form.remove();
+				this.initViewRecPopup();
+				this.initEditFormPopup();
+			}
 			this.setupEventHandlers();
 		}
 		this.initDataTables();
@@ -176,6 +183,57 @@ function HTMLtable( tableObj ) {
 
 
 
+	this.openForm = function ( $triggerSrc ) {
+		// triggered by click on edit-row button:
+		if (this.permanentForm) {
+			this.populateForm( $triggerSrc );
+		} else {
+			this.openFormPopup( $triggerSrc );
+		}
+	}; // openForm
+
+
+
+	this.populateForm = function ( $triggerSrc ) {
+		const parent = this;
+		var $table = null;
+		var fldPreset = this.waitSymbol;
+		parent.recKey = 'new-rec';
+		if (typeof $triggerSrc[0] === 'undefined') {
+			$triggerSrc = $( $triggerSrc );
+			$table = $triggerSrc.closest('[data-form-id]');
+			this.recKey = $triggerSrc.closest('[data-reckey]').data('reckey');
+		} else {
+			$table = $triggerSrc;
+			fldPreset = '';
+		}
+
+		const $form = this.$form;
+		if (!$form.length) {
+			return; // error case, should not occure
+		}
+		$('.lzy-edit-rec-delete-checkbox', $form).show();
+		$form.data('reckey', this.recKey);
+		$('input[name=_rec-key]',$form).val( this.recKey );
+
+		if (this.recKey === 'new-rec') {
+			$form.addClass('lzy-new-data');
+			$('.lzy-edit-rec-delete-checkbox').hide();
+
+		} else  {
+			$form.removeClass('lzy-new-data');
+			$('.lzy-form-wrapper [name=_rec-key]').val( this.recKey );
+			$('.lzy-edit-rec-delete-checkbox').show();
+		}
+
+		$('[type=submit]', $form).val( $('#lzy-edit-form-submit').text() );
+		$('#lzy-edit-rec-delete-checkbox input[type=checkbox]').prop('checked', false);
+
+		lzyForms.onOpen( this.recKey, $form, true );
+	}; // populateForm
+
+
+
 	this.openFormPopup = function ( $triggerSrc ) {
 		// triggered by click on edit-row button:
 		const parent = this;
@@ -265,10 +323,15 @@ function HTMLtable( tableObj ) {
 				e.stopPropagation();
 				e.stopImmediatePropagation();
 
+				const $form = $(this).closest('.lzy-form');
+
 				// only in case of existing rec we need to unlock the record:
 				if (!$(this).closest('.lzy-new-data').length) {
 					parent.unlockRecord();
 				}
+				lzyForms.clearForm( $form );
+				$('.lzy-edit-rec-delete-checkbox', $form).hide();
+				$('[name=_rec-key]', $form).val('');
 				lzyPopupClose();
 			})
 

@@ -31,7 +31,7 @@ function LzyForms() {
 
     this.clearForm = function( $form, fldPreset ) {
         if (typeof $form === 'undefined') {
-            $form = $('lzy-form');
+            $form = $('.lzy-form');
         }
         if (typeof fldPreset === 'undefined') {
             fldPreset = '';
