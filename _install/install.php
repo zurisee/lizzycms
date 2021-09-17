@@ -16,6 +16,10 @@ recursive_copy('_lizzy/_parent-folder/','./');
 rename('htaccess', '.htaccess');
 
 header("Location: ./");
+header("Cache-Control: no-cache");
+header("Cache-Control: proxy-revalidate");
+header("Cache-Control: no-store");
+header('Expires: '.gmdate('D, d M Y H:i:s \G\M\T', time() -1));
 exit;
 
 
