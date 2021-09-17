@@ -240,7 +240,7 @@ class Transvar
             }
 
             if (trim($argStr) === 'help') {
-                if ($val2 = $this->getMacroHelp($macro)) {
+                if ($val2 = $this->renderMacroHelp($macro)) {
                     $val = $val2.$val;
                 }
             }
@@ -364,13 +364,15 @@ class Transvar
 
 
 
-    private function getMacroHelp($macroName)
+    private function renderMacroHelp($macroName)
     {
         $argsHelp = $this->macroHelp[$macroName];
         if (!$argsHelp) {       // don't show anything if there are no arguments listed
             return '';
         }
-        $out = "<h2>Options for macro <em>$macroName()</em></h2>\n";
+        ksort( $argsHelp );
+        $out = "<div class='lzy-macro-help'>\n";
+        $out .= "  <h2>Options for macro <em>$macroName()</em></h2>\n";
         if (!isset($argsHelp["noArguments"])) {       // don't show anything if there are no arguments listed
             $out .= "<dl>\n";
             foreach ($argsHelp as $name => $text) {
@@ -378,8 +380,9 @@ class Transvar
             }
             $out .= "</dl>\n";
         }
+        $out .= "</div>\n";
         return $out;
-    } // getMacroHelp
+    } // renderMacroHelp
 
 
 
