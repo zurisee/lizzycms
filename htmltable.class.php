@@ -86,6 +86,7 @@ class HtmlTable
         }
         $this->tableButtons = str_replace('new-rec', 'add-rec', $this->tableButtons); // synonyme
 
+        $this->multiline                = $this->getOption('multiline', 'If true (and inline-editing is true), table cells get class "lzy-editable-multiline" thus supporting multiline editing.', false);
         $this->labelColons              = $this->getOption('labelColons', 'If false, trailing colon of labels in editing-forms are omitted.', true);
         $this->rowButtons               = $this->getOption('rowButtons', '(optional comma-separated-list) Prepends a column to each row containing custom buttons. Buttons can be defined as names of icons or HTML code. E.g. "send,trash"', null);
         $this->recViewButtonsActive     = $this->getOption('showRecViewButton', '[true|false] If true, a button to open a popup is added to each row. The popup presents the data record in form view.', false);
@@ -212,6 +213,10 @@ class HtmlTable
                 }
                 $this->tableButtons[ $button ] = $attributes;
             }
+        }
+
+        if ($this->multiline && $this->inlineEditing) {
+            $this->cellClass = trim("$this->cellClass lzy-editable-multiline");
         }
     } // __construct
 
@@ -1189,11 +1194,17 @@ EOT;
     {
         $cell = @$this->data[$row][$col];
 
+        $class = $this->cellClass;
+
+        if ($this->inlineEditing && strpos($cell, '<br>') !== false) {
+            $class = trim("$class lzy-editable-multiline");
+        }
+
         $col1 = $col + 1;
         if ($hdrElem) {
-            $tdClass = $this->cellClass ? $this->cellClass . '-hdr' : 'lzy-div-table-hdr';
+            $tdClass = $class ? $class . '-hdr' : 'lzy-div-table-hdr';
         } else {
-            $tdClass = $this->cellClass;
+            $tdClass = $class;
         }
         $tdId = '';
         $ref = '';
@@ -1207,7 +1218,7 @@ EOT;
             $ref = " data-ref='$ref'";
         }
         if ($this->cellIds) {
-            $tdId = " id='{$this->cellClass}_{$col}_{$row}'";
+            $tdId = " id='{$class}_{$col}_{$row}'";
         }
         if ($this->cellMask && $this->cellMask[$row][$col]) {
             $tdClass = $this->cellMaskedClass;
@@ -2241,7 +2252,7 @@ EOT;
                     $item = $item ? PASSWORD_PLACEHOLDER : '';
                 } else {
                     $item = trim($item, '"\'');
-                    $item = str_replace("\n", '<br />', $item);
+                    $item = str_replace("\n", '<br>', $item);
                 }
                 $item = trim($item, '"\'');
 
