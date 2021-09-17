@@ -12,6 +12,11 @@ lzy-first-user-added:
 
 
 ### UserAdmin Table
+lzy-useradmin-admin-not-allowed:
+    de: 'Aus Sicherheitsgründen kann das ADMIN Konto hier nicht modifiziert werden. Bitte bearbeiten Sie stattdessen die Datei "config/users.yaml".'
+    de2: 'Aus Sicherheitsgründen kann das ADMIN Konto hier nicht modifiziert werden. Bitte bearbeite stattdessen die Datei "config/users.yaml".'
+    _:  'Editing the ADMIN account is not allowed for security reasons.<br>Please modify file "config/users.yaml" instead.'
+
 lzy-username:
     de: Benutzername
     _:  Username

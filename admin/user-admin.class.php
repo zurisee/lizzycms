@@ -471,6 +471,7 @@ EOT;
             'sort' => 'start',
             'editableBy' => 'admins',
             'editMode' => 'form',
+            'rowButtons' => 'edit',
             'labelColons' => true,
             'tableButtons' => 'delete-rec|new-rec',
             'splitChoiceElemsInDb' => false,
@@ -540,3 +541,20 @@ function lzySignupCallback($lzy, $form, $userSuppliedData )
     }
     return $res;
 } // lzySignupCallback
+
+
+
+// invoked from _lizzy/extensions/useradmin/config/table_edit_form_template.md
+function lzyUserAdminCallback( $lzy, $forms, $userSuppliedData )
+{
+    $user = $userSuppliedData['username'];
+    if ($user === 'admin') {
+        $_POST['__lzy-form-ref'] = $_POST['_lzy-form-ref'];
+        unset($_POST['_lzy-form-ref']);
+        $lzy->page->addPopup('{{ lzy-useradmin-admin-not-allowed }}');
+        $json = json_encode( $userSuppliedData );
+        writeLogStr("Editing the ADMIN account is not allowed: $json", 'form-log.txt');
+        return "Editing the ADMIN account is not allowed";
+    }
+    return false;
+} // lzyUserAdminCallback
