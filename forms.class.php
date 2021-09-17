@@ -2034,7 +2034,7 @@ EOT;
         $customResponseEvaluation = @$currForm->customResponseEvaluation;
         if ($customResponseEvaluation) {
             if (function_exists($customResponseEvaluation)) {
-                $res =  $customResponseEvaluation();
+                $res =  $customResponseEvaluation( $userSuppliedData );
                 if (is_array($res)) {
                     $msgToClient = $res[0];
                     if (is_array($res[1])) {
@@ -2102,10 +2102,8 @@ EOT;
         if ($noError ) {
             $cont = $this->saveAndWrapUp($msgToOwner);
         }
-        if ($cont) {
-            $_POST['__lzy-form-ref'] = $_POST['_lzy-form-ref'];
-            unset($_POST['_lzy-form-ref']);
-        }
+        $_POST['__lzy-form-ref'] = $_POST['_lzy-form-ref'];
+        unset($_POST['_lzy-form-ref']);
 
         if ($cont && $this->currForm->confirmationEmail) {
             $this->sendConfirmationMail( $userSuppliedData );
