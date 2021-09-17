@@ -121,7 +121,7 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->systemPath               = SYSTEM_PATH;
         $this->systemHttpPath           = '~/'.SYSTEM_PATH;
 
-        $this->mdCachingActive          = false;
+//        $this->mdCachingActive          = false;
         $this->siteIdententation        = MIN_SITEMAP_INDENTATION;
         $this->configFile               = $lzy->configFile;
 

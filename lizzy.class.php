@@ -98,7 +98,6 @@ class Lizzy
 	public  $trans;
 	public  $page;
 	private $editingMode = false;
-	private $timer = false;
 	private $debugLogBuffer = '';
 	private $cspHeader = '';
 	private $loginFormRendered = false;
@@ -111,6 +110,8 @@ class Lizzy
 
     public function __construct()
     {
+        startTimer();
+
         session_start();
         $GLOBALS['lizzy'] = [];
         if (isset($_SESSION['lizzy']['user']) && $_SESSION['lizzy']['user']) {
@@ -262,10 +263,6 @@ class Lizzy
 
     public function render()
     {
-		if ($this->timer) {
-			startTimer();
-		}
-
 		$accessGranted = $this->checkAdmissionToCurrentPage();   // override page with login-form if required
 
         $this->injectAdminCss();
@@ -273,22 +270,6 @@ class Lizzy
         // $this->addStandardModules();
 
         if ($accessGranted) {
-
-            // enable caching of compiled MD pages:
-            // Note: in most cases MD-caching will not become active since the page caching
-            //  will kick in before we get to this point.
-            //  ToDo: figure out whether MD-caching is still required at all
-            if ($this->config->mdCachingActive && $this->page->readFromCache()) {
-                $html = $this->page->render(true);
-                $html = $this->resolveAllPaths($html);
-                if ($this->timer) {
-                    $timerMsg = 'Page rendering time: '.readTimer();
-                    $html = $this->page->lateApplyMessage($html, $timerMsg);
-                }
-                $html .= "\n<!-- cached page -->";
-                return $html;
-            }
-
             $this->loadFile();        // get content file
         }
 
@@ -327,8 +308,8 @@ class Lizzy
 
         $html = $this->resolveAllPaths($html);
 
-        if ($this->timer) {
-            $timerMsg = 'Page rendering time: '.readTimer();
+        if (getUrlArgStatic('timer')) {
+            $timerMsg = 'Page rendering time: '.readTimer( true );
             $html = $this->page->lateApplyMessage($html, $timerMsg);
 		}
 
@@ -342,6 +323,8 @@ class Lizzy
         if (strpos($html, '{|{|') !== false) {
             $html = $this->trans->translate($html, true);
         }
+
+        header("Server-Timing: total;dur=" . readTimer());
 
         return $html;
     } // render
@@ -1449,8 +1432,6 @@ EOT;
             $this->page->addOverlay($html, true, false, true);
         }
 
-        $this->timer = getUrlArgStatic('timer');				// timer
-
         if (($this->config->localHost) && getUrlArg('purge')) {     // empty recycleBins and caches
             purgeAll( $this );
         }
@@ -1987,19 +1968,6 @@ EOT;
 
 
 
-//??? obsolete? delete?
-//    public function postprocess($html)
-//    {
-//        $note = $this->trans->postprocess();
-//        if ($note) {
-//            $p = strpos($html, '</body>');
-//            $html = substr($html, 0, $p).createWarning($note).substr($html,$p);
-//        }
-//        return $html;
-//    } // postprocess
-
-
-
     public function getEditingMode()
     {
         return $this->editingMode;
@@ -2501,6 +2469,7 @@ EOT;
                 // activate Strict-Transport-Security:
                 header('Strict-Transport-Security: max-age=31536000; includeSubDomains; preload');
             }
+            header("Server-Timing: cache, total;dur=" . readTimer());
 
             exit ($html);
         }
