@@ -558,18 +558,18 @@ class Lizzy
         } elseif (($this->config->debug_forceBrowserCacheUpdate === 'mobile') && $this->isMobile) {
             $forceUpdate = getVersionCode( true );
 
-        } elseif ($this->config->debug_forceBrowserCacheUpdate) {
+        } elseif ($this->config->debug_forceBrowserCacheUpdate || getUrlArg('fup')) {
             $forceUpdate = getVersionCode( true );
 
         } else {
             return;
         }
         if ($forceUpdate) {
-            $html = preg_replace('/(<link\s+href=(["])[^"]+)"/m', "$1$forceUpdate\"", $html);
-            $html = preg_replace("/(<link\s+href=(['])[^']+)'/m", "$1$forceUpdate'", $html);
+            // append fup to css links:
+            $html = preg_replace("/(<link\s+href= (['\"]) .+? ) ['\"]/mx", "$1$forceUpdate$2", $html);
 
-            $html = preg_replace('/(<script\s+src=(["])[^"]+)"/m', "$1$forceUpdate\"", $html);
-            $html = preg_replace("/(<script\s+src=(['])[^']+)'/m", "$1$forceUpdate'", $html);
+            // append fup to js file refs:
+            $html = preg_replace("/(<script\s+src= (['\"]) .+? ) ['\"]/mx", "$1$forceUpdate$2", $html);
         }
     } // applyForcedBrowserCacheUpdate
 
@@ -2237,6 +2237,7 @@ Available URL-commands:
 <a href='?help'>?help</a>		    	this message
 <a href='?config'>?config</a>		    	list configuration-items in the config-file
 <a href='?debug'>?debug</a>		    	activates DevMode and adds 'debug' class to page on non-local host *)
+<a href='?fup'>?fup</a>		    	forces the browser to reload all js and css resources (fup = force update)
 <a href='?localhost=false'>?localhost=false</a>	For testing: simulates running on remote host
 <a href='?gitstat'>?gitstat</a>			displays the Lizzy-s GIT-status
 <a href='?pw'>?pw</a>	            	convert password to hash
