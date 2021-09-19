@@ -460,7 +460,11 @@ EOT;
             $origStructFile = EXTENSIONS_PATH . 'useradmin/config/users_structure.yaml';
             copy($origStructFile, $structFile);
         }
-        $formTemplate = '~/'. EXTENSIONS_PATH . 'useradmin/config/table_edit_form_template.md';
+        if (isset($this->options['editFormTemplate'])) {
+            $formTemplate = $this->options['editFormTemplate'];
+        } else {
+            $formTemplate = '~/' . EXTENSIONS_PATH . 'useradmin/config/table_edit_form_template.md';
+        }
         $options = [
             'dataSource' => CONFIG_PATH . 'users.yaml',
             'structureFile' => $structFile,
