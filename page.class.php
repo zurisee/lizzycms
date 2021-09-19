@@ -1130,10 +1130,10 @@ EOT;
     private function getFile( $filename, $isCss = false )
     {
         $filename = resolvePath($filename);
-        if ( !file_exists( $filename )) {
+        if ( !file_exists( $filename ) && (stripos($filename, 'http') !== 0)) {
             die("Error in page.class::getFile: file '$filename' not found.");
         }
-        $content = file_get_contents( $filename );
+        $content = @file_get_contents( $filename );
 
         // in CSS files we need to adapt 'url()' rules to reflect new file location:
         if ($isCss) {
@@ -1168,8 +1168,7 @@ EOT;
             $str = str_replace(',JQUERY,',',JQUERY1,', $str);
         }
 
-        $str = str_replace(',,', ',', trim($str, ', '));
-        $rawModules = preg_split('/\s*,+\s*/', $str);
+        $rawModules = explodeTrim(',', $str, true);
 
         $modules = [];
         $primaryModules = [];
@@ -1216,11 +1215,11 @@ EOT;
         ];
         $jsModules = [];
         foreach ($modules as $mod) {
-            if (preg_match('/\.css$/i', $mod)) {    // split between css and js files
+            if (preg_match('/\.css(\?.*)?$/i', $mod)) {    // split between css and js files
                 if (!in_array($mod, $cssModules)) {         // avoid doublets
                     $cssModules[] = $mod;
                 }
-            } elseif (preg_match('/\.js$/i', $mod)) {
+            } elseif (preg_match('/\.js(\?.*)?$/i', $mod)) {
                 if (!in_array($mod, $jsModules)) {         // avoid doublets
                     $jsModules[] = $mod;
                 }
