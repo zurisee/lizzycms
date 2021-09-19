@@ -626,8 +626,8 @@ lzy-enter onetime code:
     _:  "One-time code from e-mail:"
 
 lzy-onetime access link sent2:
-    de: "{{ vgap }}Link und Code können nur einmal verwendet werden bis: %until%."
-    _:  "{{ vgap }}This link/code only works once until: %until%."
+    de: "{{ vgap }}<p>Link und Code können nur einmal verwendet werden bis: %until%.</p>"
+    _:  "{{ vgap }}<p>This link/code only works once until: %until%.</p>"
 
 lzy-onetime access link sent3:
     de: "<p>&nbsp;</p>"
