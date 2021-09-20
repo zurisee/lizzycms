@@ -301,8 +301,8 @@ lzy-email-access-link1:
         Here is the link with which you can access the webpage: \n
 
 lzy-email-access-link2:
-    de: "\n\n\n(Als Alternative können Sie auch den folgenden Code ins Eingabefeld in der Website eintragen: %hash% )"
-    de2: "\n\n\n(Als Alternative kannst du auch den folgenden Code ins Eingabefeld in der Website eintragen: %hash% )"
+    de: "\n\n\n(Stattdessen können Sie auch den folgenden Code ins Eingabefeld in der Website eintragen: %hash% )"
+    de2: "\n\n\n(Stattdessen kannst du auch den folgenden Code ins Eingabefeld in der Website eintragen: %hash% )"
     _:  "\n\n\n(Alternatively, you can enter the following code into the entry field in the webpage: %hash% )"
 
 lzy-email-access-link3:
@@ -496,8 +496,8 @@ lzy-change-password2-info-title:
     _:  'Help on password confirmation'
 
 lzy-change-password2-info:
-    de: Geben Sie das selbe Passwort nochmals ein, um sicher zu sein, dass Sie sich nicht vertippt haben. <br /><br />Klicken Sie auf das Auge-Symbol, um die Kennwörter zu sehen.
-    de2: Gib das selbe Passwort nochmals ein, um sicher zu sein, dass du dich nicht vertippt hast. <br /><br />Klicke auf das Auge-Symbol, um die Kennwörter zu sehen.
+    de: Geben Sie das selbe Passwort nochmals ein, um sicher zu sein, dass Sie sich nicht vertippt haben. <br /><br />Klicken Sie auf das Auge-Symbol, um die Passwörter zu sehen.
+    de2: Gib das selbe Passwort nochmals ein, um sicher zu sein, dass du dich nicht vertippt hast. <br /><br />Klicke auf das Auge-Symbol, um die Passwörter zu sehen.
     _:  Repeat the password to exclude typos. <br /><br />Click on the eye-symbol to view the entered passwords in plain text.
 
 
@@ -549,7 +549,7 @@ lzy-admin-cancel-button:
     _:  Abort
 
 lzy-change-password-not-equal-response:
-    de: Die eingegebenen Kennwörter stimmten nicht überein.
+    de: Die eingegebenen Passwörter stimmten nicht überein.
     _:  The entered passwords were not identical.
 
 lzy-change-password-too-short-response:
@@ -1182,7 +1182,7 @@ lzy-password-required:
     _:  'You need to define a new password'
 
 lzy-signup-passwords-not-identical:
-    de: 'Die eingegebenen Kennwörter sind nicht identisch.'
+    de: 'Die eingegebenen Passwörter sind nicht identisch.'
     _:  'The entered password are not identical.'
 
 lzy-invite-user-create-hash-prompt:
