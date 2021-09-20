@@ -454,15 +454,27 @@ function LzyForms() {
 
 
     this.setupOnSubmitHandler = function() {
+        let parent = this;
+        $('.lzy-form input[type=reset]').click(function(e) {
+            const $form = $(this).closest('.lzy-form');
+            parent.clearForm( $form );
+        });
+
         $('.lzy-form input[type=submit]').click(function(e) {
-            let $form = $(this).closest('.lzy-form');
-            $(this).prop('disabled', true).addClass('lzy-button-disabled');
+            const $form = $(this).closest('.lzy-form');
+            const $submitBtn = $(this);
+            $submitBtn.prop('disabled', true).addClass('lzy-button-disabled');
 
             if (debugLogging) {
                 const dataStr = JSON.stringify( $form.serializeArray() );
                 serverLog('Form will submit: ' + dataStr, 'form-log.txt');
             }
-            $form.submit();
+            if ($form[0].checkValidity()) {
+                $form.submit();
+            } else {
+                $submitBtn.prop('disabled', false).removeClass('lzy-button-disabled');
+                $form[0].reportValidity();
+            }
         });
     }; // setupOnSubmitHandler
 
