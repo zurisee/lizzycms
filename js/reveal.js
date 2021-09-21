@@ -131,6 +131,11 @@ function lzyOperateRevealPanel( that )
 			}
 			$el.attr('tabindex', tabindex);
 		});
+		if ($('textarea', $revealContainer).length) {
+			setTimeout(function () {
+				$('textarea', $revealContainer).focus();
+			}, 500);
+		}
 
 	} else { // close:
 		const boundingBox = $target[0].getBoundingClientRect();
