@@ -404,6 +404,9 @@ input.lzy-login-email[type=email]:valid {
 #lzy .lzy-form.lzy-encapsulated .lzy-form-field-type-hash input {
     width: 8em;
 }
+#lzy .lzy-table-action-btns {
+    margin: 0 0 0.5em 2.3em;
+}
 
 
 

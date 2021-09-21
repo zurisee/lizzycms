@@ -482,6 +482,7 @@ EOT;
             'lockRecWhileFormOpen' => true,
             'excludeColumns' => '7-11',
             'editFormTemplate' => $formTemplate,
+            'showRowNumbers' => true,
         ];
         $tbl = new HtmlTable( $this->lzy, $options );
         $table = $tbl->render();
