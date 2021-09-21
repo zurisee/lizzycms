@@ -1067,6 +1067,22 @@ EOT;
         list($descrBy, $description) = $this->renderElemDescription();
         $wrapperId = @$rec->wrapperId ? " id='$rec->wrapperId'": '';
 
+        $checkedElem = isset($this->currRec->prefill)? $this->currRec->prefill: false;
+        if ($rec->defaultValue) {
+            $checkedElem = $rec->defaultValue;
+        }
+        $defaultValueAttr = '';
+        if ($checkedElem) {
+            if (is_array($checkedElem) && isset($checkedElem[0])) {
+                $checkedElem = $checkedElem[0];
+            }
+            $defaultValueAttr = " data-default-value='$checkedElem'";
+        }
+        if ( $rec->liveValue ) {
+            $defaultValueAttr .= " data-live-value='$rec->liveValue'";
+        }
+
+
         $aria = '';
         $revealTarget = $this->currRec->target;
         if ($revealTarget) {
@@ -1078,7 +1094,7 @@ EOT;
         }
 
         $legendId = "lzy-chckb_legend-{$groupName}_{$this->formInx}";
-        $out = "\t\t\t<fieldset$wrapperId class='lzy-form-label lzy-form-checkbox-label'><legend id='$legendId' class='lzy-legend'>$label</legend>\n\t\t\t  <div class='lzy-fieldset-body'>\n";
+        $out = "\t\t\t<fieldset$wrapperId class='lzy-form-label lzy-form-checkbox-label'><legend id='$legendId' class='lzy-legend'>$label</legend>\n\t\t\t  <div class='lzy-fieldset-body'$defaultValueAttr>\n";
 
         foreach($rec->optionLabels as $i => $optionLabel) {
             if ($i === 0) { continue; } // skip group name
@@ -1780,10 +1796,8 @@ EOT;
         } elseif ($this->currRec->translateLabel) {
             $label = $this->trans->translateVariable($label, true);
         }
-        if (($this->currForm->labelColons === null) && $hasColon) {
-            $label .= ':';
-        } elseif ($this->currForm->labelColons) {
-            $label .= ':';
+        if ($this->currForm->labelColons || $hasColon) {
+            $label = str_replace(':', '', $label) . ':';
         }
         if ($requiredMarker) {
             $label .= ' '.$requiredMarker;
@@ -2254,7 +2268,7 @@ EOT;
         foreach ($currForm->formElements as $i => $rec) {
             $usrDataFldName = $rec->name;
             $elementKey = $rec->dataKey;
-            if (($usrDataFldName[0] === '_') || !isset($userSuppliedData[$usrDataFldName])) {
+            if (($usrDataFldName && ($usrDataFldName[0] === '_')) || !isset($userSuppliedData[$usrDataFldName])) {
                 continue;
             }
 
@@ -2453,7 +2467,7 @@ EOT;
             $type = $elemDef->type;
 
             // skip elements of pseudo type:
-            if ((strpos(PSEUDO_TYPES, $type) !== false) || ($key[0] === '_')) {
+            if ((strpos(PSEUDO_TYPES, $type) !== false) || ($key && ($key[0] === '_'))) {
                 continue;
             }
 
@@ -3266,7 +3280,7 @@ EOT;
         $structure = [];
         $structure['key'] = 'hash';
 	    foreach ($formElements as $key => $rec) {
-	        if ($rec->name[0] === '_') {
+	        if (!$rec->dataKey || !$rec->name || ($rec->name[0] === '_')) {
 	            continue;
             }
             $newRec = [];

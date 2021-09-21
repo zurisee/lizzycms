@@ -235,7 +235,18 @@ function LzyForms() {
         $('[data-' + mode + '-value]', $form).each(function () {
             let $this = $(this);
             let value = $this.data( mode + '-value' );
-            if ($this.hasClass('lzy-formelem-toggle-wrapper')) {
+
+            if ($('[type=radio]', $form).length || $('[type=checkbox]', $form).length) {
+                if (value.match(',')) {
+                    const values = value.split(',');
+                    for (let i in values) {
+                        $('[value=' + values[i] + ']', $form).prop('checked', true);
+                    }
+                } else {
+                    $('[value=' + value + ']', $form).prop('checked', true);
+                }
+
+            } else if ($this.hasClass('lzy-formelem-toggle-wrapper')) {
                 $('.lzy-toggle-input-off', $this).prop('checked', !value);
                 $('.lzy-toggle-input-on', $this).prop('checked', value);
 
