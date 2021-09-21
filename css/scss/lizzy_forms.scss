@@ -246,6 +246,9 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
     .lzy-form-field-type-textarea .lzy-label-wrapper {
         width: 100%;
     }
+    .lzy-form-field-type-textarea div.lzy-form-input-elem {
+        margin-top: 0.4em;
+    }
     .lzy-label-wrapper,
     label {
         display: inline-block;
