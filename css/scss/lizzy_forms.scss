@@ -193,6 +193,7 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
     }
 
     /* === reveal ====================================== */
+    .lzy-form-field-wrapper .lzy-reveal-controller,
     .lzy-form-field-wrapper.lzy-reveal-controller {
         label.lzy-form-choice-elem-empty-label.lzy-form-choice-elem-empty-label {
             width: 2.4em;
@@ -209,6 +210,15 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
         }
     }
 
+    .lzy-form-field-wrapper.lzy-reveal-controller,
+    .lzy-form-field-wrapper .lzy-reveal-controller {
+        &:focus-within {
+            outline: 1px solid var( --lzy-form-focus-color, magenta);
+        }
+        input:focus {
+            outline: unset !important;
+        }
+    }
 
     /* === form-field-wrapper ========================== */
     .lzy-form-field-wrapper {

@@ -957,7 +957,8 @@ EOT;
     {
         $cls = " class='{$this->currRec->class}lzy-form-input-elem'";
         $value = @$this->currRec->prefill;
-        $out = $this->getLabel();
+        $label = $this->getLabel();
+        $out = '';
         list($descrBy, $description) = $this->renderElemDescription();
         if ($this->currRec->autoGrow) {
             $out .= <<<EOT
@@ -970,6 +971,25 @@ EOT;
             $out .= "<textarea id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$descrBy>$value</textarea>\n";
         }
         $out .= $description;
+
+        if (!@$this->currRec->reveal) {
+            $out = "$label$out";
+
+        // option "reveal: this" -> wrap textarea into a reveal-box:
+        } else {
+            $this->addRevealJs();
+            $out = <<<EOT
+        <div class='lzy-reveal-controller'>
+            <input id='lzy-reveal-controller-{$this->currRec->elemInx}' class='lzy-reveal-controller-elem lzy-reveal-icon' type='checkbox' data-reveal-target='#lzy-reveal-container-{$this->currRec->elemInx}' />
+            <label for='lzy-reveal-controller-{$this->currRec->elemInx}'>{$this->currRec->label}</label>
+        </div>
+		<div  id='lzy-reveal-container-{$this->currRec->elemInx}' style="display:none;">
+		    <div>
+$out
+            </div>
+        </div>
+EOT;
+        }
         return $out;
     } // renderTextarea
 
