@@ -124,7 +124,7 @@ class SiteStructure
 
     public function getPageFolder()
     {
-        if ($this->currPageRec['actualFolder'] !== false) {
+        if (@$this->currPageRec['actualFolder'] !== false) {
             return $this->currPageRec['actualFolder'];
         } else {
             return $this->currPageRec['folder'];
