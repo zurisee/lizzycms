@@ -210,6 +210,7 @@ class HtmlTable
                     if ($this->editingActive) {
                         $this->formEditing = true;
                     }
+                    $this->editMode = 'form';
                 }
                 $this->tableButtons[ $button ] = $attributes;
             }
