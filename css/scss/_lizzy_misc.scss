@@ -179,11 +179,12 @@
 // === Macro Help ===============
 .lzy-default-layout .lzy-macro-help {
   background: #f7f7f7;
+  color: #333;
   padding: 1em;
+  font-size: 9pt;
   dt {
-    font-weight: bold;
     margin: 1em 0 0.2em 0;
-    color: navy;
+    color: blue;
   }
   dd {
     line-height: 1.3em;
