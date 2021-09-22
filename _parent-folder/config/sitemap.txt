@@ -58,6 +58,9 @@ restricted:
 	If set, the page can only be accessed by users matching the corresponding 
 	criteria.
 
+loginMode:
+ 	Defines the login-mode when a user opens a restricted page.  
+ 	[byemail,multimode,normal]
 
 hide: 
 	Example: { hide: true }

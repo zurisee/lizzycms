@@ -18,7 +18,11 @@ class UserLoginBase extends UserAdminBase
     {
         $this->un_preset = '{{^ lzy-username-preset }}';
         $mode = getUrlArg('byemail')? 'byemail': (getUrlArg('multimode')? 'multimode': '');
-        if ($mode === 'byemail') {
+        if (!$mode && isset($this->lzy->siteStructure->currPageRec['loginMode'])) {
+            $mode = $this->lzy->siteStructure->currPageRec['loginMode'];
+        }
+
+        if (stripos($mode, 'email') !== false) { // email or byemail
             $html = $this->createEmailLoginForm($message);
         } elseif (($mode === 'multimode') && ($this->config->admin_enableAccessLink)) {
             $html = $this->createMultimodeLoginForm($message, $preOpenPanel);
