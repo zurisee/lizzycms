@@ -173,7 +173,7 @@ class Forms
         $currForm->lockRecWhileFormOpen = (isset($args['lockRecWhileFormOpen'])) ? $args['lockRecWhileFormOpen'] : false;
 
         // in rare cases (e.g. config/users.yaml) we need choice elements to be stored in plain form, not as an array:
-        $currForm->splitChoiceElemsInDb = (isset($args['splitChoiceElemsInDb'])) ? $args['splitChoiceElemsInDb'] : true;
+        $currForm->splitChoiceElemsInDb = (isset($args['splitChoiceElemsInDb'])) ? $args['splitChoiceElemsInDb'] : false;
 
         $currForm->formName = $label;
         $currForm->translateLabels = (isset($args['translateLabels'])) ? $args['translateLabels'] : false;
@@ -1807,7 +1807,13 @@ EOT;
         if ($requiredMarker) {
             $this->currForm->hasRequiredFields = true;
         }
-        $label = $this->currRec->labelHtml? $this->currRec->labelHtml: $this->currRec->label;
+        if (@$this->currRec->formLabel) {
+            $label = $this->currRec->formLabel;
+        } elseif ($this->currRec->labelHtml) {
+            $label = $this->currRec->labelHtml;
+        } else {
+            $label = $this->currRec->label;
+        }
 
         $hasColon = (strpos($label, ':') !== false);
         $label = trim(str_replace([':', '*'], '', $label));
@@ -2526,7 +2532,10 @@ EOT;
             // handle element types 'radio,checkbox,dropdown':
             if (strpos('radio,checkbox,dropdown', $type) !== false) {
                 $value = $rec[$key];
-                if (isset($this->currForm->formElements[$inx]->splitChoiceElemsInDb)) {
+                if (isset($elemDef->splitOutput)) {
+                    $splitChoiceElemsInDb = $elemDef->splitOutput;
+
+                } elseif (isset($this->currForm->formElements[$inx]->splitChoiceElemsInDb)) {
                     $splitChoiceElemsInDb = $this->currForm->formElements[$inx]->splitChoiceElemsInDb;
                 } else {
                     $splitChoiceElemsInDb = $this->currForm->splitChoiceElemsInDb;
@@ -3309,7 +3318,7 @@ EOT;
             $newRec['type'] = $rec->type;
             $newRec['formLabel'] = $rec->label;
             if ($rec->splitOutput) {
-                $newRec['_splitOutput'] = true;
+                $newRec['splitOutput'] = true;
             }
             $structure['elements'][$recKey] = $newRec;
         }

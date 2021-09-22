@@ -1405,7 +1405,7 @@ EOT;
         $recStructure = $this->ds->getStructure();
         $form = new Forms( $this->lzy, false );
 
-        $splitChoiceElemsInDb = isset($this->options['splitChoiceElemsInDb'])? $this->options['splitChoiceElemsInDb']: true;
+        $splitChoiceElemsInDb = isset($this->options['splitChoiceElemsInDb'])? $this->options['splitChoiceElemsInDb']: false;
 
         // Form Head:
         $args = [
@@ -1878,7 +1878,7 @@ EOT;
             $this->includeCellRefs = true;
         }
         $nCols = sizeof( reset($this->data) );
-        $recKeyInx = array_search(REC_KEY_ID, array_keys($this->structure['elements']));
+        $recKeyInx = array_search(REC_KEY_ID, $this->tblStruct);
         if ($this->includeCellRefs) {
             $r = 0;
             foreach ($this->data as $rKey => $rec) {
@@ -2111,7 +2111,7 @@ EOT;
         }
         $this->data0 = $data0;
 
-        // if structure is know -> apply structure-info:
+        // if structure is known -> apply structure-info:
         $fields = [];
         if (isset($structure['key'])) {
             // special case: recKey is linked to a rec-element -> defined as "key => '=fieldname'":
@@ -2126,7 +2126,7 @@ EOT;
             if ($this->headers) {
                 $this->getHeaders($fields, $data0);
             }
-            $this->applyHideOmitColumns($fields);
+            $this->applyHideOmitColumns($fields); //??? -> before getHeaders?
         }
 
         $data = $this->prepareData($data0, $fields);
@@ -2158,7 +2158,7 @@ EOT;
                 foreach ($rec0 as $k => $item) {
                     if (is_array($item)) {
                         // handle splitOutput of composite elements if directive is embedded in field description:
-                        $splitOutput = @$this->structure['elements'][$k]['_splitOutput'] || @$item['_splitOutput'];
+                        $splitOutput = @$this->structure['elements'][$k]['splitOutput'] || @$item['splitOutput'];
                         if ($splitOutput) {
                             foreach ($item as $k => $v) {
                                 if (($k === 0) || ($k[0] === '_')) { // skip special elems
@@ -2214,6 +2214,7 @@ EOT;
         $this->data = [];
         $ir = 0;
         foreach ($data0 as $r => $rec) {
+            $this->tblStruct = [];
             $ic = 0;
             // generally ignore all data keys starting with '_':
             if (!is_array($rec) || (@$r[0] === '_')) {
@@ -2228,13 +2229,14 @@ EOT;
                 $item = isset($rec[$c]) ? $rec[$c] : (isset($rec[$ic]) ? $rec[$ic] : '');
                 if (is_array($item)) {
                     // handle splitOutput of composite elements if directive is embedded in field description:
-                    $splitOutput = @$this->structure['elements'][$c]['_splitOutput'] || @$item['_splitOutput'];
+                    $splitOutput = @$this->structure['elements'][$c]['splitOutput'] || @$item['splitOutput'];
                     if ($splitOutput) {
                         foreach ($item as $k => $v) {
                             if (($k === 0) || ($k[0] === '_')) {
                                 continue;
                             }
                             $data[$r][$ic++] = $v ? 1 : 0;
+                            $this->tblStruct[] = $k;
                         }
                         continue;
 
@@ -2262,6 +2264,7 @@ EOT;
                     $item .= '%%!off$$';
                 }
                 $data[$r][$ic++] = $item;
+                $this->tblStruct[] = $c;
             }
             $ir++;
         }
