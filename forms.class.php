@@ -2630,7 +2630,6 @@ EOT;
 
     private function initAntiSpam()
     {
-        $id = "fld_ch{$this->inx}";
         if ($this->currForm->antiSpam !== true) {   // field for antiSpam explicitly defined:
             $nameFldId = preg_replace('/^ (\#fld_)? (.*?) $/x', "$2", $this->currForm->antiSpam);
             $found = false;
@@ -2785,6 +2784,7 @@ $('.lzy-form input[type=submit]').click(function(e) {
         return;
     }
     e.preventDefault();
+    e.stopImmediatePropagation();
     let data = JSON.stringify( $form.serializeArray() );
     serverLog('suspicious form data: ' + data, 'form-log.txt');
     initAntiSpamPopup();
@@ -3288,7 +3288,7 @@ EOT;
 
     private function updateDbStructure() {
 	    if (!$this->exportStructure) {
-	        return;
+	        return false;
         }
 	    $formElements = $this->currForm->formElements;
 	    $dbFile = $this->currForm->file;
@@ -3446,7 +3446,8 @@ class FormDescriptor
     public $encapsulate, $recModifyCheck, $dynamicFormSupport, $lockRecWhileFormOpen;
     public $formHeader, $formFooter, $next, $avoidDuplicates, $splitChoiceElemsInDb;
     public $suppressFormFeedback, $labelColons, $confirmationEmail, $confirmationText, $mailTo;
-    public $cancelButtonCallback, $confirmationEmailTemplate, $keyType, $useRecycleBin;
+    public $cancelButtonCallback, $confirmationEmailTemplate, $keyType, $useRecycleBin, $mailFrom;
+    public $submitButtonCallback;
 }
 
 
