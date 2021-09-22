@@ -1628,6 +1628,11 @@ EOT;
                 }
             }
         }
+
+        // extract "robots" directive:
+        if (@$hdr['robots']) {
+            $this->config->site_robots = true;
+        }
     } // extractSettings
 
 
