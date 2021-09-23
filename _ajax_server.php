@@ -191,14 +191,26 @@ class AjaxServer
 
     private function prepareDataRec($rec)
     {
+        // forms.js needs name attr as key -> convert:
         $out = [];
         $structure = $this->db->getStructure();
         if (is_array($structure['elements']) ) {
             foreach ($structure['elements'] as $label => $element) {
-                if (isset($rec[$label])) {
+                if (@$label[0] === '_') {
                     $out[$label] = $rec[$label];
-                } else {
-                    $out[$label] = null;
+                    continue;
+                }
+                $name = $element['name'];
+                if ($name) {
+                    if (isset($rec[$label])) {
+                        if (is_array($rec[$label])) {
+                            $out[$name] = $rec[$label][0];
+                        } else {
+                            $out[$name] = $rec[$label];
+                        }
+                    } else {
+                        $out[$name] = null;
+                    }
                 }
             }
         }

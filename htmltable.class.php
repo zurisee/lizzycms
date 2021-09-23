@@ -125,6 +125,10 @@ class HtmlTable
         $this->export                   = $this->getOption('export', '(optional) .');
         $this->exportMetaElements       = $this->getOption('exportMetaElements', '(optional) .');
         $this->prefill                  = $this->getOption('prefill', '(optional) .');
+        $this->cellTooltips             = $this->getOption('cellTooltips','[true,min-chars] If set, cells with large content (>min-chars) will get a tooltip showing the content. Default min-chars: 30.');
+        if ($this->cellTooltips === true) {
+            $this->cellTooltips = 30;
+        }
 
         $this->checkArguments();
 
@@ -151,6 +155,10 @@ class HtmlTable
                     (strpos($this->rowButtons, 'edit') === false)) {
                 $this->editingActive = checkPermission('loggedin', $this->lzy) || isLocalhost();
             }
+        }
+
+        if ($this->showRowNumbers) {
+            $this->wrapperClass = trim("$this->wrapperClass lzy-table-row-numbers");
         }
 
         // short-hand 'editable: permission':
@@ -316,6 +324,7 @@ EOT;
 
         $rInx = 1;
         $r = 0;
+        $showRowNr = $this->showRowNumbers;
         foreach ($data as $recId => $rec) {
             if (!$rec || !is_array($rec)) {
                 die("Error in renderHtmlTable(): empty data record");
@@ -330,7 +339,7 @@ EOT;
                     $thead .= "\t\t\t<th class='lzy-table-row-nr'>{{^ lzy-table-row-nr-header }}</th>\n";
                 }
                 if ($this->injectSelectionCol) {
-                    $thead .= "\t\t\t<th class='lzy-table-row-selector'>{{^ lzy-table-row-selector }}".
+                    $thead .= "\t\t\t<th class='lzy-table-row-selector'>{{^ lzy-table-row-selector }}" .
                         "<input class='lzy-table-row-all-selector' type='checkbox' title='{{ lzy-table-select-all-rows }}'></th>\n";
                 }
                 for ($c = 0; $c < $nCols; $c++) {
@@ -340,6 +349,22 @@ EOT;
                     }
                 }
                 $thead .= "\t\t</tr>\n\t</thead>\n";
+
+            } elseif ($recId === 'footer') {
+                $tfoot = "\n\t<tfoot>\n\t\t<tr class='$rowClass'>\n";
+                if ($this->showRowNumbers) {
+                    $tfoot .= "\t\t\t<td></td>\n";
+                }
+                if ($this->injectSelectionCol) {
+                    $tfoot .= "\t\t\t<td></td>\n";
+                }
+                for ($c = 0; $c < $nCols; $c++) {
+                    $cell = $this->getDataElem($recId, $c, 'td');
+                    if ($cell !== null) {
+                        $tfoot .= "\t\t\t$cell\n";
+                    }
+                }
+                $tfoot .= "\t\t</tr>\n\t</tfoot>\n";
 
             } else {    // render row:
                 if ($recId === '') {
@@ -357,11 +382,17 @@ EOT;
                     $rowClass .= " {$this->specificRowClasses[$r]}";
                 }
                 $tbody .= "\t\t<tr class='$rowClass'$recKey>\n";
-                if ($this->showRowNumbers) {
-                    if ($this->headers) {
-                        $n = $r;
-                    } else {
-                        $n = $r + 1;
+                $n = '';
+                if ($showRowNr) {
+                    if (strpos($rowClass, 'lzy-added-row') === false) {
+                        if ($this->headers) {
+                            $n = $r;
+                        } else {
+                            $n = $r + 1;
+                        }
+                        if ($n < 10) {
+                            $n = "<span class='lzy-spacer'>0</span>$n";
+                        }
                     }
                     $tbody .= "\t\t\t<td class='lzy-table-row-nr'>$n</td>\n";
 
@@ -392,7 +423,7 @@ EOT;
   <table id='{$this->id}' class='$tableClass'{$this->tableDataAttr} data-inx="$this->tableCounter">
 {$this->caption}
 $thead	<tbody>
-$tbody	</tbody>
+$tbody	</tbody>$tfoot
   </table>
 
 EOT;
@@ -851,7 +882,7 @@ EOT;
         $content = $this->getArg('content');
         $class = $this->getArg('class');
 
-        $rowClass = $this->getArg('rowClass');
+        $rowClass = trim($this->getArg('rowClass').' lzy-added-row');
         if ($rowClass) {
             $n = sizeof($data);
             $this->specificRowClasses[$n] = $rowClass;
@@ -896,7 +927,7 @@ EOT;
                 $row[$_c] = $content . $newCellVal;
             }
         }
-        $data[] = $row;
+        $data['footer'] = $row;
     } // addRow
 
 
@@ -1040,6 +1071,9 @@ EOT;
         // iterate over rows and apply cell-instructions:
         foreach ($data as $r => $row) {
             if (!$inclHead && ($r === 'hdr')) {
+                continue;
+            }
+            if ($r === 'footer') {
                 continue;
             }
             try {
@@ -1248,7 +1282,16 @@ EOT;
                 $cell = "<div>$cell</div>";
             }
         }
-        return "<$tag$tdId$tdClass$ref$title>$cell</$tag>";
+        $tooltip = '';
+        if (!$hdrElem && $this->cellTooltips) {
+            $tooltip = strip_tags($cell);
+            if (strlen($tooltip) > $this->cellTooltips) {
+                $tooltip = " class='tooltipster' title='$tooltip'";
+            } else {
+                $tooltip = '';
+            }
+        }
+        return "<$tag$tdId$tdClass$ref$title><div$tooltip>$cell</div></$tag>";
     } // getDataElem
 
 
@@ -1442,10 +1485,12 @@ EOT;
             if (@$elemKey[0] === '_') {
                 continue;
             }
-            if (isset($this->headerElems[ $inx-1])) {
-                $label = $this->headerElems[ $inx-1];
+            if (isset($rec['formLabel'])) {
+                $label = $rec['formLabel'];
+            } elseif (isset($this->headerElems[ $inx - 1 ])) {
+                $label = $this->headerElems[ $inx - 1 ];
             } else {
-                $label = isset($rec['formLabel']) ? $rec['formLabel'] : $elemKey;
+                $label = $elemKey;
             }
             $rec['label'] = $label;
             $rec['dataKey'] = $elemKey;
@@ -1886,7 +1931,11 @@ EOT;
                 $ic = 0;
                 for ($c = 0; $c < $nCols; $c++) {
                     if ($this->includeKeys && (@$this->headerElems[$c] === REC_KEY_ID)) {
-                        $this->data[$rKey][$c] .= "<{<$r,#>}>";
+                        if (!isset($this->data[$rKey][$c])) {
+                            $this->data[$rKey][$c] = "<{<$r,#>}>";
+                        } else {
+                            $this->data[$rKey][$c] .= "<{<$r,#>}>";
+                        }
                     } else {
                         if (!isset($this->data[$rKey][$c])) {
                             $this->data[$rKey][$c] = "<{<$recKey,$ic>}>";

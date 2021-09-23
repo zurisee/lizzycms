@@ -697,6 +697,28 @@ a.lzy-button {
 #lzy .lzy-encapsulated.lzy-edit-data-form .lzy-edit-rec-delete-checkbox legend.lzy-legend {
 	display: none;
 }
+#lzy .lzy-table-default {
+	table.dataTable tbody button,
+	table.dataTable tbody tr {
+		color: #444;
+	}
+	.lzy-table-btn-col,
+	.lzy-table-row-selector {
+		&.sorting,
+		&.sorting_asc,
+		&.sorting_desc {
+			background: none;
+			padding: 9px 0 0 11px;
+		}
+	}
+	&.lzy-table-row-numbers .lzy-table-delete-rec-btn {
+		margin-left: 2.3em;
+	}
+	.lzy-spacer {
+		opacity: 0;
+	}
+}
+
 
 
 /* === Override page =================================== */
