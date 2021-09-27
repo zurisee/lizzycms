@@ -22,13 +22,13 @@ class LizzyMarkdown
 		'(?<![\-\\\])\-&gt;'  => '&rarr;', // unless it's '-->'
 		'\=\>'              => '&rArr;',
 		'\=&gt;'              => '&rArr;',
-		' \-\- '            => ' &ndash; ',
+		'(?<!\\\)([\d\s\.])\-\-([\d\s])' => '$1&ndash;$2',
 		'(?<!\.)\.\.\.(?!\.)' => '&hellip;',
 		'\bEURO\b'          => '&euro;',
 		'\bBR\b'            => '<br>',
 		'\bNL\b'            => '<br>&nbsp;',
 		'\bSPACE\b'         => '&nbsp;&nbsp;&nbsp;&nbsp;',
-		'(?<![\-\\\])sS'    => 'ß',
+		'(?<!\\\)sS'    => 'ß',
 		'CLEAR'             => '<div style="clear:both;"></div>',
 	);
 
