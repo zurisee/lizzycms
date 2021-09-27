@@ -797,10 +797,12 @@ function is_inCommaSeparatedList($keyword, $list)
 
 
 
-function fileExt($file0, $reverse = false)
+function fileExt($file0, $reverse = false, $isUrl = false)
 {
     $file = basename($file0);
-    $file = preg_replace(['|^\w{1,6}://|', '/[#?&:].*/'], '', $file);
+    if ($isUrl) {
+        $file = preg_replace(['|^\w{1,6}://|', '/[#?&:].*/'], '', $file);
+    }
     if ($reverse) {
         $path = dirname($file0).'/';
         if ($path === './') {
