@@ -56,7 +56,7 @@ class ImageTag
 
         $src = $lizzy["appRoot"].$lizzy["pageFolder"].'_/'.base_name($this->src);
 
-        $style = "\n\t\tstyle='width: {$this->w}px; height: {$this->h}px;'";
+        $style = "\n\t\tstyle='max-width: {$this->w}px; max-height: {$this->h}px;'";
 
         // basic img code:
         $str = <<<EOT
@@ -143,7 +143,7 @@ EOT;
                 }
                 // e.g. $sizes = "(max-width: 600px) 125px, (max-width: 1200px) 250px, 900px"; // for img-width 25% of win width
                 if ($sizes) {
-                    $this->srcset .= " sizes='$sizes' style='width: {$this->w}px; height: {$this->h}px;'";
+                    $this->srcset .= " sizes='$sizes'";
                 }
             }
 
