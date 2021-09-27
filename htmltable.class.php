@@ -12,7 +12,7 @@ define('SCALAR_TYPES',
 
 define('DEFAULT_EDIT_FORM_TEMPLATE_FILE', '~page/-table_edit_form_template.md');
 define('LZY_TABLE_SHOW_REC_ICON', "<span class='lzy-icon lzy-icon-show2'></span>");
-define('DOWNLOAD_PATH_LINK_FILE', '.#download.link');
+define('DOWNLOAD_PATH_LINK_CODE', '.#download.code');
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -2554,12 +2554,12 @@ EOT;
 
     private function getDownloadFilename()
     {
-        $dlLinkFile = resolvePath('~page/'.DOWNLOAD_PATH_LINK_FILE);
-        if (file_exists($dlLinkFile)) {
-            $dlHash = file_get_contents($dlLinkFile);
+        $dlCodeFile = resolvePath('~page/'.DOWNLOAD_PATH_LINK_CODE);
+        if (file_exists($dlCodeFile)) {
+            $dlHash = file_get_contents($dlCodeFile);
         } else {
             $dlHash = createHash(8, false, true);
-            file_put_contents($dlLinkFile, $dlHash);
+            file_put_contents($dlCodeFile, $dlHash);
         }
         $ts = filemtime($this->dataSource);
         $ts = date('Ymd_Hi_', $ts);
@@ -2568,6 +2568,8 @@ EOT;
         } else {
             $file = "download/$dlHash/$ts".$this->export.'.';
         }
+        $dlLinkFile = fileExt($dlCodeFile, true).'.link';
+        file_put_contents($dlLinkFile, $file);
         return $file;
     } // getDownloadFilename
 } // HtmlTable
