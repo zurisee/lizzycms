@@ -19,6 +19,7 @@ $this->addMacro($macroName, function () {
         $this->getArg($macroName, 'alt', 'Alt-text for image, i.e. a short text that describes the image.');
         $this->getArg($macroName, 'id', 'Id that will be applied to the image.');
         $this->getArg($macroName, 'class', 'Class-name that will be applied to the image.');
+        $this->getArg($macroName, 'wrapperClass', 'Class-name that will be applied to the FIGURE tag (if a caption is defined).');
         $this->getArg($macroName, 'caption', 'Optional caption. If set, Lizzy will wrap the image into a &lt;figure> tag and wrap the caption itself in &lt;figcaption> tag.');
         $this->getArg($macroName, 'srcset', "Let's you override the automatic srcset mechanism.");
         $this->getArg($macroName, 'imgTagAttributes', "Supplied string is put into the &lt;img> tag as is. This way you can apply advanced attributes, such as 'sizes' or 'crossorigin', etc.");
@@ -35,6 +36,7 @@ $this->addMacro($macroName, function () {
 
     $id = $this->getArg($macroName, 'id', '');
     $this->getArg($macroName, 'class', '');
+    $this->getArg($macroName, 'wrapperClass', '');
     $this->getArg($macroName, 'alt', '');
     $caption = $this->getArg($macroName, 'caption', '');
     $this->getArg($macroName, 'srcset', '');
@@ -88,7 +90,6 @@ $this->addMacro($macroName, function () {
 
     $impTag = new ImageTag($this, $args);
     $str = $impTag->render($id);
-    $class = ''; //???
 
 
     // link around img
@@ -112,6 +113,8 @@ $this->addMacro($macroName, function () {
             $this->figureCounter++;
         }
 
+        $figureClass = trim("lzy-figure {$args['wrapperClass']}");
+
         if (preg_match('/(.*)\#\#=(\d+)(.*)/', $caption, $m)) {
             $this->figureCounter = intval($m[2]);
             $caption = $m[1].'##'.$m[3];
@@ -121,7 +124,7 @@ $this->addMacro($macroName, function () {
 
         $caption = str_replace('##', $this->figureCounter, $caption);
         $caption = "\t<figcaption>$caption</figcaption>\n";
-        $str = "<figure id='figure_$id' class='lzy-figure $class'>\n\t$str\n$caption</figure>\n";
+        $str = "<figure id='figure_$id' class='$figureClass'>\n\t$str\n$caption</figure>\n";
     }
     return $str;
 });
