@@ -65,6 +65,9 @@ define('TRANSVAR_ARG_QUOTES', 	'!@#$%&:?');    // Special quotes to enclose tran
 define('MKDIR_MASK',            0700); // permissions for file access by Lizzy
 define('MKDIR_MASK_WEBACCESS',  0755); // permissions for files cache
 
+define('PAGED_POLYFILL_SCRIPT', '~sys/third-party/paged.polyfill/paged.polyfill.min.js');
+//define('PAGED_POLYFILL_SCRIPT', '~sys/third-party/paged.polyfill/paged.polyfill.js');
+
 $localeFiles = ['config/user_variables.yaml', SYSTEM_PATH.LOCALES_PATH.'*'];
 
 
@@ -1630,10 +1633,11 @@ EOT;
             foreach ($_GET as $k => $v) {   // make sure all other url-args are preserved:
                 $url .= "&$k=$v";
             }
+            $pagedPolyfillScript = PAGED_POLYFILL_SCRIPT;
             $jq = <<<EOT
 	setTimeout(function() {
 	    console.log('now running paged.polyfill.js'); 
-	    $.getScript( "~sys/third-party/paged.polyfill/paged.polyfill.js"); 
+	    $.getScript( '$pagedPolyfillScript' );
 	}, 1000);
 	setTimeout(function() {
 	    console.log('now adding buttons'); 
@@ -1644,11 +1648,12 @@ EOT;
             $this->page->addJq($jq);
         }
         if (getUrlArg('print')) {              // activate Print-supprt and start printing dialog
+            $pagedPolyfillScript = PAGED_POLYFILL_SCRIPT;
 
             $jq = <<<EOT
 	setTimeout(function() {
 	    console.log('now running paged.polyfill.js'); 
-	    $.getScript( "~sys/third-party/paged.polyfill/paged.polyfill.js");
+	    $.getScript( '$pagedPolyfillScript' );
 	}, 1000);
     setTimeout(function() {
         window.print();
