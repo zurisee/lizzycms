@@ -14,6 +14,7 @@ $this->addMacro($macroName, function ($args) {
     $count = $this->getArg($macroName, 'count', 'Number of times to repeat the process');
     $text0 = $this->getArg($macroName, 'text', 'Text to be repeated', '');
     $contentFrom = $this->getArg($macroName, 'contentFrom', 'CSS-Selector from which to import text', '');
+    $macro = $this->getArg($macroName, 'macro', '', '');
     $variable = $this->getArg($macroName, 'variable', 'Variable to be repeated');
     $file = $this->getArg($macroName, 'file', 'Name of file to be repeatedly included');
     $wrapperClass = $this->getArg($macroName, 'wrapperClass', 'Variable to be repeated', '.repeated');
@@ -38,6 +39,12 @@ $this->addMacro($macroName, function ($args) {
 
     if ($variable) {
         $text0 .= $this->getVariable($variable);
+    }
+
+    if ($macro) {
+        if (preg_match('/([\w-]+) \( (.*) \)/x', $macro, $m)) {
+            $text0 .= $this->translateMacro($m[1], $m[2]);
+        }
     }
 
     if ($file) {
