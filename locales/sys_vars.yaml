@@ -7,7 +7,7 @@
 #--- Login Link ----------------------------------
 space: "&nbsp;&nbsp;"
 
-vgap: "<div class='vgap' style='margin:1em 0;'>&nbsp;</div>\n"
+vgap: "<div class='vgap' style='margin:0.7em 0;'>&nbsp;</div>\n"
 
 clear: '<div style="clear:both;"></div>'
 
