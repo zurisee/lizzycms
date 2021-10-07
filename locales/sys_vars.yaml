@@ -11,7 +11,7 @@ vgap: "<div class='vgap' style='margin:0.7em 0;'>&nbsp;</div>\n"
 
 clear: '<div style="clear:both;"></div>'
 
-section: "\n</section>\n<section>\n"
+#section: "\n</section>\n<section>\n"
 
 lzy-login-icon: '<span class="lzy-icon lzy-icon-user"></span>'
 
