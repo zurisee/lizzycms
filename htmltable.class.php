@@ -312,6 +312,7 @@ EOT;
         $tableClass = trim( "lzy-table $tableClass" );
         $thead = '';
         $tbody = '';
+        $tfoot = '';
         $nCols = sizeof(reset( $data ));
         $rowClass0 = $this->rowClass;
 
