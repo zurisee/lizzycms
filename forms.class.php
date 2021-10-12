@@ -85,6 +85,7 @@ class Forms
             if (isset($_POST['_lzy-form-ref'])) {    // we received data for curr form:
                 $this->evaluateUserSuppliedData();
             }
+            // $userDataEval===true means client just wants to eval data, not instantiate an object:
             if ($userDataEval === true) {
                 $GLOBALS['lizzy']['lzyFormsCount']--;
             }
@@ -2261,6 +2262,7 @@ EOT;
         }
 
         $oldRec = false;
+        $skipSaving = false;
 
         if (isset($this->dataKeyOverride)) {
             $recKey = $this->getOverrideKey( $recKey );
@@ -2285,7 +2287,7 @@ EOT;
         if ($currForm->avoidDuplicates) {
             $keys0 = array_keys($struc['elements']);
             if ($this->checkDuplicates($ds, $keys0, $currForm, $userSuppliedData)) {
-                return false;
+                $skipSaving = true;
             }
         }
 
@@ -2323,18 +2325,20 @@ EOT;
             return true;
         }
 
-        if ($this->isNewRec) {
-            // add new record:
-            if ($struc['key'] === 'index') {
-                $recKey = false;
-            }
-            $res = $ds->addRecord($newRec, $recKey, true, true, true);
+        if (!$skipSaving) {
+            if ($this->isNewRec) {
+                // add new record:
+                if ($struc['key'] === 'index') {
+                    $recKey = false;
+                }
+                $res = $ds->addRecord($newRec, $recKey, true, true, true);
 
-        } else {
-            $res = $ds->writeRecord($recKey, $newRec, true, true, true);
-        }
-        if (!$res) {
-            mylog("forms:saveUserSuppliedDataToDB(): Error writing to DB");
+            } else {
+                $res = $ds->writeRecord($recKey, $newRec, true, true, true);
+            }
+            if (!$res) {
+                mylog("forms:saveUserSuppliedDataToDB(): Error writing to DB");
+            }
         }
 
         if ($this->repeatEventTaskPending) {
@@ -2403,13 +2407,14 @@ EOT;
             $doubletFound |= $identical;
         }
 
-        if ($doubletFound && !$this->repeatEventTaskPending) {
+        if ($doubletFound) {
             $this->clearCache();
-            $this->errorDescr[$this->formInx]['_announcement_'] = '{{ lzy-form-duplicate-data }}';
-            $this->skipRenderingForm = true;
-            writeLogStr("Unchanged data: ignored [{$currForm->formName}:$this->recKey] ".json_encode($userSuppliedData), FORM_LOG_FILE);
-        } else {
-            $doubletFound = false;
+            // if repeatEventTaskPending we need to continue without sending warning:
+            if (!$this->repeatEventTaskPending) {
+                $this->errorDescr[$this->formInx]['_announcement_'] = '{{ lzy-form-duplicate-data }}';
+                $this->skipRenderingForm = true;
+                writeLogStr("Unchanged data: ignored [{$currForm->formName}:$this->recKey] " . json_encode($userSuppliedData), FORM_LOG_FILE);
+            }
         }
         return $doubletFound;
     } // checkDuplicates
@@ -2493,7 +2498,8 @@ EOT;
             $type = $elemDef->type;
 
             // skip elements of pseudo type:
-            if ((strpos(PSEUDO_TYPES, $type) !== false) || ($key && ($key[0] === '_'))) {
+            if ((strpos(PSEUDO_TYPES, $type) !== false) ||
+                ($key && ($key[0] === '_') && (strpos($key, '_repeat') === false))) {
                 continue;
             }
 

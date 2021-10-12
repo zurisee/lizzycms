@@ -233,41 +233,29 @@ function LzyForms() {
 
         // copy default-values to value attributs:
         $('[data-' + mode + '-value]', $form).each(function () {
-            let $this = $(this);
+            const $this = $(this);
+            let $elem = $this.closest('.lzy-form-field-wrapper');
+            if (!$elem.length) {
+                $elem = $this;
+            }
             let value = $this.data( mode + '-value' );
+            value = parent.evalExpr( value ); // of type "=((...))" or "=eval((...))"
 
-            if ($('[type=radio]', $form).length || $('[type=checkbox]', $form).length) {
+            if ($('[type=radio]', $elem).length || $('[type=checkbox]', $elem).length) {
                 if (value.match(',')) {
                     const values = value.split(',');
                     for (let i in values) {
-                        $('[value=' + values[i] + ']', $form).prop('checked', true);
+                        const data = '[value=' + values[i] + ']';
+                        $( data, $elem).prop('checked', true);
                     }
                 } else {
-                    $('[value=' + value + ']', $form).prop('checked', true);
+                    $('[value=' + value + ']', $elem).prop('checked', true);
                 }
 
             } else if ($this.hasClass('lzy-formelem-toggle-wrapper')) {
                 $('.lzy-toggle-input-off', $this).prop('checked', !value);
                 $('.lzy-toggle-input-on', $this).prop('checked', value);
 
-            } else if (typeof value === 'string') {
-                value = value.replace(/´/g, "'");
-                // check whether there are compound definitions "=(...)":
-                let compound = value.match(/=\(\((.*)\)\)/); // =((
-                if (compound !== null) {
-                    value = compound[1];
-                    // check whether there is a reference to some other input field (defined as '$varName'):
-                    value = parent.resolveInputVars(value);
-                }
-
-                // handle expressions to eval:
-                compound = value.match(/^=eval\(\((.*?)\)\)/); // =eval((
-                if (compound !== null) {
-                    let expr = parent.resolveInputVars(compound[1]);
-                    let code = '"use strict";return (' + expr + ')';
-                    mylog(code, false);
-                    value = Function(code)(); // requires 'site_ContentSecurityPolicy: false'
-                }
             } else if (typeof value === 'boolean') {
                 value = value? 'true': 'false';
             }
@@ -533,6 +521,32 @@ function LzyForms() {
             });
         }
     }; // _openForm
+
+
+
+    this.evalExpr = function ( value ) {
+        // expressions of type "=((...))" or "=eval((...))"
+        if (typeof value === 'string') {
+            value = value.replace(/´/g, "'");
+            // check whether there are compound definitions "=((...))":
+            let compound = value.match(/=\(\((.*)\)\)/); // =((
+            if (compound !== null) {
+                value = compound[1];
+                // check whether there is a reference to some other input field (defined as '$varName'):
+                value = this.resolveInputVars(value);
+            }
+
+            // handle expressions to eval:
+            compound = value.match(/^=eval\(\((.*?)\)\)/); // =eval((
+            if (compound !== null) {
+                let expr = this.resolveInputVars(compound[1]);
+                let code = '"use strict";return (' + expr + ')';
+                mylog(code, false);
+                value = Function(code)(); // requires 'site_ContentSecurityPolicy: false'
+            }
+        }
+        return value;
+    } // evalExpr
 
 
 
