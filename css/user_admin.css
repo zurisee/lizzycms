@@ -487,3 +487,10 @@ input.lzy-login-email[type=email]:valid {
 #lzy .lzy-edit-profile-wrapper .lzy-panels-widget.lzy-account-form {
     font-size: 9pt;
 }
+
+.lzy-signup-hint {
+    font-size: 12pt!important;
+    display: inline-block;
+    margin-left: 1em;
+    font-style: italic;
+}

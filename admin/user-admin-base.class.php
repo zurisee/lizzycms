@@ -735,13 +735,16 @@ EOT;
 
 
 
-    protected function renderCheckboxListOfGroups( $preselected = 'selfadmin' )
+    protected function renderCheckboxListOfGroups( $preselected = 'selfadmin', $proxyuser = '' )
     {
         $out = "\t\t<div class='lzy-form-field-wrapper lzy-form-field-wrapper-2 lzy-form-field-type-checkbox lzy-form-field-type-choice lzy-horizontal'>";
 
         $groups = $this->auth->getKnownGroups();
         sort($groups);
         foreach ($groups as $i => $group) {
+            if ($proxyuser === $group) {
+                continue;
+            }
             $checked = ''; //selected=''
             if ($preselected && ($preselected === $group)) {
                 $checked = " checked='true' ";

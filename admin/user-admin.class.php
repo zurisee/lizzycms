@@ -19,6 +19,7 @@ class UserAdmin extends UserAdminBase
     {
         $this->options      = $options;
         $mode               = @$options['mode']? $options['mode']: 'signup';
+        $html               = '';
 
         if (strpos($mode, 'invite') !== false) {
             $html = $this->renderInviteUsersForm();
@@ -94,7 +95,7 @@ class UserAdmin extends UserAdminBase
             // success -> create a ot-ticket which reloads the browser, opening the right page and logging in:
             $landingPage = $GLOBALS['lizzy']['pageUrl'];
             $hash = $this->createOneTimeTicket( $username, $landingPage );
-            reloadAgent("./$hash", '{{ lzy-signup-success }}');
+            reloadAgent("~/$hash", '{{ lzy-signup-success }}');
 
         } else {
             $res = [ "{{ lzy-signup-failed }} {{ $res }}" ];
@@ -132,7 +133,8 @@ class UserAdmin extends UserAdminBase
             $rec = [
                 'user' => $proxyUser,
                 'email' => $email, // -> to prefill signup form
-                'groups' => $groups,
+                'groups' => $proxyUser,
+                'targetGroups' => $groups,
                 'displayName' => $name, // optional -> to prefill signup form
                 'landingPage' => $landingpage, // pagePath of signup form
                 'hash' => $hash,
@@ -152,8 +154,9 @@ class UserAdmin extends UserAdminBase
     private function processInvitationMail($hash, $email, $name, $time, $sendImmediately)
     {
         $until = strftime('%x %R', $time);
-        $host = $GLOBALS['lizzy']['host'];
-        $url = "{$GLOBALS['lizzy']['absAppRootUrl']}$hash";
+        $host = $GLOBALS['lizzy']['absAppRootUrl'];
+        $url = $host . $hash;
+
         $subject = "{{ lzy-email-sign-up-subject }}{$host}";
         $subject = $this->trans->translate($subject);
         $subject1 = htmlentities( $subject );
@@ -178,7 +181,7 @@ class UserAdmin extends UserAdminBase
             $addr = "$email?subject=$subject1&body=$message1";
             $out =
                 <<<EOT
-## {{ link('mailto:$addr', '$email') }}
+## {{ link('mailto:$addr', '$email') }} <span class="lzy-signup-hint">{{ lzy-email-sign-click-hint }}</span>
 Subject: $subject
 
 <pre>$message</pre>
@@ -198,11 +201,14 @@ EOT;
     private function renderInviteUsersForm()
     {
         // args from page / macro-call:
-        $proxyuser    = isset($this->options['proxyuser'])? $this->options['proxyuser']: 'proxyuser';
-        $group        = isset($this->options['group'])? $this->options['group']: 'guests';
-        $landingPage  = isset($this->options['landingPage'])? $this->options['landingPage']: '';
+        $proxyuser    = isset($this->options['proxyuser'])? $this->options['proxyuser']: 'signup';
+        $defaultGroup = isset($this->options['defaultGroup'])? $this->options['defaultGroup']: 'guests';
+        $landingPage  = '';
+        if (isset($this->options['landingPage'])) {
+            $landingPage  = str_replace('~/', '', $this->options['landingPage']);
+        }
         $registrationPeriod  = isset($this->options['registrationPeriod'])? $this->options['registrationPeriod']: '1 week';
-        $groupSelect  = parent::renderCheckboxListOfGroups( $group );
+        $groupSelect  = parent::renderCheckboxListOfGroups( $defaultGroup, $proxyuser );
 
         $warning = '';
         $users = $this->auth->getKnownUsers();
@@ -221,9 +227,9 @@ EOT;
         }
 
         $until = strftime('%x %R', time() + $registrationPeriod);
-        $host = $GLOBALS['lizzy']['host'];
-        $url = "{$GLOBALS['lizzy']['absAppRootUrl']}XXXXXX";
-        $subject = "{{ lzy-email-sign-up-subject }}{$host}";
+        $host = $GLOBALS['lizzy']['absAppRootUrl'];
+        $url = $host . ltrim($landingPage, '/');
+        $subject = "{{ lzy-email-sign-up-subject }}{$GLOBALS['lizzy']['absAppRootUrl']}";
         $subject = $this->trans->translate($subject);
         $message = "{{ lzy-email-sign-up1 }} → $url {{ lzy-email-sign-up2 }}{{ lzy-email-sign-up3 }}$until. {{ lzy-email-sign-up-greeting }} \n";
         $message = $this->trans->translate($message);
@@ -318,8 +324,12 @@ EOT;
         if (!$tickRec) {
             $tickRec = @$this->lzy->landingPageTickRec;
         }
+        if (@$tickRec['hash']) {
+            $tck = new Ticketing();
+            $tck->deleteTicket( $tickRec['hash'] );
+        }
         $group   = isset($this->options['group'])? $this->options['group']: 'guests';
-        $group   = isset($tickRec['group'])? $tickRec['group']: $group;
+        $group   = isset($tickRec['targetGroups'])? $tickRec['targetGroups']: $group;
         $hash    = isset($tickRec['hash'])? $tickRec['hash']: '';
         $email   = isset($tickRec['email'])? $tickRec['email']: '';
 
@@ -335,6 +345,7 @@ EOT;
                 'info' => '{{ lzy-signup-email-info-text }}',
                 'type' => 'email',
                 'name' => 'email',
+                'value' => $email,
             ],
 
             'Passwort' => [
@@ -512,6 +523,7 @@ function lzySignupCallback($lzy, $form, $userSuppliedData )
     }
 
     $verifiedEmail = @$userSuppliedData['verifiedemail'];
+    $next = $form->getNext();
     if ($verifiedEmail && ($verifiedEmail === $email)) {
         // user didn't modify email, so we it's verified -> add user to DB:
         $ua = new UserAdminBase($lzy);
@@ -520,7 +532,7 @@ function lzySignupCallback($lzy, $form, $userSuppliedData )
             // success -> create a ot-ticket which reloads the browser, opening the right page and logging in:
             $landingPage = $GLOBALS['lizzy']['pageUrl'];
             $hash = $ua->createOneTimeTicket( $username, $landingPage, $verifiedEmail );
-            reloadAgent("./$hash", '{{ lzy-signup-success }}');
+            reloadAgent("$next$hash", '{{ lzy-signup-success }}');
 
         } else {
             $res = [ "{{ lzy-signup-failed }} {{ $res }}" ];
@@ -549,7 +561,7 @@ function lzySignupCallback($lzy, $form, $userSuppliedData )
 
 
 
-// invoked from _lizzy/extensions/useradmin/config/table_edit_form_template.md
+ // invoked from _lizzy/extensions/useradmin/config/table_edit_form_template.md
 function lzyUserAdminCallback( $lzy, $forms, $userSuppliedData )
 {
     $user = $userSuppliedData['username'];

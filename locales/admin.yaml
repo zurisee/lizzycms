@@ -383,6 +383,9 @@ lzy-email-sign-up-greeting:
     de: "Beste Grüsse,\nDer Webmaster\n"
     _:  "Best Regards,\nWebmaster\n"
 
+lzy-email-sign-click-hint:
+    de: "&larr; Hier klicken, um die E-Mail zu erzeugen"
+    _:  "&larr; Click here to create e-mail"
 
 lzy-sign-up-link sent:
     de: "<h1>Registrierungs-Link versendet</h1>
