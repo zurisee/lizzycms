@@ -66,7 +66,6 @@ define('MKDIR_MASK',            0700); // permissions for file access by Lizzy
 define('MKDIR_MASK_WEBACCESS',  0755); // permissions for files cache
 
 define('PAGED_POLYFILL_SCRIPT', '~sys/third-party/paged.polyfill/paged.polyfill.min.js');
-//define('PAGED_POLYFILL_SCRIPT', '~sys/third-party/paged.polyfill/paged.polyfill.js');
 
 $localeFiles = ['config/user_variables.yaml', SYSTEM_PATH.LOCALES_PATH.'*'];
 
@@ -427,6 +426,7 @@ class Lizzy
             $tickRec = $tck->previewTicket( $hash );
             if ($tickRec) {
                 $tickType = @$tickRec['_ticketType'];
+                $res = '';
                 switch ($tickType) {
                     case 'lzy-ot-access':
                         $res = $this->auth->validateOnetimeAccessCode( $hash ); // reloads & never returns if login successful
@@ -438,7 +438,7 @@ class Lizzy
                         break;
 
                     case 'landing-page':
-                        $this->activateLandingPage( $hash );
+                        $this->activateLandingPage( $tickRec );
                         break;
 
                     case 'invite-user':
@@ -468,10 +468,8 @@ class Lizzy
 
 
 
-    private function activateLandingPage( $hash )
+    private function activateLandingPage( $tickRec )
     {
-        $tck = new Ticketing();
-        $tickRec = $tck->consumeTicket( $hash );
         $reqPage = $tickRec['landingPage'];
         $this->reqPagePath = $reqPage;
         $user = $tickRec['user'];
