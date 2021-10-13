@@ -336,6 +336,9 @@ class NextInTimeSequence
 
     private function applyFormat($event)
     {
+        if (!is_int($event)) {
+            return '';
+        }
         // apply optional format:
         if ($this->format) {
             $out = strftime($this->format, $event);
