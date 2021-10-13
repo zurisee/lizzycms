@@ -409,6 +409,8 @@ class Forms
         if (isset($args['defaultValue'])) {
             $this->currForm->dynamicFormSupport = true;
             $rec->defaultValue = $args['defaultValue'];
+        } elseif ($rec->value) {
+            $rec->defaultValue = $rec->value;
         } else {
             $rec->defaultValue = null;
         }
@@ -660,10 +662,6 @@ EOT;
             case 'tel':
                 $elem = $this->renderTel();
                 break;
-
-//            case 'file':
-//                $elem = $this->renderFileUpload();
-//                break;
 
             case 'fieldset':
                 return $this->renderFieldsetBegin();
@@ -1428,147 +1426,6 @@ EOT;
 
 
 
-
-//    private function renderFileUpload()
-//    {
-//        // While Lizzy's file-manager is active (admin_enableFileManager=true), the upload feature is not working due
-//        // to an incompatibility. Thus, we render a dummy button containing a warning:
-//        $e1 = $this->trans->config->admin_enableFileManager;
-//        $e2 = !isset($this->trans->page->frontmatter["admin_enableFileManager"]) || $this->trans->page->frontmatter["admin_enableFileManager"];
-//        $e3 = !isset($this->trans->page->frontmatter["enableFileManager"]) || $this->trans->page->frontmatter["enableFileManager"];
-//        if ($e1 && $e2 && $e3) {
-//            $str = "<button class='lzy-form-file-upload-label lzy-button'><span class='lzy-icon-error' title='Upload() not working while Lizzy&#39;s file-manager is active.'></span>{$this->currRec->label}</button>";
-//            return $str;
-//        }
-//
-//
-//        $inx = $this->inx;
-//        $id = "lzy-upload-elem-{$this->formInx}-$inx";
-//		$server = isset($this->args['server']) ? $this->args['server'] : UPLOAD_SERVER;
-//		$multiple = $this->currRec->multiple ? 'multiple' : '';
-//
-//        $targetPath = fixPath($this->currRec->uploadPath);
-//        $targetPath = makePathDefaultToPage($targetPath);
-//        $targetPathHttp = $targetPath;
-//        $targetFilePath = resolvePath($targetPath);
-//
-//        $rec = [
-//            'uploadPath' => $targetFilePath,
-//            'pagePath' => $GLOBALS['lizzy']['pageFolder'], //??? -> rename subsequently
-//            'pathToPage' => $GLOBALS['lizzy']['pathToPage'],
-//            'appRootUrl' => $GLOBALS['lizzy']['absAppRootUrl'],
-//            'user'      => $_SESSION["lizzy"]["user"],
-//        ];
-//        $tick = new Ticketing(['defaultType' => 'lzy-upload']);
-//        $this->ticket = $tick->createTicket($rec, 25);
-//
-//
-//        $thumbnailPath = THUMBNAIL_PATH;
-//        $list = "\t<div class='lzy-uploaded-files-title'>{{ lzy-uploaded-files-title }}</div>\n";  // assemble list of existing files
-//        $list .= "<ul>";
-//        $dispNo = ' style="display:none;"';
-//		if (isset($this->currRec->showExisting) && $this->currRec->showExisting) {
-//			$files = getDir($targetFilePath.'*');
-//			foreach ($files as $file) {
-//				if (is_file($file) && (fileExt($file) !== 'md')) {
-//					$file = basename($file);
-//					if (preg_match("/\.(jpe?g|gif|png)$/i", $file)) {
-//						$list .= "<li><span>$file</span><span><img src='$targetPathHttp$thumbnailPath$file' alt=''></span></li>";
-//					} else {
-//						$list .= "<li><span>$file</span></li>";
-//					}
-//				}
-//                $dispNo = '';
-//            }
-//        }
-//        $list .= "</ul>\n";
-//
-//		$labelClass = $this->currRec->labelClass;
-//        $out = <<<EOT
-//            <div class="lzy-upload-wrapper">
-//                <input type="hidden" name="lzy-upload" value="{$this->ticket}" />
-//                <label class="$id lzy-form-file-upload-label $labelClass" for="$id">{$this->currRec->label}</label>
-//                <input id="$id" class="lzy-form-file-upload-hidden" type="file" name="files[]" data-url="$server" $multiple />
-//
-//                <div class='lzy-form-progress-indicator lzy-form-progress-indicator$inx' style="display: none;">
-//                    <progress id="lzy-progressBar$inx" class="lzy-form-progressBar" max='100' value='0'>
-//                        <span id="lzy-form-progressBarFallback1-$inx"><span id="lzy-form-progressBarFallback2-$inx">&#160;</span></span>
-//                    </progress>
-//                    <div><span aria-live="polite" id="lzy-form-progressPercent$inx" class="lzy-form-progressPercent"></span></div>
-//                </div>
-//            </div> <!-- /lzy-upload-wrapper-->
-//			<div id='lzy-form-uploaded$inx' class='lzy-form-uploaded'$dispNo >$list</div>
-//
-//EOT;
-//
-//        if (!isset($this->uploadInitialized)) {
-//            $js = <<<EOT
-//var lzyD = new Date();
-//var lzyT0 = lzyD.getTime();
-//
-//EOT;
-//            $this->page->addJs($js);
-//            $this->uploadInitialized = true;
-//        }
-//		$jq = <<<EOT
-//
-//	$('#$id').fileupload({
-//	    url: '$server',
-//		dataType: 'json',
-//
-//		progressall: function (e, data) {
-//		    mylog('processing upload');
-//		    $('.lzy-form-progress-indicator$inx').show();
-//			var progress = parseInt(data.loaded / data.total * 100, 10);
-//			$('#lzy-progressBar$inx').val(progress);
-//			var lzyD = new Date();
-//			var lzyT1 = lzyD.getTime();
-//			if (((lzyT1 - lzyT0) > 500) && (progress < 100)) {
-//				lzyT0 = lzyT1;
-//				$('#lzy-form-progressPercent$inx').text( progress + '%' );
-//			}
-//			if (progress === 100) {
-//				$('#lzy-form-progressPercent$inx').text( progress + '%' );
-//			}
-//		},
-//
-//		done: function (e, data) {
-//		    mylog('upload accomplished');
-//			$.each(data.result.files, function (index, file) {
-//				if (file.name.match(/\.(jpe?g|gif|png)$/i)) {
-//					var img = '<img src="$targetPathHttp$thumbnailPath' + file.name + '" alt="" />';
-//				} else {
-//					var img = '';
-//				}
-//				var line = '<li><span>' + file.name + '</span><span>' + img + '</span></li>';
-//				$('#lzy-form-uploaded$inx').show();
-//				$('#lzy-form-uploaded$inx ul').append(line);
-//			});
-//		},
-//
-//		error: function (data, textStatus, errorThrown) {
-//		    mylog( data.responseText );
-//		},
-//	});
-//
-//EOT;
-//		$this->page->addJq($jq);
-//
-//		if (!isset($this->fileUploadInitialized)) {
-//			$this->fileUploadInitialized = true;
-//
-//			$this->page->addJqFiles([
-//			    '~sys/third-party/jquery-upload/js/vendor/jquery.ui.widget.js',
-//                '~sys/third-party/jquery-upload/js/jquery.iframe-transport.js',
-//                '~sys/third-party/jquery-upload/js/jquery.fileupload.js',
-//                '~sys/third-party/jquery-upload/js/jquery.fileupload-process.js']);
-//		}
-//
-//        return $out;
-//    } // renderFileUpload
-
-
-
     private function renderHidden()
     {
         $value = $this->getValueAttr();
@@ -1730,10 +1587,19 @@ EOT;
 
         $formInx = $this->currForm->formInx;
         if (!$this->skipRenderingForm) {
+            $out = '';
             if ($this->currForm->antiSpam) {
                 $this->initAntiSpam();
             }
-            $out = "\t  </form>\n";
+            if ($this->bypassedValues) {
+                $tck = new Ticketing([
+                    'defaultType' => 'form-bypass-hash',
+                    'defaultMaxConsumptionCount' => 10]
+                );
+                $tickHash = $tck->createTicket($this->bypassedValues);
+                $out .= "\t\t<input type='hidden' name='_form-bypass-hash' value='$tickHash' />\n";
+            }
+            $out .= "\t  </form>\n";
 
             if ($this->currForm->formFooter) {
                 $out .= "\t  <div class='lzy-form-footer'>{$this->currForm->formFooter}</div>\n";
@@ -1925,6 +1791,12 @@ EOT;
         $str = $this->formHash . ':'. base64_encode( serialize( $form ) );
         preparePath($cacheFile);
         file_put_contents($cacheFile, $str);
+
+        // for debugging only:
+        if (@$_SESSION['lizzy']['debug']) {
+            $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['lizzy']['pagePath'] . "form-descr-{$this->formInx}.yaml";
+            writeToYamlFile($cacheFile, $form);
+        }
     } // saveFormDescr
 
 
@@ -1956,6 +1828,14 @@ EOT;
             }
         }
         $this->currForm = unserialize(base64_decode( substr($str, 9 )));
+        if (@$this->userSuppliedData0['_form-bypass-hash']) {
+            $tickHash = $this->userSuppliedData0['_form-bypass-hash'];
+            $tck = new Ticketing();
+            $bypassed = $tck->consumeTicket($tickHash);
+            if ($bypassed) {
+                $this->currForm->bypassedValues = $bypassed;
+            }
+        }
         return $this->currForm;
 	} // restoreFormDescr
 
@@ -2155,6 +2035,10 @@ EOT;
                 $msgToClient = $this->currForm->confirmationText;
             }
             $this->responseToClient = $msgToClient . '<br>' . $this->responseToClient;
+            $this->skipRenderingForm = true;
+
+        } elseif (@$this->errorDescr[ 'generic' ]['_override_']) {
+            $this->responseToClient = $this->errorDescr[ 'generic' ]['_override_'];
             $this->skipRenderingForm = true;
         }
         return true;
@@ -2507,7 +2391,7 @@ EOT;
             if (!isset($rec[ $key ])) {
                 // handle elements of type beypassed, retrieve value from $elemDef:
                 if ($type === 'bypassed') {
-                    $rec[$key] = $elemDef->value;
+                    $rec[$key] = $this->currForm->bypassedValues[ $key ];
                 } else {
                     $rec[$key] = '';
                 }
@@ -3423,6 +3307,13 @@ EOT;
         }
         return $recKey;
     } // getOverrideKey
+
+
+
+    public function getNext()
+    {
+        return $this->currForm->next;
+    } // getNext
 
 } // Forms
 
