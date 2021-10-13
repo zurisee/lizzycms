@@ -44,7 +44,13 @@ class Authentication
                     $msg = $this->lzy->trans->translate('{{ lzy-login-successful-as }}');
                     reloadAgent(false, "$msg: $user");
                 } elseif (is_array($user)) {
-                    $res = $user;
+                    if ((@$user[2] === 'Override') && isset($user[1])) {
+                        $this->lzy->page->addOverride($user[1]);
+                    } elseif ((@$user[2] === 'Overlay') && isset($user[1])) {
+                        $this->lzy->page->addOverlay($user[1]);
+                    }
+//                    $res = $user;//???
+                    $res = false;
                 }
             } else {
                 $this->validateAccessCode( $credentials );
@@ -225,7 +231,7 @@ class Authentication
             $codeCandidate = $codeCandidate['password'];
         }
         foreach ($this->knownUsers as $user => $rec) {
-            if ($rec['inactive']) {
+            if (@$rec['inactive']) {
                 continue;
             }
             if (isset($rec['accessCode'])) {
