@@ -213,7 +213,9 @@ EOT;
         $warning = '';
         $users = $this->auth->getKnownUsers();
         if (!in_array($proxyuser, array_keys($users))) {
-            $warning = "<div class='lzy-warning'>{{ lzy-invite-user-missing-warning }}: \"$proxyuser\"</div>";
+            $warning = $this->lzy->trans->getVariable('lzy-invite-user-missing-warning');
+            $warning = str_replace('%proxyuser%', $proxyuser, $warning);
+            $warning = "<div class='lzy-warning'>$warning</div>";
         }
 
         if (strpos($registrationPeriod, 'day') !== false) {
@@ -238,6 +240,7 @@ EOT;
 
 	<div class='lzy-form-wrapper lzy-form-colored'>
 	    <h2>{{ lzy-invite-user-request-header }}</h2>
+$warning
 	  <form id='lizzy-form1' class='lzy-form lzy-form-labels-above lzy-encapsulated' method='post' novalidate>
 		<input type='hidden' class='lzy-form-cmd' name='_lzy-form-cmd' value='invite-users' />
 		<input type='hidden' name='landingpage' value='$landingPage' />
@@ -272,7 +275,6 @@ EOT;
             </span><!-- /lzy-label-wrapper -->
 $groupSelect
 		</div><!-- /field-wrapper -->
-$warning
 
 		<div class='lzy-form-field-type-buttons'>
             <input type='reset' id='btn_lizzy-form1_cancel' value='{{ lzy-admin-cancel-button }}'  class='lzy-form-button lzy-form-button-cancel' />
@@ -310,6 +312,26 @@ $('#btn_lizzy-form1_prepare').click(function() {
     $('#lizzy-form1 .lzy-form-cmd').val('edit-invite-users');
     $('#lizzy-form1').submit();
 });
+$('.lzy-formelem-show-info').tooltipster({
+    trigger: 'custom',
+    contentCloning: true,
+    animation: 'fade',
+    delay: 200,
+    animation: 'grow',
+    maxWidth: 420,
+}).focus(function(){ // show on focus
+    $(this).tooltipster('show');
+}).mouseover(function(){ // show on hover
+    $(this).tooltipster('show');
+}).blur(function(){ // on click it'll focuses, and will hide only on blur
+    $(this).tooltipster('hide');
+}).mouseout(function(){ // if user doesnt click, will hide on mouseout
+    if (document.activeElement !== this) {
+        $(this).tooltipster('hide');
+    }
+});
+
+
 EOT;
         $this->page->addJq( $jq );
         $this->page->addModules('REVEAL');
@@ -340,7 +362,8 @@ EOT;
             'customResponseEvaluationFunction' => 'lzySignupCallback',
             'action' => '~/' . $GLOBALS['lizzy']['pagePath'],
             'next' => '~/',
-            'E-Mail' => [
+
+            '{{ lzy-email }}' => [
                 'required' => true,
                 'info' => '{{ lzy-signup-email-info-text }}',
                 'type' => 'email',
@@ -348,14 +371,14 @@ EOT;
                 'value' => $email,
             ],
 
-            'Passwort' => [
+            '{{ lzy-password }}' => [
                 'required' => true,
                 'info' => '{{ lzy-signup-pw-info-text }}',
                 'type' => 'password',
                 'name' => 'password',
             ],
 
-            'Benutzername' => [
+            '{{ lzy-username }}' => [
                 'type' => 'text',
                 'info' => '{{ lzy-signup-username-info-text }}',
                 'name' => 'username',

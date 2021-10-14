@@ -114,6 +114,20 @@ body {
     margin-top: 2em;
     border: 1px solid orange;
 }
+.lzy-useradmin-warning {
+    border: 1px solid red;
+    padding: 1em;
+    margin: 1em 0;
+    background: #ffdddd;
+    color: black;
+}
+.lzy-useradmin-warning pre,
+.lzy-useradmin-warning code {
+    font-size: 100% !important;
+}
+.lzy-useradmin-warning pre {
+    margin: 0;
+}
 
 .lzy-email-login .lzy-login-form,
 .lzy-simple-login .lzy-login-form {

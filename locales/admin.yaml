@@ -966,17 +966,17 @@ lzy-invite-user-invite-as-user-info:
 
 lzy-invite-user-groups-info:
     de: |
-        Bestimmt, welche Gruppezugehörigkeit die neuen Benutzern erhalten werden. Standardvorgabe "gaeste".<br>
-        Zur Auswahl stehen nur bereits verwendete Gruppen.<br>
-        Um eine neue Gruppe zu verwenden, weisen Sie diese zuerst einem vorhandenen Benutzer zu.
+        Bestimmt, welche Gruppezugehörigkeit die neuen Benutzern erhalten werden.<br>
+        (Die Auswahl unten besteht aus den bereits verwendeten Gruppen in config/users.yaml.<br>
+        Um eine neue Gruppe zu verwenden, weisen Sie diese zuerst einem vorhandenen Benutzer zu.)
     de2: |
-        Bestimmt, welche Gruppezugehörigkeit die neuen Benutzern erhalten werden. Standardvorgabe "gaeste".<br>
-        Zur Auswahl stehen nur bereits verwendete Gruppen.<br>
-        Um eine neue Gruppe zu verwenden, weise diese zuerst einem vorhandenen Benutzer zu.
+        Bestimmt, welche Gruppezugehörigkeit die neuen Benutzern erhalten werden.<br>
+        (Die Auswahl unten besteht aus den bereits verwendeten Gruppen in config/users.yaml.<br>
+        Um eine neue Gruppe zu verwenden, weise diese zuerst einem vorhandenen Benutzer zu.)
     _:  |
-        Defines to which group membership(s) new users will be assigned. Default "guests".<br>
-        Here you can only chose from groups already in use. <br>
-        To use a new group, assign it first to one of the existing users.
+        Defines to which group(s) new users will be assigned.<br>
+        (The selection below is derived from config/users.yaml. <br>
+        To use a new group, assign it first to one of the existing users.)
 
 lzy-invite-user-email-send:
     de: 'Einladung(en) versenden'
@@ -1414,5 +1414,24 @@ lzy-sign-up-now:
     _: 'Sign-up now'
 
 lzy-invite-user-missing-warning:
-    de: '<strong>Achtung</strong>:<br>für den proxyuser fehlt der Eintrag in config/users.yaml'
-    _: '<strong>Warning</strong>:<br>for the requested proxyuser there is no entry in config/users.yaml'
+    de: |
+        <div class='lzy-useradmin-warning'>
+            <strong>Achtung</strong>:<br>in Datei <code>config/users.yaml</code> fehlt der <em>Proxyuser</em>.<br>
+            Bitte Datei ergänzen mit:
+            <pre><code>
+        %proxyuser%:
+            groups: %proxyuser%
+            </code></pre>
+        </div>
+    _:  |
+        <div class='lzy-useradmin-warning'>
+            <strong>Warning</strong>:<br><em>Proxyuser</em> is missing in file <code>config/users.yaml</code>.<br>
+            Please append following entry:
+            <pre><code>
+        %proxyuser%:
+            groups: %proxyuser%
+            </code></pre>
+        </div>
+
+#    de: '<strong>Achtung</strong>:<br>für den proxyuser fehlt der Eintrag in config/users.yaml'
+#    _: '<strong>Warning</strong>:<br>for the requested proxyuser there is no entry in config/users.yaml'

@@ -293,7 +293,6 @@ EOT;
 
     public function renderLoginMenu( $userRec )
     {
-        $logInVar = '';
         if ($this->loggedInUser) {
             list($header,$logInVar) = $this->renderLoginAccountMenu( $userRec );
             $jq = <<<EOT
