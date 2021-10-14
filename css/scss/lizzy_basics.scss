@@ -1179,14 +1179,14 @@ body {
 		text-align: center;
 		line-height: 1em;
 		margin: 0;
-		content: '➕';
+		content: '+'; //'➕';
 		transition: transform 0.3s;
 		transform-origin: 50% 50%;
 	}
 	input.lzy-reveal-icon:checked::before {
 		transform: rotate( 180deg );
 		transition: transform 0.3s;
-		content: '➖';
+		content: '-'; //'➖';
 	}
 	.lzy-reveal-controller label {
 		width: calc(100% - 2em);
@@ -1210,7 +1210,14 @@ body {
 
 .lzy-reveal-controller {
 	padding: 0.5em 0;
+	&:focus-within {
+		outline: 1px solid var( --lzy-form-focus-color, magenta);
+	}
+	input:focus {
+		outline: unset !important;
+	}
 }
+
 .lzy-reveal-triangle {
 	input.lzy-reveal-icon {
 		margin-right: 0.4em;

@@ -921,6 +921,7 @@ body {
 		line-height: 2em;
 		vertical-align: middle;
 		padding: 0;
+		color: inherit;
 	}
     input.lzy-reveal-icon.lzy-reveal-icon {
         -webkit-appearance: none;
@@ -988,6 +989,12 @@ body {
 
 .lzy-reveal-controller {
     padding: 0.5em 0;
+	&:focus-within {
+		outline: 1px solid var( --lzy-form-focus-color, magenta);
+	}
+	input:focus {
+		outline: unset !important;
+	}
 }
 .lzy-reveal-triangle {
     input.lzy-reveal-icon {
