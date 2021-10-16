@@ -584,6 +584,22 @@ html:not(.lzy-responsive-fontsize) .lzy-default-layout {
     transform:  translateX(0);
     transition: transform var(--lzy-msg-transition-time, 0.6s);
 }
+.lzy-msgbox.lzy-msg-show::before {
+    transform: rotate( 180deg );
+    border-radius: 0 3px 3px 0;
+}
+.lzy-msgbox::before {
+    position: absolute;
+    content: '\25C3';
+    font-family: sans-serif;
+    background: #fbfb77;
+    border-radius: 3px 0 0 3px;
+    font-size: 0.8rem;
+    width: 0.8rem;
+    left: -0.75rem;
+    top: 2px;
+    padding-top: 2px;
+}
 .lzy-msgbox::after {
     position: absolute;
     content: ' ';
