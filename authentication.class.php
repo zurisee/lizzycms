@@ -49,7 +49,6 @@ class Authentication
                     } elseif ((@$user[2] === 'Overlay') && isset($user[1])) {
                         $this->lzy->page->addOverlay($user[1]);
                     }
-//                    $res = $user;//???
                     $res = false;
                 }
             } else {
@@ -256,7 +255,7 @@ class Authentication
 
                     if ($keepAccessCode && !isset($_GET['login'])) {
                         $msg = $this->lzy->trans->translate('{{ lzy-login-successful-as }}');
-                        $this->lzy->page->addMessage("$msg: $user");
+                        $this->lzy->page->addMessage("$msg: $user", true);
                         return $user;
                     } else {
                         $msg = '';
