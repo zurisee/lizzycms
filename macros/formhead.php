@@ -99,6 +99,12 @@ $this->addMacro($macroName, function () {
         $this->getArg($macroName, 'encapsulate', 'If true, activates Lizzy\'s widget encapsulation scheme '.
             '(i.e. adds class "lzy-encapsulated" to the form element).', '');
 
+        $this->getArg($macroName, 'responseViaSideChannels', 'If true, responses to user inputs will be shown in popups. '.
+            'Otherwise, they are presented in the page.', '');
+
+//        $this->getArg($macroName, '', ' '.
+//            '.', '');
+//
         $this->getArg($macroName, 'exportStructure', 'If true, Lizzy exports the datastructure corresponding to '.
             'given form data to file "filename_structure.yaml". This is needed when outputting data as a table. '.
             '(Default: true)', '');
