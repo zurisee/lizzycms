@@ -1831,6 +1831,11 @@ EOT;
                 $this->currForm->bypassedValues = $bypassed;
             }
         }
+
+        // enroll can set admin_mode, if so, skip recModifyCheck:
+        if (@$this->admin_mode) {
+            $this->currForm->recModifyCheck = false;
+        }
         return $this->currForm;
 	} // restoreFormDescr
 
