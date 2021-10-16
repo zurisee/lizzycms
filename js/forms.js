@@ -454,16 +454,20 @@ function LzyForms() {
 
     this.setupOnSubmitHandler = function() {
         let parent = this;
-        $('.lzy-form input[type=reset]').click(function(e) {
+        $('input[type=reset]', this.$form).click(function(e) {
             const $form = $(this).closest('.lzy-form');
             parent.clearForm( $form );
         });
 
-        $('.lzy-form input[type=submit]').click(function(e) {
+        $('input[type=submit], button[data-delete]', this.$form).click(function(e) {
             const $form = $(this).closest('.lzy-form');
             const $submitBtn = $(this);
             $submitBtn.prop('disabled', true).addClass('lzy-button-disabled');
 
+            const del = $submitBtn.data('delete');
+            if (typeof del !== 'undefined') {
+                $('[name=_lzy-form-cmd]', $form).val('delete');
+            }
             if (debugLogging) {
                 const dataStr = JSON.stringify( $form.serializeArray() );
                 serverLog('Form will submit: ' + dataStr, 'form-log.txt');

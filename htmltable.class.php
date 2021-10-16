@@ -37,6 +37,7 @@ class HtmlTable
     private $phpExpr;
     private $nCols;
     private $processingInstructions;
+    private $form;
 
     public function __construct($lzy, $options)
     {
@@ -244,9 +245,7 @@ class HtmlTable
             $this->tableClass .= ' lzy-active-table';
         }
         if ($this->formEditing || $this->recViewButtonsActive) {
-            $this->page->addModules('FORMS');
-            require_once SYSTEM_PATH . 'forms.class.php';
-            new Forms($this->lzy, true);
+            $this->form = $this->renderEditingForm();
         }
 
         $this->loadData();
@@ -268,7 +267,7 @@ class HtmlTable
         }
 
         if ($this->formEditing || $this->recViewButtonsActive) {
-            $out .= $this->renderEditingForm();
+            $out .= $this->form;
         }
         if ($this->inlineEditing) {
             $this->srcRef = $this->activateInlineEditing();
@@ -1447,7 +1446,7 @@ EOT;
     private function renderForm()
     {
         $recStructure = $this->ds->getStructure();
-        $form = new Forms( $this->lzy, false );
+        $form = new Forms($this->lzy);
 
         $splitChoiceElemsInDb = isset($this->options['splitChoiceElemsInDb'])? $this->options['splitChoiceElemsInDb']: false;
 
@@ -1465,7 +1464,7 @@ EOT;
             'splitChoiceElemsInDb' => $splitChoiceElemsInDb,
             'lockRecWhileFormOpen' => @$this->options['lockRecWhileFormOpen'],
             'translateLabels' => true,
-            'skipConfirmation' => true,
+            'responseViaSideChannels' => true,
         ];
         if ($this->editFormArgs) {
             $args = array_merge($args, $this->editFormArgs);
@@ -1685,6 +1684,7 @@ EOT;
             $out = removeCStyleComments( $out );
             $out = str_replace(['#file#','#tableCounter#'], ['~/'.$this->dataSource, $this->tableCounter], $out);
             $out = compileMarkdownStr( $out );
+            $out = $this->lzy->trans->translate( $out );
             $out = <<<EOT
 
 <div class='lzy-edit-rec-form-wrapper' style='display:none'>
@@ -1855,7 +1855,7 @@ EOT;
             $sortInx = $this->sort;
             if (is_numeric($sortInx)) {
                 $sortInx = intval($sortInx) - 1;
-            } else {
+            } elseif (is_array($this->headerElems)) {
                 $sortInx = array_search($sortInx, $this->headerElems);
             }
             if ($sortInx === false) {
