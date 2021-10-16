@@ -106,6 +106,7 @@ class Lizzy
 	private $loginFormRequired = false;
 	public  $loginFormRequiredOverride = true; // to suppress login form in case of onetime code sent
     public  $ticketHash = [];
+    public  $keepAccessCode = false;
 
 
 
