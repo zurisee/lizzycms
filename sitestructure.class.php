@@ -333,7 +333,11 @@ class SiteStructure
 
             // elem name == '*' means derive page-list from current folder down:
             if ($name === '*') {
-                $branch = $this->getBranchFromFolders( $listInx, $parentLevel, $path );
+                $ascending = true;
+                if (@$list[2]['sort']) {
+                    $ascending = (strpos($list[2]['sort'], 'r') === false);
+                }
+                $branch = $this->getBranchFromFolders( $listInx, $parentLevel, $path, $ascending );
                 array_splice( $this->list, $listInx, 1, $branch);
             }
 
@@ -392,10 +396,11 @@ class SiteStructure
 
 
 
-    private function getBranchFromFolders( $listInx, $parentLevel, $path )
+    private function getBranchFromFolders( $listInx, $parentLevel, $path, $ascending )
     {
         $path1 = "{$GLOBALS['lizzy']['pagesFolder']}$path";
         $dir = getDirDeep( "$path1*.md" );
+
         $tmp = [];
         foreach ($dir as $i => $elem) {
             $elem = dirname($elem).'/';
@@ -404,7 +409,12 @@ class SiteStructure
             }
         }
         $dir = array_keys($tmp);
-        sort($dir);
+        if ($ascending) {
+            sort($dir);
+        } else {
+            $dir = $this->reversereverseDirSort($dir, $path1);
+        }
+
         $branch = [];
         foreach ($dir as $i => $p) {
             $rec = &$branch[$i];
@@ -711,6 +721,28 @@ class SiteStructure
         return false;
     } // hasActiveAncestor
 
+
+
+    private function reversereverseDirSort( $dir, $path = '' )
+    {
+        // sort logic: subfolders after parent folders
+        // [1,2,2a,3] => [3,2,2a,1]
+        $l = strlen($path);
+        sort($dir);
+        usort($dir, function ($a,$b) use($l) {
+            $a = substr($a, $l);
+            $b = substr($b, $l);
+            $an = intval($a);
+            $bn = intval($b);
+            if ($an === $bn) {
+                $ord = (strlen($an) < strlen($bn));
+            } else {
+                $ord = ($an < $bn);
+            }
+            return $ord;
+        });
+        return $dir;
+    } // reversereverseDirSort
 
 
 
