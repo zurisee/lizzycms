@@ -14,6 +14,9 @@ function parseArgumentStr($str, $delim = ',', $yamlCompatibility = false)
     $str0 = $str;
     if (strpos($str, '↵') !== false) {
         $str = trim($str, '↵ ');
+        if (!$str) {
+            return [];
+        }
         $str = preg_replace('|\s//.*?↵|', '', $str); // remove inline comments
         $str = str_replace("\t", '    ', $str);
     }
