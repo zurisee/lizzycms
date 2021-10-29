@@ -109,6 +109,29 @@ private $userConfigurableSettingsAndDefaults      = [
     'site_ContentSecurityPolicy'        => ['report', '[true,report,false] Enables "Content Security Policy (CSP)" for scripts embedded in pages. (Default: report)', 2 ],
     'site_enableAllowOrigin'            => ['false', 'Set to "*" or explicitly to a domain to allow other websites to include pages of this site.', 2 ],
     'site_allowFrameAncestors'          => ['\'self\'', 'Defines who can import pages from this site via &lt;frame>. Default: \'self\'. Add URL to allow others.', 3 ],
+
+    'site_loadStyleSheets'              => [[
+        'normalize.scss' => 1,
+        'lizzy_layout.scss' => 1,
+        'lizzy_core.scss' => 1,
+        'lizzy_nav.scss' => 1,
+        'lizzy_forms.scss' => 1,
+        'lizzy_misc.scss' => 2,
+        'lizzy_icons.scss' => 2,
+        'admin.scss' => 3,
+        'htmltables.scss' => 3,
+        'normalize.min.css' => 3,
+        'panels.scss' => 3,
+        'popup.scss' => 3,
+        'post-it.scss' => 3,
+        'quickview.scss' => 3,
+        'user_admin.scss' => 3,
+//        'auxiliary.scss' => 0,
+//        'lizzy_basics.scss' => 0,
+//        'editor.scss' => 0,
+//        'file_editor.scss' => 0,
+    ], 'Defines CSS/SCSS style-sheets to be loaded. 0 = not loaded, 1 = loaded, 2 = late loaded, 3 = compiled to separate css-file.', 2 ],
+
 ];
 
 
@@ -121,7 +144,6 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->systemPath               = SYSTEM_PATH;
         $this->systemHttpPath           = '~/'.SYSTEM_PATH;
 
-//        $this->mdCachingActive          = false;
         $this->siteIdententation        = MIN_SITEMAP_INDENTATION;
         $this->configFile               = $lzy->configFile;
 

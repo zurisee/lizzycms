@@ -62,6 +62,7 @@ class Page
 
     private $assembledCssFiles = '';
     private $assembledJsFiles = '';
+    private $asyncLoadJsLoadedHash = false;
 
     private $metaElements = ['lzy', 'trans', 'config', 'metaElements']; // items that shall not be merged
 
@@ -1023,6 +1024,9 @@ EOT;
 
         // CSP for Scripts:
         $cspStr .= " script-src 'self'";
+        if ($this->asyncLoadJsLoadedHash) {
+            $cspStr .= " 'sha256-$this->asyncLoadJsLoadedHash'";
+        }
         if ($this->assembledJs) {
             $hash = base64_encode(hash('sha256', $this->assembledJs, true));
             $cspStr .= " 'sha256-$hash'";
@@ -1069,7 +1073,29 @@ EOT;
                     $mediaType = " media=\"{$m[2]}\"";
                 }
                 $item1 = resolvePath($item, true, true);
-                $out .= "\t<link href='$item1' rel='stylesheet'$mediaType />\n";
+                if (strpos($item, 'async') === false) {
+                    $out .= "\t<link href='$item1' rel='stylesheet'$mediaType />\n";
+                } else {
+                    $asyncLoadJs = '';
+                    if (!$this->asyncLoadJsLoadedHash) {
+                        $asyncLoadJs = "var elem = document.getElementsByClassName('lzy-onload-css');".
+                        "for (i=0;i<elem.length;i++) { elem[i].setAttribute('media', 'all'); }";
+                        $this->asyncLoadJsLoadedHash = base64_encode(hash('sha256', $asyncLoadJs, true));
+                        $asyncLoadJs = "\t<script>$asyncLoadJs</script>\n";
+                    }
+                    $out .= <<<EOT
+    <link rel="stylesheet" href="$item1" media="print" class="lzy-onload-css" />
+    <noscript><link rel="stylesheet" href="$item1" /></noscript>
+    $asyncLoadJs
+
+EOT;
+//                    $out .= <<<EOT
+//    <link rel="stylesheet" href="$item1" media="print" onload="this.media='all'" />
+//    <noscript><link rel="stylesheet" href="$item1" /></noscript>
+//
+//EOT;
+
+                }
 
                 if ($this->config->site_enableFilesCaching) {
                     $this->assembledCssFiles .= $this->getFile( $item, true );
@@ -1209,10 +1235,15 @@ EOT;
         $primaryModules = array_column($primaryModules, 0);
         $modules = array_merge($primaryModules,$modules);
         $cssModules = [
-            '~sys/css/__lizzy-core.css',
-            '~sys/css/__lizzy-aux.css',
-            '~/css/__styles.css'
+            '~/'.SYSTEM_STYLESHEET,
+            '~/'.SYSTEM_STYLESHEET_LATE_LOAD,
+            "~/css/{$this->config->site_compiledStylesFilename}",
         ];
+//        $cssModules = [
+//            '~sys/css/__lizzy-core.css',
+//            '~sys/css/__lizzy-aux.css',
+//            '~/css/__styles.css'
+//        ];
         $jsModules = [];
         foreach ($modules as $mod) {
             if (preg_match('/\.css(\?.*)?$/i', $mod)) {    // split between css and js files
