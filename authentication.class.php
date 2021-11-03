@@ -311,10 +311,20 @@ class Authentication
         }
         $this->userInitialized = true;
 
-        // check whether account is inactive -> no login allowed:
-        $rec = $this->getUserRec($user);
-	    if (!$rec || (isset($rec['inactive']) && $rec['inactive'])) {
-	        return false;
+        if (!file_exists('config/users.yaml') && isLocalhost()) {
+            // we are in initial state where no users or admin, has been defined yet:
+            $user = 'autoAdmin';
+            $isAdmin = true;
+            $rec = [];
+
+        } else {
+            // check whether account is inactive -> no login allowed:
+            $rec = $this->getUserRec($user);
+            if (!$rec || (isset($rec['inactive']) && $rec['inactive'])) {
+                return false;
+            }
+
+            $isAdmin = $this->isAdmin();
         }
 
         $this->userRec = $rec;
@@ -323,7 +333,6 @@ class Authentication
         $this->loggedInUser = $user;
         $_SESSION['lizzy']['user'] = $user;
         $_SESSION['lizzy']['userRec'] = $rec;
-        $isAdmin = $this->checkAdmission('admins');
         $isPrivileged = $isAdmin || $this->checkAdmission('editors');
 
         $_SESSION['lizzy']['isAdmin'] = $isAdmin;
