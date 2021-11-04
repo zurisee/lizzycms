@@ -1,6 +1,8 @@
 <?php
 
-// renders <img tag, handling alt, srcset, late-loading, quickview etc. as well as loading of required resourcs
+ // renders <img tag, handling alt, srcset, late-loading, quickview etc. as well as loading of required resourcs
+
+$this->page->addModules('~sys/css/_images.css');
 
 
 class ImageTag
@@ -9,6 +11,10 @@ class ImageTag
     private $imgFullsizeWidth = null;
     private $imgFullsizeHeight = null;
     private $sizesFactor = null;
+    private $lateImgLoading = null;
+    private $alt = null;
+    private $origSrc = null;
+    private $imgTagAttributes = null;
 
     public function __construct($obj, $args) {
         list($feature_image_default_max_width) = parseDimString($obj->config->feature_ImgDefaultMaxDim);
@@ -54,9 +60,8 @@ class ImageTag
 
         $genericAttibs = $this->imgTagAttributes ? "\n\t\t".$this->imgTagAttributes : '';
 
-        $src = $lizzy["appRoot"].$lizzy["pageFolder"].'_/'.base_name($this->src);
-
-        $style = "\n\t\tstyle='max-width: {$this->w}px; max-height: {$this->h}px;'";
+        $src = $lizzy['appRoot'].$lizzy['pageFolder'].'_/'.base_name($this->src);
+        $style = '';
 
         // basic img code:
         $str = <<<EOT
@@ -206,7 +211,7 @@ EOT;
         $src = base_name($src, false);
         if (preg_match('/ \( (.*?) \) $/x', $src, $m)) {    // (WxH) size specifier present?
             return parseDimString($m[1]);
-        } elseif (preg_match('/ \[ (.*?) \] $/x', $src, $m)) {    // [WxH] size specifier present?
+        } elseif (preg_match('/ \[ (.*?) ] $/x', $src, $m)) {    // [WxH] size specifier present?
             return parseDimString($m[1]);
         }
 
