@@ -160,7 +160,7 @@ class UserAdminBase
 </div>
 
 EOT;
-        $this->lzy->page->addModules('~sys/css/user_admin.css');
+        $this->lzy->page->addModules('USER_ADMIN');
         $jq = <<<'EOT'
 			$('#lzy-adduser-create-hash').click(function() {
 			    let $wrapper = $(this).closest('.lzy-form-field-wrapper');

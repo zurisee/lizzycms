@@ -17,6 +17,7 @@ class SCssCompiler
 
     public function __construct( $lzy )
     {
+        $this->lzy = $lzy;
         $this->config = $lzy->config;
         $this->page = $lzy->page;
         $this->userCssPath = $lzy->config->path_stylesPath;
@@ -128,10 +129,10 @@ class SCssCompiler
 
     private function doCompile($file, &$target)
     {
+        $filename = basename($file, '.scss');
         if ((fileExt($file) === 'css') && file_exists($file)) {
             $cssStr = file_get_contents($file);
         } else {
-            $filename = basename($file, '.scss');
             if (!$this->scss) {
                 $this->scss = new Compiler;
                 //$this->scss->setLineNumberStyle(Compiler::LINE_COMMENTS);
@@ -181,7 +182,7 @@ class SCssCompiler
         
     private function getFile($file)
     {
-        if ($this->localHost && $this->config->debug_compileScssWithLineNumbers) {
+        if ($this->localHost && ($this->config->debug_compileScssWithLineNumbers || @$_SESSION['lizzy']['debug'])) {
             $out = getFile($file);
             $fname = basename($file);
             $lines = explode(PHP_EOL, $out);

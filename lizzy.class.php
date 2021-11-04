@@ -881,7 +881,7 @@ EOT;
         if ($this->auth->checkGroupMembership('admins') ||
             $this->auth->checkGroupMembership('editors') ||
             $this->auth->checkGroupMembership('fileadmins')) {
-                $this->page->addCssFiles('~sys/css/_admin.css');
+                $this->page->addModules('USER_ADMIN');
         }
     } // injectAdminCss
 

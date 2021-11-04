@@ -99,7 +99,7 @@
 }
 
 
-.lzy-default-layout {
+.lzy-default-styling {
   .lzy-inactive {
     color: #888;
   }
@@ -170,14 +170,14 @@
 }
 
 // ===  button() -> toggle
-#lzy.lzy-default-layout .lzy-encapsulated,
-#lzy.lzy-default-layout {
+#lzy.lzy-default-styling .lzy-encapsulated,
+#lzy.lzy-default-styling {
   .lzy-button-active { box-shadow: inset 0 0 4px red; }
 }
 
 
 // === Macro Help ===============
-.lzy-default-layout .lzy-macro-help {
+.lzy-default-styling .lzy-macro-help {
   background: #f7f7f7;
   color: #333;
   padding: 1em;
@@ -188,6 +188,13 @@
   dt {
     margin: 1em 0 0.2em 0;
     color: blue;
+    span {
+      color: #999;
+      font-size: 70%;
+      &:hover {
+        color: black;
+      }
+    }
   }
   dd {
     line-height: 1.3em;

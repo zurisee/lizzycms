@@ -1,0 +1,81 @@
+/* === Links =========================================== */
+#lzy .lzy-encapsulated,
+& {
+
+  .lzy-link {
+    position: relative;
+    white-space: nowrap;
+    color: inherit;
+    color: var(--lzy-link-color, inherit);
+  }
+
+  .lzy-link:before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: inline-block;
+    font-family: 'Lzy Icons';
+    font-style: normal;
+    font-weight: normal;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  //.lzy-page-link {
+  //  padding-left: 0;
+  //}
+
+  .lzy-mail_link {
+    padding-left: 1.25em;
+  }
+
+  .lzy-pdf_link,
+  .lzy-download_link,
+  .lzy-newwin_link,
+  .lzy-external_link {
+    padding-left: 1.2em;
+  }
+
+  .lzy-newwin_link:before,
+  .lzy-external_link:before {
+    content: 'X';
+    font-size: 90%;
+    top: 0.1em;
+  }
+
+  .lzy-mail_link:before {
+    content: 'Z';
+  }
+
+  .lzy-sms_link:before {
+    content: 'L';
+  }
+
+  .lzy-tel_link:before {
+    content: 'I';
+  }
+
+  .lzy-gsm_link:before {
+    content: 't';
+  }
+
+  .lzy-pdf_link:before {
+    content: 'r';
+  }
+
+  .lzy-geo_link:before {
+    content: 'J';
+  }
+
+  .lzy-slack_link:before {
+    content: 'q';
+    font-size: 90%;
+  }
+
+  .lzy-download_link:before {
+    content: 'v';
+    font-size: 90%;
+  }
+}
+

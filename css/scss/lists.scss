@@ -1,0 +1,104 @@
+/* === lists ============================== */
+@import '_lizzy/css/scss/definitions.scss';
+
+#lzy .lzy-encapsulated,
+& {
+
+  // Definition Lists in table layout:
+
+  .lzy-dl-floating, .dl-floating,
+  .lzy-dl-flex, .dl-flex,
+  .lzy-dl-as-table, .dl-as-table {
+    //--lzy-dl-as-table-dt-width: 6em;
+    --inline-block: inline-block;
+    --flex: flex;
+  }
+
+  &.lzy-large-screen {
+    .lzy-dl-as-table,
+    .dl-as-table {
+      dl {
+        margin: 0;
+      }
+
+      dt, dd {
+        display: var(--inline-block); // hack to get round IE
+        vertical-align: top;
+        margin: 0 0 0.5em 0;
+      }
+
+      dt {
+        width: 16em;
+        width: var(--lzy-dl-as-table-dt-width, $dl-as-table-dt-width);
+      }
+
+      dd {
+        width: 70%;
+        width: calc(100% - var(--lzy-dl-as-table-dt-width, #{$dl-as-table-dt-width}));
+      }
+    }
+  }
+
+  // variante floating -> less problem in conjunction with printing
+  &.lzy-small-screen {
+    .dl-as-table,
+    .dl-floating {
+      dt {
+        font-weight: bold;
+      }
+    }
+  }
+
+  &.lzy-large-screen {
+    .dl-floating {
+      --dt-width: 6em;
+
+      dl {
+        clear: left;
+      }
+
+      dt, dd {
+        margin-bottom: 0.5em;
+      }
+
+      dt {
+        width: 6em;
+        width: var(--dt-width);
+        float: left;
+      }
+
+      dd {
+        vertical-align: top;
+        margin-left: 0;
+        padding-left: 6.1em;
+        padding-left: var(--dt-width);
+      }
+    }
+  }
+
+  // variante using flex -> less problem in conjunction with other floating elements
+  .dl-flex dl {
+    display: block;
+    display: var(--flex);
+    flex-flow: row;
+    flex-wrap: wrap;
+    overflow: visible;
+
+    dt {
+      flex: 0 0 var(--lzy-dl-as-table-dt-width, $dl-as-table-dt-width);
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+
+    dd {
+      flex: 0 0 calc(100% - var(--lzy-dl-as-table-dt-width, #{$dl-as-table-dt-width}));
+      margin-left: auto;
+      text-align: left;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      padding-bottom: 1em;
+      line-height: 1.25em;
+    }
+  }
+
+}

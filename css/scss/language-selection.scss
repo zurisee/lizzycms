@@ -1,0 +1,29 @@
+// === Language Selection:
+.lzy-lang-selection {
+  display: inline-block;
+  margin-right: 0.33em;
+}
+.lzy-lang-elem {
+  width: 1.5em;
+  height: 1.5em;
+  transform: translateY(0.25em);
+  display: inline-block;
+  margin:  0 3px;
+}
+.lzy-lang-selection > span a {
+  border-bottom: none;
+}
+.lzy-lang-icon {
+  width: 1.5em;
+  height: 1.5em;
+  border-radius: 50%;
+  opacity: 0.5;
+}
+.lzy-lang-selection:hover .lzy-lang-icon {
+  opacity: 1;
+}
+.lzy-active-lang .lzy-lang-icon {
+  border: 2px solid black;
+}
+
+

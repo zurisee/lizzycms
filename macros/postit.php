@@ -22,7 +22,8 @@ $str =  <<<EOT
 EOT;
 $page->addJq($str);
 
-$page->addCssFiles('~sys/css/post-it.css');
+$page->addCssFiles('~sys/css/_post-it.css');
+//$page->addCssFiles('~sys/css/post-it.css');
 $page->addJqFiles(['PANZOOM']);
 
 $macroName = basename(__FILE__, '.php');

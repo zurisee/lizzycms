@@ -4,6 +4,7 @@
 require_once SYSTEM_PATH.'nav-renderer.class.php';
 
 $this->page->addModules('NAV');
+//$this->page->requireModule('css/_nav.css');
 
 
 $macroName = basename(__FILE__, '.php');

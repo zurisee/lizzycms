@@ -212,15 +212,6 @@ class Page
 
 
 
-//??? obsolete? delete?
-//    public function getEncoded()
-//    {
-//        $encoded = serialize($this);
-//        return $encoded;
-//    } // getEncoded
-
-
-
     public function addBody($str, $replace = false)
     {
         $this->addToProperty('bodyTopInjections', $str, $replace);
@@ -311,6 +302,33 @@ class Page
 
 
 
+    private function getCssModule($module)
+    {
+        $m = str_replace('.css', '.scss', basename($module));
+        if ($m[0] === '_') {
+            $m = substr($m, 1);
+        }
+        $mod = @$GLOBALS['lzy']->config->site_loadStyleSheets[$m];
+        if ($mod === 3) {
+            if (!file_exists($module)) {
+                $module1 = resolvePath($module);
+                if (!file_exists($module1)) {
+                    $module1 = "_lizzy/$module";
+                    if (!file_exists($module1)) {
+                        return '';
+                    }
+                    $module = "~sys/$module";
+                }
+            }
+            $module = resolvePath($module, true, true);
+            return $module;
+        } else {
+            return '';
+        }
+    } // getCssModule
+
+
+
     public function addJsFiles($str, $replace = false, $persisent = false)
     {
         $this->addModules($str, $replace);
@@ -318,15 +336,6 @@ class Page
 			$_SESSION['lizzy']["lizzyPersistentJsFiles"] .= $str;
 		}
     } // addJsFiles
-
-
-
-//??? obsolete? delete?
-//    public function addAutoAttrFiles($str, $replace = false, $persisent = false)
-//    {
-//        $this->addToListProperty($this->autoAttrFiles, $str, $replace);
-//    } // addAutoAttrFiles
-
 
 
 
@@ -474,7 +483,6 @@ EOT;
             'jsFiles' => $this->jsFiles,
             'jq' => $this->jq,
             'jqFiles' => $this->jqFiles,
-//???            'modules' => $this->modules,
             'jsModules' => $this->jsModules
         ];
         $this->override = $args;
@@ -778,45 +786,6 @@ EOT;
 
 
 
-//??? obsolete? delete?
-//    public function autoInvokeClassBasedModules($content)
-//    {
-//        $modified = false;
-//        $class1 = '';
-//        foreach ($this->config->classBasedModules as $class => $modules) {
-//            $varname = 'class_'.$class;
-//            if (isset($this->config->$varname) && ($class !== $this->config->$varname)) {
-//                $class1 = $this->config->$varname;
-//            }
-//            if (preg_match("/class\=.*['\"\s] $class1 ['\"\s]/x", $content, $m)) {
-//                foreach ($modules as $module => $rsc) {
-//                    $modified = true;
-//                    if ($module === 'cssFiles') {
-//                        $this->addCssFiles($rsc);
-//
-//                    } elseif ($module === 'css') {
-//                        $this->addCss($rsc);
-//
-//                    } elseif ($module === 'jqFiles') {
-//                        $this->addJQFiles($rsc);
-//
-//                    } elseif ($module === 'jq') {
-//                        $this->addJq($rsc);
-//
-//                    } elseif ($module === 'jsFiles') {
-//                        $this->addJsFiles($rsc);
-//
-//                    } elseif ($module === 'jq') {
-//                        $this->addJq($rsc);
-//                    }
-//                }
-//                unset($this->config->classBasedModules[$class]); // avoid loading module multiple times
-//            }
-//        }
-//        return $modified;
-//    } // autoInvokeClassBasedModules
-
-
 
     private function getHeadInjections()
     {
@@ -1068,37 +1037,41 @@ EOT;
         if ($type === 'css') {
             foreach ($this->cssModules as $item) {
                 $mediaType = '';
-                if (preg_match('/^(.*?)\@(\w+)/', $item, $m)) {
+                if (preg_match('/^(.*?)@(\w+)/', $item, $m)) {
                     $item = $m[1];
                     $mediaType = " media=\"{$m[2]}\"";
                 }
-                $item1 = resolvePath($item, true, true);
-                if (strpos($item, 'async') === false) {
-                    $out .= "\t<link href='$item1' rel='stylesheet'$mediaType />\n";
+
+                if (strpos(basename($item), '__') !== 0) {
+                    // check for css files of site_loadStyleSheets type 3:
+                    $item1 = $this->getCssModule($item);
                 } else {
-                    $asyncLoadJs = '';
-                    if (!$this->asyncLoadJsLoadedHash) {
-                        $asyncLoadJs = "var elem = document.getElementsByClassName('lzy-onload-css');".
-                        "for (i=0;i<elem.length;i++) { elem[i].setAttribute('media', 'all'); }";
-                        $this->asyncLoadJsLoadedHash = base64_encode(hash('sha256', $asyncLoadJs, true));
-                        $asyncLoadJs = "\t<script>$asyncLoadJs</script>\n";
-                    }
-                    $out .= <<<EOT
+                    // system style sheets __lizzy.css and __lizzy-async.css -> no need to check:
+                    $item1 = resolvePath($item, true, true);
+                }
+                if ($item1) {
+                    if (strpos($item, 'async') === false) {
+                        $out .= "\t<link href='$item1' rel='stylesheet'$mediaType />\n";
+                    } else {
+                        $asyncLoadJs = '';
+                        if (!$this->asyncLoadJsLoadedHash) {
+                            $asyncLoadJs = "var elem = document.getElementsByClassName('lzy-onload-css');" .
+                                "for (i=0;i<elem.length;i++) { elem[i].setAttribute('media', 'all'); }";
+                            $this->asyncLoadJsLoadedHash = base64_encode(hash('sha256', $asyncLoadJs, true));
+                            $asyncLoadJs = "\t<script>$asyncLoadJs</script>\n";
+                        }
+                        $out .= <<<EOT
     <link rel="stylesheet" href="$item1" media="print" class="lzy-onload-css" />
     <noscript><link rel="stylesheet" href="$item1" /></noscript>
     $asyncLoadJs
 
 EOT;
-//                    $out .= <<<EOT
-//    <link rel="stylesheet" href="$item1" media="print" onload="this.media='all'" />
-//    <noscript><link rel="stylesheet" href="$item1" /></noscript>
-//
-//EOT;
 
-                }
+                    }
 
-                if ($this->config->site_enableFilesCaching) {
-                    $this->assembledCssFiles .= $this->getFile( $item, true );
+                    if ($this->config->site_enableFilesCaching) {
+                        $this->assembledCssFiles .= $this->getFile($item, true);
+                    }
                 }
             }
 
@@ -1234,16 +1207,14 @@ EOT;
         usort($primaryModules, function($a, $b) { return ($a[1] < $b[1]); });
         $primaryModules = array_column($primaryModules, 0);
         $modules = array_merge($primaryModules,$modules);
-        $cssModules = [
-            '~/'.SYSTEM_STYLESHEET,
-            '~/'.SYSTEM_STYLESHEET_LATE_LOAD,
-            "~/css/{$this->config->site_compiledStylesFilename}",
-        ];
-//        $cssModules = [
-//            '~sys/css/__lizzy-core.css',
-//            '~sys/css/__lizzy-aux.css',
-//            '~/css/__styles.css'
-//        ];
+        $cssModules = [];
+        if ($this->config->site_defaultStyling) {
+            $cssModules = [
+                '~/' . SYSTEM_STYLESHEET,
+                '~/' . SYSTEM_STYLESHEET_LATE_LOAD,
+            ];
+        }
+        $cssModules[] = "~/css/{$this->config->site_compiledStylesFilename}";
         $jsModules = [];
         foreach ($modules as $mod) {
             if (preg_match('/\.css(\?.*)?$/i', $mod)) {    // split between css and js files
@@ -1333,6 +1304,9 @@ EOT;
         $html = $this->trans->adaptBraces($html);
 
         $bodyTagInjections = $this->bodyTagInjections;
+        if ($this->config->site_defaultStyling) {
+            $this->addToProperty('bodyTagClasses', ' lzy-default-styling');
+        }
         if ($this->bodyTagClasses) {
             $bodyTagInjections = rtrim(" class='".trim($this->bodyTagClasses)."' ".$bodyTagInjections);
         }

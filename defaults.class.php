@@ -88,6 +88,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'path_stylesPath'                   => ['css/', 'Name of folder in which style sheets reside', 3 ],
     'path_userCodePath'                 => [USER_CODE_PATH, 'Name of folder in which user-provided PHP-code must reside.', 3 ],
 
+    'site_defaultStyling'               => [true, 'If true, Lizzy provides basic styling as a starting point. If false, none of Lizzy\'s style-sheets are loaded.', 2 ],
     'site_compiledStylesFilename'       => ['__styles.css', 'Name of style sheet containing collection of compiled user style sheets', 2 ],
     'site_dataPath'                     => [DATA_PATH, 'Path to data/ folder.', 3 ],
     'site_devDataPath'                  => ['', 'Activates a mechanism that, in dev-mode, switches &#126;data/ to given destination. Thus, you can savely develop and test in dev-mode without overwriting hot data. Hint: set site_dataPath to "../db/".', 2 ],
@@ -111,25 +112,35 @@ private $userConfigurableSettingsAndDefaults      = [
     'site_allowFrameAncestors'          => ['\'self\'', 'Defines who can import pages from this site via &lt;frame>. Default: \'self\'. Add URL to allow others.', 3 ],
 
     'site_loadStyleSheets'              => [[
-        'normalize.scss' => 1,
-        'lizzy_layout.scss' => 1,
+        'normalize.min.css' => 1,
+        'layout.scss' => 1,
         'lizzy_core.scss' => 1,
-        'lizzy_nav.scss' => 1,
-        'lizzy_forms.scss' => 1,
+        'nav.scss' => 1,
+        'forms.scss' => 1,
         'lizzy_misc.scss' => 2,
-        'lizzy_icons.scss' => 2,
+        'icons.scss' => 2,
         'admin.scss' => 3,
         'htmltables.scss' => 3,
-        'normalize.min.css' => 3,
         'panels.scss' => 3,
         'popup.scss' => 3,
         'post-it.scss' => 3,
-        'quickview.scss' => 3,
         'user_admin.scss' => 3,
-//        'auxiliary.scss' => 0,
-//        'lizzy_basics.scss' => 0,
-//        'editor.scss' => 0,
-//        'file_editor.scss' => 0,
+
+        'buttons.scss' => 1,
+        'debugging.scss' => 2,
+        'editing.scss' => 2,
+        'images.scss' => 3,
+        'language-selection.scss' => 1,
+        'links.scss' => 2,
+        'lists.scss' => 2,
+        'login.scss' => 2,
+        'overlays.scss' => 1,
+        'pageswitcher.scss' => 2,
+        'printing.scss' => 1,
+        'reveal.scss' => 1,
+        'skiplinks.scss' => 1,
+        'tables.scss' => 1,
+        'texts.scss' => 1,
     ], 'Defines CSS/SCSS style-sheets to be loaded. 0 = not loaded, 1 = loaded, 2 = late loaded, 3 = compiled to separate css-file.', 2 ],
 
 ];
@@ -181,10 +192,10 @@ private $userConfigurableSettingsAndDefaults      = [
 
         $this->loadModules['REVEAL']                = array('module' => 'js/reveal.js', 'weight' => 128);
         $this->loadModules['TABBABLE']              = array('module' => 'third-party/tabbable/jquery.tabbable.min.js', 'weight' => 126);
-        $this->loadModules['NAV']                   = array('module' => 'js/nav.js', 'weight' => 125);
+        $this->loadModules['NAV']                   = array('module' => 'js/nav.js,css/_nav.css', 'weight' => 125);
 
         $this->loadModules['FORMS']                 = array('module' => 'js/forms.js', 'weight' => 124);
-        $this->loadModules['HTMLTABLE']             = array('module' => 'js/htmltable.js,css/htmltables.css', 'weight' => 123);
+        $this->loadModules['HTMLTABLE']             = array('module' => 'js/htmltable.js,css/_htmltables.css', 'weight' => 123);
 
         $this->loadModules['LIVE_DATA']             = array('module' => 'extensions/livedata/js/live_data.js', 'weight' => 121);
         $this->loadModules['EDITABLE']              = array('module' => 'extensions/livedata/js/live_data.js,extensions/editable/js/editable.js,'.
@@ -193,13 +204,13 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->loadModules['EDITOR']                = array('module' => 'js/editor.js, css/_editor.css', 'weight' => 117);
         $this->loadModules['FILE_EDITOR']           = array('module' => 'js/file_editor.js, css/_file_editor.css', 'weight' => 115);
 
-        $this->loadModules['PANELS']                = array('module' => 'js/panels.js, css/panels.css', 'weight' => 110);
+        $this->loadModules['PANELS']                = array('module' => 'js/panels.js, css/_panels.css', 'weight' => 110);
 
-        $this->loadModules['QUICKVIEW']     	    = array('module' => 'js/quickview.js, css/quickview.css', 'weight' => 92);
+        $this->loadModules['QUICKVIEW']     	    = array('module' => 'js/quickview.js', 'weight' => 92);
 
         $this->loadModules['POPUPS']                = array('module' => 'third-party/jquery.event.ue/jquery.event.ue.min.js,' .
                                                             'third-party/javascript-md5/md5.min.js, '.
-                                                            'js/popup.js, css/popup.css', 'weight' => 86);
+                                                            'js/popup.js, css/_popup.css', 'weight' => 86);
 
         $this->loadModules['TOOLTIPS']              = array('module' => 'third-party/jquery-popupoverlay/jquery.popupoverlay.js,'.
                                                                         'js/tooltips.js, css/tooltips.css', 'weight' => 84);
@@ -224,7 +235,7 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->loadModules['PAGE_SWITCHER']         = array('module' => 'js/page_switcher.js', 'weight' => 30);
         $this->loadModules['TETHER']                = array('module' => 'third-party/tether.js/tether.min.js', 'weight' => 20);
         $this->loadModules['IFRAME_RESIZER']        = array('module' => 'third-party/iframe-resizer/iframeResizer.contentWindow.min.js', 'weight' => 19);
-        $this->loadModules['USER_ADMIN']            = array('module' => 'js/user_admin.js, css/user_admin.css', 'weight' => 5);
+        $this->loadModules['USER_ADMIN']            = array('module' => 'js/user_admin.js, css/_user_admin.css', 'weight' => 5);
 
 
 
@@ -248,6 +259,9 @@ private $userConfigurableSettingsAndDefaults      = [
         // userConfigurableSettingsAndDefaults will be needed if ?config arg was used, so keep it
         if (!getUrlArg('config')) {
             unset($this->userConfigurableSettingsAndDefaults);
+        }
+        if (!$this->site_defaultStyling) {
+            $this->site_loadStyleSheets = [];
         }
         return $this;
     } // __construct

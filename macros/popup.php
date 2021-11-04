@@ -4,6 +4,7 @@ $macroName = basename(__FILE__, '.php');    // macro name normally the same as t
 $this->addMacro($macroName, function () {
     $macroName = basename(__FILE__, '.php');
 
+    $this->getArg($macroName, 'text', '', false);
     $args = $this->getArgsArray($macroName);
 
     if (@$args[0] === 'help') {
