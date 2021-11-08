@@ -1,0 +1,17 @@
+SCSS Notes
+==========
+
+CSS-Variables:
+
+--lzy-root-font-size
+--lzy-link-color
+--lzy-focus-color
+
+--lzy-form-width
+
+
+Classes:
+.lzy-fluid-fontsize
+.lzy-responsive-fontsize
+.lzy-flex-layout
+

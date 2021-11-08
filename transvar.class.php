@@ -215,6 +215,11 @@ class Transvar
 
     public function translateMacro($macro, $argStr)
     {
+        if (strpos($argStr, '↵') !== false) {
+            $argStr = trim($argStr, '↵ ');
+            $argStr = preg_replace('|\s//.*?↵|', '', $argStr); // remove inline comments
+            $argStr = str_replace("\t", '    ', $argStr);
+        }
         $this->macroArgs[$macro] = parseArgumentStr($argStr);
         $this->macroInx = 0;
 
@@ -370,13 +375,21 @@ class Transvar
         if (!$argsHelp) {       // don't show anything if there are no arguments listed
             return '';
         }
+        $i = 0;
+        foreach ($argsHelp as $key => $value) {
+            $argsHelp[$key] = [$i++, $value];
+        }
         ksort( $argsHelp );
         $out = "<div class='lzy-macro-help'>\n";
         $out .= "  <h2>Options for macro <em>$macroName()</em></h2>\n";
         if (!isset($argsHelp["noArguments"])) {       // don't show anything if there are no arguments listed
             $out .= "<dl>\n";
-            foreach ($argsHelp as $name => $text) {
-                $out .= "\t<dt>$name:</dt>\n\t\t<dd>$text</dd>\n";
+            foreach ($argsHelp as $name => $rec) {
+                if ($rec[0] < 4) {
+                    $out .= "\t<dt>$name: <span>[{$rec[0]}]</span></dt>\n\t\t<dd>{$rec[1]}</dd>\n";
+                } else {
+                    $out .= "\t<dt>$name:</dt>\n\t\t<dd>{$rec[1]}</dd>\n";
+                }
             }
             $out .= "</dl>\n";
         }

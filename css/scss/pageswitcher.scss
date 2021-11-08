@@ -1,0 +1,46 @@
+// === Page Switcher Links
+.lzy-page-switcher-links a {
+  position: absolute;
+  border-bottom: none;
+  z-index: 10000;
+  opacity: 0.6;
+  color: black;
+  display: block;
+  font-size: 2rem;
+  height: 3rem;
+  line-height: 3rem;
+}
+.lzy-page-switcher-links a:focus,
+.lzy-page-switcher-links a:hover {
+  opacity: 1;
+}
+.lzy-prev-page-link a {
+  padding-right: 0.5rem;
+  left: 0;
+}
+.lzy-next-page-link a {
+  padding-left: 0.5rem;
+  right: 0;
+}
+.lzy-page-switcher-links a::before {
+  content: ' ';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: -1;
+  width: 100%;
+  height: 3rem;
+}
+.lzy-prev-page-link a::before {
+  right: 0;
+}
+.lzy-page-switcher-links a:focus::before,
+.lzy-page-switcher-links a:hover::before {
+  background: rgba(169, 227, 255, 0.75);
+}
+.lzy-prev-link-arrow,
+.lzy-next-link-arrow {
+  font-size: 11pt;
+  vertical-align: top;
+}

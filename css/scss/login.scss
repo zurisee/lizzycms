@@ -1,0 +1,148 @@
+/* === Login ============================== */
+#lzy .lzy-encapsulated,
+#lzy {
+
+  /* login window for pages requiring login: */
+  &.lzy-page-override .lzy-required-login-wrapper {
+    font-size: 12pt;
+    max-width: 30em;
+    margin: 5% auto 0 auto;
+    padding: 1em;
+    border: 1px solid #aaa;
+
+    .lzy-comment {
+      margin: 1em;
+      //padding-left: 1em;
+      font-style: italic;
+    }
+  }
+
+  &.lzy-small-screen {
+    #lzy-login-form_wrapper * {
+      font-size: 14pt;
+    }
+
+    .lzy-login-form {
+      padding: 0;
+    }
+
+    #lzy-login-form a.lzy-panel-link {
+      color: white;
+    }
+
+    .lzy-panel-inner-wrapper {
+      padding: 1em 0;
+      transition: margin-top 0.3s;
+    }
+
+    // conflicting with table-buttons
+    //	input, button {
+    //		line-height: 2em;
+    //	}
+    .lzy-footer {
+      input, button, a.lzy-login-link {
+        line-height: 1em;
+      }
+    }
+
+    .lzy-panel-page:focus {
+      outline: none;
+    }
+  }
+
+  .lzy-logged-in-user > div {
+    display: inline-block;
+  }
+
+  #lzy-onetime-code {
+    padding: 3px 6px;
+  }
+
+  /* === Login Link ========================= */
+  .lzy-login-icon-btn {
+    border: none;
+    background: transparent;
+  }
+
+  .lzy-login-link-menu {
+    position: relative;
+    clear: both;
+    display: inline-block;
+  }
+
+  .lzy-login-link-menu div {
+    display: block;
+    clear: both;
+    float: none;
+  }
+
+  .lzy-login-menu.lzy-login-menu.lzy-login-menu {
+    background: #fff9b5;
+    min-width: 30em;
+    max-width: 95vw;
+  }
+
+
+  .lzy-loading-spinner {
+    width: 24px;
+    height: 24px;
+  }
+
+
+  /* === Login Form =========================== */
+  .lzy-login-form {
+    font-family: verdana, sans-serif;
+    --lzy-panels-label-color: #444;
+    --lzy-panels-bg-color: white;
+    --lzy-panels-bg-color-non-selected: #444;
+    --lzy-panels-label-color-non-selected: #ddd;
+    color: black;
+  }
+
+  .lzy-form.lzy-login-form {
+    margin: 2em 0 1em;
+  }
+
+  .tooltipster-sidetip {
+    font-family: verdana, sans-serif;
+
+    .tooltipster-box {
+      background: #f3ffd3;
+      border: 1px solid #778c3d;
+      border-radius: 6px;
+      line-height: 1.4em;
+      padding: 0.5em;
+    }
+
+    .tooltipster-content {
+      color: black;
+      padding: 8px;
+    }
+
+    &.tooltipster-top {
+      .tooltipster-arrow {
+        bottom: -1px;
+      }
+
+      .tooltipster-arrow-background {
+        border-top-color: #f3ffd3;
+        top: -1px;
+      }
+    }
+
+    &.tooltipster-arrow-border {
+      border-top-color: #778c3d;
+    }
+  }
+
+  &.lzy-small-screen .lzy-form.lzy-login-form {
+    .lzy-form-field-type-buttons {
+      display: block;
+    }
+
+    .lzy-form-button-submit {
+      width: 100%;
+    }
+  }
+
+}

@@ -28,6 +28,21 @@
 }
 
 
+// Config Viewer:
+.lzy-config-viewer dt strong {
+    color: navy;
+}
+.lzy-config-viewer dt code {
+    color: black;
+}
+.lzy-config-viewer-hl,
+.lzy-config-viewer dt code.lzy-config-viewer-hl {
+    color: red;
+}
+.lzy-config-viewer dd {
+    margin-bottom: 1em;
+}
+
 
 
 

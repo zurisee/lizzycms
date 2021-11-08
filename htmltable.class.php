@@ -312,7 +312,12 @@ EOT;
         $thead = '';
         $tbody = '';
         $tfoot = '';
-        $nCols = sizeof(reset( $data ));
+        if ($data) {
+            $rec0 = reset($data);
+            if (is_array($rec0)) {
+                $nCols = sizeof(reset($data));
+            }
+        }
         $rowClass0 = $this->rowClass;
 
         $rec = end($data);
@@ -1829,12 +1834,16 @@ EOT;
                 foreach ($data as $key => $rec) {
                     $data[$key] = array_pad($rec, $nColsReq, '');
                 }
-                $this->headerElems = array_pad($this->headerElems, $nColsReq, '');
+                if (is_array($this->headerElems)) {
+                    $this->headerElems = array_pad($this->headerElems, $nColsReq, '');
+                }
             } elseif ($nColsReq < $nCols) { // reduce size
                 foreach ($data as $key => $rec) {
                     $data[$key] = array_slice($rec, 0, $nColsReq);
                 }
-                $this->headerElems = array_slice($this->headerElems, 0, $nColsReq);
+                if (is_array($this->headerElems)) {
+                    $this->headerElems = array_slice($this->headerElems, 0, $nColsReq);
+                }
             }
         }
 

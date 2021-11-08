@@ -269,7 +269,7 @@ function LzyPopup( options, index ) {
                 }
 
                 $popupContent.wrap('<div class="' + cls + '"' + data + closeCallback + '>');
-                // $popupContent.wrap('<div class="' + cls + '"' + data + '>');
+// $popupContent.wrap('<div class="' + cls + '"' + data + '>');
                 $popupContent.parent().prepend( header );
                 $popupContent.wrap('<div class="lzy-popup-container">');
                 $popupContent.append(this.buttonHtml);

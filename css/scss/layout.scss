@@ -1,0 +1,635 @@
+/*
+**  Lizzy Layout-related Styles
+**
+** CSS Variables:
+    --lzy-mobile-header-height:
+    --lzy-mobile-footer-height:
+    
+    --lzy-mobile-header-txt-color:
+    --lzy-mobile-header-bg-color:
+    --lzy-mobile-header-text-size:
+    
+    --lzy-mobile-footer-txt-color:
+    --lzy-mobile-footer-bg-color:
+    --lzy-mobile-footer-txt-size:
+
+    --lzy-mobile-nav-title-color:
+    --lzy-mobile-nav-title-bg-color:
+    --lzy-mobile-nav-txt-color:
+    --lzy-mobile-nav-bg-color:
+
+    --lzy-mobile-txt-color:
+    --lzy-mobile-link-color:
+    --lzy-mobile-bg-color:
+ */
+
+
+// main page:
+$mobile-main-txt-color: black;
+$mobile-main-link-color: darkgray;
+$mobile-main-bg-color: white;
+
+// mobile header:
+$mobile-header-font-size: 6vw;
+$mobile-header-height:    3rem;
+$mobile-header-txt-color: #ddd;
+$mobile-header-bg-color:  #444;
+
+$mobile-page-font-size:   4.5vw;
+$mobile-nav-bg-color:     #333;
+$mobile-nav-txt-color:     #ddd;
+$mobile-nav-title-color:  #333;
+$mobile-nav-title-bg-color: #ddd;
+
+// mobile footer:
+$mobile-footer-height:    3rem;
+$mobile-footer-txt-color: #ddd;
+$mobile-footer-font-size: 5vw;
+
+// mobile nav:
+$mobile-nav-width:       18rem;     // must be same as _lizzy_nav.scss
+
+$yPadding: 0.4rem;
+
+$grid-gap: 10px;
+$box-width: 300px;
+
+$min-font-size: 15;
+$max-font-size: 24;
+
+#lzy .lzy-encapsulated,
+& {
+
+    // === Header
+    .lzy-header {
+
+    }
+
+
+    // === Footer
+    .lzy-footer {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5em 0;
+        border-top: 1px solid #bbb;
+        margin-top: 2em;
+
+        a {
+            border-bottom: none;
+        }
+
+        .lzy-icon {
+            --lzy-icon-factor: 1.25;
+            opacity: 0.6;
+
+            &:focus,
+            &:hover {
+                opacity: 1;
+            }
+        }
+
+        .lzy-config-button,
+        .lzy-toggle-edit-mode {
+            padding-right: 10px;
+        }
+    }
+
+
+    // === Default Layouts:
+    //html:not(.lzy-responsive-fontsize) .lzy-default-styling {
+    @at-root html:not(.lzy-responsive-fontsize) {
+        font-size: calc(var(--lzy-root-font-size, #{$min-font-size}) * 1px);
+    }
+
+    // lzy-default-styling
+
+
+    //.lzy-default-styling {
+        font-size: 1rem;
+
+        hr {
+            margin: 2em 0;
+        }
+    //}
+
+    .lzy-fluid-fontsize {
+        font-size: clamp(1.5rem, 8vw - 2rem, 3rem); // https://fluid-typography.netlify.app/
+    }
+
+    .lzy-responsive-fontsize {
+        // responsive font-size:
+        --min-font-size1: var(--min-font-size, #{$min-font-size});
+        --max-font-size1: var(--max-font-size, #{$max-font-size});
+        --fluid-size: var(--min-font-size1) * 1px + (var(--max-font-size1) - var(--min-font-size1)) * ((100vw - 420px) / (1200 - 420));
+        font-size: clamp(
+                var(--min-font-size1) * 1px,
+                var(--fluid-size),
+                var(--max-font-size1) * 1px
+        );
+    }
+
+    .lzy-flex-layout {
+        .lzy-header,
+        .lzy-nav-wrapper,
+        .lzy-sidebar {
+            &:empty {
+                display: none;
+            }
+        }
+
+        .lzy-page {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .lzy-header {
+            order: -30;
+            flex: 0 0 100%;
+        }
+
+        .lzy-nav-wrapper {
+            order: -20;
+            flex: 0 0 100%;
+        }
+
+        .lzy-main {
+            order: -10;
+            flex: 1 1 80%;
+            //margin-top: 2em;
+        }
+
+        .lzy-sidebar {
+            order: -11;
+            flex: 0 1 20%;
+        }
+
+        .lzy-footer {
+            flex: 0 0 100%;
+        }
+    } // lzy-flex-layout
+
+
+
+    .lzy-section {
+        //padding: 1rem;
+        overflow: auto; /* to avoid inside margin to affect outer element */
+    }
+
+
+    // === Footer
+    .lzy-large-only,
+    .lzy-large-screen-only,
+    .lzy-small-only,
+    .lzy-small-screen-only {
+        display: inline-block;
+    }
+
+    // === Large Screen:
+    &.lzy-large-screen {
+        .lzy-small-screen-only,
+        .lzy-small-only {
+            display: none;
+        }
+        .lzy-flex-layout .lzy-main {
+            margin-top: 2em;
+        }
+    }
+
+    &.lzy-small-screen {
+        .lzy-large-screen-only,
+        .lzy-large-only {
+            display: none;
+        }
+    }
+
+    //.lzy-default-styling {
+        .lzy-mobile-page-header {
+            display: none;
+        }
+    //}
+
+    &.lzy-large-screen {
+    //&.lzy-large-screen.lzy-default-styling {
+        .lzy-small-screen-footer {
+            display: none;
+        }
+
+        .lzy-footer {
+            .lzy-icon-edit,
+            .lzy-icon-settings,
+            .lzy-fileadmin-button,
+            .lzy-icon-user {
+                color: var(--lzy-system-buttons, gray);
+            }
+
+            .lzy-fileadmin-button {
+                border: none;
+                background: none;
+                padding-left: 0;
+                margin-left: -0.1em;
+                margin-right: 0.5em;
+            }
+
+            & > div {
+                padding-top: 0.5em;
+            }
+
+            .lzy-footer-right.lzy-footer-right {
+                padding-top: 0;
+            }
+        }
+
+    }
+
+
+    // === Small/Mobile Screen:
+    &.lzy-small-screen {
+    //&.lzy-small-screen.lzy-default-styling {
+        //    font-size: $mobile-page-font-size; //??? better to define separately?
+        background: $mobile-nav-bg-color;
+        background: var(--lzy-mobile-nav-bg-color, $mobile-nav-bg-color);
+
+        .lzy-page {
+            padding: 0;
+            position: absolute;
+            top: var(--lzy-mobile-header-height, #{$mobile-header-height});
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: 0;
+            height: calc(100vh - var(--lzy-mobile-header-height, #{$mobile-header-height}));
+            width: 100vw;
+        }
+
+        .lzy-primary-nav * {
+            color: $mobile-nav-txt-color;
+            color: var(--lzy-mobile-nav-txt-color, $mobile-nav-txt-color);
+        }
+
+        .lzy-page-switcher-links a {
+            font-size: var(--lzy-mobile-header-font-size, 8vw);
+            color: #ddd;
+            top: 0.5em;
+        }
+
+        .lzy-prev-page-link a {
+            right: 1.2em;
+            left: initial;
+        }
+
+        .lzy-large-screen-footer {
+            display: none;
+        }
+
+        .lzy-main,
+        .lzy-header {
+            position: fixed;
+            top: #{$mobile-header-height};
+            top: var(--lzy-mobile-header-height, #{$mobile-header-height});
+            //overflow-y: auto;
+            padding-bottom: 15vh;
+        }
+
+        .lzy-header {
+            left: 0;
+            width: 60vw;
+            box-shadow: inset -4px 0 4px 0px #333;
+            height: #{$mobile-header-height};
+            height: calc(100vh - var(--lzy-mobile-header-height, #{$mobile-header-height}) - var(--lzy-mobile-footer-height, #{$mobile-footer-height}));
+
+            .lzy-nav.lzy-nav {
+                a {
+                    padding-top: #{$yPadding} !important;
+                    padding-bottom: #{$yPadding} !important;
+                }
+            }
+        }
+
+        //&#lzy .lzy-nav-wrapper.lzy-primary-nav a {
+        //    background: none;
+        //}
+
+        .lzy-main {
+            left: 0;
+            width: 100vw;
+            height: 100%;
+            height: calc(100vh - var(--lzy-mobile-header-height, #{$mobile-header-height}) - var(--lzy-mobile-footer-height, #{$mobile-footer-height}));
+            background: var(--lzy-mobile-bg-color, $mobile-main-bg-color);
+            color: var(--lzy-mobile-txt-color, $mobile-main-txt-color);
+//padding: 0 0.6rem 20vh;
+            padding-bottom: 20vh;
+            transition: left 0.3s;
+            overflow-y: auto;
+            z-index: 1;
+
+            a, a:visited {
+                color: var(--lzy-mobile-link-color, $mobile-main-link-color);
+            }
+        }
+
+        .lzy-section {
+            padding: 0 0.6rem;
+        }
+
+        .lzy-nav-title {
+            color: #{$mobile-nav-title-color};
+            color: var(--lzy-mobile-nav-title-color, #{$mobile-nav-title-color});
+            background: #{$mobile-nav-title-bg-color};
+            background: var(--lzy-mobile-nav-title-bg-color, #{$mobile-nav-title-bg-color});
+            line-height: 2.5em;
+            margin: 0;
+        }
+
+        .lzy-mobile-page-header {
+            color: #{$mobile-header-txt-color};
+            color: var(--lzy-mobile-header-txt-color, #{$mobile-header-txt-color});
+            background: #{$mobile-nav-bg-color};
+            background: var(--lzy-mobile-header-bg-color, #{$mobile-header-bg-color});
+        }
+
+        .lzy-header {
+            display: none;
+        }
+
+        .lzy-footer {
+            position: fixed;
+            left: 0;
+            width: 100vw;
+            bottom: 0;
+            color: var(--lzy-mobile-footer-txt-color, #000);
+            background: #{$mobile-header-bg-color};
+            background: var(--lzy-mobile-footer-bg-color, var(--lzy-mobile-header-bg-color, #{$mobile-header-bg-color}));
+            padding: 2px 0.5rem 2px 1rem;
+            margin-top: 0;
+            height: var(--lzy-mobile-footer-height, #{$mobile-footer-height});
+            z-index: 3;
+        }
+
+        .lzy-footer * {
+            color: #{$mobile-header-txt-color};
+            color: var(--lzy-mobile-footer-txt-color, #{$mobile-header-txt-color});
+            font-size: #{$mobile-footer-font-size};
+            font-size: var(--lzy-mobile-footer-txt-size, #{$mobile-footer-font-size});
+        }
+
+        .lzy-footer .lzy-small-only {
+            padding-top: 0.5rem;
+        }
+
+        .lzy-mobile-page-header {
+            display: block;
+            z-index: 2;
+        }
+
+        .lzy-primary-nav {
+            position: relative;
+        }
+
+        &#lzy .lzy-nav {
+            .lzy-nav-label {
+                display: inline-block;
+                overflow-x: hidden;
+            }
+
+            &.lzy-nav-primary a {
+                background: #4f4f4f;
+                margin-bottom: 1px !important;
+            }
+        }
+
+        .lzy-primary-nav.lzy-nav-wrapper {
+            min-height: 200vh;
+        }
+
+    }
+
+    // small-screen
+
+
+    //=== Mobile Page Header
+    .lzy-mobile-page-header {
+        text-align: center;
+        height: #{$mobile-header-height};
+        height: var(--lzy-mobile-header-height, #{$mobile-header-height});
+        line-height: #{$mobile-header-height};
+        line-height: var(--lzy-mobile-header-height, #{$mobile-header-height});
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        margin: 0;
+        color: #{$mobile-header-txt-color};
+        color: var(--lzy-mobile-header-txt-color, #{$mobile-header-txt-color});
+        background: #{$mobile-header-bg-color};
+        background: var(--lzy-mobile-header-bg-color, #{$mobile-header-bg-color});
+
+        h1 {
+            font-size: #{$mobile-header-font-size};
+            font-size: var(--lzy-mobile-header-text-size, #{$mobile-header-font-size});
+            font-weight: bold;
+            margin: 0;
+            color: #{$mobile-header-txt-color};
+            color: var(--lzy-mobile-header-txt-color, #{$mobile-header-txt-color});
+            line-height: #{$mobile-header-height};
+            line-height: var(--lzy-mobile-header-height, #{$mobile-header-height});
+        }
+
+        button {
+            height: #{$mobile-header-height};
+            height: var(--lzy-mobile-header-height, #{$mobile-header-height});
+            width: #{$mobile-header-height};
+            width: var(--lzy-mobile-header-height, #{$mobile-header-height});
+            position: absolute;
+            top: 0;
+            left: 0;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            border: none;
+            line-height: initial;
+
+            span {
+                font-size: #{$mobile-header-font-size};
+                font-size: var(--lzy-mobile-header-text-size, #{$mobile-header-font-size});
+                color: #{$mobile-header-txt-color};
+                color: var(--lzy-mobile-header-txt-color, #{$mobile-header-txt-color});
+            }
+
+            .lzy-icon-menu {
+                font-size: calc(var(--lzy-mobile-header-height, 3rem) / 2);
+                line-height: var(--lzy-mobile-header-height, 3rem);
+
+                &::before {
+                    transform: translateY(-1.25em);
+                }
+            }
+        }
+    }
+
+
+    // === Misc Layout Styles:
+    .lzy-h-space {
+        display: inline-block;
+        width: 2em;
+    }
+
+    .lzy-h-v-centered, .h-v-centered,
+    .lzy-v-h-centered, .v-h-centered {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* stretch-wrapping boxes: */
+    .lzy-stretch-wrapping-box-container {
+        //--lzy-box-width: 300px;
+        //--lzy-grid-gap: 10px;
+        display: grid;
+        grid-gap: var(--lzy-grid-gap, $grid-gap);
+        grid-template-columns: repeat(auto-fill, minmax(var(--lzy-box-width, $box-width), 1fr));
+        grid-auto-flow: dense;
+        padding: 5px;
+        padding: var(--lzy-grid-gap, $grid-gap);
+    }
+
+    .lzy-stretch-wrapping-box-container > div {
+        overflow: hidden;
+    }
+
+    .lzy-stretch-wrapping-box-container > div img {
+        width: 100%;
+        height: auto;
+        margin-bottom: -5px; /* ??? bug workaround? */
+    }
+
+    .lzy-warning:empty,
+    .lzy-warning-box:empty {
+        display: none;
+    }
+
+    .lzy-msgbox,
+    .lzy-warning-box {
+        position: fixed !important;
+        top: 5px;
+        left: calc(100vw - 5px);
+        max-width: 80vw;
+        min-width: 30vw;
+        padding: 0.5em 1em;
+        background: #fbfb77;
+        border-radius: 5px;
+        opacity: 0.8;
+        color: black;
+        box-shadow: 0 0 5px grey;
+        z-index: 102;
+        transform: translateX(0);
+        transition: transform var(--lzy-msg-transition-time, 0.6s);
+    }
+
+    .lzy-msgbox.lzy-msg-show::before {
+        transform: rotate(180deg);
+        border-radius: 0 3px 3px 0;
+    }
+
+    .lzy-msgbox::before {
+        position: absolute;
+        content: '\25C3';
+        font-family: sans-serif;
+        background: #fbfb77;
+        border-radius: 3px 0 0 3px;
+        font-size: 0.8rem;
+        width: 0.8rem;
+        left: -0.75rem;
+        top: 2px;
+        padding-top: 2px;
+    }
+
+    .lzy-msgbox::after {
+        position: absolute;
+        content: ' ';
+        background: transparent;
+        left: -10px;
+        right: -10px;
+        top: 0;
+        bottom: 0;
+    }
+
+    .lzy-msgbox.lzy-msg-show {
+        transform: translateX(-100%);
+        transition: transform var(--lzy-msg-transition-time, 0.6s);
+    }
+
+    .lzy-admin {
+        .lzy-msgbox,
+        .lzy-warning-box {
+            border: 1px solid red;
+        }
+    }
+
+    &.lzy-large-screen {
+        .lzy-msgbox,
+        .lzy-warning-box {
+            &, p, a, div, span {
+                font-size: 12pt;
+            }
+        }
+    }
+
+
+    // === in-browser Logging Output
+    #lzy-log:empty {
+        display: none;
+    }
+
+    #lzy-log {
+        height: 10vh;
+        background: #edd;
+        margin: 0;
+        padding: 10px 20px;
+        overflow: auto;
+        border: 1px solid red;
+        position: fixed;
+        width: 100vw;
+        left: 0;
+        bottom: 0;
+        z-index: 9999;
+    }
+
+    #lzy-log h1 {
+        font-size: 11pt;
+        margin: 0 0 0.5em 0;
+    }
+
+    #lzy-log p {
+        font-size: 8pt;
+        margin: 0 0 0.5em 0;
+    }
+
+    #lzy-log-placeholder {
+        content: " ";
+        position: relative;
+        height: 11vh;
+        margin: 30px 0 0 0;
+    }
+
+
+    // === when menu button clicked:
+    //#lzy.lzy-default-styling.lzy-nav-mobile-open main {
+    &.lzy-nav-mobile-open .lzy-main {
+        left: $mobile-nav-width;
+        transition: left 0.3s;
+    }
+
+
+    // === Scroll-hints:
+    // credit to Lea Verou: http://localhost/Lizzy-Dev/Tables/test/view_record/
+    .lzy-scroll-hints {
+        background: linear-gradient(white 15px, hsla(0, 0%, 100%, 0)) 0 0 / 100% 50px,
+        radial-gradient(at top, rgba(0, 0, 0, .4), transparent 70%) 0 0 / 100% 15px,
+        linear-gradient(to top, white 15px, hsla(0, 0%, 100%, 0)) bottom / 100% 50px,
+        radial-gradient(at bottom, rgba(0, 0, 0, .4), transparent 70%) bottom / 100% 15px;
+        background-repeat: no-repeat;
+        background-attachment: local, scroll, local, scroll;
+    }
+
+} // encapsulated

@@ -23,6 +23,8 @@ define('MODULES_CACHE_PATH',    '.cache/files/');
 define('PAGE_CACHE_PATH',       CACHE_PATH.'pages/');
 define('LOGS_PATH',             '.#logs/');
 define('MACROS_PATH',           SYSTEM_PATH.'macros/');
+define('SYSTEM_STYLESHEET',     SYSTEM_PATH.'css/__lizzy.css');
+define('SYSTEM_STYLESHEET_LATE_LOAD', SYSTEM_PATH.'css/__lizzy-async.css');
 define('EXTENSIONS_PATH',       SYSTEM_PATH.'extensions/');
 define('LOCALES_PATH',          'locales/');
 define('USER_INIT_CODE_FILE',   USER_CODE_PATH.'init-code.php');
@@ -879,7 +881,7 @@ EOT;
         if ($this->auth->checkGroupMembership('admins') ||
             $this->auth->checkGroupMembership('editors') ||
             $this->auth->checkGroupMembership('fileadmins')) {
-                $this->page->addCssFiles('~sys/css/_admin.css');
+                $this->page->addModules('USER_ADMIN');
         }
     } // injectAdminCss
 

@@ -4,7 +4,6 @@
 class UserEditProfileBase extends UserAdminBase
 {
     public function __construct($lzy, $hash = false)
-//    public function __construct($lzy)
     {
         parent::__construct($lzy);
 
@@ -30,7 +29,6 @@ class UserEditProfileBase extends UserAdminBase
 
         } else {
             $res = [false, $res, 'Error', '#lizzy-lzy-profile-edit-1'];
-//            $res = [false, $res, 'Message'];
         }
         return $res;
     } // handleChangePasswordRequest
@@ -40,8 +38,6 @@ class UserEditProfileBase extends UserAdminBase
     private function handleChangeUsernameRequest()
     {
         return $this->doChangeUsername();
-//        $str = $this->doChangeUsername();
-//        $this->lzy->page->addMessage($str); // lzy-profile-edit-2
     } // handleChangeUsernameRequest
 
 
@@ -194,12 +190,10 @@ class UserEditProfileBase extends UserAdminBase
             $rec['email'] = $user;
         }
         if (!$newUsername && !$displayName) {
-//            return "<div class='lzy-admin-task-response'>{{ lzy-username-change-no-change-response }}</div>";
             return [false, '{{ lzy-username-change-no-change-response }}', 'Error', '#lzy-profile-edit-2'];
         }
         if ($user === $newUsername) {
             if (!$displayName) {
-//                return "<div class='lzy-admin-task-response'>{{ lzy-username-change-no-change-response }}</div>";
                 return [false, '{{ lzy-username-change-no-change-response }}', 'Error', '#lzy-profile-edit-2'];
             }
             $newUsername = '';
@@ -212,8 +206,6 @@ class UserEditProfileBase extends UserAdminBase
             $err = parent::isInvalidUsername($newUsername);
         }
         if ($err) { // user name already in use or invalid!
-//            $str = "<div class='lzy-admin-task-response'>$err</div>";
-//            return $str;
             return [false, $err, 'Error', '#lzy-profile-edit-2'];
         }
         if ($user !== $rec['username']) {
@@ -222,7 +214,6 @@ class UserEditProfileBase extends UserAdminBase
         } else {
             if ($displayName) {
                 if (($dn = $this->auth->findUserRecKey($displayName, 'displayName')) && ($dn !== $newUsername)) {
-//                    return "<div class='lzy-admin-task-response'>{{ lzy-username-change-illegal-displayname-response }}</div>";
                     return [false, '{{ lzy-username-change-illegal-displayname-response }}', 'Error', '#lzy-profile-edit-2'];
                 } else {
                     $rec['displayName'] = $displayName;
@@ -314,11 +305,7 @@ $deleteProfileForm
 
 EOT;
 
-        $userAdmCss = '~/css/user_admin.css';
-        if (!file_exists(resolvePath($userAdmCss))) {
-            $userAdmCss = '';
-        }
-        $this->page->addModules("USER_ADMIN, $userAdmCss,PANELS,AUXILIARY,TOOLTIPSTER" );
+        $this->page->addModules("USER_ADMIN,PANELS,AUXILIARY,TOOLTIPSTER" );
 
         $jq = <<<'EOT'
 
@@ -545,7 +532,6 @@ EOT;
         }
 
         $accessCode = $this->lzy->auth->getAccessCode();
-//        $delAccessCode = '';
         if ($accessCode) {
             $delAccessCode = '<button class="lzy-button lzy-login-form-button lzy-accesslink-delete-button">{{ lzy-accesslink-delete-button }}</button>';
         }  else {
@@ -641,8 +627,6 @@ EOT;
             $res = $this->handleChangeEMailRequest($email);
 
         } elseif ($tickType === 'lzy-change-email-request') {
-//        } elseif ($email = getPostData('lzy-change-email-confirm', false, true)) {
-//            $this->handleChangeEMailConfirm( $email );
             $err = $this->handleChangeEMailConfirm($tickRec);
             if ($err) {
                 $res = [false, $err, 'Error', '#lzy-profile-edit-3'];
