@@ -55,68 +55,20 @@ class SCssCompiler
         $namesOfCompiledFiles = '';
 
         // app specific styles:
-        $aggregatedCss = '';
-        $compiledFilename = $this->userCssPath.$this->compiledStylesFilename;
-        $files = getDir($this->userCssPath.'scss/*.scss');
-        $mustCompile = $this->checkUpToDate($files, $compiledFilename);
-        if ($mustCompile) {
-            $this->runTreeParser = $this->config->feature_enableScssTreeNotation;
-            foreach ($files as $file) {
-                $namesOfCompiledFiles .= $this->doCompile($file, $aggregatedCss);
-            }
-            file_put_contents($compiledFilename, $aggregatedCss);
-        }
+        $namesOfCompiledFiles = $this->compileAppScss($namesOfCompiledFiles);
 
 
         // optional style sheet in page folder:
-        if ($this->config->feature_enableScssInPageFolder) {
-            $this->compilePageFolderStylesheet($forceUpdate, $namesOfCompiledFiles);
-        }
+        $namesOfCompiledFiles .= $this->compilePageFolderStylesheet($forceUpdate);
 
 
-        $this->runTreeParser = false;
-        $aggregatedCss = '';
-        $targetFile = SYSTEM_STYLESHEET;
-        $targetFileLate = SYSTEM_STYLESHEET_LATE_LOAD;
+        // compile system SCSS files:
+        $namesOfCompiledFiles .= $this->compileSystemScss();
 
-        // determine whether compiling is required:
-        $targetFileT = 0;
-        if (file_exists($targetFile)) {
-            $targetFileT = filemtime( $targetFile );
-        }
-        if (file_exists($targetFileLate)) {
-            $targetFileT = min($targetFileT, filemtime( $targetFileLate ));
-        } else {
-            $targetFileT = 0;
-        }
 
-        // compile files to compile for immediate loading:
-        list($files, $filesLate, $filesSeparate) = $this->getFilesToCompile( $targetFileT );
-        if ($files) {
-            $aggregatedCss = '';
-            foreach ($files as $srcFile) {
-                $namesOfCompiledFiles .= $this->doCompile($srcFile, $aggregatedCss);
-            }
-            file_put_contents($targetFile, $aggregatedCss);
-        }
+        // compile SCSS files in extension:
+        $namesOfCompiledFiles .= $this->compileExtensionScss();
 
-        // compile files to compile for async loading:
-        if ($filesLate) {
-            $aggregatedCss = '';
-            foreach ($filesLate as $srcFile) {
-                $namesOfCompiledFiles .= $this->doCompile($srcFile, $aggregatedCss);
-            }
-            file_put_contents($targetFileLate, $aggregatedCss);
-        }
-
-        // compile files to compile for separate files:
-        if ($filesSeparate) {
-            foreach ($filesSeparate as $srcFile => $targetFile) {
-                $aggregatedCss = false;
-                $namesOfCompiledFiles .= $this->doCompile($srcFile, $aggregatedCss);
-                file_put_contents($targetFile, $aggregatedCss);
-            }
-        }
 
         if ($namesOfCompiledFiles) {
             writeLog("SCSS files compiled: ".rtrim($namesOfCompiledFiles, ', '));
@@ -127,7 +79,7 @@ class SCssCompiler
 
 
 
-    private function doCompile($file, &$target)
+    private function doCompile($file, &$target, $saveToFile = false)
     {
         $filename = basename($file, '.scss');
         if ((fileExt($file) === 'css') && file_exists($file)) {
@@ -156,7 +108,12 @@ class SCssCompiler
             }
         }
         $cssStr = "/**** auto-created from '$file' - do not modify! ****/\n\n$cssStr";
-        $target .= $cssStr . "\n\n\n";
+
+        if ($saveToFile) {
+            file_put_contents($saveToFile, $cssStr);
+        } else {
+            $target .= $cssStr . "\n\n\n";
+        }
         return "$filename.scss, ";
     } // doCompile
 
@@ -229,8 +186,12 @@ class SCssCompiler
 
 
 
-    private function compilePageFolderStylesheet($forceUpdate, $namesOfCompiledFiles)
+    private function compilePageFolderStylesheet($forceUpdate)
     {
+        if (!$this->config->feature_enableScssInPageFolder) {
+            return '';
+        }
+        $namesOfCompiledFiles = '';
         $files = getDirDeep('pages/*.scss');
         foreach ($files as $file) {
             $cssFile = dirname($file) . '/' . base_name($file, false) . '.css';
@@ -335,5 +296,97 @@ class SCssCompiler
         }
         return [$files, $filesLate, $filesSeparate];
     } // getFilesToCompile
+
+
+
+    private function compileAppScss()
+    {
+        $namesOfCompiledFiles = '';
+        $aggregatedCss = '';
+        $compiledFilename = $this->userCssPath.$this->compiledStylesFilename;
+        $files = getDir($this->userCssPath.'scss/*.scss');
+        $mustCompile = $this->checkUpToDate($files, $compiledFilename);
+        if ($mustCompile) {
+            $this->runTreeParser = $this->config->feature_enableScssTreeNotation;
+            foreach ($files as $file) {
+                $namesOfCompiledFiles .= $this->doCompile($file, $aggregatedCss);
+            }
+            file_put_contents($compiledFilename, $aggregatedCss);
+        }
+        return $namesOfCompiledFiles;
+    } // compileAppScss
+
+
+
+
+    private function compileSystemScss()
+    {
+        $namesOfCompiledFiles = '';
+        $this->runTreeParser = false;
+        $targetFile = SYSTEM_STYLESHEET;
+        $targetFileLate = SYSTEM_STYLESHEET_LATE_LOAD;
+
+        // determine whether compiling is required:
+        $targetFileT = 0;
+        if (file_exists($targetFile)) {
+            $targetFileT = filemtime($targetFile);
+        }
+        if (file_exists($targetFileLate)) {
+            $targetFileT = min($targetFileT, filemtime($targetFileLate));
+        } else {
+            $targetFileT = 0;
+        }
+
+        // compile files to compile for immediate loading:
+        list($files, $filesLate, $filesSeparate) = $this->getFilesToCompile($targetFileT);
+        if ($files) {
+            $aggregatedCss = '';
+            foreach ($files as $srcFile) {
+                $namesOfCompiledFiles .= $this->doCompile($srcFile, $aggregatedCss);
+            }
+            file_put_contents($targetFile, $aggregatedCss);
+        }
+
+        // compile files to compile for async loading:
+        if ($filesLate) {
+            $aggregatedCss = '';
+            foreach ($filesLate as $srcFile) {
+                $namesOfCompiledFiles .= $this->doCompile($srcFile, $aggregatedCss);
+            }
+            file_put_contents($targetFileLate, $aggregatedCss);
+        }
+
+        // compile files to compile for separate files:
+        if ($filesSeparate) {
+            foreach ($filesSeparate as $srcFile => $targetFile) {
+                $aggregatedCss = false;
+                $namesOfCompiledFiles .= $this->doCompile($srcFile, $aggregatedCss);
+                file_put_contents($targetFile, $aggregatedCss);
+            }
+        }
+        return $namesOfCompiledFiles;
+    } // compileSystemScss
+
+
+
+    private function compileExtensionScss()
+    {
+        $namesOfCompiledFiles = '';
+
+        if (!file_exists(EXTENSIONS_PATH)) {
+            return '';
+        }
+        $files = getDirDeep( EXTENSIONS_PATH.'*.scss' );
+        foreach ($files as $scssFile) {
+            $scssFileT = filemtime($scssFile);
+            $targetFile = $this->getCompiledFileName($scssFile);
+            $targetFileT = @filemtime($targetFile);
+            if ($scssFileT > $targetFileT) {
+                $aggregatedCss = '';
+                $namesOfCompiledFiles .= $this->doCompile($scssFile, $aggregatedCss, $targetFile);
+            }
+        }
+        return $namesOfCompiledFiles;
+    } // compileExtensionScss
 
 } // SCssCompiler
