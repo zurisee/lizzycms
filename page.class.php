@@ -309,7 +309,7 @@ class Page
             $m = substr($m, 1);
         }
         $mod = @$GLOBALS['lzy']->config->site_loadStyleSheets[$m];
-        if ($mod === 3) {
+        if (($mod === 3) ||($mod === null)) {
             if (!file_exists($module)) {
                 $module1 = resolvePath($module);
                 if (!file_exists($module1)) {
@@ -821,7 +821,9 @@ EOT;
         }
 
         if ($this->config->site_enableRelLinks) {
+            $headInjections .= "\n\t  <!-- rel-links -->\n";
             $headInjections .= $this->renderRelLinks();
+            $headInjections .= "\t  <!-- /rel-links -->\n";
         }
 
         $headInjections = "\t<!-- head injections -->\n$headInjections\t<!-- /head injections -->";
@@ -1055,18 +1057,17 @@ EOT;
                     } else {
                         $asyncLoadJs = '';
                         if (!$this->asyncLoadJsLoadedHash) {
-                            $asyncLoadJs = "var elem = document.getElementsByClassName('lzy-onload-css');" .
+                            $asyncLoadJs = "var elem = document.getElementsByClassName('lzy-async-css');" .
                                 "for (i=0;i<elem.length;i++) { elem[i].setAttribute('media', 'all'); }";
                             $this->asyncLoadJsLoadedHash = base64_encode(hash('sha256', $asyncLoadJs, true));
                             $asyncLoadJs = "\t<script>$asyncLoadJs</script>\n";
                         }
                         $out .= <<<EOT
-    <link rel="stylesheet" href="$item1" media="print" class="lzy-onload-css" />
+    <link rel="stylesheet" href="$item1" media="print" class="lzy-async-css" />
     <noscript><link rel="stylesheet" href="$item1" /></noscript>
     $asyncLoadJs
 
 EOT;
-
                     }
 
                     if ($this->config->site_enableFilesCaching) {
