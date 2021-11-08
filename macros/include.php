@@ -22,6 +22,7 @@ $this->addMacro($macroName, function () {
     $outerWrapperTag = $this->getArg($macroName, 'outerWrapperTag', '(optional) HTML-tag in which to wrap the set of included files.', false);
     $outerWrapperClass = $this->getArg($macroName, 'outerWrapperClass', '(optional) class applied to the wrapper around all files.', '');
     $literal = $this->getArg($macroName, 'literal', '(optional) If true, wraps output in pre tags.', false);
+    $bare = $this->getArg($macroName, 'bare', '(optional) If true, includes targeted text as is.', false);
     $trim = $this->getArg($macroName, 'trim', '(optional) If false, leading and trailing whitespace will not be removed from included text.', true);
     $compileMarkdown = $this->getArg($macroName, 'compileMarkdown', '(optional) Flag to activate MD-compilation of .md files.', null);
     $this->disablePageCaching = $this->getArg($macroName, 'disableCaching', '(true) Disables page caching. Note: only active if system-wide caching is enabled.', false);
@@ -129,23 +130,25 @@ $this->addMacro($macroName, function () {
         $str = compileMarkdownStr($str);
     }
 
-    if ($outerWrapperClass) {
-        $outerWrapperClass = " class='$outerWrapperClass'";
-    } else {
-        $outerWrapperClass = " class='lzy-include'";
-    }
+    if (!$bare) {
+        if ($outerWrapperClass) {
+            $outerWrapperClass = " class='$outerWrapperClass'";
+        } else {
+            $outerWrapperClass = " class='lzy-include'";
+        }
 
-    if ($literal) {
-        $str = "\t<pre$outerWrapperClass>\n$str\n\t</pre>\n";
-    }
+        if ($literal) {
+            $str = "\t<pre$outerWrapperClass>\n$str\n\t</pre>\n";
+        }
 
-    if ($wrapperTag) {
-        $str = str_replace('<p>@@1@@</p>', "\t\t<$wrapperTag$wrapperClass>\n", $str);
-        $str = str_replace('<p>@@2@@</p>', "\t\t</$wrapperTag>\n", $str);
-    }
+        if ($wrapperTag) {
+            $str = str_replace('<p>@@1@@</p>', "\t\t<$wrapperTag$wrapperClass>\n", $str);
+            $str = str_replace('<p>@@2@@</p>', "\t\t</$wrapperTag>\n", $str);
+        }
 
-    if ($outerWrapperTag) {
-        $str = "\t<$outerWrapperTag$outerWrapperClass>\n$str\n\t</$outerWrapperTag>\n";
+        if ($outerWrapperTag) {
+            $str = "\t<$outerWrapperTag$outerWrapperClass>\n$str\n\t</$outerWrapperTag>\n";
+        }
     }
 
     $this->optionAddNoComment = true;
