@@ -1426,8 +1426,9 @@ EOT;
             $out = str_replace(['&#39;', '&#34;'], ["'", '"'], $out);
         }
         if (isset($this->currRec->md)) {
-            $md = $this->currRec->md;
-            $out .= compileMarkdownStr( $md );
+            $mdStr = $this->currRec->md;
+            $md = new LizzyMarkdown( $this->lzy );
+            $out .= $md->compileStr( $mdStr );
         }
         return $out;
     } // renderLiteral
@@ -3099,7 +3100,7 @@ EOT;
 
             if (stripos($ext, 'md') !== false) {
                 $page = new Page();
-                $tmpl = $page->extractFrontmatter($tmpl);
+                $tmpl = $page->extractFrontmatter( $tmpl );
                 $css = $page->get('css');
                 $fm = $page->get('frontmatter');
                 $subject = isset($fm['subject']) ? $fm['subject'] : '';
@@ -3111,7 +3112,8 @@ $css
 
 EOT;
                 }
-                $message = compileMarkdownStr($tmpl);
+                $md = new LizzyMarkdown( $this->lzy );
+                $message = $md->compileStr( $tmpl );
                 $message = <<<EOT
 <!DOCTYPE html>
 <html lang="de">

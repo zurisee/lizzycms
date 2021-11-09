@@ -37,7 +37,6 @@ class Page
     private $jq = '';
     private $jqStart = '';
     private $jqEnd = '';
-    private $autoAttrFiles = '';
     private $bodyTagClasses = '';
     private $bodyTagInjections = '';
     private $bodyTopInjections = '';
@@ -73,6 +72,7 @@ class Page
             $this->lzy = $lzy;
             $this->trans = $lzy->trans;
             $this->config = $lzy->config;
+            $this->mdVariables = &$lzy->mdVariables;
         } else {
             $this->lzy = null;
             $this->trans = null;
@@ -1238,11 +1238,13 @@ EOT;
 
     public function render()
     {
+        $md = new LizzyMarkdown( $this->lzy );
         $n = 0;
         do {
             $modified = false;
 
             $modified |= $this->trans->supervisedTranslate($this, $this->template);
+            $this->content = $md->replaceMdVariables( $this->content );
             $modified |= $this->trans->supervisedTranslate($this, $this->content);
 
             $modified |= $this->trans->supervisedTranslate($this, $this->assembledJs);

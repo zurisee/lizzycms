@@ -1688,7 +1688,8 @@ EOT;
         if ($out) {
             $out = removeCStyleComments( $out );
             $out = str_replace(['#file#','#tableCounter#'], ['~/'.$this->dataSource, $this->tableCounter], $out);
-            $out = compileMarkdownStr( $out );
+            $md = new LizzyMarkdown( $this->lzy );
+            $out = $md->compileStr($out);
             $out = $this->lzy->trans->translate( $out );
             $out = <<<EOT
 

@@ -109,6 +109,7 @@ class Lizzy
 	public  $loginFormRequiredOverride = true; // to suppress login form in case of onetime code sent
     public  $ticketHash = [];
     public  $keepAccessCode = false;
+    public  $mdVariables = [];  // global storage for markdown variables, i.e. $var within MD source
 
 
 

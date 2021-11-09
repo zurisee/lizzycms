@@ -54,7 +54,7 @@ class LizzyMarkdown
         $this->lzy = $lzy;
         $this->trans = isset($this->lzy->trans) ? $this->lzy->trans: null;
         if ($lzy) {
-            $this->mdVariables = &$lzy->page->mdVariables; // take over mdVariables from Page class
+            $this->mdVariables = &$lzy->mdVariables; // take over mdVariables from Page class
         }
     }  // __construct
 
@@ -64,8 +64,6 @@ class LizzyMarkdown
 	public function compile($str, $page)
 	{
 		$this->page = $page;
-
-        $this->mdVariables = array_merge($this->mdVariables, $this->page->mdVariables); // get mdVars defined in frontmatter
 
         $this->addReplacesFromFrontmatter($page);
 
@@ -123,7 +121,7 @@ class LizzyMarkdown
 
 	private function doMDincludes($str)
 	{
-		while (preg_match('/(.*) (?<!\\\\)\{\{ \s* include\( ([^)]*\.md) [\'"]? \) \s* \}\}(.*)/xms', $str, $m)) {
+		while (preg_match('/(.*) (?<!\\\\){{ \s* include\( ([^)]*\.md) [\'"]? \) \s* }}(.*)/xms', $str, $m)) {
 			$s1 = $m[1];
 			$s2 = $m[3];
 			$file = str_replace("'", '', $m[2]);
@@ -216,7 +214,7 @@ class LizzyMarkdown
 	{
         $str = $this->shieldLiteralTransvar($str);
 
-        if (preg_match("/\n\>\s/", $str, $m)) {	// is there a blockquote? ('> ' at beginning of line)
+        if (preg_match("/\n>\s/", $str, $m)) {	// is there a blockquote? ('> ' at beginning of line)
 			$lines = explode("\n", $str);
 			$lastBlockquoteLine = 0;
 			foreach ($lines as $i => $l) {
@@ -288,8 +286,8 @@ class LizzyMarkdown
 
         $lines = explode(PHP_EOL, $str);
         foreach ($lines as $i => $l) {
-            if (preg_match('/\{\{ \s* tab\b [^\}]* \s* \}\}/x', $l)) { // tab present?
-                if (preg_match('/^[-\*]\s/', $l)) { // UL?  (begins with - or *)
+            if (preg_match('/{{ \s* tab\b [^}]* \s* }}/x', $l)) { // tab present?
+                if (preg_match('/^[-*]\s/', $l)) { // UL?  (begins with - or *)
                     $l = substr($l, 2);
                     $lines[$i] = "@/@ul@\\@$l";
 
@@ -374,7 +372,7 @@ class LizzyMarkdown
 
 
 
-	private function replaceMdVariables($l, $p = false)
+	public function replaceMdVariables($l, $p = false)
 	{
 	    // replaces $var or ${var} with its content, unless shielded as \$var
         //  if variable is not defined, leaves source string untouched. exception: one of below
@@ -389,7 +387,7 @@ class LizzyMarkdown
 	    while ($p !== false) {
 	        if (($p === 0) || ($l[$p-1] !== '\\')) {
                 $str = substr($l, $p);
-                if (preg_match('/^\$ (\w+) (.*)/x', $str, $m)) {
+                if (preg_match('/^\$ (\w+) (.*)/xms', $str, $m)) {
                     $varName = $m[1];
                     $rest = $m[2];
                     if (isset($this->mdVariables[$varName])) {
@@ -495,14 +493,14 @@ class LizzyMarkdown
         // takes into account optional dimension information as produced by pandoc
         // example:
         //      ![](~/media/image1.jpeg){width="4.588888888888889in height="3.5840277777777776in"}
-        if (preg_match_all('/ \!\[ (.*?) \]\( (.*?) \) ( \{ (.*?) \})?/xms', $str, $m)) {
+        if (preg_match_all('/ !\[ (.*?) ]\( (.*?) \) ( { (.*?) })?/xms', $str, $m)) {
             $i = 0;
             while (isset($m[0][$i])) {
                 $pat = $m[0][$i];
                 $alt = $m[1][$i];
                 $file = $m[2][$i];
                 $dim = $m[4][$i];
-                if (preg_match('/width="([\d\.]*)/', $dim, $mm)) {
+                if (preg_match('/width="([\d.]*)/', $dim, $mm)) {
                     $w = intval($mm[1]) * 254;
                     $file = preg_replace('/^ (.*) \. (\w+) $/x', "$1[{$w}x].$2", $file);
                 }
@@ -573,9 +571,9 @@ class LizzyMarkdown
 		        continue;
             }
 			$l = $this->postprocessInlineStylings($l);
-			if ($preCode && preg_match('|\</code\>\</pre\>|', $l)) {
+			if ($preCode && preg_match('|</code></pre>|', $l)) {
 				$preCode = false;
-			} elseif (preg_match('/\<pre\>\<code\>/', $l)) {
+			} elseif (preg_match('/<pre><code>/', $l)) {
 				$preCode = true;
 			}
 			$l = $this->postprocessShieldedTags($l, $preCode);
@@ -605,7 +603,7 @@ class LizzyMarkdown
             }
 
             // if enum-list was marked with ! meaning set start value:
-			if (preg_match('|(.*) \%\@start\=(\d+)\@\% (.*)|x', $l, $m)) {
+			if (preg_match('|(.*) %@start=(\d+)@% (.*)|x', $l, $m)) {
                 $olStart = $m[2];
 			    continue;
 
@@ -674,7 +672,7 @@ class LizzyMarkdown
                 }
                 $head .= "<$tag $attr>$span</$tag>";
 
-			} elseif (preg_match('/([^\<]*\<[^\>]*) \> (.*)/x', $head, $m)) {	// now insert into preceding tag
+			} elseif (preg_match('/([^<]*<[^>]*) > (.*)/x', $head, $m)) {	// now insert into preceding tag
 			    if ($tag) {
 			        $m[1] = "<$tag";
 			        $tail = "</$tag>";

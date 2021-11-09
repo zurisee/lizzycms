@@ -127,7 +127,8 @@ $this->addMacro($macroName, function () {
         $str = str_replace(['{{','<'], ['&#123;{','&lt;'], $str);
 
     } elseif ($compileMarkdown && $allMD) {
-        $str = compileMarkdownStr($str);
+        $md = new LizzyMarkdown( $this->lzy );
+        $str = $md->compileStr($str);
     }
 
     if (!$bare) {
