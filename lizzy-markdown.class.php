@@ -53,9 +53,6 @@ class LizzyMarkdown
     {
         $this->lzy = $lzy;
         $this->trans = isset($this->lzy->trans) ? $this->lzy->trans: null;
-        if ($lzy) {
-            $this->mdVariables = &$lzy->mdVariables; // take over mdVariables from Page class
-        }
     }  // __construct
 
 
@@ -335,34 +332,39 @@ class LizzyMarkdown
 		$textBlock = '';
 		$var = '';
 		foreach (explode(PHP_EOL, $str) as $l) {
+            // catch body of text-block, e.g. $var = <<<EOT ... EOT
 		    if ($withinEot) {
 		        if (preg_match('/^EOT\s*$/', $l)) {
 		            $withinEot = false;
-                    $textBlock = str_replace("'", '&apos;', $textBlock); //??? check!
-                    $this->mdVariables[$var] = $textBlock;
+//                    $textBlock = str_replace("'", '&apos;', $textBlock); //??? check!
+                    $this->trans->setVariable($var, $textBlock);
                 } else {
                     $textBlock .= $l."\n";
                 }
                 continue;
             }
-			if (preg_match('/^\$(\w+)\s?=\s*(.*)/', $l, $m)) { // mdVariables definition
+
+            if (!$l) {
+                $out .= "\n";
+                continue;
+            }
+
+            // catch in-text variable definitions, e.g. $var = xy
+			if (preg_match('/^\$ ([\w.]+) \s? = \s* (.*)/x', $l, $m)) {
 				$var = trim($m[1]);
 				$val = trim($m[2]);
-				if ($val === '<<<EOT') {         // handle <<<EOT
+
+                // catch text-block, e.g. $var = <<<EOT ... EOT
+				if ($val === '<<<EOT') {
 				    $withinEot = true;
                     $textBlock = '';
 				    continue;
                 }
 				// translate transvar/macro if there is any:
-                if ($this->lzy && strpos($val, '{{') !== false) {
-                    $val = $this->replaceMdVariables($val);
-                    $val = $this->lzy->trans->translate($val);
-                }
-                $this->mdVariables[$var] = $this->replaceMdVariables($val);
+                $this->trans->setVariable($var, $val);
 				continue;
-			}
-            if ($l && (($p = strpos($l, '$')) !== false)) {
-                $l = $this->replaceMdVariables($l, $p);
+			} else {
+                $l = $this->replaceVariables($l);
             }
 			$out .= $l."\n";
 		}
@@ -372,7 +374,7 @@ class LizzyMarkdown
 
 
 
-	public function replaceMdVariables($l, $p = false)
+	public function replaceVariables( $str )
 	{
 	    // replaces $var or ${var} with its content, unless shielded as \$var
         //  if variable is not defined, leaves source string untouched. exception: one of below
@@ -381,108 +383,67 @@ class LizzyMarkdown
         //  $var++ or $var-- or ++$var or --$var    -> auto-increaces/decreaces numeric variable
         //  ${var++} or ${var--} or ${++var} or ${--var} -> dito
 
-	    if ($p === false) {
-            $p = strpos($l, '$');
-        }
-	    while ($p !== false) {
-	        if (($p === 0) || ($l[$p-1] !== '\\')) {
-                $str = substr($l, $p);
-                if (preg_match('/^\$ (\w+) (.*)/xms', $str, $m)) {
-                    $varName = $m[1];
-                    $rest = $m[2];
-                    if (isset($this->mdVariables[$varName])) {
-                        $val = $this->mdVariables[$varName];
+        while (preg_match('/(.*?) ( (?<!\\\) \$ .*)/xm', $str, $m0)) {
+            $before = $m0[1];
+            $str = $m0[2];
 
-                        if (strpos($val, '{{') !== false) {
-                            $val = $this->lzy->trans->translate($val);
-                        }
-
-                        // ++ or -- in front of var:
-                        if (($p > 2) && (substr($l, $p-2, 2) === '++')) {
-                            $l = substr($l, 0, $p-2) . substr($l, $p);
-                            $p = $p - 2;
-                            if (preg_match('/^-?[\d.]$/', $val)) {
-                                $val = $this->mdVariables[$varName] = (string) (intval($val) + 1);
-                            }
-                        } elseif (($p > 2) && (substr($l, $p-2, 2) === '--')) {
-                            $l = substr($l, 0, $p-2) . substr($l, $p);
-                            $p = $p - 2;
-                            if (preg_match('/^-?[\d.]$/', $val)) {
-                                $val = $this->mdVariables[$varName] = (string) (intval($val) - 1);
-                            }
-                        }
-
-                        // ++ or -- trailing
-                        if (strpos($rest, '++') === 0) {
-                            $rest = substr($rest, 2);
-                            if (preg_match('/^-?[\d.]$/', $val)) {
-                                $this->mdVariables[$varName] = (string) (intval($val) + 1);
-                            }
-                        } elseif (strpos($rest, '--') === 0) {
-                            $rest = substr($rest, 2);
-                            if (preg_match('/^-?[\d.]$/', $val)) {
-                                $this->mdVariables[$varName] = (string) (intval($val) - 1);
-                            }
-                        }
-                        $l = substr($l, 0, $p) . $val . $rest;
-                    }
-
-                // format variant ${}:
-                } elseif (preg_match('/^\$ { (.*?) } (.*)/x', $str, $mm)) {
-                    $varName = $mm[1];
-
-                    if ((strpos($varName, '++') === false) && (strpos($varName, '--') === false) && (strpos($varName, '=') === false)) {
-                        if (isset($this->mdVariables[$varName])) {
-                            $val = $this->mdVariables[$varName];
-
-                            if (strpos($val, '{{') !== false) {
-                                $val = $this->lzy->trans->translate($val);
-                            }
-                        } else {
-                            $val = '';
-                        }
-                        $rest = $mm[2];
-
-                    // on the spot assignment:
-                    } elseif (preg_match('/^ (\w+?) \s* = \s* (.*)/x', $varName, $mmm)) {
-                        $varName = $mmm[1];
-                        $this->mdVariables[$varName] = $val = $mmm[2];
-                        $rest = $mm[2];
-
-                    // increment/decrement:
-                    } elseif (preg_match('/^\$ { (\+\+|--)? (\w+) (\+\+|--)? } (.*)/x', $str, $mm)) {
-                        $varName = $mm[2];
-                        if (isset($this->mdVariables[$varName])) {
-                            $val = intval($this->mdVariables[$varName]);
-                        } else {
-                            $val = 0;
-                        }
-                        $op1 = $mm[1];
-                        $op2 = $mm[3];
-                        $rest = $mm[4];
-                        if ($op1 === '++') {
-                            $this->mdVariables[$varName] = $val = (string)($val + 1);
-                        } elseif ($op1 === '--') {
-                            $this->mdVariables[$varName] = $val = (string)($val - 1);
-                        }
-
-                        if ($op2 === '++') {
-                            $this->mdVariables[$varName] = (string)($val + 1);
-
-                        } elseif ($op2 === '--') {
-                            $this->mdVariables[$varName] = (string)($val - 1);
-                        }
-                    }
-                    $l = substr($l, 0, $p) . $val . $rest;
-                }
-
-            } else {
-                $l = substr($l, 0, $p-1) . substr($l, $p);
+            // case ${var=newvalue}:
+            if (preg_match('/^ \$ { (\w+ ) = (.*?) } (.*)/xm', $str, $m)) {
+                $varName = $m[1];
+                $val = $m[2];
+                $str = $val . $m[3];
+                $this->trans->setVariable($varName, $val);
             }
-            $p = strpos($l, '$', $p+1);
-        }
-        return $l;
-	} // replaceMdVariables
+
+            // case ${var++} or ${var--}:
+            elseif (preg_match('/^ \$ { (\w+ ) (--|\+\+) } (.*)/xm', $str, $m)) {
+                $varName = $m[1];
+                $val = $this->trans->getVariable( $varName );
+                if ($val === false) {
+                    $val = 0;
+                }
+                $str = $val . $m[3];
+                $val = $this->incDecValue($val, $m[2]);
+                $this->trans->setVariable($varName, $val);
+            }
+
+            // case ${++var} or ${--var}:
+            elseif (preg_match('/^ \$ { (--|\+\+) (\w+ ) } (.*)/xm', $str, $m)) {
+                $varName = $m[2];
+                $val = $this->trans->getVariable( $varName );
+                if ($val === false) {
+                    $val = 0;
+                }
+                $val = $this->incDecValue($val, $m[1]);
+
+                $this->trans->setVariable($varName, $val);
+                $str = $val . $m[3];
+            }
+
+            // case ${var}:
+            elseif (preg_match('/^ \$ { (\w+) } (.*)/xm', $str, $m)) {
+                $varName = $m[1];
+                $val = $this->trans->getVariable( $varName );
+                if ($val === false) {
+                    $val = 0;
+                }
+                $str = $val . $m[2];
+            }
+
+            // case $var:
+            elseif (preg_match('/^ \$ (\w+) (.*)/xm', $str, $m)) {
+                $varName = $m[1];
+                $val = $this->trans->getVariable( $varName );
+                if ($val !== false) {
+                    $str = $val . $m[2];
+                } else {
+                    $str = "\\$$varName" . $m[2];
+                }
+            }
+            $str = $before . $str;
+        };
+        return $str;
+	} // replaceVariables
 
 
 
@@ -777,6 +738,60 @@ class LizzyMarkdown
         }
         return $str;
     } // unshieldLiteralTransvar
+
+
+
+    private function incDecValue($val, $op)
+    {
+        // numeric value:
+        if (preg_match('/(\D*) (\d+) (\D*)/x', $val, $m2)) {
+            $v = $m2[2];
+            if ($op === '++') {
+                $val = (string)(intval($v) + 1);
+            } else {
+                $val = (string)(intval($v) - 1);
+            }
+            $val = $m2[1] . $val . $m2[3];
+
+        // alpha value:
+        } elseif (preg_match('/([a-zA-Z]*)/x', $val, $m2)) {
+            $v = $m2[1];
+            for ($i = (strlen($v) - 1); $i >= 0; $i--) {
+                $n = ord($v[$i]);
+                $n1 = $n & 31;
+                // inc:
+                if ($op === '++') {
+                    if ($n1 < 26) {
+                        $n++;
+                        $val[$i] = chr($n);
+                        break;
+                    } else {
+                        $val[$i] = chr($n - 25);
+                        if ($i === 0) {
+                            $ch = ($n > 95) ? 'a' : 'A';
+                            $val = $ch . $val;
+                            break;
+                        }
+                    }
+                    // dec:
+                } else {
+                    if ($n1 > 1) {
+                        $n--;
+                        $val[$i] = chr($n);
+                        break;
+                    } else {
+                        if ($i === 0) {
+                            $val = str_pad('', strlen($v) - 1, ($n > 95) ? 'z' : 'Z');
+                        } else {
+                            $val[$i] = ($n > 95) ? 'z' : 'Z';
+                        }
+                    }
+                }
+            }
+
+        }
+        return $val;
+    } // incDecValue
 
 
 } // class MyMarkdown

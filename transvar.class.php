@@ -615,6 +615,27 @@ class Transvar
 
 
 
+    public function setVariable($key, $value, $lang = '')
+    {
+        if (preg_match('/^(.*?) \. (\w{2,3})$/x', $key, $m)) {
+            $key = $m[1];
+            $lang = $m[2];
+        }
+        if (isset($this->transvars[$key]) && !is_array($this->transvars[$key])) {
+            $tmp = $this->transvars[$key];
+            unset( $this->transvars[$key] );
+            $this->transvars[$key]['_'] = $tmp;
+        }
+        if (!$lang) {
+            $this->transvars[$key]['_'] = $value;
+        } else {
+            $this->transvars[$key][$lang] = $value;
+        }
+    } // setVariable
+
+
+
+
     public function getVariable($key, $lang = '')
     {
         if (!$lang) {

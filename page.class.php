@@ -1244,7 +1244,7 @@ EOT;
             $modified = false;
 
             $modified |= $this->trans->supervisedTranslate($this, $this->template);
-            $this->content = $md->replaceMdVariables( $this->content );
+            $this->content = $md->replaceVariables( $this->content );
             $modified |= $this->trans->supervisedTranslate($this, $this->content);
 
             $modified |= $this->trans->supervisedTranslate($this, $this->assembledJs);
@@ -1585,38 +1585,6 @@ EOT;
                 }
                 unset($hdr['runPHPonce']);
             }
-        }
-
-        // mdVariables:
-        $mdVariables = [];
-        if (isset($hdr['mdVariables'])) {
-            foreach ($hdr['mdVariables'] as $key => $value) {
-                $key = str_replace('$', '', $key);
-                if (preg_match('/^ \s* (\w [\w\d]*) \( (.*?) \) $/x', $value, $m)) {
-                    $funName = $m[1];
-                    if (!$this->config->custom_permitUserCode) {
-                        fatalError("Trying to use function '$funName()' in frontmatter, but config option 'custom_permitUserCode' is not enabled.");
-                    }
-                    if (function_exists($funName)) {
-                        $value = $funName($m[2]);
-                    } else {
-                        fatalError("Trying to use function, '$funName()' is not defined.");
-                    }
-                }
-                $mdVariables[$key] = $value;
-            }
-            unset($hdr['mdVariables']);
-            $this->mdVariables = array_merge($this->mdVariables, $mdVariables);
-
-        } else {
-            foreach ($hdr as $key => $value) {
-                if ($key[0] !== '$') {
-                    continue;
-                }
-                $mdVariables[substr($key, 1)] = $value;
-                unset($hdr[$key]);
-            }
-            $this->mdVariables = array_merge($this->mdVariables, $mdVariables);
         }
 
         // extract "locales" directive:
