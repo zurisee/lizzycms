@@ -9,6 +9,7 @@
 
 
 
+
 define('SYSTEM_PATH', 		'');		                            // same directory
 define('PATH_TO_APP_ROOT', 	'../');		                            // root folder of web app
 define('LOCK_TIMEOUT', 		120);	                                // max time till field is automatically unlocked
