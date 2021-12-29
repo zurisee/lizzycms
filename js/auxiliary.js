@@ -214,7 +214,7 @@ function setupMessageHandler( delay) {
     $('.lzy-msgbox').click(function () {
         $(this).toggleClass('lzy-msg-show');
     }).dblclick(function () {
-        $(this).hide()
+        $(this).hide();
     });
     lzyMsgInitialized = true;
 } // setupMessageHandler
