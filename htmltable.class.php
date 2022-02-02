@@ -57,7 +57,7 @@ class HtmlTable
 
         $this->dataSource               = $this->getOption('dataSource', '(optional if nCols is set) Name of file containing data. Format may be .cvs or .yaml and is expected be local to page folder.');
         $this->preselectData            = $this->getOption('preselectData', 'If set, pre-selects data from dataSource before rendering (only makes sense for higher dimensional data).');
-        $this->inMemoryData             = $this->getOption('data', 'Alternative to "dataSource": provide data directly as array. E.g. data: $array,');
+        $this->inMemoryData             = $this->getOption('data', 'Alternative to "dataSource": provide data directly as array. E.g. data: &#36;array,');
         $this->id                       = $this->getOption('id', '(optional) Id applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
         $this->wrapperClass             = $this->getOption('wrapperClass', '(optional) Class applied to the DIV around the table tag (resp. wrapping div tag if renderAsDiv is set). (Default: "lzy-table-default" which applies default styling).', 'lzy-table-default');
         $this->tableClass               = $this->getOption('tableClass', '(optional) Class applied to the table tag (resp. wrapping div tag if renderAsDiv is set). Use "lzy-table-default" to apply default styling.');
@@ -244,11 +244,10 @@ class HtmlTable
             $this->includeCellRefs = true;
             $this->tableClass .= ' lzy-active-table';
         }
+        $this->loadData();
         if ($this->formEditing || $this->recViewButtonsActive) {
             $this->form = $this->renderEditingForm();
         }
-
-        $this->loadData();
 
         $this->applyHeaders();
 
@@ -1451,6 +1450,7 @@ EOT;
     private function renderForm()
     {
         $recStructure = $this->ds->getStructure();
+        require_once "_lizzy/forms.class.php";
         $form = new Forms($this->lzy);
 
         $splitChoiceElemsInDb = isset($this->options['splitChoiceElemsInDb'])? $this->options['splitChoiceElemsInDb']: false;
