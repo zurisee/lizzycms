@@ -14,6 +14,7 @@ function LzyForms() {
     this.$form = null;
     this.waitSymbol = '⌛';
     this.lockRecWhileFormOpen = false;
+    this.initPhase = true;
 
 
 
@@ -21,9 +22,11 @@ function LzyForms() {
         if ((typeof lockRecWhileFormOpen !== 'undefined') && lockRecWhileFormOpen) {
             this.lockRecWhileFormOpen = true;
         }
+
         this.setupOnChangeHandler();
         this.setupOnSubmitHandler();
         this.onOpen();
+        this.initPhase = false;
         mylog('lzyForms initialized');
     }; // init
 
@@ -224,9 +227,9 @@ function LzyForms() {
             let type = $this.attr('type');
             if ('text,textarea,'.includes(type)) {
                 if (mode === 'default') {
-                    $this.val(placehoderInEmptyFields);
+                   $this.val(placehoderInEmptyFields);
                 } else if ($this.val() === placehoderInEmptyFields) {
-                    $this.val('');
+                   $this.val('');
                 }
             }
         });
@@ -509,8 +512,9 @@ function LzyForms() {
 
         // (re-)enable submit key:
         $('input[type=submit]', $form).prop('disabled', false).removeClass('lzy-button-disabled');
-
-        this.clearForm($form);
+        if (!this.initPhase) {
+            this.clearForm($form);
+        }
         this.presetValues($form, 'default');
         if ((recKey === false) || (recKey === 'new-rec')) {
             this.setRecKey( $form, '' );
