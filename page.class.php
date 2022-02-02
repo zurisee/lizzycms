@@ -1205,7 +1205,7 @@ EOT;
             }
         }
 
-        usort($primaryModules, function($a, $b) { return ($a[1] < $b[1]); });
+        usort($primaryModules, function($a, $b) { return ($b[1] - $a[1]); });
         $primaryModules = array_column($primaryModules, 0);
         $modules = array_merge($primaryModules,$modules);
         $cssModules = [];

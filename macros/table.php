@@ -62,7 +62,7 @@ function renderTableHelp($trans, $macroName)
     $help = $dataTable->render('help');
     array_shift($help);
     usort( $help, function($a, $b) {
-        return ($a['option'] > $b['option']);
+        return ($a['option'] > $b['option'])? 1 : -1;
     });
     foreach ($help as $rec) {
         $trans->getArg($macroName, $rec['option'], $rec['text']);
