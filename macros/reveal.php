@@ -9,6 +9,7 @@ $this->addMacro($macroName, function () {
     $inx = $this->invocationCounter[$macroName] + 1;
 
     $label = $this->getArg($macroName, 'label', 'Text that prepresents the controlling element.', '');
+    $labelPosition = $this->getArg($macroName, 'labelPosition', '(before,after).', 'before');
     $target = $this->getArg($macroName, 'target', '[css selector] CSS selector of the DIV that shall be revealed, e.g. "#box"', '');
     $class = $this->getArg($macroName, 'class', '(optional) A class that will be applied to the controlling element.', '');
     $symbol = $this->getArg($macroName, 'symbol', '(triangle) If defined, the symbol on the left hand side of the label will be modified. (currently just "triangle" implemented.)', '');
@@ -29,8 +30,13 @@ $this->addMacro($macroName, function () {
 
     $class = $class? " $class": '';
     $out = '';
-    $out .= "\n\t\t\t\t<input id='$id' class='lzy-reveal-controller-elem lzy-reveal-icon' type='checkbox' data-reveal-target='$target' />".
-        "\n\t\t\t\t<label for='$id'>$label</label>\n";
+    if ($labelPosition && ($labelPosition[0] === 'a')) {
+        $out .= "\n\t\t\t\t<label for='$id'>$label</label>".
+            "\n\t\t\t\t<input id='$id' class='lzy-reveal-controller-elem lzy-reveal-icon' type='checkbox' data-reveal-target='$target' />\n";
+    } else {
+        $out .= "\n\t\t\t\t<input id='$id' class='lzy-reveal-controller-elem lzy-reveal-icon' type='checkbox' data-reveal-target='$target' />".
+            "\n\t\t\t\t<label for='$id'>$label</label>\n";
+    }
 
     $out = "\t\t\t<div class='lzy-reveal-controller$class'>$out\t\t\t</div>\n";
 
