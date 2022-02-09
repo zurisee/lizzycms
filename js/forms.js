@@ -14,7 +14,7 @@ function LzyForms() {
     this.$form = null;
     this.waitSymbol = '⌛';
     this.lockRecWhileFormOpen = false;
-    this.initPhase = true;
+    this.initPhase = false;
 
 
 
@@ -74,6 +74,7 @@ function LzyForms() {
             $this.attr('data-live-value', v);
             $this.removeAttr('data-live-value-inactive');
         });
+
         $('.lzy-elem-revealed', $form).removeClass('lzy-elem-revealed');
         $('.lzy-reveal-container > div', $form).css('margin-top', '-10000px');
     }; // clearForm
@@ -100,13 +101,13 @@ function LzyForms() {
             $.ajax({
                 url: url,
             })
-                .done(function ( json ) {
-                    if (json.charAt(0) === '<') {
-                        mylog( json.replace(/(<([^>]+)>)/gi, '') );
-                        json = false;
-                    }
-                    resolve( json );
-                });
+            .done(function ( json ) {
+                if (json.charAt(0) === '<') {
+                    mylog( json.replace(/(<([^>]+)>)/gi, '') );
+                    json = false;
+                }
+                resolve( json );
+            });
         });
     }; // fetchValuesFromHost
 
@@ -251,7 +252,7 @@ function LzyForms() {
                         const data = '[value=' + values[i] + ']';
                         $( data, $elem).prop('checked', true);
                     }
-                } else {
+                } else if (value) {
                     $('[value=' + value + ']', $elem).prop('checked', true);
                 }
 
@@ -287,6 +288,13 @@ function LzyForms() {
                 }
             });
         }
+
+        // prefill
+        $('[data-prefill]', $form).each(function() {
+            let $this = $( this );
+            let v = $this.data('prefill');
+            $this.val(v);
+        });
 
         this.liveUpdateActive = true;
     }; // presetValues
