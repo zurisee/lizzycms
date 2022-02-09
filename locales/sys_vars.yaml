@@ -140,6 +140,26 @@ lzy-form-data-preview-title:
     de: 'Bisher empfangene Daten:'
     _:  'Data received until now:'
 
+lzy-form-general-error:
+    de: |
+        Ihre Eingaben konnten nicht verarbeitet werden weil serverseitig ein Fehler aufgetreten ist.<br>
+        Der Webmaster wurde benachrichtigt.<br>
+        Wir entschuldigen uns für die Unannahmlichkeiten. Bitte versuchen Sie es später noch einmal.
+    _:  |
+        Your input could not be processed due to an error condition on the server.<br>The webmaster has been notified.<br>
+        We apologize for the inconvenience. Please try again later.
+
+lzy-form-antispam-notice:
+    de: |
+        Ihre Eingaben konnten nicht verarbeitet werden weil serverseitig ein Fehler aufgetreten ist.<br>
+        Bitte senden Sie Ihr Angaben per E-Mail an den {{ webmaster_link }}.<br>
+        Wir entschuldigen uns für die Unannahmlichkeiten.
+    _:  |
+        Your input could not be processed due to an error condition on the server.<br>
+        Please send your request by e-mail to the {{ webmaster_link }}<br>
+        We apologize for the inconvenience.
+
+
 lzy-form-expired:
     de: 'Dieses Formular war zu lange offen,<br>Ihre Eingaben konnten nicht mehr akzeptiert werden.<br>Bitte versuchen Sie es erneut.'
     de2: 'Dieses Formular war zu lange offen,<br>Deine Eingaben konnten nicht mehr akzeptiert werden.<br>Bitte versuche es erneut.'
