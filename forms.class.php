@@ -61,6 +61,7 @@ class Forms
     private   $isNewRec;
     private   $bypassedValues;
     private   $infoInitialized, $mailfrom, $dataKeyOverride;
+    private   $inhibitSavingUserData;
     protected $userSuppliedData, $userSuppliedData0, $repeatEventTaskPending, $dataKeyOverrideHash;
 
 
@@ -836,6 +837,7 @@ EOT;
         if ($currForm->formHeader) {
             $out .= "\t  <div class='$legendClass {$currForm->formId}'>{$currForm->formHeader}</div>\n\n";
         }
+        $out .= "\t  {{^ lzy-form-head-placeholder-{$currForm->formInx} }}\n";
 
         $this->formHash = $this->getFormHash();
 
@@ -1634,9 +1636,24 @@ EOT;
                 } else {
                     $msgToClient = "<div class='lzy-form-override-msg'>{$this->errorDescr[ 'generic' ]['_override_']}</div>\n";
                 }
+                $out .= "\t  <div class='lzy-form-response'>$msgToClient</div>\n";
+
+            } else {
+                $msgToClient = "\t  <div class='lzy-form-response lzy-error-message'>$msgToClient</div>\n";
+                $this->trans->addVariable("lzy-form-head-placeholder-{$currForm->formInx}", $msgToClient);
             }
-            $out .= "\t  <div class='lzy-form-response'>$msgToClient</div>\n";
         }
+
+        // check whether request has been properly processed, display an error message if not:
+        if (@$_SESSION['lizzy']['formRequestPending']) {
+            $errMsg = "\t  <div class='lzy-form-response lzy-error-message'>{{ lzy-form-general-error }}</div>\n";
+            $this->trans->addVariable("lzy-form-head-placeholder-{$currForm->formInx}", $errMsg);
+            $this->hideForm();
+            $_SESSION['lizzy']['formRequestPending'] = false;
+            $this->sendMailToWebmaster('Error while processing form input');
+        }
+
+
         if (!$this->skipRenderingForm) {
             $out .= "\t</div><!-- /lzy-form-wrapper -->\n\n";
         }
@@ -1863,16 +1880,18 @@ EOT;
     public function evaluateUserSuppliedData()
     {
         $msgToClient = '';
+        $this->inhibitSavingUserData = false;
 
         // returns false on success, error msg otherwise:
         $this->userSuppliedData = $_POST;
         $this->userSuppliedData0 = $_POST;
 
         $userSuppliedData = &$this->userSuppliedData;
+        $_SESSION['lizzy']['formRequestPending'] = true;
 
         if ($this->lzy->config->debug_debugLogging) {
             $log = json_encode($userSuppliedData);
-            writeLogStr("Server: Forms received: $log", FORM_LOG_FILE);
+            writeLogStr("Form data received: $log", FORM_LOG_FILE);
         }
 
 		if (!isset($userSuppliedData['_lzy-form-ref'])) {
@@ -1896,8 +1915,11 @@ EOT;
 
         // anti-spam check:
         if ($this->checkHoneyPot()) {
+            $this->errorDescr[$currForm->formInx]['_announcement_'] = "{{ lzy-form-antispam-notice }}";
             $this->clearCache();
-            return false;
+            $_SESSION['lizzy']['formRequestPending'] = false;
+            $this->hideForm($currForm->formId);
+            $this->inhibitSavingUserData = true;
         }
 
         $cmd = @$userSuppliedData['_lzy-form-cmd'];
@@ -1907,6 +1929,7 @@ EOT;
 
         } elseif ($cmd === '_reset_') { // _reset_
             $this->clearCache();
+            $_SESSION['lizzy']['formRequestPending'] = false;
             reloadAgent();
 
         } elseif ($cmd === '_cache_') { // _cache_
@@ -2012,9 +2035,11 @@ EOT;
                 if (isset($res[1])) {
                     $this->errorDescr[ 'generic' ]['_override_'] = $res[1];
                     $GLOBALS['lizzy']['forms_skipRenderingForm'][$this->formInx] = true;
+                    writeLogStr("{$res[1]}", FORM_LOG_FILE);
 
                 } else {
                     $this->errorDescr[$currForm->formInx]['_announcement_'] = $res[0];
+                    writeLogStr("{$res[0]}", FORM_LOG_FILE);
                 }
             }
         }
@@ -2043,12 +2068,14 @@ EOT;
             if (!$this->currForm->responseViaSideChannels) {
                 $this->skipRenderingForm = true;
             }
+            $_SESSION['lizzy']['formRequestPending'] = false;
 
         } elseif (@$this->errorDescr[ 'generic' ]['_override_']) {
             $this->responseToClient = $this->errorDescr[ 'generic' ]['_override_'];
             if (!$this->currForm->responseViaSideChannels) {
                 $this->skipRenderingForm = true;
             }
+            $_SESSION['lizzy']['formRequestPending'] = false;
         }
         return true;
     } // evaluateUserSuppliedData
@@ -2061,6 +2088,10 @@ EOT;
             return false;
         }
 
+        if ($this->checkDataWritten()) {
+            writeLogStr("Forms data processed successfully", FORM_LOG_FILE);
+        }
+
         $this->clearCache();
 
         if ($msgToOwner && $this->currForm->mailTo) {
@@ -2068,6 +2099,23 @@ EOT;
         }
         return true;
     } // saveAndWrapUp
+
+
+
+    private function checkDataWritten()
+    {
+        $filename = $this->db->close();
+        $rawData = file_get_contents($filename);
+        $data = $this->userSuppliedData;
+        do {
+            $testStr = array_shift($data);
+        } while (!$testStr);
+        if (strpos($rawData, $testStr) === false) {
+            $this->sendMailToWebmaster("Error detected while double checking strong of form data.");
+            return false;
+        }
+        return true;
+    } // checkDataWritten
 
 
 
@@ -2128,9 +2176,11 @@ EOT;
             $out = str_replace("\n", ' ', $out);
             $out .= "\n[{$_SERVER['REMOTE_ADDR']}] {$_SERVER['HTTP_USER_AGENT']}\n";
             $logState = $GLOBALS['lizzy']['errorLoggingEnabled'];
-            $GLOBALS['lizzy']['errorLoggingEnabled'] = true;
+            $GLOBALS['lizzy']['errorLoggingEnabled'] = true; // temp override errorLoggingEnabled setting
             writeLog($out, SPAM_LOG_FILE);
+            writeLogStr("Honeypot entry detected", FORM_LOG_FILE);
             $GLOBALS['lizzy']['errorLoggingEnabled'] = $logState;
+            //ToDo: provide feedback to user
             return true;
         }
         return false;
@@ -2155,7 +2205,7 @@ EOT;
         }
 
         $oldRec = false;
-        $skipSaving = false;
+        $skipSaving = $this->inhibitSavingUserData;
 
         if (isset($this->dataKeyOverride)) {
             $recKey = $this->getOverrideKey( $recKey );
@@ -2236,7 +2286,8 @@ EOT;
                     }
                 } else {
                     $this->errorDescr[$currForm->formInx]['_announcement_'] = 'Error writing to DB';
-                    mylog("forms:saveUserSuppliedDataToDB(): Error writing to DB");
+                    writeLogStr("forms:saveUserSuppliedDataToDB(): Error writing to DB", FORM_LOG_FILE);
+                    $this->sendMailToWebmaster('Error while writing form data to DB');
                 }
             }
         }
@@ -2687,7 +2738,7 @@ $('.lzy-form input[type=submit]').click(function(e) {
     e.preventDefault();
     e.stopImmediatePropagation();
     let data = JSON.stringify( $form.serializeArray() );
-    serverLog('suspicious form data: ' + data, 'form-log.txt');
+    // serverLog('suspicious form data: ' + data, 'form-log.txt');
     initAntiSpamPopup();
 });
 
@@ -2793,6 +2844,11 @@ EOT;
         if ($liveValue) {
             $liveValue = str_replace("'", "´", $liveValue);
             $this->currRec->inpAttr .= " data-live-value='$liveValue'";
+        }
+
+        if (@$this->currRec->prefill) {
+            $prefill = $this->currRec->prefill;
+            $this->currRec->inpAttr .= " data-prefill='$prefill'";
         }
 
         $value = $this->parseValue($type, $value);
@@ -3318,6 +3374,25 @@ EOT;
     {
         return $this->currForm->next;
     } // getNext
+
+
+
+    private function hideForm($formId = false)
+    {
+        if (!$formId) {
+            $formId = $this->formId;
+        }
+        $this->page->addCss("#$formId { display: none; }");
+    } // hideForm
+
+
+
+    private function sendMailToWebmaster($subject, $message = '')
+    {
+        $webmasterEmail = $this->trans->getVariable('webmaster_email');
+        $domain = $this->trans->getVariable('site_title');
+        sendMail($webmasterEmail, $webmasterEmail, "[$domain] $subject", $message);
+    } // sendMailToWebmaster
 
 } // Forms
 
