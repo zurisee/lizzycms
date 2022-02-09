@@ -102,18 +102,26 @@ class DataStorage2
         }
         chdir($this->appPath); // workaround for include bug
 
-        $this->exportToFile(); // saves data if modified
+        $filename = $this->exportToFile(); // saves data if modified
 
         if (@$_SESSION['lizzy']['debug']) {
             $str = $this->dumpDb(true, false);
             file_put_contents(PATH_TO_APP_ROOT . ".#logs/dBdump_$this->tableName.txt", $str);
         }
 
-        if ($this->lzyDb) {
+        if (@$this->lzyDb) {
             $this->lzyDb->close();
             unset($this->lzyDb);
         }
+        return $filename;
     } // __destruct
+
+
+
+    public function close()
+    {
+        return $this->__destruct();
+    } // close
 
 
 
@@ -1513,7 +1521,7 @@ class DataStorage2
 
     private function lowlevelReadRawData($rawElem = false)
     {
-        if (!$this->tableName) {
+        if (!@$this->tableName || !@$this->lzyDb) {
             return null;
         }
         $query = "SELECT * FROM \"{$this->tableName}\"";
@@ -1994,6 +2002,7 @@ EOT;
             $this->writeToCsvFile($filename, $data);
         }
         $this->exportRequired = false;
+        return $filename;
     } // exportToFile
 
 
