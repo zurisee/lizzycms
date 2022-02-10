@@ -1896,6 +1896,7 @@ EOT;
 
 		if (!isset($userSuppliedData['_lzy-form-ref'])) {
 			$this->clearCache();
+            $_SESSION['lizzy']['formRequestPending'] = false;
 			return false;
 		}
 
@@ -1905,6 +1906,7 @@ EOT;
         // ticket timed out or formInx not matching:
         if (($currForm === null) || ($currForm->formHash !== $formHash)) {
             $this->clearCache();
+            $_SESSION['lizzy']['formRequestPending'] = false;
             return false;
         }
         if ($this->formInx !== $currForm->formInx) {
@@ -1925,6 +1927,7 @@ EOT;
         $cmd = @$userSuppliedData['_lzy-form-cmd'];
         if ($cmd === '_ignore_') {     // _ignore_
             $this->cacheUserSuppliedData($formInx, $userSuppliedData);
+            $_SESSION['lizzy']['formRequestPending'] = false;
             return false;
 
         } elseif ($cmd === '_reset_') { // _reset_
@@ -1948,10 +1951,12 @@ EOT;
         // check required entries:
         if (!$this->checkSuppliedDataEntries()) {
             $this->cacheUserSuppliedData($formInx, $userSuppliedData);
+            $_SESSION['lizzy']['formRequestPending'] = false;
             return false;
         }
-        if ( @$this->errorDescr[$formInx] ) {
+        if (@$this->errorDescr[$formInx] ) {
             $this->cacheUserSuppliedData($formInx, $userSuppliedData);
+            $_SESSION['lizzy']['formRequestPending'] = false;
             return false;
         }
 
@@ -1960,6 +1965,7 @@ EOT;
             $dataTime = $currForm->creationTime;
             if ($dataTime < (time() - $currForm->formTimeout)) {
                 $this->page->addPopup( '{{ lzy-form-expired }} [form timed out]' );
+                $_SESSION['lizzy']['formRequestPending'] = false;
                 return false;
             }
         }
@@ -1970,6 +1976,7 @@ EOT;
         $errDescr = @$this->errorDescr[ $this->formInx ];
         if ($errDescr) {
             $_POST = [];
+            $_SESSION['lizzy']['formRequestPending'] = false;
             return false;
         }
 
@@ -1998,6 +2005,7 @@ EOT;
                         fatalError($result[1]);
                     } else {
                         $this->clearCache();
+                        $_SESSION['lizzy']['formRequestPending'] = false;
                         return $result[1];
                     }
                 }
@@ -2029,6 +2037,7 @@ EOT;
                 $this->clearCache();
                 $GLOBALS['lizzy']['forms_skipRenderingForm'][$this->formInx] = true;
                 $this->responseToClient = $res;
+                $_SESSION['lizzy']['formRequestPending'] = false;
                 return '';
             } elseif(is_array($res)) {
                 // second elem of $res set => means skip rendering form and override output:
