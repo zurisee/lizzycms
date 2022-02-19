@@ -16,7 +16,7 @@ define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,ma
     'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,'.
     'validate,novalidate,showData,showDataMinRows,options,encapsulate,disableCaching,labelWidth,'.
     'translateLabel,labelPosition,formName,formHeader,formHint,formFooter,showSource,splitChoiceElemsInDb,'.
-    'responseViaSideChannels,reportErrorByPopup');
+    'responseViaSideChannels,reportErrorByPopup,useRecycleBin,');
 
 define('ELEM_ATTRIBUTES', 	    ',label,type,id,class,wrapperClass,name,required,value,'.
 	'option,options,optionLabels,layout,info,comment,translateLabel,'.
@@ -86,6 +86,7 @@ class Forms
         if (isset($_POST['_lzy-form-ref'])) {
             $this->evaluateUserSuppliedData();    // we received data for curr form
         }
+        $this->formHeadInfoVariableName = "lzy-form-head-placeholder-{$this->formInx}";
 	} // __construct
 
     
@@ -837,7 +838,10 @@ EOT;
         if ($currForm->formHeader) {
             $out .= "\t  <div class='$legendClass {$currForm->formId}'>{$currForm->formHeader}</div>\n\n";
         }
-        $out .= "\t  {{^ lzy-form-head-placeholder-{$currForm->formInx} }}\n";
+
+        // add DOM-elem in which FormFooter can later inject (error-)message:
+        // (note: does not work using variable, therefore we use the include() macro)
+        $out .= "{{ include(contentFrom:'#{$this->formHeadInfoVariableName}', id:'lzy-form-msg-{$currForm->formInx}') }}";
 
         $this->formHash = $this->getFormHash();
 
@@ -1043,7 +1047,7 @@ EOT;
                 $cls = $class ? " class='$class'" : '';
             }
 
-            $checked = ($checkedElem && @$checkedElem[$name]) || $preselectedValue ? ' checked' : '';
+            $checked = ($checkedElem || $preselectedValue) ? ' checked' : '';
             $out .= "\t\t\t\t<div class='$id lzy-form-radio-elem lzy-form-choice-elem'>\n";
             $out .= "\t\t\t\t\t<input id='$id' type='radio' name='$groupName' value='$name'$checked$cls$attr$descrBy /><label for='$id'>$optionLabel</label>\n";
             $out .= "\t\t\t\t</div>\n";
@@ -1117,7 +1121,7 @@ EOT;
                 $cls = $class ? " class='$class'" : '';
             }
 
-            $checked = (($presetValues !== false) && @$presetValues[$name]) || $preselectedValue ? ' checked' : '';
+            $checked = ($presetValues || $preselectedValue) ? ' checked' : '';
             $out .= "\t\t\t<div class='$id lzy-form-checkbox-elem lzy-form-choice-elem'>\n";
 
             // special case: $optionLabel is empty -> instead of label, apply aria-labelledby referring to legend:
@@ -1637,22 +1641,22 @@ EOT;
                     $msgToClient = "<div class='lzy-form-override-msg'>{$this->errorDescr[ 'generic' ]['_override_']}</div>\n";
                 }
                 $out .= "\t  <div class='lzy-form-response'>$msgToClient</div>\n";
+                $out .= "\t<div id='{$this->formHeadInfoVariableName}' class='dispno'>$msgToClient\t</div>\n";
 
             } else {
                 $msgToClient = "\t  <div class='lzy-form-response lzy-error-message'>$msgToClient</div>\n";
-                $this->trans->addVariable("lzy-form-head-placeholder-{$currForm->formInx}", $msgToClient);
+                $out .= "\t<div id='{$this->formHeadInfoVariableName}' class='dispno'>$msgToClient\t</div>\n";
             }
         }
 
         // check whether request has been properly processed, display an error message if not:
         if (@$_SESSION['lizzy']['formRequestPending']) {
             $errMsg = "\t  <div class='lzy-form-response lzy-error-message'>{{ lzy-form-general-error }}</div>\n";
-            $this->trans->addVariable("lzy-form-head-placeholder-{$currForm->formInx}", $errMsg);
+            $out .= "\t<div id='{$this->formHeadInfoVariableName}' class='dispno'>$errMsg</div>\n";
             $this->hideForm();
             $_SESSION['lizzy']['formRequestPending'] = false;
             $this->sendMailToWebmaster('Error while processing form input');
         }
-
 
         if (!$this->skipRenderingForm) {
             $out .= "\t</div><!-- /lzy-form-wrapper -->\n\n";
@@ -1798,7 +1802,9 @@ EOT;
         }
 
         $cacheFile = SYSTEM_CACHE_PATH . $GLOBALS['lizzy']['pagePath'] . "form-descr-{$this->formInx}.txt";
-        if (file_exists($cacheFile)) {
+        
+        // cache form-description for max 24hours:
+        if (file_exists($cacheFile) && (filemtime($cacheFile) > (time() - 86400))) {
             return;
         }
         $str = $this->formHash . ':'. base64_encode( serialize( $form ) );
@@ -2120,7 +2126,7 @@ EOT;
             $testStr = array_shift($data);
         } while (!$testStr);
         if (strpos($rawData, $testStr) === false) {
-            $this->sendMailToWebmaster("Error detected while double checking strong of form data.");
+            $this->sendMailToWebmaster("Error detected while double checking whether form data has been written to DB-file.");
             return false;
         }
         return true;
@@ -2179,6 +2185,11 @@ EOT;
         if (!$this->currForm->antiSpam) {
             return false;
         }
+
+        // skip if on localhost and NOT in debug mode:
+        if ($GLOBALS['lizzy']['isLocalhost'] && !$GLOBALS['_SESSION']['lizzy']['debug']) {
+            return false;
+        }
         // check honey pot field (unless on local host):
         if (@$this->userSuppliedData['_lzy-form-name'] !== '') {
             $out = var_export($this->userSuppliedData, true);
@@ -2189,7 +2200,6 @@ EOT;
             writeLog($out, SPAM_LOG_FILE);
             writeLogStr("Honeypot entry detected", FORM_LOG_FILE);
             $GLOBALS['lizzy']['errorLoggingEnabled'] = $logState;
-            //ToDo: provide feedback to user
             return true;
         }
         return false;
@@ -2237,7 +2247,7 @@ EOT;
 
         // check whether data already present in DB, if not disabled:
         if ($currForm->avoidDuplicates) {
-            $keys0 = array_keys($struc['elements']);
+            $keys0 = array_keys($struc['elements'] ?? []);
             if ($this->checkDuplicates($ds, $keys0, $currForm, $userSuppliedData)) {
                 $skipSaving = true;
             }
@@ -2641,7 +2651,7 @@ function lzyChContinue( callbackArg ) {
     if (!origFld) {
         origFld = '';
     }
-    if (val === origFld.toUpperCase()) {
+    if (val.trim() === origFld.toUpperCase().trim()) {
         let \$form = $( '#' + callbackArg );
         $( '.lzy-form-check', \$form ).val('');
         \$form[0].submit();
@@ -2677,6 +2687,12 @@ EOT;
     $('body')
         .on('click', '.lzy-button-submit', function() {
             lzyChContinue('{$this->currForm->formId}');
+        })
+        .on('keyup', '.lzy-popup-container', function(e) {
+            const key = e.which;
+            if (key === 13) {
+                lzyChContinue('{$this->currForm->formId}');
+            }
         });
 
 EOT;
