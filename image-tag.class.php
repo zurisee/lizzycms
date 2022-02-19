@@ -62,6 +62,15 @@ class ImageTag
 
         $src = $lizzy['appRoot'].$lizzy['pageFolder'].'_/'.base_name($this->src);
         $style = '';
+        if ($this->w) {
+            $style .= "max-width:{$this->w}px;";
+        }
+        if ($this->h) {
+            $style .= "max-height:{$this->h}px;";
+        }
+        if ($style) {
+            $style = " style='$style'";
+        }
 
         // basic img code:
         $str = <<<EOT
