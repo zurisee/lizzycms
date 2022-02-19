@@ -252,6 +252,14 @@ function LzyForms() {
                         const data = '[value=' + values[i] + ']';
                         $( data, $elem).prop('checked', true);
                     }
+                } else if (value.match('|')) {
+                    const values = value.split('|');
+                    for (let i in values) {
+                        if (values[i]) {
+                            const data = '[value=' + values[i] + ']';
+                            $(data, $elem).prop('checked', true);
+                        }
+                    }
                 } else if (value) {
                     $('[value=' + value + ']', $elem).prop('checked', true);
                 }
