@@ -98,7 +98,7 @@ class DataStorage2
     public function __destruct()
     {
         if (!isset($this->appPath)) {
-            return;
+            return '';
         }
         chdir($this->appPath); // workaround for include bug
 
@@ -446,7 +446,8 @@ class DataStorage2
         $res = false;
         if (isset($this->data[ $recId ])) {
             unset($this->data[ $recId ]);
-            if ($this->structure['key'] === 'index') {
+            if (@$this->structure['key'] === 'index') {
+                // fix indexes after removing one:
                 $this->data = array_values($this->data);
             }
             $this->lowLevelWrite();
@@ -1955,7 +1956,7 @@ EOT;
     {
         $rawData = $this->lowlevelReadRawData();
         if (!$this->exportRequired) {
-            return;
+            return '';
         }
 
         if (@$GLOBALS['appRoot'] && @$rawData['origFile']) {
@@ -1966,11 +1967,11 @@ EOT;
         }
         if (!$filename) {
             mylog("Error: filename missing for export file (".__FILE__.' '.__LINE__.')');
-            return;
+            return '';
         }
         if (!file_exists($filename)) {
             mylog("Error: unable to export data to file '$filename'");
-            return;
+            return '';
         }
 
         if ($this->useRecycleBin) {
@@ -1989,6 +1990,20 @@ EOT;
                 if (isset($rec[TIMESTAMP_KEY_ID])) {
                     unset( $data[$recKey][TIMESTAMP_KEY_ID]);
                 }
+            }
+        } else {
+            //ToDo: remove test code for finding zero-timestamp bug
+            $error = false;
+            foreach ($data as $rec) {
+                if (!isset($rec[REC_KEY_ID])) {
+                    $error = true;
+                }
+                if (!isset($rec[TIMESTAMP_KEY_ID]) || !$rec[TIMESTAMP_KEY_ID]) {
+                    $error = true;
+                }
+            }
+            if ($error) {
+                $this->sendMailToWebmaster("Error: meta-data corrupt while exporting data to file '$filename'.");
             }
         }
 
@@ -2499,6 +2514,16 @@ EOT;
         }
         return $data1;
     } // completeData
+
+
+
+    private function sendMailToWebmaster($subject, $message = '')
+    {
+        $webmasterEmail = $GLOBALS['website']->trans->getVariable('webmaster_email');
+        $domain = $GLOBALS['website']->trans->getVariable('site_title');
+        sendMail($webmasterEmail, $webmasterEmail, "[$domain] $subject", $message);
+    } // sendMailToWebmaster
+
 
 } // DataStorage
 
