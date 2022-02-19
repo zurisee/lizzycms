@@ -177,11 +177,7 @@ class ServiceTasks
         //  so no need to do it again here.
 
         $this->checkInstallation1();   // check folder structure and writability
-
-        // initialise housekeeping flag:
-        preparePath(HOUSEKEEPING_FILE);
-        file_put_contents(HOUSEKEEPING_FILE, $intervall);
-        chmod(HOUSEKEEPING_FILE, 0770);
+        $this->initHouskeepingFlag();
 
         return true;
     } // checkTimeForDailyHousekeeping
@@ -543,6 +539,7 @@ class ServiceTasks
                 }
             }
         }
+        $this->initHouskeepingFlag();
     } // execDailyPurge
 
 
@@ -625,6 +622,17 @@ class ServiceTasks
     {
         rrmdir(DEFAULT_TICKETS_PATH);
     } // clearLogs
+
+
+
+    private function initHouskeepingFlag()
+    {
+        // initialise housekeeping flag:
+        $intervall = $this->config->site_cacheResetIntervall * 3600;
+        preparePath(HOUSEKEEPING_FILE);
+        file_put_contents(HOUSEKEEPING_FILE, $intervall);
+        chmod(HOUSEKEEPING_FILE, 0770);
+    } // initHouskeepingFlag
 } // class ServiceTasks
 
 
