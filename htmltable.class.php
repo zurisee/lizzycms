@@ -38,6 +38,8 @@ class HtmlTable
     private $nCols;
     private $processingInstructions;
     private $form;
+    private $recKeyCol = false;
+    private $timestampKeyCol = false;
 
     public function __construct($lzy, $options)
     {
@@ -319,12 +321,6 @@ EOT;
         }
         $rowClass0 = $this->rowClass;
 
-        $rec = end($data);
-        foreach ($rec as $recKeyInx => $elem) {
-            if (strpos($elem, '<{<') !== false) {
-                break;
-            }
-        }
 
         $rInx = 1;
         $r = 0;
@@ -357,10 +353,10 @@ EOT;
             } elseif ($recId === 'footer') {
                 $tfoot = "\n\t<tfoot>\n\t\t<tr class='$rowClass'>\n";
                 if ($this->showRowNumbers) {
-                    $tfoot .= "\t\t\t<td></td>\n";
+                    $tfoot .= "\t\t\t<td class='lzy-table-row-nr'></td>\n";
                 }
                 if ($this->injectSelectionCol) {
-                    $tfoot .= "\t\t\t<td></td>\n";
+                    $tfoot .= "\t\t\t<td class='lzy-table-row-selector'></td>\n";
                 }
                 for ($c = 0; $c < $nCols; $c++) {
                     $cell = $this->getDataElem($recId, $c, 'td');
@@ -374,13 +370,7 @@ EOT;
                 if ($recId === '') {
                     $recId = 'new-rec';
                 }
-                $recHash = @$rec[ $recKeyInx ];
-                $recKey = '';
-                if (preg_match('/ <{< (.*?) ,/x', $recHash, $m)) {
-                    $recKey = " data-reckey='{$m[1]}'";
-                } elseif ($recHash) {
-                    $recKey = " data-reckey='$recHash'";
-                }
+                $recKey = " data-reckey='$recId'";
                 $rowClass = str_replace('*', $rInx, $rowClass0);
                 if (isset($this->specificRowClasses[$r])) {
                     $rowClass .= " {$this->specificRowClasses[$r]}";
@@ -472,7 +462,7 @@ EOT;
 
     private function export()
     {
-        if (!$this->export) {
+        if (!$this->export || !$this->data0) {
             return;
         }
 
@@ -481,9 +471,11 @@ EOT;
         $file = basename( $file );
         $file = str_replace(['.xlsx','.ods','.csv', '.'], '', $file) . '.';
         $path = (!$path || ($path !== '.')) ? $path : 'download/';
-        preparePath( $path );
+        // download folder needs '755' access permission:
+        preparePath( $path, octdec(755) );
         $file = substr( $file , 0, -1);
         $file = "$path$file";
+        $data = $this->data;
 
         // handle export of meta keys:
         if ($this->exportMetaElements) {
@@ -491,20 +483,20 @@ EOT;
             $includeKey = ($this->exportMetaElements === true) ||
                 (strpos($this->exportMetaElements, 'key') !== false) ||
                 (strpos($this->exportMetaElements, 'hash') !== false);
-            foreach ($this->data as $key => $rec) {
+            foreach ($data as $key => $rec) {
                 if ($key === 'hdr') {
                     if ($includeTS) {
-                        $this->data[$key][] = TIMESTAMP_KEY_ID;
+                        $data[$key][] = TIMESTAMP_KEY_ID;
                     }
                     if ($includeKey) {
-                        $this->data[$key][] = REC_KEY_ID;
+                        $data[$key][] = REC_KEY_ID;
                     }
                 } else {
                     if ($includeTS) {
-                        $this->data[$key][] = @$this->data0[$key][TIMESTAMP_KEY_ID];
+                        $data[$key][] = @$this->data0[$key][TIMESTAMP_KEY_ID];
                     }
                     if ($includeKey) {
-                        $this->data[$key][] = @$this->data0[$key][REC_KEY_ID];
+                        $data[$key][] = @$this->data0[$key][REC_KEY_ID];
                     }
                 }
             }
@@ -1164,7 +1156,6 @@ EOT;
                         continue;
                     }
                     $val = @$rec[$_col];
-                    $val = preg_replace('/(<{<([^>]*)>}>)/', '', $val); // ignore data-ref
                     if (preg_match('/\S/', $val)) {
                         $count++;
                     }
@@ -1234,6 +1225,12 @@ EOT;
         $cell = @$this->data[$row][$col];
 
         $class = $this->cellClass;
+        if ($col === $this->recKeyCol) {
+            $class .= ' lzy-col-rec-key';
+        }
+        if ($col === $this->timestampKeyCol) {
+            $class .= ' lzy-col-timestamp';
+        }
 
         if ($this->inlineEditing && strpos($cell, '<br>') !== false) {
             $class = trim("$class lzy-editable-multiline");
@@ -1246,15 +1243,10 @@ EOT;
             $tdClass = $class;
         }
         $tdId = '';
-        $ref = '';
-        if (preg_match('/(@@ ([\w\- ]*) @@)/x', $cell, $m)) { // extract tdClass
-            $tdClass = trim($m[2]);
-            $cell = trim(str_replace($m[1], '', $cell));
-        }
-        if (preg_match('/(<{<([^>]*)>}>)/', $cell, $m)) {    // extract ref
-            $ref = trim($m[2]);
-            $cell = trim(str_replace($m[1], '', $cell));
-            $ref = " data-ref='$ref'";
+        if ($hdrElem) {
+            $ref = '';
+        } else {
+            $ref = " data-ref='$row,$col'";
         }
         if ($this->cellIds) {
             $tdId = " id='{$class}_{$col}_{$row}'";
@@ -1853,7 +1845,10 @@ EOT;
 
         } elseif ($nRows > sizeof($data)) { // increase size
             $emptyRow = array_pad([], $nCols, '');
-            $data = array_pad($data, $nRows, $emptyRow);
+            $k = ($nRows - sizeof($data));
+            for ($i=0; $i<$k; $i++) {
+                $data["_empty$i"] = $emptyRow;
+            }
         }
     } // adjustTableSize
 
@@ -1935,30 +1930,6 @@ EOT;
         }
         $nCols = sizeof( reset($this->data) );
         $recKeyInx = array_search(REC_KEY_ID, $this->tblStruct);
-        if ($this->includeCellRefs) {
-            $r = 0;
-            foreach ($this->data as $rKey => $rec) {
-                $recKey = @$rec[ $recKeyInx ];
-                $ic = 0;
-                for ($c = 0; $c < $nCols; $c++) {
-                    if ($this->includeKeys && (@$this->headerElems[$c] === REC_KEY_ID)) {
-                        if (!isset($this->data[$rKey][$c])) {
-                            $this->data[$rKey][$c] = "<{<$r,#>}>";
-                        } else {
-                            $this->data[$rKey][$c] .= "<{<$r,#>}>";
-                        }
-                    } else {
-                        if (!isset($this->data[$rKey][$c])) {
-                            $this->data[$rKey][$c] = "<{<$recKey,$ic>}>";
-                        } else {
-                            $this->data[$rKey][$c] .= "<{<$recKey,$ic>}>";
-                        }
-                        $ic++;
-                    }
-                }
-                $r++;
-            }
-        }
     } // insertCellAddressAttributes
 
 
@@ -2239,11 +2210,17 @@ EOT;
             die("Error in getHeaders(): unknown type of argument 'headers'.");
         }
         if ($this->includeKeys) {
-            if (!in_array(REC_KEY_ID, $this->headerElems)) {
+            if (($i = array_search(REC_KEY_ID, $this->headerElems)) === false) {
+                $this->recKeyCol = sizeof($this->headerElems);
                 $this->headerElems[] = REC_KEY_ID;
+            } else {
+                $this->recKeyCol = $i;
             }
-            if (!in_array(TIMESTAMP_KEY_ID, $this->headerElems)) {
+            if (($i = array_search(TIMESTAMP_KEY_ID, $this->headerElems)) === false) {
+                $this->timestampKeyCol = sizeof($this->headerElems);
                 $this->headerElems[] = TIMESTAMP_KEY_ID;
+            } else {
+                $this->timestampKeyCol = $i;
             }
         }
     } // getHeaders
