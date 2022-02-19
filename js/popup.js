@@ -324,7 +324,7 @@ function LzyPopup( options, index ) {
     this.setupKeyHandler = function () {
         $('body').on('keyup', function(e) {
             const key = e.which;
-            if(key === 27) {                // ESC
+            if (key === 27) {                // ESC
                 lzyPopupClose( this );
             }
         });
@@ -440,6 +440,13 @@ function lzyConfirm( prompt ) {
         options.onCancel = true;
         options.closeOnBgClick = false;
         options.closeButton = false;
+        $('body').on('keyup', function(e) {
+            const key = e.which;
+            if (key === 13) {                // Enter
+                lzyPopupClose( this );
+                resolve( true );
+            }
+        });
         $('body').on('click','.lzy-popup-btn-confirm', function () {
             lzyPopupClose();
             $('body').off('click','.lzy-popup-btn-confirm').off('click','.lzy-popup-btn-cancel');
