@@ -2474,6 +2474,7 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
         }
         return $err;
     } else {
+        writeLog("Email successfully sent to $to");
         return false;
     }
 } // sendMail
