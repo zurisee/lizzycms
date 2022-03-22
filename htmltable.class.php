@@ -837,10 +837,10 @@ EOT;
         $phpExpr = $this->getArg('phpExpr');
 
         $header1 = '';
-        if ($class) {
-            $content .= " @@$class@@";
-            $header1 = "$header @@$class@@";
-        }
+//        if ($class) {
+//            $content .= " @@$class@@";
+//            $header1 = "$header @@$class@@";
+//        }
 
         foreach ($data as $i => $row) {
             $content1 = $content;
@@ -891,9 +891,9 @@ EOT;
             $contents = $content;
             $content = '';
         }
-        if ($class) {
-            $content .= " @@$class@@";
-        }
+//        if ($class) {
+//            $content .= " @@$class@@";
+//        }
 
         $row = [];
 
@@ -1020,7 +1020,7 @@ EOT;
         $c = $column;
         $data = &$this->data;
         $nCols = sizeof(reset( $data ));
-        $class = $class ? " @@$class@@" : '';
+//        $class = $class ? " @@$class@@" : '';
 
         foreach ($data as $r => $row) {
             if (!$inclHead && ($r === 0)) {
@@ -1056,9 +1056,9 @@ EOT;
         if (!$phpExpr) {
             return;
         }
-        if ($class) {
-            $class = "@@$class@@";
-        }
+//        if ($class) {
+//            $class = "@@$class@@";
+//        }
         $c = $column;
         $data = &$this->data;
 
@@ -2006,14 +2006,16 @@ EOT;
                     // email address:
                     if (preg_match_all('/ ([\w\-.]*?) @ ([\w\-.]*?\.\w{2,6}) /x', $d, $m)) {
                         foreach ($m[0] as $addr) {
-                            $d = str_replace($addr, "<a href='mailto:$addr'>$addr</a>@@lzy-td-email@@", $d);
+                            $d = str_replace($addr, "<a href='mailto:$addr'>$addr</a>", $d);
+//                            $d = str_replace($addr, "<a href='mailto:$addr'>$addr</a>@@lzy-td-email@@", $d);
                         }
 
                     // phone number:
                     } elseif (preg_match('/^( \+? [\d\-\s()]* )$/x', $d, $m)) {
                         $tel = preg_replace('/[^\d+]/', '', $d);
                         if (strlen($tel) > 7) {
-                            $d = "<a href='tel:$tel'>$d</a>@@lzy-td-tel@@";
+                            $d = "<a href='tel:$tel'>$d</a>";
+//                            $d = "<a href='tel:$tel'>$d</a>@@lzy-td-tel@@";
                         }
 
                     // url:
@@ -2024,14 +2026,16 @@ EOT;
                             $url = $m[1];
                         }
                         if (strlen($url) > 7) {
-                            $d = "<a href='$url'>$d</a>@@lzy-td-url@@";
+                            $d = "<a href='$url'>$d</a>";
+//                            $d = "<a href='$url'>$d</a>@@lzy-td-url@@";
                         }
 
                     // image:
                     } elseif (preg_match('/ img: (([\w\-~\/]+) \. (jpg|jpeg|png|gif)) /ix', $d, $m)) {
                         if (strlen($m[1]) > 7) {
                             $img = "{$m[2]}[x48].{$m[3]}";
-                            $d = "{{ img( src:'$img') }}@@lzy-td-img@@";
+                            $d = "{{ img( src:'$img') }}";
+//                            $d = "{{ img( src:'$img') }}@@lzy-td-img@@";
                         }
                     }
                     $data[$r][$c] = $d;
