@@ -1577,18 +1577,20 @@ function path_info($file)
 
 
 
-function preparePath($path0, $accessRights = false)
+function preparePath($path0, $accessRights = false, $suppressSafetyCheck = false)
 {
     if ($path0 && ($path0[0] === '~')) {
         $path0 = resolvePath($path0);
     }
 
-    // check for inappropriate path:
-    if (strpos($path0, '../') !== false) {
-        $path0 = normalizePath($path0);
+    if (!$suppressSafetyCheck) {
+        // check for inappropriate path:
         if (strpos($path0, '../') !== false) {
-            mylog("=== Warning: preparePath() trying to access inappropriate location: '$path0'");
-            return;
+            $path0 = normalizePath($path0);
+            if (strpos($path0, '../') !== false) {
+                mylog("=== Warning: preparePath() trying to access inappropriate location: '$path0'");
+                return;
+            }
         }
     }
 
