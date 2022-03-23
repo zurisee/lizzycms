@@ -190,6 +190,30 @@ class PageSource
 
 
 
+    public static function moveFolderToRecycleBin($filename, $recycleBin = false, $inOrigPath = true)
+    {
+        if (file_exists($filename)) {
+            $destFolder = ($recycleBin) ? $recycleBin : RECYCLE_BIN_PATH;
+            if ($inOrigPath) {
+                $destFolder = dirname($filename) . '/' . basename(RECYCLE_BIN_PATH ) . '/';
+            } else {
+                $destFolder = resolvePath($destFolder);
+            }
+            preparePath($destFolder, false, true);
+
+            $recycleFile = $destFolder . basename($filename);
+            while (file_exists($recycleFile)) {
+                $recycleFile = dirname($recycleFile) . '/#' . basename($recycleFile);
+            }
+            shell_exec("mv $filename $recycleFile");
+            return 1;
+        }
+    } // moveFolderToRecycleBin
+
+
+
+
+
     public static function copyFileToRecycleBin($filename, $recycleBin = false, $inOrigPath = false)
     {
         if (file_exists($filename)) {
@@ -199,7 +223,7 @@ class PageSource
             } else {
                 $destFolder = resolvePath($destFolder);
             }
-            preparePath($destFolder);
+            preparePath($destFolder, false, true);
 
             $currContent = file_get_contents($filename);
             foreach (PageSource::getRecycledFilenames($filename, $recycleBin, $inOrigPath) as $f) {
