@@ -9,9 +9,10 @@ $this->addMacro($macroName, function () {
     $inx = $this->invocationCounter[$macroName] + 1;
 
     $label = $this->getArg($macroName, 'label', 'Text that prepresents the controlling element.', '');
-    $labelPosition = $this->getArg($macroName, 'labelPosition', '(before,after).', 'before');
     $target = $this->getArg($macroName, 'target', '[css selector] CSS selector of the DIV that shall be revealed, e.g. "#box"', '');
+    $labelPosition = $this->getArg($macroName, 'labelPosition', '(before,after).', 'before');
     $class = $this->getArg($macroName, 'class', '(optional) A class that will be applied to the controlling element.', '');
+    $open = $this->getArg($macroName, 'open', 'If true, the reveal-target will initially be opened.', false);
     $symbol = $this->getArg($macroName, 'symbol', '(triangle) If defined, the symbol on the left hand side of the label will be modified. (currently just "triangle" implemented.)', '');
     $frame = $this->getArg($macroName, 'frame', '(true, class) If true, class "lzy-reveal-frame" is added, painting a frame around the element by default.', '');
 
@@ -26,6 +27,10 @@ $this->addMacro($macroName, function () {
     }
     if (stripos($symbol, 'tri') !== false) {
         $class .= ' lzy-reveal-triangle';
+    }
+
+    if ($open) {
+        $this->page->addJq("let p = $('#$id');\nlzyOperateRevealPanel( p[0] );");
     }
 
     $class = $class? " $class": '';
