@@ -18,7 +18,7 @@ define('PAGES_PATH',            'pages/');
 define('HOMEPAGE_PATH',         'home/');
 define('DATA_PATH',             'data/');
 define('SYSTEM_CACHE_PATH',     '.#sys-cache/');
-define('CACHE_PATH',            '.cache/');
+define('CACHE_PATH',            SYSTEM_CACHE_PATH . 'misc/');
 define('MODULES_CACHE_PATH',    '.cache/files/');
 define('PAGE_CACHE_PATH',       CACHE_PATH.'pages/');
 define('LOGS_PATH',             '.#logs/');
