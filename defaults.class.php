@@ -230,7 +230,7 @@ private $userConfigurableSettingsAndDefaults      = [
         $this->loadModules['DATATABLES']            = array('module' => 'third-party/datatables/datatables.min.js,'.
                                                                         'third-party/datatables/datatables.min.css', 'weight' => 50);
 
-        $this->loadModules['PAGED_POLYFILL']        = array('module' => 'third-party/paged.polyfill/paged.polyfill.js', 'weight' => 46);
+        $this->loadModules['PAGED_POLYFILL']        = array('module' => 'third-party/paged.polyfill/paged.polyfill.min.js', 'weight' => 46);
         $this->loadModules['ZOOM_TARGET']           = array('module' => 'third-party/zoomooz/jquery.zoomooz.min.js', 'weight' => 45);
         $this->loadModules['PAGE_SWITCHER']         = array('module' => 'js/page_switcher.js', 'weight' => 30);
         $this->loadModules['TETHER']                = array('module' => 'third-party/tether.js/tether.min.js', 'weight' => 20);
