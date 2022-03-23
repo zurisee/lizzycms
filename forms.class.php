@@ -2123,10 +2123,13 @@ EOT;
         $rawData = file_get_contents($filename);
         $data = $this->userSuppliedData;
         do {
+            if (!$data) {
+                return false;
+            }
             $testStr = array_shift($data);
         } while (!$testStr);
-        if (strpos($rawData, $testStr) === false) {
-            $this->sendMailToWebmaster("Error detected while double checking whether form data has been written to DB-file.");
+        if ($testStr && (strpos($rawData, $testStr) === false)) {
+            $this->sendMailToWebmaster("Error in DB-write-check.", "Missing pattern:\n\n$testStr");
             return false;
         }
         return true;
