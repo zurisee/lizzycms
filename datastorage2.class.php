@@ -1991,7 +1991,7 @@ EOT;
                     unset( $data[$recKey][TIMESTAMP_KEY_ID]);
                 }
             }
-        } else {
+        } elseif ($this->format !== 'csv') {
             //ToDo: remove test code for finding zero-timestamp bug
             $error = false;
             foreach ($data as $rec) {
