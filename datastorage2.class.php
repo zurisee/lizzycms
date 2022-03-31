@@ -153,6 +153,8 @@ class DataStorage2
         $this->structureFile = isset($args['structureFile']) ? $args['structureFile'] : false;
         $this->structureDef = isset($args['structureDef']) ? $args['structureDef'] : false;
         $this->exportInternalFields = isset($args['exportInternalFields']) ? $args['exportInternalFields'] : false;
+
+        $this->useNormalizedDb = isset($args['useNormalizedDb']) ? $args['useNormalizedDb'] : false;
     } // parseArguments
 
 
@@ -1982,28 +1984,32 @@ EOT;
 
         $data = $this->getBareData();
 
-        if (!$this->includeKeys) {
-            foreach ($data as $recKey => $rec) {
-                if (isset($rec[REC_KEY_ID])) {
-                    unset( $data[$recKey][REC_KEY_ID]);
+        if ($this->useNormalizedDb) {
+            $data = $this->normalizeDb($data);
+        } else {
+            if (!$this->includeKeys) {
+                foreach ($data as $recKey => $rec) {
+                    if (isset($rec[REC_KEY_ID])) {
+                        unset($data[$recKey][REC_KEY_ID]);
+                    }
+                    if (isset($rec[TIMESTAMP_KEY_ID])) {
+                        unset($data[$recKey][TIMESTAMP_KEY_ID]);
+                    }
                 }
-                if (isset($rec[TIMESTAMP_KEY_ID])) {
-                    unset( $data[$recKey][TIMESTAMP_KEY_ID]);
+            } elseif ($this->format !== 'csv') {
+                //ToDo: remove test code for finding zero-timestamp bug
+                $error = false;
+                foreach ($data as $rec) {
+                    if (!isset($rec[REC_KEY_ID])) {
+                        $error = true;
+                    }
+                    if (!isset($rec[TIMESTAMP_KEY_ID]) || !$rec[TIMESTAMP_KEY_ID]) {
+                        $error = true;
+                    }
                 }
-            }
-        } elseif ($this->format !== 'csv') {
-            //ToDo: remove test code for finding zero-timestamp bug
-            $error = false;
-            foreach ($data as $rec) {
-                if (!isset($rec[REC_KEY_ID])) {
-                    $error = true;
+                if ($error) {
+                    $this->sendMailToWebmaster("Error: meta-data corrupt while exporting data to file '$filename'.");
                 }
-                if (!isset($rec[TIMESTAMP_KEY_ID]) || !$rec[TIMESTAMP_KEY_ID]) {
-                    $error = true;
-                }
-            }
-            if ($error) {
-                $this->sendMailToWebmaster("Error: meta-data corrupt while exporting data to file '$filename'.");
             }
         }
 
@@ -2020,6 +2026,32 @@ EOT;
         return $filename;
     } // exportToFile
 
+
+
+    private function normalizeDb($data, $returnWithKeys = false)
+    {
+        foreach ($data as $key => $rec) {
+            $key0 = $key;
+            $rec1 = &$data[$key];
+            if (!isset($rec[TIMESTAMP_KEY_ID])) {
+                $rec1[TIMESTAMP_KEY_ID] = 0;
+            }
+            if (!isset($rec[REC_KEY_ID])) {
+                if (!preg_match('/^[A-Z0-9]{4,20}$/', $key)) {
+                    $key = createHash();
+                }
+                $rec1[REC_KEY_ID] = $key;
+            }
+            if ($key0 !== $rec1[REC_KEY_ID]) {
+                $data[$rec1[REC_KEY_ID]] = $rec1;
+                unset($data[$key0]);
+            }
+        }
+        if (!$returnWithKeys) {
+            $data = array_values($data);
+        }
+        return $data;
+    } // normalizeDb
 
 
 
@@ -2169,22 +2201,25 @@ EOT;
             $data = array();
         }
 
-        if ($this->includeKeys) {
-            foreach ($data as $key => $rec) {
-                if ($this->includeTimestamp) {
-                    if (isset($data[$key][REC_KEY_ID])) {
-                        unset($data[$key][REC_KEY_ID]);
+        if ($this->useNormalizedDb) {
+            $data = $this->normalizeDb($data, true);
+        } else {
+            if ($this->includeKeys) {
+                foreach ($data as $key => $rec) {
+                    if ($this->includeTimestamp) {
+                        if (isset($data[$key][REC_KEY_ID])) {
+                            unset($data[$key][REC_KEY_ID]);
+                        }
+                        if (!isset($data[$key][TIMESTAMP_KEY_ID]) || !$data[$key][TIMESTAMP_KEY_ID]) {
+                            $data[$key][TIMESTAMP_KEY_ID] = 0;
+                        }
+                        $data[$key][REC_KEY_ID] = $key;
+                    } elseif (!isset($data[$key][REC_KEY_ID]) || !$data[$key][REC_KEY_ID]) {
+                        $data[$key][REC_KEY_ID] = $key;
                     }
-                    if (!isset( $data[ $key ][ TIMESTAMP_KEY_ID ] ) || !$data[ $key ][ TIMESTAMP_KEY_ID ]) {
-                        $data[$key][TIMESTAMP_KEY_ID] = 0;
-                    }
-                    $data[$key][REC_KEY_ID] = $key;
-                } elseif (!isset( $data[ $key ][ REC_KEY_ID ] ) || !$data[ $key ][ REC_KEY_ID ]) {
-                    $data[$key][REC_KEY_ID] = $key;
                 }
             }
         }
-
         $this->lowLevelWrite( $data );
         $this->data = $data;
         $this->determineStructure();
@@ -2519,6 +2554,9 @@ EOT;
 
     private function sendMailToWebmaster($subject, $message = '')
     {
+        if (!@$GLOBALS['website']) {
+            return;
+        }
         $webmasterEmail = $GLOBALS['website']->trans->getVariable('webmaster_email');
         $domain = $GLOBALS['website']->trans->getVariable('site_title');
         sendMail($webmasterEmail, $webmasterEmail, "[$domain] $subject", $message);
