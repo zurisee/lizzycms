@@ -194,6 +194,7 @@ class Forms
         $currForm->customResponseEvaluationFunction = (isset($args['customResponseEvaluationFunction'])) ? $args['customResponseEvaluationFunction'] : '';
         $currForm->next = (isset($args['next'])) ? $args['next'] : './';
         $currForm->file = (isset($args['file'])) ? $args['file'] : '';
+        $currForm->useNormalizedDb = (isset($args['useNormalizedDb'])) ? $args['useNormalizedDb'] : false;
         $currForm->useRecycleBin = (isset($args['useRecycleBin'])) ? $args['useRecycleBin'] : false;
         $currForm->confirmationText = (isset($args['confirmationText'])) ? $args['confirmationText'] : '{{ lzy-form-data-received-ok }}';
         $currForm->formDataCaching = (isset($args['formDataCaching'])) ? $args['formDataCaching'] : true;
@@ -2120,6 +2121,10 @@ EOT;
     private function checkDataWritten()
     {
         $filename = $this->db->close();
+        if (!$filename) {
+            writeLogStr("Error in checkDataWritten() -> no filename", FORM_LOG_FILE);
+            return false;
+        }
         $rawData = file_get_contents($filename);
         $data = $this->userSuppliedData;
         do {
@@ -2294,9 +2299,6 @@ EOT;
             } else {
                 if ($this->isNewRec) {
                     // add new record:
-                    if ($struc['key'] === 'index') {
-                        $recKey = false;
-                    }
                     $res = $ds->addRecord($newRec, $recKey, true, true, true);
 
                 } else {
@@ -2479,6 +2481,7 @@ EOT;
                 if (strpos($elemDef->postProcess, '%repeatEvent') !== 0) {
                     if (preg_match('/=\(\( (.*?) \)\)/x', $elemDef->postProcess, $m)) {
                         $expr = $m[1];
+                        $expr = str_replace('\\$', '$', $expr); //??? work-around for var-bug
                         if (preg_match_all('/\$(\w+)/', $expr, $mm)) {
                             foreach ($mm[1] as $i => $elem) {
                                 $varName = $mm[1][$i];
@@ -3348,6 +3351,7 @@ EOT;
 
         $this->db = new DataStorage2([
             'dataFile' => $file,
+            'useNormalizedDb' => $this->currForm->useNormalizedDb,
             'useRecycleBin' => $this->currForm->useRecycleBin,
             'includeKeys' => true,
             'includeTimestamp' => true,
