@@ -1019,6 +1019,7 @@ lzy-table-edit-btn-title:
 lzy-table-delete-rec-btn: ':trash:'
 lzy-table-new-rec-btn: '✚'
 lzy-table-download-btn: ':download:'
+lzy-table-upload-btn: ':upload:'
 lzy-table-edit-btn: ':edit:'
 
 lzy-table-delete-rec-title:

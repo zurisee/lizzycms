@@ -166,7 +166,12 @@ class HtmlTable
 
         // short-hand 'editable: permission':
         if ($this->editable) {
-                $this->tableButtons = 'delete-rec|add-rec|download'; // table buttons
+            // add std tableButtons if not already defined:
+            foreach (['download','add-rec','delete-rec'] as $elem) {
+                if (strpos($this->tableButtons, $elem) === false) {
+                    $this->tableButtons = "$elem|$this->tableButtons";
+                }
+            }
             $this->rowButtons = 'edit';
         }
 
@@ -247,6 +252,11 @@ class HtmlTable
             $this->tableClass .= ' lzy-active-table';
         }
         $this->loadData();
+
+        if (isset($_FILES['lzy-table-upload'])) {
+            $this->getUploadedData();
+        }
+
         if ($this->formEditing || $this->recViewButtonsActive) {
             $this->form = $this->renderEditingForm();
         }
@@ -493,13 +503,15 @@ EOT;
                     }
                 } else {
                     if ($includeTS) {
-                        $data[$key][] = @$this->data0[$key][TIMESTAMP_KEY_ID];
+                        $data[$key][] = @$this->data0[$key][TIMESTAMP_KEY_ID] ? $this->data0[$key][TIMESTAMP_KEY_ID] : 0;
                     }
                     if ($includeKey) {
                         $data[$key][] = @$this->data0[$key][REC_KEY_ID];
                     }
                 }
             }
+            $this->dataBare = $data;
+
         } else {
             $header = &$this->dataBare[0];
             $inx = array_search(REC_KEY_ID, $header);
@@ -581,7 +593,9 @@ EOT;
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        $data = $this->dataBare;
+        $data = $this->data0;
+        $headerElems = array_merge($this->headerElems, [TIMESTAMP_KEY_ID, REC_KEY_ID]);
+        array_unshift($data, $headerElems);
         $r = 1;
         foreach ($data as $rec) {
             $c = 0;
@@ -1569,6 +1583,7 @@ EOT;
 	id: 'lzy-edit-data-form-#tableCounter#',
 	class: 'lzy-form lzy-edit-data-form',
 	file: '\~/$this->dataSource',
+	useNormalizedDb: true,
 	cancelButtonCallback: false,
 	validate: true,
 	labelColons: $labelColons,$formArgs
@@ -1683,6 +1698,11 @@ EOT;
             $md = new LizzyMarkdown( $this->lzy );
             $out = $md->compileStr($out);
             $out = $this->lzy->trans->translate( $out );
+
+            // if new data has been stored, we need to restart the rendering process:
+            if (isset($_POST['__lzy-form-ref'])) {
+                reloadAgent();
+            }
             $out = <<<EOT
 
 <div class='lzy-edit-rec-form-wrapper' style='display:none'>
@@ -2107,6 +2127,7 @@ EOT;
         }
 
         $this->options['includeKeys'] = $this->includeKeys;
+        $this->options['useNormalizedDb'] = true;
         if ($this->editableBy) {
             $this->options['includeTimestamp'] = true;
             $this->options['includeKeys'] = true;
@@ -2347,6 +2368,10 @@ EOT;
                     list($button, $class, $attributes) = $this->appendDownloadButton($attributes);
                     $this->export();
 
+                } elseif (stripos($button, 'upload') === 0) {
+                    $this->export = true;
+                    list($button, $class, $attributes) = $this->appendUploadButton($attributes);
+
                 } else {
                     $class = translateToClassName($button);
                 }
@@ -2507,6 +2532,40 @@ EOT;
 
 
 
+    private function appendUploadButton( $attributes )
+    {
+        $button = 'lzy-table-upload-btn';
+        $jq = <<<EOT
+
+$('.lzy-table-upload-btn').click(function() {
+    mylog('open table upload popup', false);
+    const \$tableWrapper = $(this).closest('.lzy-table-wrapper');
+    const \$table = $('.lzy-table', \$tableWrapper);
+    const tableInx = \$table.data('inx');
+    const popup = '<p>{{ lzy-table-upload-text }}</p>'
+            +'<form method="post" action="./" enctype="multipart/form-data">'
+            +'  <div>'
+            +'    <input type="file" id="lzy-file-upload" name="lzy-table-upload" accept="text/csv">'
+            +'  </div>'
+            +'  <div>'
+            +'    <input type="submit" value="{{ lzy-table-button-upload-now }}">'
+            +'  </div>'
+            +'</form>';
+    lzyPopup({
+        text: popup,
+        header: '{{ lzy-table-upload-header }}',
+        wrapperClass: 'lzy-table-upload',
+    });
+});
+EOT;
+        $this->jq .= $this->lzy->trans->translate($jq);
+        $class = 'lzy-table-upload-btn';
+        $attributes = "$attributes title='{{ lzy-table-upload-title }}'";
+        return [$button, $class, $attributes];
+    } // appendUploadButton
+
+
+
     private function determineHeaders(): void
     {
         if (!@$this->headerElems) {
@@ -2564,4 +2623,41 @@ EOT;
         file_put_contents($dlLinkFile, $file);
         return $file;
     } // getDownloadFilename
+
+
+
+    private function getUploadedData()
+    {
+        $fileTmpPath = $_FILES['lzy-table-upload']['tmp_name'];
+        $fileName = $_FILES['lzy-table-upload']['name'];
+        $fileType = $_FILES['lzy-table-upload']['type'];
+
+        if ($fileType !== 'text/csv') {
+            return;
+        }
+
+        $tmpPath = "data/new.csv";
+        if (!move_uploaded_file($fileTmpPath, $tmpPath)) {
+            return;
+        }
+
+        $db = new DataStorage2([
+            'dataFile' => $tmpPath,
+            'useNormalizedDb' => true,
+            'useRecycleBin' => true,
+        ]);
+        $data = $db->read();
+        $db->close();
+        if ($data) {
+            $this->ds->close();
+            $db = new DataStorage2([
+                'dataFile' => $this->dataSource,
+                'useNormalizedDb' => true,
+                'useRecycleBin' => true,
+            ]);
+            $db->write($data);
+            reloadAgent();
+        }
+    } // getUploadedData
+
 } // HtmlTable
