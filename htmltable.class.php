@@ -2525,9 +2525,11 @@ EOT;
             $db = new DataStorage2([
                 'dataFile' => $this->dataSource,
                 'useNormalizedDb' => true,
+                'exportInternalFields' => true,
                 'useRecycleBin' => true,
             ]);
             $db->write($data);
+            $db->close();
             unlink($tmpPath);
             reloadAgent(false, 'Data successfully imported');
         }

@@ -2266,8 +2266,10 @@ EOT;
         foreach ($currForm->formElements as $i => $rec) {
             $usrDataFldName = $rec->name;
             $elementKey = $rec->dataKey;
-            if (($usrDataFldName && ($usrDataFldName[0] === '_')) || !isset($userSuppliedData[$usrDataFldName])) {
-                continue;
+            if ($usrDataFldName && (@$usrDataFldName[1] !== '_')) {
+                if (($usrDataFldName && ($usrDataFldName[0] === '_')) || !isset($userSuppliedData[$usrDataFldName])) {
+                    continue;
+                }
             }
 
             if (!$this->isNewRec && ($rec->type === 'password')) {
@@ -2278,6 +2280,9 @@ EOT;
                     }
                     $userSuppliedData[ $usrDataFldName ] = @$oldRec[ $elementKey ];
                 }
+            }
+            if (substr($elementKey,0,2) === '__') {
+                $elementKey = '.' . substr($elementKey,2);
             }
             $newRec[$elementKey] = $userSuppliedData[$usrDataFldName];
         }
@@ -2450,7 +2455,7 @@ EOT;
 
         // drop elements from userSuppliedData whose keys start with '_':
         foreach ($rec as $key => $label) {
-            if ($key[0] === '_') {
+            if (($key[0] === '_') && (@$key[1] !== '_')) {
                 unset($rec[ $key ]);
             }
         }
@@ -2461,7 +2466,7 @@ EOT;
 
             // skip elements of pseudo type:
             if ((strpos(PSEUDO_TYPES, $type) !== false) ||
-                ($key && ($key[0] === '_') && (strpos($key, '_repeat') === false))) {
+                ($key && ($key[0] === '_') && ($key[1] !== '_') && (strpos($key, '_repeat') === false))) {
                 continue;
             }
 
@@ -2553,7 +2558,7 @@ EOT;
 
         foreach ($elemDefs as $key => $elemDef) {
             // drop user-defined elements that have dataKey === false or dataKey starts with '_':
-            if (!$elemDef || !@$elemDef->dataKey || ($elemDef->dataKey[0] === '_')) {
+            if (!$elemDef || !@$elemDef->dataKey || (($elemDef->dataKey[0] === '_') && ($elemDef->dataKey[1] !== '_'))) {
                 if (isset($rec[ $elemDef->name ])) {
                     unset( $rec[$elemDef->name ]);
                 }

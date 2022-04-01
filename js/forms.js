@@ -142,17 +142,20 @@ function LzyForms() {
             this.handleException( data );
         }
         for (let key in data.data) {
+            let key1 = key;
             if (!key || ((typeof key === 'string') && (key.charAt(0) === '_'))) {
-                continue;
+                if (key.charAt(1) !== '_') {
+                    continue;
+                }
             }
             let val = data.data[ key ];
             if ((typeof val === 'undefined') || (val === null)) {
                 val = '';
             }
-            let sel ='[name=' + key + ']';
+            let sel ='[name=' + key1 + ']';
             let $el = $( sel, formId );
             if (!$el.length) {
-                $el = $( '[name="' + key + '[]"]', formId );
+                $el = $( '[name="' + key1 + '[]"]', formId );
             }
             let type = $el.attr('type');
             if (typeof type === 'undefined') {

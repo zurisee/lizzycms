@@ -199,6 +199,11 @@ class AjaxServer
         $structure = $this->db->getStructure();
         if (is_array($structure['elements']) ) {
             foreach ($structure['elements'] as $label => $element) {
+                if (@$label[0] === '.') {
+                    $label1 = '__'.substr($label,1);
+                    $out[$label1] = $rec[$label];
+                    continue;
+                }
                 if (@$label[0] === '_') {
                     $out[$label] = $rec[$label];
                     continue;

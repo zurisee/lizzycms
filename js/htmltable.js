@@ -17,7 +17,6 @@ $( document ).ready(function() {
 	$('.lzy-active-table').on('click', '.lzy-table-edit-btn', function () {
 		var tableInx = $(this).closest('.lzy-active-table').data('inx');
 		lzyActiveTables[tableInx].openForm(this);
-		// lzyActiveTables[tableInx].openFormPopup(this);
 	});
 });
 
