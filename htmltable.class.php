@@ -28,7 +28,7 @@ class HtmlTable
     private $ticketHash;
     private $jq;
     private $headerElems;
-    private $data, $data0, $dataBare; // $dataBare = data without data-ref
+    private $data, $data0;
     private $tableCounter, $nRows;
     private $textResourcesRendered;
     private $structure;
@@ -98,7 +98,6 @@ class HtmlTable
         $this->excludeColumns           = $this->getOption('excludeColumns', '(optional) Allows to exclude specific columns, e.g. "excludeColumns:2,4-5"');
         $this->sort                     = $this->getOption('sort', '(optional) Allows to sort the table on a given columns, e.g. "sort:3"');
         $this->sortExcludeHeader        = $this->getOption('sortExcludeHeader', '(optional) Allows to exclude the first row from sorting');
-        //        $this->filter               = $this->getOption('filter', '(optional) Allows to filter data. Filter value is exected to be a PHP expression. Data is referenced as "[[elemKey]]", where elemKey is column-index or header-string.');
         $this->autoConvertLinks         = $this->getOption('autoConvertLinks', '(optional) If true, all data is scanned for patterns of URL, mail address or telephone numbers. If found the value is wrapped in a &lt;a> tag');
         $this->autoConvertTimestamps    = $this->getOption('autoConvertTimestamps', '(optional) If true, integer values that could be timestamps (= min. 10 digits) are converted to time strings.');
         $this->caption                  = $this->getOption('caption', '(optional) If set, a caption tag is added to the table. The caption text may contain the pattern "##" which will be replaced by a number.');
@@ -112,13 +111,9 @@ class HtmlTable
         $this->showRowNumbers           = $this->getOption('showRowNumbers', '(optional) Adds a left most column showing row numbers.');
         $this->injectSelectionCol       = $this->getOption('injectSelectionCol', '(optional) Adds a column showing row selection checkboxes.');
         $this->hideMetaFields           = $this->getOption('hideMetaFields', '(optional) If true, system (or "meta") fields are not rendered (default: true).', true);
-        //        $this->renderAsDiv	        = $this->getOption('renderAsDiv', '(optional) If set, the table is rendered as &lt;div> tags rather than &lt;table>');
         $this->renderAsDiv              = false; // disabled for the time being...
         $this->tableDataAttr            = $this->getOption('tableDataAttr', '(optional) ');
-        //        $this->renderDivRows        = $this->getOption('renderDivRows', '(optional) If set, each row is wrapped in an additional &lt;div> tag. Omitting this may be useful in conjunction with CSS grid.');
         $this->includeCellRefs          = $this->getOption('includeCellRefs', '(optional) If set, data-source and cell-coordinates are added as \'data-xy\' attributes');
-        //        $this->cellMask 	        = $this->getOption('cellMask', '(optional) Lets you define regions that a masked and thus will not get the cellClass. Selection code: rY -> row, cX -> column, eX,Y -> cell element.');
-        //        $this->cellMaskedClass      = $this->getOption('cellMaskedClass', '(optional) Class that will be applied to masked cells');
         $this->cellMask                 = false;
         $this->cellMaskedClass          = false;
         $this->process                  = $this->getOption('process', '(optional) Provide name of a frontmatter variable to activate this feature. In the frontmatter area define an array containing instructions for manipulating table data. See <a href="https://getlizzy.net/macros/extensions/table/" target="_blank">Doc</a> for further details.');
@@ -485,107 +480,48 @@ EOT;
         preparePath( $path, octdec(755) );
         $file = substr( $file , 0, -1);
         $file = "$path$file";
-        $data = $this->data;
+        $data = $this->prepareDataForExport();
+        $this->exportToOfficeFormats($data, $file);
 
-        // handle export of meta keys:
-        if ($this->exportMetaElements) {
-            $includeTS = ($this->exportMetaElements === true) || (strpos($this->exportMetaElements, 'time') !== false);
-            $includeKey = ($this->exportMetaElements === true) ||
-                (strpos($this->exportMetaElements, 'key') !== false) ||
-                (strpos($this->exportMetaElements, 'hash') !== false);
-            foreach ($data as $key => $rec) {
-                if ($key === 'hdr') {
-                    if ($includeTS) {
-                        $data[$key][] = TIMESTAMP_KEY_ID;
-                    }
-                    if ($includeKey) {
-                        $data[$key][] = REC_KEY_ID;
-                    }
-                } else {
-                    if ($includeTS) {
-                        $data[$key][] = @$this->data0[$key][TIMESTAMP_KEY_ID] ? $this->data0[$key][TIMESTAMP_KEY_ID] : 0;
-                    }
-                    if ($includeKey) {
-                        $data[$key][] = @$this->data0[$key][REC_KEY_ID];
-                    }
-                }
-            }
-            $this->dataBare = $data;
-
-        } else {
-            $header = &$this->dataBare[0];
-            $inx = array_search(REC_KEY_ID, $header);
-            if ($inx !== false) {
-                unset($header[ $inx ]);
-            }
-            $inx = array_search(TIMESTAMP_KEY_ID, $header);
-            if ($inx !== false) {
-                unset($header[ $inx ]);
-            }
-        }
-
-        if (strpos($this->export, '.csv') !== false) {
-            $this->exportToCsv( $file );
-
-        } elseif (strpos($this->export, '.xlsx') !== false) {
-            $this->exportToOfficeFormats( $file, '.xlsx' );
-
-        } elseif (strpos($this->export, '.ods') !== false) {
-            $this->exportToOfficeFormats( $file, '.ods' );
-
-        } else {
-            $this->exportToOfficeFormats( $file );
-        }
     } // export
 
 
 
-    private function exportToCsv( $file )
+    private function prepareDataForExport()
     {
-        // define temporary $structure to control export by datastorage:
-        $structure['key'] = 'index';
-        foreach ($this->data['hdr'] as $elemKey) {
-            $structure['elements'][$elemKey] = [ 'type' => 'string', 'name' => $elemKey ];
-        }
+        $data = $this->data0;
 
-        $dbExport = new DataStorage2([
-            'dataSource' => $file.'.csv',
-            'structureDef' => $structure,
-            'includeKeys' => false,
-            'includeTimestamp' => false,
-        ]);
+        // get header elements:
+        $headerElems = array_merge($this->headerElems, [TIMESTAMP_KEY_ID, REC_KEY_ID]);
 
-        $data = $this->dataBare;
-        // remove header row (it's already handled in $structure)
-        array_shift($data);
-        foreach ($data as $key => $rec) {
-            foreach ($rec as $k => $v) {
-                $data[$key][$k] = preg_replace('/<{(.*?)}>/', '', $v);
+        // assemble data for export:
+        $data1[0] = $headerElems;
+        $r = 0;
+        foreach ($data as $rec) {
+            $r++;
+            foreach ($headerElems as $key) {
+                $data1[$r][$key] = @$rec[$key] ? $rec[$key] : '';
             }
         }
-        $dbExport->write( $data );
-    } // exportToCsv
+        return $data1;
+    } // prepareDataForExport
 
 
 
-    private function exportToOfficeFormats( $file, $type = '.xlsx.ods' )
+
+    private function exportToOfficeFormats( $data, $file)
     {
-        $fileXlsx = $fileOds = false;
         $upToDate = true;
         $ts0 = filemtime($this->dataSource);
-        if (strpos($type, 'xlsx') !== false) {
-            $fileXlsx = "$file.xlsx";
-            $ts = @filemtime($fileXlsx);
-            if ($ts0 > $ts) {
-                $upToDate = false;
-            }
+        $fileXlsx = "$file.xlsx";
+        $ts = @filemtime($fileXlsx);
+        if ($ts0 > $ts) {
+            $upToDate = false;
         }
-        if (strpos($type, 'ods') !== false) {
-            $fileOds = "$file.ods";
-            $ts = @filemtime($fileOds);
-            if ($ts0 > $ts) {
-                $upToDate = false;
-            }
+        $fileOds = "$file.ods";
+        $ts = @filemtime($fileOds);
+        if ($ts0 > $ts) {
+            $upToDate = false;
         }
         if ($upToDate) {
             return;
@@ -593,9 +529,7 @@ EOT;
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
-        $data = $this->data0;
-        $headerElems = array_merge($this->headerElems, [TIMESTAMP_KEY_ID, REC_KEY_ID]);
-        array_unshift($data, $headerElems);
+        // prepare data for Office-export module:
         $r = 1;
         foreach ($data as $rec) {
             $c = 0;
@@ -613,15 +547,13 @@ EOT;
             $r++;
         }
 
-        if ($fileXlsx) {
-            $writer = new Xlsx($spreadsheet);
-            $writer->save($fileXlsx);
-        }
+        // export to Excel:
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($fileXlsx);
 
-        if ($fileOds) {
-            $writer = new Ods($spreadsheet);
-            $writer->save($fileOds);
-        }
+        // export to OpenOffice:
+        $writer = new Ods($spreadsheet);
+        $writer->save($fileOds);
     } // exportToOfficeFormats
 
 
@@ -851,10 +783,6 @@ EOT;
         $phpExpr = $this->getArg('phpExpr');
 
         $header1 = '';
-//        if ($class) {
-//            $content .= " @@$class@@";
-//            $header1 = "$header @@$class@@";
-//        }
 
         foreach ($data as $i => $row) {
             $content1 = $content;
@@ -890,7 +818,6 @@ EOT;
         $this->instructions = $cellInstructions;
 
         $content = $this->getArg('content');
-        $class = $this->getArg('class');
 
         $rowClass = trim($this->getArg('rowClass').' lzy-added-row');
         if ($rowClass) {
@@ -905,9 +832,6 @@ EOT;
             $contents = $content;
             $content = '';
         }
-//        if ($class) {
-//            $content .= " @@$class@@";
-//        }
 
         $row = [];
 
@@ -1033,8 +957,6 @@ EOT;
     {
         $c = $column;
         $data = &$this->data;
-        $nCols = sizeof(reset( $data ));
-//        $class = $class ? " @@$class@@" : '';
 
         foreach ($data as $r => $row) {
             if (!$inclHead && ($r === 0)) {
@@ -1070,9 +992,6 @@ EOT;
         if (!$phpExpr) {
             return;
         }
-//        if ($class) {
-//            $class = "@@$class@@";
-//        }
         $c = $column;
         $data = &$this->data;
 
@@ -1413,8 +1332,6 @@ EOT;
         $this->loadDataFromFile();
 
         $this->determineHeaders();
-
-    //        $this->applyFilter();
 
         $this->applySort();
 
@@ -1903,43 +1820,6 @@ EOT;
 
 
 
-    //    private function applyFilter()
-    //    {
-    //        if (!$this->filter) {
-    //            return;
-    //        }
-    //        $phpExpr = $this->filter;
-    //        if (preg_match_all('/ \[\[ (.*?) ]] /x', $phpExpr, $m)) {
-    //            foreach ($m[1] as $i => $value) {
-    //                if (is_numeric($value)) {
-    //                    $inx = intval($value) - 1;
-    //                } else {
-    //                    $inx = array_search($value, $this->headerElems);
-    //                    if ($inx === false) {
-    //                        continue;
-    //                    }
-    //                }
-    //                $phpExpr = str_replace($m[0][$i], '@$'."rec[$inx]", $phpExpr);
-    //            }
-    //        }
-    //
-    //        $out = [];
-    //        foreach ($this->data as $r => $rec) {
-    //            try {
-    //                $res = eval( "return $phpExpr;" );
-    //            } catch (Throwable $t) {
-    //                print_r($t);
-    //                exit;
-    //            }
-    //            if ($res) {
-    //                $out[] = $rec;
-    //            }
-    //        }
-    //        $this->data = $out;
-    //    } // applyFilter
-
-
-
     private function insertCellAddressAttributes()
     {
         if (!$this->data0) {
@@ -2027,7 +1907,6 @@ EOT;
                     if (preg_match_all('/ ([\w\-.]*?) @ ([\w\-.]*?\.\w{2,6}) /x', $d, $m)) {
                         foreach ($m[0] as $addr) {
                             $d = str_replace($addr, "<a href='mailto:$addr'>$addr</a>", $d);
-//                            $d = str_replace($addr, "<a href='mailto:$addr'>$addr</a>@@lzy-td-email@@", $d);
                         }
 
                     // phone number:
@@ -2035,7 +1914,6 @@ EOT;
                         $tel = preg_replace('/[^\d+]/', '', $d);
                         if (strlen($tel) > 7) {
                             $d = "<a href='tel:$tel'>$d</a>";
-//                            $d = "<a href='tel:$tel'>$d</a>@@lzy-td-tel@@";
                         }
 
                     // url:
@@ -2047,7 +1925,6 @@ EOT;
                         }
                         if (strlen($url) > 7) {
                             $d = "<a href='$url'>$d</a>";
-//                            $d = "<a href='$url'>$d</a>@@lzy-td-url@@";
                         }
 
                     // image:
@@ -2055,7 +1932,6 @@ EOT;
                         if (strlen($m[1]) > 7) {
                             $img = "{$m[2]}[x48].{$m[3]}";
                             $d = "{{ img( src:'$img') }}";
-//                            $d = "{{ img( src:'$img') }}@@lzy-td-img@@";
                         }
                     }
                     $data[$r][$c] = $d;
@@ -2544,11 +2420,11 @@ $('.lzy-table-upload-btn').click(function() {
     const tableInx = \$table.data('inx');
     const popup = '<p>{{ lzy-table-upload-text }}</p>'
             +'<form method="post" action="./" enctype="multipart/form-data">'
-            +'  <div>'
+            +'  <div class="lzy-table-upload-input">'
             +'    <input type="file" id="lzy-file-upload" name="lzy-table-upload" accept="text/csv">'
             +'  </div>'
-            +'  <div>'
-            +'    <input type="submit" value="{{ lzy-table-button-upload-now }}">'
+            +'  <div class="lzy-table-upload-button">'
+            +'    <input type="submit" value="{{ lzy-table-button-upload-now }}" class="lzy-button">'
             +'  </div>'
             +'</form>';
     lzyPopup({
@@ -2629,15 +2505,11 @@ EOT;
     private function getUploadedData()
     {
         $fileTmpPath = $_FILES['lzy-table-upload']['tmp_name'];
-        $fileName = $_FILES['lzy-table-upload']['name'];
         $fileType = $_FILES['lzy-table-upload']['type'];
 
-        if ($fileType !== 'text/csv') {
-            return;
-        }
-
-        $tmpPath = "data/new.csv";
-        if (!move_uploaded_file($fileTmpPath, $tmpPath)) {
+        $tmpPath = "data/_tmp_.csv";
+        if (!move_uploaded_file($fileTmpPath, $tmpPath) || ($fileType !== 'text/csv')) {
+            reloadAgent(false, 'Data import failed');
             return;
         }
 
@@ -2656,7 +2528,8 @@ EOT;
                 'useRecycleBin' => true,
             ]);
             $db->write($data);
-            reloadAgent();
+            unlink($tmpPath);
+            reloadAgent(false, 'Data successfully imported');
         }
     } // getUploadedData
 

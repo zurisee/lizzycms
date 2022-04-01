@@ -1095,6 +1095,25 @@ lzy-datatables-records:
 
 
 #--- Tables --------------------------
+#lzy-table-upload-title:
+#    de: 'Diese Tabelle herunter laden'
+#    _:  'Download this table'
+
+
+lzy-table-upload-header:
+    de: 'Neue Daten hochloaden'
+    _:  'Upload new data'
+
+lzy-table-upload-text:
+    de: 'Die bisherigen Daten dieser Tabelle werden vollständig ersetzt.<br>Die neuen Daten müssen im .CSV Format vorliegen:'
+    _:  'All existing data of this table will be overwritten.<br>Provide new data in .CSV format:'
+
+lzy-table-button-upload-now:
+    de: 'Jetzt hochladen'
+    _:  'Upload now'
+
+
+
 lzy-table-download-title:
     de: 'Diese Tabelle herunter laden'
     _:  'Download this table'
