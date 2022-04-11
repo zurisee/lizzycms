@@ -412,7 +412,7 @@ class SiteStructure
         if ($ascending) {
             sort($dir);
         } else {
-            $dir = $this->reversereverseDirSort($dir, $path1);
+            $dir = $this->reverseDirSort($dir, $path1);
         }
 
         $branch = [];
@@ -723,7 +723,7 @@ class SiteStructure
 
 
 
-    private function reversereverseDirSort( $dir, $path = '' )
+    private function reverseDirSort( $dir, $path = '' )
     {
         // sort logic: subfolders after parent folders
         // [1,2,2a,3] => [3,2,2a,1]
@@ -735,14 +735,14 @@ class SiteStructure
             $an = intval($a);
             $bn = intval($b);
             if ($an === $bn) {
-                $ord = (strlen($an) < strlen($bn));
+                $ord = (strlen($bn) - strlen($an));
             } else {
-                $ord = ($an < $bn);
+                $ord = ($bn - $an);
             }
             return $ord;
         });
         return $dir;
-    } // reversereverseDirSort
+    } // reverseDirSort
 
 
 
