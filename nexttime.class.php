@@ -61,6 +61,10 @@ class NextInTimeSequence
             $dayOfEvent = strtotime(date('Y-m-d', $next));
             if ($this->excludeCondition) {
                 try {
+                    if (strpos($this->excludeCondition, '\\') !== false) {
+                        $cond = str_replace(['\\', '<mark>', '</mark>'], ['', '==', '=='], $this->excludeCondition);
+                        $this->excludeCondition = $cond;
+                    }
                     $skip = eval( $this->excludeCondition );
                 } catch (Exception $e) {
                     die( 'Error in next() -> excludeCondition: '. $e->getMessage());
@@ -136,7 +140,7 @@ class NextInTimeSequence
         if ($data) {
             if ($dateKey) {
                 usort($data, function ($a, $b) use ($dateKey) {
-                    return ($a[$dateKey] > $b[$dateKey]);
+                    return strcmp($a[$dateKey], $b[$dateKey]);
                 });
             } else {
                 sort($data);
