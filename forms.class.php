@@ -16,7 +16,7 @@ define('HEAD_ATTRIBUTES', 	    ',label,id,translateLabels,class,method,action,ma
     'confirmationEmailTemplate,prefill,preventMultipleSubmit,replaceQuotes,antiSpam,'.
     'validate,novalidate,showData,showDataMinRows,options,encapsulate,disableCaching,labelWidth,'.
     'translateLabel,labelPosition,formName,formHeader,formHint,formFooter,showSource,splitChoiceElemsInDb,'.
-    'responseViaSideChannels,reportErrorByPopup,useRecycleBin,');
+    'responseViaSideChannels,reportErrorByPopup,useRecycleBin,is2Ddata,');
 
 define('ELEM_ATTRIBUTES', 	    ',label,type,id,class,wrapperClass,name,required,value,'.
 	'option,options,optionLabels,layout,info,comment,translateLabel,'.
@@ -217,6 +217,8 @@ class Forms
         $currForm->file = resolvePath($currForm->file, true);
 
         $currForm->skipConfirmation = (isset($args['skipConfirmation'])) ? $args['skipConfirmation'] : false;
+
+        $currForm->is2Ddata = (isset($args['is2Ddata'])) ? $args['is2Ddata'] : true;
 
         $currForm->prefill = (isset($args['prefill'])) ? $args['prefill'] : false;
         if ($currForm->prefill) {
@@ -2265,6 +2267,9 @@ EOT;
         $newRec = [];
         foreach ($currForm->formElements as $i => $rec) {
             $usrDataFldName = $rec->name;
+            if (!$usrDataFldName) {
+                continue;
+            }
             $elementKey = $rec->dataKey;
             if ($usrDataFldName && (@$usrDataFldName[1] !== '_')) {
                 if (($usrDataFldName && ($usrDataFldName[0] === '_')) || !isset($userSuppliedData[$usrDataFldName])) {
@@ -2284,7 +2289,7 @@ EOT;
             if (substr($elementKey,0,2) === '__') {
                 $elementKey = '.' . substr($elementKey,2);
             }
-            $newRec[$elementKey] = $userSuppliedData[$usrDataFldName];
+            $newRec[$elementKey] = @$userSuppliedData[$usrDataFldName];
         }
 
         $newRec[ TIMESTAMP_KEY_ID ] = date('Y-m-d H:i:s');
@@ -3360,6 +3365,7 @@ EOT;
             'useRecycleBin' => $this->currForm->useRecycleBin,
             'includeKeys' => true,
             'includeTimestamp' => true,
+            'is2Ddata' => $this->currForm->is2Ddata,
         ]);
         return $this->db;
     } // openDB
