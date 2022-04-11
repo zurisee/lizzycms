@@ -153,6 +153,7 @@ class DataStorage2
         $this->structureFile = isset($args['structureFile']) ? $args['structureFile'] : false;
         $this->structureDef = isset($args['structureDef']) ? $args['structureDef'] : false;
         $this->exportInternalFields = isset($args['exportInternalFields']) ? $args['exportInternalFields'] : false;
+        $this->is2Ddata = isset($args['is2Ddata']) ? $args['is2Ddata'] : true;
 
         $this->useNormalizedDb = isset($args['useNormalizedDb']) ? $args['useNormalizedDb'] : false;
     } // parseArguments
@@ -1996,7 +1997,7 @@ EOT;
                         unset($data[$recKey][TIMESTAMP_KEY_ID]);
                     }
                 }
-            } elseif ($this->format !== 'csv') {
+            } elseif (($this->format !== 'csv') && $this->is2Ddata) {
                 //ToDo: remove test code for finding zero-timestamp bug
                 $error = false;
                 foreach ($data as $rec) {
@@ -2282,7 +2283,7 @@ EOT;
 
         // add 'name' elem:
         $rec0 = reset($structure['elements']);
-        if (!isset($rec0['name']) || !$rec0['name']) {
+        if (!@$rec0['name']) {
             foreach ($structure['elements'] as $elemKey => $rec) {
                 $structure['elements'][$elemKey]['type'] = @$rec['type']? $rec['type']: 'string';
                 $structure['elements'][$elemKey]['name'] = translateToIdentifier($elemKey, false, true, false);
