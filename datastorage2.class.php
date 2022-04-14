@@ -775,10 +775,10 @@ class DataStorage2
                         if (isset($rec[$k1])) {
                             unset($rec[$k1]);
                         } else {
-                            return "Error..."; //???
+                            return "Error: element not found"; //???
                         }
                     } else {
-                        return "Error..."; //???
+                        return "Error: element not found"; //???
                     }
                 }
 
@@ -2004,7 +2004,8 @@ EOT;
                     if (!isset($rec[REC_KEY_ID])) {
                         $error = true;
                     }
-                    if (!isset($rec[TIMESTAMP_KEY_ID]) || !$rec[TIMESTAMP_KEY_ID]) {
+                    if (!isset($rec[TIMESTAMP_KEY_ID])) {
+//???                    if (!isset($rec[TIMESTAMP_KEY_ID]) || !$rec[TIMESTAMP_KEY_ID]) {
                         $error = true;
                     }
                 }
