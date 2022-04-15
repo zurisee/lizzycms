@@ -180,8 +180,9 @@ function LzyForms() {
                 }
                 val = ',' + val.replace(' ', '') + ',';
                 $el.each(function () {
-                    let v = $(this).val();
-                    $(this).prop('checked', val.includes(',' + v + ',') );
+                    let v = ',' + $(this).val().replace(' ', '') + ',';
+                    let checked = val.includes(v);
+                    $(this).prop('checked', checked );
                 });
             } else if (type === 'password') {
                 $el.val( '●●●●' );
