@@ -13,6 +13,7 @@ define('SCALAR_TYPES',
 define('DEFAULT_EDIT_FORM_TEMPLATE_FILE', '~page/-table_edit_form_template.md');
 define('LZY_TABLE_SHOW_REC_ICON', "<span class='lzy-icon lzy-icon-show2'></span>");
 define('DOWNLOAD_PATH_LINK_CODE', '.#download.code');
+define('DOWNLOAD_FOLDER', 'download/tmp/');
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -471,11 +472,19 @@ EOT;
             return;
         }
 
+        // check whether tmp download folder expired, rebuild if necessary:
+        if (file_exists(DOWNLOAD_FOLDER)) {
+            if (filemtime(DOWNLOAD_FOLDER) >= (time() - 2)) {
+                return;
+            }
+            shell_exec('rm -R '.DOWNLOAD_FOLDER);
+        }
+
         $file = $this->getDownloadFilename();
         $path = dir_name( $file );
         $file = basename( $file );
         $file = str_replace(['.xlsx','.ods','.csv', '.'], '', $file) . '.';
-        $path = (!$path || ($path !== '.')) ? $path : 'download/';
+        $path = (!$path || ($path !== '.')) ? $path : DOWNLOAD_FOLDER;
         // download folder needs '755' access permission:
         preparePath( $path, octdec(755) );
         $file = substr( $file , 0, -1);
@@ -2491,9 +2500,9 @@ EOT;
         $ts = filemtime($this->dataSource);
         $ts = date('Ymd_Hi_', $ts);
         if ($this->export === true) {
-            $file = "download/$dlHash/$ts".base_name($this->dataSource, false).'.';
+            $file = DOWNLOAD_FOLDER."$dlHash/$ts".base_name($this->dataSource, false).'.';
         } else {
-            $file = "download/$dlHash/$ts".$this->export.'.';
+            $file = DOWNLOAD_FOLDER."$dlHash/$ts".$this->export.'.';
         }
         $dlLinkFile = fileExt($dlCodeFile, true).'.link';
         file_put_contents($dlLinkFile, $file);
