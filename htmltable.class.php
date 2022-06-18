@@ -41,6 +41,7 @@ class HtmlTable
     private $form;
     private $recKeyCol = false;
     private $timestampKeyCol = false;
+    private $export, $exportedTo = false;
 
     public function __construct($lzy, $options)
     {
@@ -468,16 +469,20 @@ EOT;
 
     private function export()
     {
+        if ($this->exportedTo) {
+            return; // export already done
+        }
         if (!$this->export || !$this->data0) {
             return;
         }
 
-        // check whether tmp download folder expired, rebuild if necessary:
+        // check whether folders in download/tmp/ expired, delete if possible:
         if (file_exists(DOWNLOAD_FOLDER)) {
-            if (filemtime(DOWNLOAD_FOLDER) >= (time() - 2)) {
-                return;
+            foreach (getDir(DOWNLOAD_FOLDER.'*') as $f) {
+                if (filemtime($f) < (time() - 300)) { // 5 min
+                    shell_exec("rm -R $f");
+                }
             }
-            shell_exec('rm -R '.DOWNLOAD_FOLDER);
         }
 
         $file = $this->getDownloadFilename();
@@ -489,9 +494,9 @@ EOT;
         preparePath( $path, octdec(755) );
         $file = substr( $file , 0, -1);
         $file = "$path$file";
+        $this->exportedTo = $file;
         $data = $this->prepareDataForExport();
         $this->exportToOfficeFormats($data, $file);
-
     } // export
 
 
@@ -501,14 +506,15 @@ EOT;
         $data = $this->data0;
 
         // get header elements:
-        $headerElems = array_merge($this->headerElems, [TIMESTAMP_KEY_ID, REC_KEY_ID]);
+        $headerElems = array_merge($this->headerElems);
 
         // assemble data for export:
         $data1[0] = $headerElems;
         $r = 0;
+        $keys = array_keys($this->structure['elements']);
         foreach ($data as $rec) {
             $r++;
-            foreach ($headerElems as $key) {
+            foreach ($keys as $key) {
                 $data1[$r][$key] = @$rec[$key] ? $rec[$key] : '';
             }
         }
@@ -2249,9 +2255,11 @@ EOT;
                     }
 
                 } elseif (stripos($button, 'download') === 0) {
-                    $this->export = true;
-                    list($button, $class, $attributes) = $this->appendDownloadButton($attributes);
+                    if (!$this->export) {
+                        $this->export = true;
+                    }
                     $this->export();
+                    list($button, $class, $attributes) = $this->appendDownloadButton($attributes);
 
                 } elseif (stripos($button, 'upload') === 0) {
                     $this->export = true;
@@ -2387,7 +2395,6 @@ EOT;
 
     private function appendDownloadButton( $attributes )
     {
-        $file = $this->getDownloadFilename();
         $button = 'lzy-table-download-btn';
         $appRoot = $GLOBALS['lizzy']['appRoot'];
         $jq = <<<EOT
@@ -2398,9 +2405,9 @@ $('.lzy-table-download-btn').click(function() {
     const \$table = $('.lzy-table', \$tableWrapper);
     const tableInx = \$table.data('inx');
     const popup = '<p>{{ lzy-table-download-text }}</p><ul><li>{{^ lzy-table-download-prefix }}'
-        +'<a href="$appRoot{$file}xlsx" download target="_blank">{{ lzy-table-download-excel }}</a>'
+        +'<a href="$appRoot{$this->exportedTo}.xlsx" download target="_blank">{{ lzy-table-download-excel }}</a>'
         +'{{^ lzy-table-download-postfix }}</li><li>{{^ lzy-table-download-prefix }}'
-        +'<a href="$appRoot{$file}ods" download target="_blank">{{ lzy-table-download-ods }}</a>'
+        +'<a href="$appRoot{$this->exportedTo}.ods" download target="_blank">{{ lzy-table-download-ods }}</a>'
         +'{{^ lzy-table-download-postfix }}</li></ul>';
     lzyPopup({
         text: popup,
@@ -2490,13 +2497,7 @@ EOT;
 
     private function getDownloadFilename()
     {
-        $dlCodeFile = resolvePath('~page/'.DOWNLOAD_PATH_LINK_CODE);
-        if (file_exists($dlCodeFile)) {
-            $dlHash = file_get_contents($dlCodeFile);
-        } else {
-            $dlHash = createHash(8, false, true);
-            file_put_contents($dlCodeFile, $dlHash);
-        }
+        $dlHash = createHash(8, false, true);
         $ts = filemtime($this->dataSource);
         $ts = date('Ymd_Hi_', $ts);
         if ($this->export === true) {
@@ -2504,8 +2505,6 @@ EOT;
         } else {
             $file = DOWNLOAD_FOLDER."$dlHash/$ts".$this->export.'.';
         }
-        $dlLinkFile = fileExt($dlCodeFile, true).'.link';
-        file_put_contents($dlLinkFile, $file);
         return $file;
     } // getDownloadFilename
 
