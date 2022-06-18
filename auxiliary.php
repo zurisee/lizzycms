@@ -686,7 +686,9 @@ function getDir($pat, $supportLinks = false)
         $files = glob($pat, GLOB_BRACE);
     }
     $files = array_filter($files, function ($str) {
-        return ($str && ($str[0] !== '#') && (strpos($str,'/#') === false));
+        return ($str && ($str[0] !== '#') &&
+            (strpos($str,'/#') === false) &&
+            !preg_match('/\.old\.\w{1,8}$/', $str)); // xy.old.md -> may be created by mobile FTP access
     });
 
     if ($supportLinks) {
@@ -2439,7 +2441,8 @@ function sendMail($to, $from, $subject, $message, $options = null, $exitOnError 
     writeLog("sendMail to:[$to], from:[$from], subject:[$subject],\nmessage:[$message]");
 
     // replace tabs, shield nl:
-    $message = str_replace(["\t", "\n"], ['    ', '~~NL~~'], $message);
+    $message = str_replace("\n", '~~NL~~', $message);
+//    $message = str_replace(["\t", "\n"], ['    ', '~~NL~~'], $message);
     // strip non-printable chars etc.
     $message = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/u', '', $message);
     $message = str_replace('~~NL~~', "\n", $message);
