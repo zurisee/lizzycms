@@ -2171,9 +2171,9 @@ EOT;
             if (@$currForm->replaceQuotes) {
                 $value = str_replace(['"', "'"], ['ʺ', 'ʹ'], $value);
             }
-            $msgToOwner .= mb_str_pad($label, 22, '.') . ": $value\n\n";
+            $msgToOwner .= mb_str_pad("$label: ", 22, '.') . "\t$value\n\n";
         }
-        $msgToOwner = trim($msgToOwner, "\n\n");
+        $msgToOwner = trim($msgToOwner, "\n");
 
         // prepare default mail to owner if arg 'mailTo' is defined:
         if ($currForm->mailTo) {
