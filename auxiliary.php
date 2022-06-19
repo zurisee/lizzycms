@@ -730,6 +730,9 @@ function getDirDeep($path, $onlyDir = false, $assoc = false, $returnAll = false)
         $patt = '|/#|';
         $patt2 = '|/[.#]|';
     }
+    if (!file_exists($path)) {
+        return [];
+    }
     $it = new RecursiveDirectoryIterator($path);
     foreach(new RecursiveIteratorIterator($it) as $fileRec) {
         $f = $fileRec->getFilename();
