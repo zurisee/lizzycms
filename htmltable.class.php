@@ -556,6 +556,9 @@ EOT;
                     $c2 = chr(65 + $c % 26);
                     $cellId = "$c1$c2$r";
                     $c++;
+                    if (is_array($cell)) {
+                        $cell = @$cell[0];
+                    }
                     $sheet->setCellValue($cellId, $cell);
                 }
             }
