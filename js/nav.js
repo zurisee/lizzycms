@@ -17,13 +17,14 @@ LzyNav.prototype.init = function() {
     this.largeScreenClasses = $('.lzy-primary-nav .lzy-nav').attr('class');
 
     var isSmallScreen = ($(window).width() < screenSizeBreakpoint);
-    this.adaptMainMenuToScreenSize( isSmallScreen );
+    var isTouchScreen = $('html').hasClass('touchevents');
+    this.adaptMainMenuToScreenSize( isSmallScreen, isTouchScreen );
 
     let parent = this;
     $(window).resize(function(){
         let w = $(this).width();
         let isSmallScreen = (w < screenSizeBreakpoint);
-        parent.adaptMainMenuToScreenSize(isSmallScreen);
+        parent.adaptMainMenuToScreenSize(isSmallScreen, isTouchScreen);
         parent.setHightOnHiddenElements();
     });
 
@@ -242,7 +243,7 @@ LzyNav.prototype.openCurrentElement = function() {
 
 
 
-LzyNav.prototype.adaptMainMenuToScreenSize = function( smallScreen ) {
+LzyNav.prototype.adaptMainMenuToScreenSize = function( smallScreen, isTouchScreen ) {
     let parent = this;
     if (smallScreen) {
         $('.lzy-primary-nav .lzy-nav')
@@ -257,6 +258,22 @@ LzyNav.prototype.adaptMainMenuToScreenSize = function( smallScreen ) {
                 parent.openAccordion( $(this), false, true );
             });
         }
+
+    }
+    if (isTouchScreen) {
+        $('.lzy-primary-nav .lzy-has-children.lzy-nav-has-content').each(function () {
+            let $this = $(this);
+            mylog($this);
+            let cls = $this.attr('class');
+            let lvl = parseInt((cls.match(/^lzy-lvl(\d)/))[1]);
+            cls = 'lzy-lvl' + (lvl+1);
+            let a = $('> a', $this)[0].outerHTML;
+            let atxt = $(a).text();
+            let $li = $('<li class="lzy-lvl2 lzy-nav-touch-elem"></li>').html(a);
+            $('a', $li).text(atxt);
+            $('> div > ol', $this).prepend($li);
+        });
+        $('.lzy-nav-touch-elem .lzy-nav-arrow').remove();
 
     } else {
         // restore classes:

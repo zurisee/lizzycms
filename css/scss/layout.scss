@@ -261,6 +261,10 @@ $max-font-size: 24;
             width: 100vw;
         }
 
+        &.lzy-nav-mobile-open .lzy-primary-nav {
+            left: 0;
+        }
+
         .lzy-primary-nav * {
             color: $mobile-nav-txt-color;
             color: var(--lzy-mobile-nav-txt-color, $mobile-nav-txt-color);
