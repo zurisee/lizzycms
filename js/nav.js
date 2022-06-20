@@ -258,12 +258,15 @@ LzyNav.prototype.adaptMainMenuToScreenSize = function( smallScreen, isTouchScree
                 parent.openAccordion( $(this), false, true );
             });
         }
-
+    } else {
+        // restore classes:
+        $('.lzy-primary-nav .lzy-nav').attr('class', this.largeScreenClasses);
+        $('.lzy-primary-nav .lzy-has-children').removeClass('lzy-open');
+        $('body').removeClass('lzy-nav-mobile-open');
     }
-    if (isTouchScreen) {
+    if (isTouchScreen && !$('.lzy-nav-touch-elem').length) {
         $('.lzy-primary-nav .lzy-has-children.lzy-nav-has-content').each(function () {
             let $this = $(this);
-            mylog($this);
             let cls = $this.attr('class');
             let lvl = parseInt((cls.match(/^lzy-lvl(\d)/))[1]);
             cls = 'lzy-lvl' + (lvl+1);
@@ -274,12 +277,6 @@ LzyNav.prototype.adaptMainMenuToScreenSize = function( smallScreen, isTouchScree
             $('> div > ol', $this).prepend($li);
         });
         $('.lzy-nav-touch-elem .lzy-nav-arrow').remove();
-
-    } else {
-        // restore classes:
-        $('.lzy-primary-nav .lzy-nav').attr('class', this.largeScreenClasses);
-        $('.lzy-primary-nav .lzy-has-children').removeClass('lzy-open');
-        $('body').removeClass('lzy-nav-mobile-open');
     }
 }; // adaptMainMenuToScreenSize
 
@@ -364,8 +361,7 @@ LzyNav.prototype.setupKeyboardEvents = function() {
                 event.preventDefault();
                 let expanded = $this.closest('.lzy-open').hasClass('lzy-open');
                 if (expanded) {
-                    let $l = $this;
-                    console.log($l);
+                    console.log($this);
                     if ( $this.parent().is(':last-child') ) {
                         mylog('last-child');
                     }
@@ -423,48 +419,48 @@ LzyNav.prototype.setupKeyboardEvents = function() {
 
 
 
-function focusNextElement( reverse, activeElem ) {
-    /*check if an element is defined or use activeElement*/
-    activeElem = activeElem instanceof HTMLElement ? activeElem : document.activeElement;
-
-    let queryString = [
-            'a:not([disabled]):not([tabindex="-1"])',
-            'button:not([disabled]):not([tabindex="-1"])',
-            'input:not([disabled]):not([tabindex="-1"])',
-            'select:not([disabled]):not([tabindex="-1"])',
-            '[tabindex]:not([disabled]):not([tabindex="-1"])'
-            /* add custom queries here */
-        ].join(','),
-        queryResult = Array.prototype.filter.call(document.querySelectorAll(queryString), elem => {
-            /*check for visibility while always include the current activeElement*/
-            return elem.offsetWidth > 0 || elem.offsetHeight > 0 || elem === activeElem;
-        }),
-        indexedList = queryResult.slice().filter(elem => {
-            /* filter out all indexes not greater than 0 */
-            return elem.tabIndex == 0 || elem.tabIndex == -1 ? false : true;
-        }).sort((a, b) => {
-            /* sort the array by index from smallest to largest */
-            return a.tabIndex != 0 && b.tabIndex != 0
-                ? (a.tabIndex < b.tabIndex ? -1 : b.tabIndex < a.tabIndex ? 1 : 0)
-                : a.tabIndex != 0 ? -1 : b.tabIndex != 0 ? 1 : 0;
-        }),
-        focusable = [].concat(indexedList, queryResult.filter(elem => {
-            /* filter out all indexes above 0 */
-            return elem.tabIndex == 0 || elem.tabIndex == -1 ? true : false;
-        }));
-
-    let thisIndex = focusable.indexOf(activeElem);
-    let nextElem = null;
-    if (reverse) {
-        nextElem = (focusable[thisIndex - 1]);
-        // nextElem = (focusable[thisIndex - 1] || focusable[focusable.length - 1]);
-    } else {
-        nextElem = (focusable[thisIndex + 1] );
-        // nextElem = (focusable[thisIndex + 1] || focusable[0]);
-    }
-    $( nextElem ).focus();
-    /* if reverse is true return the previous focusable element
-       if reverse is false return the next focusable element */
-    // return reverse ? (focusable[focusable.indexOf(activeElem) - 1] || focusable[focusable.length - 1])
-    //     : (focusable[focusable.indexOf(activeElem) + 1] || focusable[0]);
-} // focusNextElement
+// function focusNextElement( reverse, activeElem ) {
+//     /*check if an element is defined or use activeElement*/
+//     activeElem = activeElem instanceof HTMLElement ? activeElem : document.activeElement;
+//
+//     let queryString = [
+//             'a:not([disabled]):not([tabindex="-1"])',
+//             'button:not([disabled]):not([tabindex="-1"])',
+//             'input:not([disabled]):not([tabindex="-1"])',
+//             'select:not([disabled]):not([tabindex="-1"])',
+//             '[tabindex]:not([disabled]):not([tabindex="-1"])'
+//             /* add custom queries here */
+//         ].join(','),
+//         queryResult = Array.prototype.filter.call(document.querySelectorAll(queryString), elem => {
+//             /*check for visibility while always include the current activeElement*/
+//             return elem.offsetWidth > 0 || elem.offsetHeight > 0 || elem === activeElem;
+//         }),
+//         indexedList = queryResult.slice().filter(elem => {
+//             /* filter out all indexes not greater than 0 */
+//             return !(elem.tabIndex === 0 || elem.tabIndex === -1);
+//         }).sort((a, b) => {
+//             /* sort the array by index from smallest to largest */
+//             return a.tabIndex !== 0 && b.tabIndex !== 0
+//                 ? (a.tabIndex < b.tabIndex ? -1 : b.tabIndex < a.tabIndex ? 1 : 0)
+//                 : a.tabIndex !== 0 ? -1 : b.tabIndex !== 0 ? 1 : 0;
+//         }),
+//         focusable = [].concat(indexedList, queryResult.filter(elem => {
+//             /* filter out all indexes above 0 */
+//             return !(elem.tabIndex === 0 || elem.tabIndex === -1);
+//         }));
+//
+//     let thisIndex = focusable.indexOf(activeElem);
+//     let nextElem = null;
+//     if (reverse) {
+//         nextElem = (focusable[thisIndex - 1]);
+//         // nextElem = (focusable[thisIndex - 1] || focusable[focusable.length - 1]);
+//     } else {
+//         nextElem = (focusable[thisIndex + 1] );
+//         // nextElem = (focusable[thisIndex + 1] || focusable[0]);
+//     }
+//     $( nextElem ).focus();
+//     /* if reverse is true return the previous focusable element
+//        if reverse is false return the next focusable element */
+//     // return reverse ? (focusable[focusable.indexOf(activeElem) - 1] || focusable[focusable.length - 1])
+//     //     : (focusable[focusable.indexOf(activeElem) + 1] || focusable[0]);
+// } // focusNextElement
