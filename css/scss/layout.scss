@@ -57,15 +57,12 @@ $box-width: 300px;
 $min-font-size: 15;
 $max-font-size: 24;
 
+#lzy.lzy-default-layout {
+    min-height: 100vh;
+}
+
 #lzy .lzy-encapsulated,
 & {
-
-    // === Header
-    .lzy-header {
-
-    }
-
-
     // === Footer
     .lzy-footer {
         display: flex;
@@ -101,16 +98,13 @@ $max-font-size: 24;
         font-size: calc(var(--lzy-root-font-size, #{$min-font-size}) * 1px);
     }
 
-    // lzy-default-styling
-
-
-    //.lzy-default-styling {
+    .lzy-default-styling {
         font-size: 1rem;
 
         hr {
             margin: 2em 0;
         }
-    //}
+    }
 
     .lzy-fluid-fontsize {
         font-size: clamp(1.5rem, 8vw - 2rem, 3rem); // https://fluid-typography.netlify.app/
@@ -155,7 +149,6 @@ $max-font-size: 24;
         .lzy-main {
             order: -10;
             flex: 1 1 80%;
-            //margin-top: 2em;
         }
 
         .lzy-sidebar {
@@ -171,7 +164,6 @@ $max-font-size: 24;
 
 
     .lzy-section {
-        //padding: 1rem;
         overflow: auto; /* to avoid inside margin to affect outer element */
     }
 
@@ -202,14 +194,13 @@ $max-font-size: 24;
         }
     }
 
-    //.lzy-default-styling {
+    .lzy-default-styling {
         .lzy-mobile-page-header {
             display: none;
         }
-    //}
+    }
 
-    &.lzy-large-screen {
-    //&.lzy-large-screen.lzy-default-styling {
+    &.lzy-large-screen.lzy-default-styling {
         .lzy-small-screen-footer {
             display: none;
         }
@@ -243,8 +234,7 @@ $max-font-size: 24;
 
 
     // === Small/Mobile Screen:
-    &.lzy-small-screen {
-    //&.lzy-small-screen.lzy-default-styling {
+    &.lzy-small-screen.lzy-default-styling {
         //    font-size: $mobile-page-font-size; //??? better to define separately?
         background: $mobile-nav-bg-color;
         background: var(--lzy-mobile-nav-bg-color, $mobile-nav-bg-color);
@@ -261,7 +251,7 @@ $max-font-size: 24;
             width: 100vw;
         }
 
-        &.lzy-nav-mobile-open .lzy-primary-nav {
+        .lzy-primary-nav {
             left: 0;
         }
 
@@ -290,7 +280,6 @@ $max-font-size: 24;
             position: fixed;
             top: #{$mobile-header-height};
             top: var(--lzy-mobile-header-height, #{$mobile-header-height});
-            //overflow-y: auto;
             padding-bottom: 15vh;
         }
 
@@ -309,10 +298,6 @@ $max-font-size: 24;
             }
         }
 
-        //&#lzy .lzy-nav-wrapper.lzy-primary-nav a {
-        //    background: none;
-        //}
-
         .lzy-main {
             left: 0;
             width: 100vw;
@@ -320,7 +305,6 @@ $max-font-size: 24;
             height: calc(100vh - var(--lzy-mobile-header-height, #{$mobile-header-height}) - var(--lzy-mobile-footer-height, #{$mobile-footer-height}));
             background: var(--lzy-mobile-bg-color, $mobile-main-bg-color);
             color: var(--lzy-mobile-txt-color, $mobile-main-txt-color);
-//padding: 0 0.6rem 20vh;
             padding-bottom: 20vh;
             transition: left 0.3s;
             overflow-y: auto;
@@ -407,7 +391,7 @@ $max-font-size: 24;
 
     }
 
-    // small-screen
+    // === small-screen =========================================
 
 
     //=== Mobile Page Header
@@ -618,8 +602,7 @@ $max-font-size: 24;
 
 
     // === when menu button clicked:
-    //#lzy.lzy-default-styling.lzy-nav-mobile-open main {
-    &.lzy-nav-mobile-open .lzy-main {
+    #lzy.lzy-default-styling.lzy-nav-mobile-open main {
         left: $mobile-nav-width;
         transition: left 0.3s;
     }
