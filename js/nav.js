@@ -270,9 +270,13 @@ LzyNav.prototype.adaptMainMenuToScreenSize = function( smallScreen, isTouchScree
             let cls = $this.attr('class');
             let lvl = parseInt((cls.match(/^lzy-lvl(\d)/))[1]);
             cls = 'lzy-lvl' + (lvl+1);
+            if ($this.hasClass('lzy-curr')) {
+                cls += ' lzy-curr';
+                $this.removeClass('lzy-curr');
+            }
             let a = $('> a', $this)[0].outerHTML;
             let atxt = $(a).text();
-            let $li = $('<li class="lzy-lvl2 lzy-nav-touch-elem"></li>').html(a);
+            let $li = $('<li class="' + cls + ' lzy-nav-touch-elem"></li>').html(a);
             $('a', $li).text(atxt);
             $('> div > ol', $this).prepend($li);
         });
