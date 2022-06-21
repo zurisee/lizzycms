@@ -77,6 +77,7 @@ body {
 .lzy-reveal-controller {
   padding: 0.5em 0;
   &:focus-within {
+  //&:has(:focus-visible) {
     outline: 1px solid var( --lzy-form-focus-color, magenta);
   }
   input:focus {

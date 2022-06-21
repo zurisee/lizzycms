@@ -248,6 +248,7 @@ $toggleBaseUnit: 1.6em; // --toggle-base-unit
     .lzy-form-field-wrapper.lzy-reveal-controller,
     .lzy-form-field-wrapper .lzy-reveal-controller {
         &:focus-within {
+        //&:has(:focus-visible) {
             outline: 1px solid var( --lzy-form-focus-color, magenta);
         }
         input:focus {
