@@ -819,6 +819,14 @@ EOT;
         }
         $this->nCols++;
 
+        // adjust indexes for recKey and timestamp if necessary:
+        if ($_newCol < $this->recKeyCol) {
+            $this->recKeyCol++;
+        }
+        if ($_newCol < $this->timestampKeyCol) {
+            $this->timestampKeyCol++;
+        }
+
         if ($phpExpr) {
             $this->applyCellInstructionsToColumn($_newCol, $phpExpr, !$header, $class);
         }
@@ -2074,7 +2082,7 @@ EOT;
 
             $fields = $structure['elements'];
             if ($this->headers) {
-                $this->getHeaders($fields, $data0);
+                $this->getHeaders($fields);
             }
             $this->applyHideOmitColumns($fields); //??? -> before getHeaders?
         }
@@ -2093,36 +2101,20 @@ EOT;
 
 
 
-    private function getHeaders($elements, $data0)
+    private function getHeaders($elements)
     {
         if ($this->headers === true) {
-            $elemKeys = array_keys($elements);
-            if (isset($elemKeys[0]) && is_int($elemKeys[0])) {
-                $this->headerElems = array_shift($data0);
-            } else {
-                $this->headerElems = $elemKeys;
-            }
-            $rec0 = reset($data0);
-            $ic = 0;
-            if ($rec0) {
-                foreach ($rec0 as $k => $item) {
-                    if (is_array($item)) {
-                        // handle splitOutput of composite elements if directive is embedded in field description:
-                        $splitOutput = @$this->structure['elements'][$k]['splitOutput'] || @$item['splitOutput'];
-                        if ($splitOutput) {
-                            foreach ($item as $k => $v) {
-                                if (($k === 0) || ($k[0] === '_')) { // skip special elems
-                                    unset($item[$k]);
-                                }
-                            }
-                            $newCols = array_keys($item);
-                            array_splice($this->headerElems, $ic, 1, $newCols);
-                            $ic += sizeof($newCols) - 1;
-                        }
-                    }
-                    $ic++;
+            $elemKeys = [];
+            foreach ($elements as $k => $rec) {
+                if (isset($rec['formLabel'])) {
+                    $elemKeys[] = $rec['formLabel'];
+                } elseif (isset($rec['name'])) {
+                    $elemKeys[] = $rec['name'];
+                } else {
+                    $elemKeys[] = $k;
                 }
             }
+            $this->headerElems = $elemKeys;
         } elseif (is_string($this->headers)) {
             $this->headerElems = explodeTrim(',|', $this->headers);
         } else {

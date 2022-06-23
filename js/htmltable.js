@@ -4,17 +4,18 @@
 
 var lzyActiveTables = [];
 $( document ).ready(function() {
-	$('.lzy-active-table').each(function () {
+	let $activeTable = $('.lzy-active-table');
+	$activeTable.each(function () {
 		var tableInx = $(this).data('inx');
 		lzyActiveTables[tableInx] = new HTMLtable(this);
 	});
 
-	$('.lzy-active-table').on('click', '.lzy-table-view-btn', function () {
+	$activeTable.on('click', '.lzy-table-view-btn', function () {
 		var tableInx = $(this).closest('.lzy-active-table').data('inx');
 		lzyActiveTables[tableInx].openViewRecPopup(this);
 	});
 
-	$('.lzy-active-table').on('click', '.lzy-table-edit-btn', function () {
+	$activeTable.on('click', '.lzy-table-edit-btn', function () {
 		var tableInx = $(this).closest('.lzy-active-table').data('inx');
 		lzyActiveTables[tableInx].openForm(this);
 	});
