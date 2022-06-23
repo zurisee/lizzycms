@@ -316,7 +316,7 @@ class Forms
             $name = '';
         }
         $name = trim( str_replace(['*', ':'], '', $name) );
-        $name = str_replace(' ','_', $name);
+        $name = str_replace([' ', '.'],['_','__'], $name);
         $name = preg_replace("/[^[:alnum:]_-]/m", '', $name);	// remove any non-letters, except _ and -
 
         // check that $name is unique:
@@ -2460,6 +2460,12 @@ EOT;
 
         // drop elements from userSuppliedData whose keys start with '_':
         foreach ($rec as $key => $label) {
+            if (substr($key, 2) === '__') {
+                $val = $rec[ $key ];
+                unset($rec[ $key ]);
+                $key = '.'.substr($key,2);
+                $rec[ $key ] = $val;
+            }
             if (($key[0] === '_') && (@$key[1] !== '_')) {
                 unset($rec[ $key ]);
             }
