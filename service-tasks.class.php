@@ -199,7 +199,7 @@ class ServiceTasks
     //....................................................
     private function checkInstallation1()
     {
-        $writableFolders = ['data/', CACHE_PATH, LOGS_PATH];
+        $writableFolders = ['data/', SYSTEM_CACHE_PATH, CACHE_PATH, LOGS_PATH];
         $readOnlyFolders = ['_lizzy/','code/','config/','css/','pages/'];
         $out = '';
         foreach ($writableFolders as $folder) {
@@ -607,7 +607,7 @@ class ServiceTasks
     private function clearLogs( $outputBufferOnly = false)
     {
         if ($outputBufferOnly) {
-            unlink(LOGS_PATH . 'output-buffer.txt');
+            @unlink(LOGS_PATH . 'output-buffer.txt');
             return;
         }
         rrmdir(LOGS_PATH);
