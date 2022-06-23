@@ -559,7 +559,10 @@ class Lizzy
             $forceUpdate = getVersionCode( true );
             unset($_SESSION['lizzy']['reset']);
 
-        } elseif (($this->config->debug_forceBrowserCacheUpdate === 'mobile') && $this->isMobile) {
+        } elseif ($this->config->debug_forceBrowserCacheUpdate === 'mobile') {
+            if (!$this->isMobile) {
+                return;
+            }
             $forceUpdate = getVersionCode( true );
 
         } elseif ($this->config->debug_forceBrowserCacheUpdate || getUrlArg('fup')) {

@@ -52,7 +52,7 @@ private $userConfigurableSettingsAndDefaults      = [
     'debug_enableDevModeAutoOff'        => [false, '[false|true] If true, devolepment mode is automatically turned off by next morning', 1 ],
     'debug_errorLogging'                => [false, 'Enable or disabling logging.', 1 ],
     'debug_debugLogging'                => [false, 'Enable or disabling logging.', 1 ],
-    'debug_forceBrowserCacheUpdate'     => [false, 'If true, the browser is forced to ignore the cache and reload css and js resources on every time.', 2 ],
+    'debug_forceBrowserCacheUpdate'     => ['false', 'If true, the browser is forced to ignore the cache and reload css and js resources on every time.', 2 ],
     'debug_logClientAccesses'           => [false, 'If true, Lizzy records visits (IP-addresses and browser/os types).', 3 ],
     'debug_showDebugInfo'               => [false, 'If true, debugging info is appended to the page (prerequisite: debug_allowDebugInfo=true and localhost or logged in as editor/admin)', 1 ],
     'debug_showUndefinedVariables'      => [false, 'If true, all undefined static variables (i.e. obtained from yaml-files) are marked.', 2 ],
@@ -303,7 +303,13 @@ private $userConfigurableSettingsAndDefaults      = [
                     $this->$key = intval( $val );
 
                 } elseif (is_string($defaultValue)) {
-                    $this->$key = (string)$val;
+                    if ($val === 'true') {
+                        $this->$key = true;
+                    } elseif ($val === 'true') {
+                        $this->$key = false;
+                    } else {
+                        $this->$key = (string)$val;
+                    }
 
                 } elseif (is_array($defaultValue)) {
                     if (is_array($val)) {
