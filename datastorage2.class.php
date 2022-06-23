@@ -2032,27 +2032,63 @@ EOT;
 
     private function normalizeDb($data, $returnWithKeys = false)
     {
-        foreach ($data as $key => $rec) {
-            $key0 = $key;
-            $rec1 = &$data[$key];
+        $data1 = [];
+        $structure = $this->getStructure();
+        $recKeys = array_keys($structure['elements']);
+        foreach ($data as $origKey => $rec) {
             if (!isset($rec[TIMESTAMP_KEY_ID])) {
-                $rec1[TIMESTAMP_KEY_ID] = 0;
+                $rec[TIMESTAMP_KEY_ID] = 0;
             }
+
             if (!isset($rec[REC_KEY_ID])) {
-                if (!preg_match('/^[A-Z0-9]{4,20}$/', $key)) {
-                    $key = createHash();
+                if (!preg_match('/^[A-Z0-9]{4,20}$/', $origKey)) {
+                    $origKey = createHash();
                 }
-                $rec1[REC_KEY_ID] = $key;
+                $rec[REC_KEY_ID] = $origKey;
+            } else {
+                if (!preg_match('/^[A-Z0-9]{4,20}$/', $rec[REC_KEY_ID])) {
+                    $rec[REC_KEY_ID] = createHash();
+                }
             }
-            if ($key0 !== $rec1[REC_KEY_ID]) {
-                $data[$rec1[REC_KEY_ID]] = $rec1;
-                unset($data[$key0]);
+
+            $rec1 = [];
+            foreach ($recKeys as $key) {
+                if (!isset($rec[$key])) {
+                    $rec1[$key] = '';
+                } else {
+                    $rec1[$key] = $rec[$key];
+                }
+            }
+            $data1[$rec[REC_KEY_ID]] = $rec1;
+        }
+
+        // sort array if it contains elements 'date' or 'start' (as used in calendars):
+        if (isset($rec1['date'])) {
+            if (is_string($rec1['date'])) {
+                usort($data1, function ($a, $b) {
+                    return strcmp($a['date'], $b['date']);
+                });
+            } elseif (is_string($rec1['date'])) {
+                usort($data1, function ($a, $b) {
+                    return $a['date'] - $b['date'];
+                });
+            }
+        } elseif (isset($rec1['start'])) {
+            if (is_string($rec1['start'])) {
+                usort($data1, function ($a, $b) {
+                    return strcmp($a['start'], $b['start']);
+                });
+            } elseif (is_string($rec1['start'])) {
+                usort($data1, function ($a, $b) {
+                return $a['start'] - $b['start'];
+                });
             }
         }
+
         if (!$returnWithKeys) {
-            $data = array_values($data);
+            $data1 = array_values($data1);
         }
-        return $data;
+        return $data1;
     } // normalizeDb
 
 
