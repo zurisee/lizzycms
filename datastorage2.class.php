@@ -141,7 +141,8 @@ class DataStorage2
         $this->format = isset($args['format']) ? $args['format'] : '';
         $this->supportBlobType = isset($args['supportBlobType']) ? $args['supportBlobType'] : false;
         $this->includeKeys = isset($args['includeKeys']) ? $args['includeKeys'] : false;
-        $this->includeTimestamp = isset($args['includeTimestamp']) ? $args['includeTimestamp'] : false;
+        $this->includeTimestamp = $this->includeKeys;
+        // $this->includeTimestamp = isset($args['includeTimestamp']) ? $args['includeTimestamp'] : false; // obsolete
         $this->secure = isset($args['secure']) ? $args['secure'] : true;
         $this->userCsvFirstRowAsLabels = isset($args['userCsvFirstRowAsLabels']) ? $args['userCsvFirstRowAsLabels'] : true;
         $this->useRecycleBin = isset($args['useRecycleBin']) ? $args['useRecycleBin'] : false;
@@ -2005,21 +2006,6 @@ EOT;
                     if (isset($rec[TIMESTAMP_KEY_ID])) {
                         unset($data[$recKey][TIMESTAMP_KEY_ID]);
                     }
-                }
-            } elseif (($this->format !== 'csv') && $this->is2Ddata) {
-                //ToDo: remove test code for finding zero-timestamp bug
-                $error = false;
-                foreach ($data as $rec) {
-                    if (!isset($rec[REC_KEY_ID])) {
-                        $error = true;
-                    }
-                    if (!isset($rec[TIMESTAMP_KEY_ID])) {
-//???                    if (!isset($rec[TIMESTAMP_KEY_ID]) || !$rec[TIMESTAMP_KEY_ID]) {
-                        $error = true;
-                    }
-                }
-                if ($error) {
-                    $this->sendMailToWebmaster("Error: meta-data corrupt while exporting data to file '$filename'.");
                 }
             }
         }
