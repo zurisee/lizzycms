@@ -1422,6 +1422,7 @@ EOT;
         $cls = $this->currRec->class? " class='{$this->currRec->class}'": '';
 
         $out = "<input type='hidden' id='{$this->currRec->fldPrefix}{$this->currRec->elemId}'{$this->currRec->inpAttr}$cls$value />\n";
+        $out = "<div class='lzy-form-field-wrapper lzy-dispno'>$out</div>";
         return $out;
     } // renderHidden
 
