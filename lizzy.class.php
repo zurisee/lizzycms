@@ -565,7 +565,9 @@ class Lizzy
             }
             $forceUpdate = getVersionCode( true );
 
-        } elseif ($this->config->debug_forceBrowserCacheUpdate || getUrlArg('fup')) {
+        } elseif (!$this->config->debug_forceBrowserCacheUpdate ||
+            ($this->config->debug_forceBrowserCacheUpdate !== 'false') ||
+            getUrlArg('fup')) {
             $forceUpdate = getVersionCode( true );
 
         } else {
