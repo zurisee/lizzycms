@@ -505,13 +505,9 @@ EOT;
     {
         $data = $this->data0;
 
-        // get header elements:
-        $headerElems = array_merge($this->headerElems);
-
-        // assemble data for export:
-        $data1[0] = $headerElems;
         $r = 0;
         $keys = array_keys($this->structure['elements']);
+        $data1[0] = $keys;
         foreach ($data as $rec) {
             $r++;
             foreach ($keys as $key) {
@@ -2518,12 +2514,16 @@ EOT;
 
         $db = new DataStorage2([
             'dataFile' => $tmpPath,
-            'useNormalizedDb' => true,
             'useRecycleBin' => true,
         ]);
         $data = $db->read();
         $db->close();
         if ($data) {
+            foreach ($data as $key => $rec) {
+                if (!$rec[TIMESTAMP_KEY_ID]) {
+                    $data[$key][TIMESTAMP_KEY_ID] = time();
+                }
+            }
             $this->ds->close();
             $db = new DataStorage2([
                 'dataFile' => $this->dataSource,
