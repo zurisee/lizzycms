@@ -657,3 +657,12 @@ function findArrayElementByAttribute( $array, $key, $value) {
     return $res;
 } // findArrayElementByAttribute
 
+
+
+function sortArrayByElement($array, $key)
+{
+    uasort($array, function ($a,$b) use($key) {
+        return $a[$key] <=> $b[$key];
+    });
+    return $array;
+} // sortArrayByElement
