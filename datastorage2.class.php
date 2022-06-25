@@ -48,6 +48,8 @@ class DataStorage2
     private $data = null;
     private $rawData = null;
     private $exportRequired = false;
+    private $useNormalizedDb = false;
+    private $dbNormalized = false;
     private $sid;
     private $format;
     private $lockDB = false;
@@ -223,6 +225,7 @@ class DataStorage2
         }
 
         if ($replace) {
+            $this->dbNormalized = false;
             $res = $this->lowLevelWrite($data);
         } else {
             $res = $this->_updateDB($data);
@@ -1548,6 +1551,9 @@ class DataStorage2
     {
         $this->openDbReadWrite();
 
+        if ($this->useNormalizedDb && !$this->dbNormalized) {
+            $newData = $this->normalizeDb($newData, true);
+        }
         if ($this->supportBlobType) {
             $newData = $this->exportBlobData( $newData );
         }
@@ -1919,6 +1925,9 @@ EOT;
         $this->openDbReadWrite();
         $rawData = $this->loadFile();
 
+        // after file upload there appears a ZWNBSP in the file, so as a workaround we remove them:
+        $rawData = str_replace("\xEF\xBB\xBF", '', $rawData);
+
         if ($this->logModifTimes) {
             $oldDat = $this->getData();
             $newData = $this->decode($rawData, false, false, $initial);
@@ -1985,7 +1994,7 @@ EOT;
 
         $data = $this->getBareData();
 
-        if ($this->useNormalizedDb) {
+        if ($this->useNormalizedDb && !$this->dbNormalized) {
             $data = $this->normalizeDb($data);
         } else {
             if (!$this->includeKeys) {
@@ -2032,6 +2041,11 @@ EOT;
 
     private function normalizeDb($data, $returnWithKeys = false)
     {
+        $inPlace = false;
+        if ($data === null) {
+            $data = $this->data;
+            $inPlace = true;
+        }
         $data1 = [];
         $structure = $this->getStructure();
         $recKeys = array_keys($structure['elements']);
@@ -2056,7 +2070,7 @@ EOT;
                 if (!isset($rec[$key])) {
                     $rec1[$key] = '';
                 } else {
-                    $rec1[$key] = $rec[$key];
+                    $rec1[$key] = trim($rec[$key]);
                 }
             }
             $data1[$rec[REC_KEY_ID]] = $rec1;
@@ -2064,30 +2078,20 @@ EOT;
 
         // sort array if it contains elements 'date' or 'start' (as used in calendars):
         if (isset($rec1['date'])) {
-            if (is_string($rec1['date'])) {
-                usort($data1, function ($a, $b) {
-                    return strcmp($a['date'], $b['date']);
-                });
-            } elseif (is_string($rec1['date'])) {
-                usort($data1, function ($a, $b) {
-                    return $a['date'] - $b['date'];
-                });
-            }
+            $data1 = sortArrayByElement($data1, 'date');
         } elseif (isset($rec1['start'])) {
-            if (is_string($rec1['start'])) {
-                usort($data1, function ($a, $b) {
-                    return strcmp($a['start'], $b['start']);
-                });
-            } elseif (is_string($rec1['start'])) {
-                usort($data1, function ($a, $b) {
-                return $a['start'] - $b['start'];
-                });
-            }
+            $data1 = sortArrayByElement($data1, 'start');
+        }
+
+        if ($inPlace) {
+            $this->data = $data1;
+            return $data1;
         }
 
         if (!$returnWithKeys) {
             $data1 = array_values($data1);
         }
+        $this->dbNormalized = true;
         return $data1;
     } // normalizeDb
 
@@ -2239,7 +2243,7 @@ EOT;
             $data = array();
         }
 
-        if ($this->useNormalizedDb) {
+        if ($this->useNormalizedDb && !$this->dbNormalized) {
             $data = $this->normalizeDb($data, true);
         } else {
             if ($this->includeKeys) {
@@ -2286,11 +2290,6 @@ EOT;
 
         if (file_exists( $structureFile )) {
             $structure = getYamlFile( $structureFile );
-
-    //        } elseif (isset($this->data['_structure'])) {
-    //            // structure may be submitted within data in a special record '_structure':
-    //            $structure = $this->data['_structure'];
-    //            unset($this->data['_structure']);
         }
         return $structure;
     } // checkExternalStructureDef
