@@ -338,8 +338,13 @@ function HTMLtable( tableObj ) {
 			// submit button in form:
 			.on('click', '.lzy-edit-data-form input[type=submit]', function() {
 				if ( parent.lzyTableNewRec ) {
-					$('#lzy-chckb__delete_1').prop('checked', false);
+					$('#lzy-chckb__delete_1').prop('checked', false).addClass('lzy-button-pressed');
 				}
+			})
+
+			// make submit button inactive when pressed:
+			.on('click', '.lzy-table-upload-button > input', function() {
+					$(this).prop('checked', false).addClass('lzy-button-pressed');
 			})
 
 			// delete checkbox in form:
