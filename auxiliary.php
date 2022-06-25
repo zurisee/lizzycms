@@ -2685,3 +2685,13 @@ function secondsToTime( $seconds, $sep = '' )
     $out = ($out && $seconds)? "$out$sep$seconds": $out;
     return $out;
 } // secondsToTime
+
+
+
+function sortArrayByElement($array, $key)
+{
+    uasort($array, function ($a,$b) use($key) {
+        return $a[$key] <=> $b[$key];
+    });
+    return $array;
+} // sortArrayByElement
