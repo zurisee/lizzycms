@@ -159,6 +159,7 @@ class DataStorage2
         $this->is2Ddata = isset($args['is2Ddata']) ? $args['is2Ddata'] : true;
 
         $this->useNormalizedDb = isset($args['useNormalizedDb']) ? $args['useNormalizedDb'] : false;
+        $this->elementsToShieldInCvs = isset($args['elementsToShieldInCvs']) ? $args['elementsToShieldInCvs'] : false;
     } // parseArguments
 
 
@@ -1995,8 +1996,8 @@ EOT;
 
         $data = $this->getBareData();
 
-        if ($this->useNormalizedDb && !$this->dbNormalized) {
-            $data = $this->normalizeDb($data);
+        if ($this->useNormalizedDb) {
+            $data = $this->normalizeDb($data, false);
         } else {
             if (!$this->includeKeys) {
                 foreach ($data as $recKey => $rec) {
@@ -2130,12 +2131,26 @@ EOT;
             $outData[] = array_values($row);
         }
         // transform into CSV format:
-        foreach ($outData as $row) {
+        $elementsToShieldInCvs = false;
+        // handle option elementsToShieldInCvs => prepend ' to shielded elements:
+        if ($this->elementsToShieldInCvs) {
+            foreach ($elemKeys as $i => $k) {
+                if (strpos($this->elementsToShieldInCvs, $k) !== false) {
+                    $elementsToShieldInCvs[] = $i;
+                }
+            }
+        }
+        foreach ($outData as $r => $row) {
             if (!is_array($row)) { continue; }
             foreach ($row as $i => $elem) {
                 if (is_array($elem)) {
                     $elem = @$elem[0]; // -> see note at top
                 }
+
+                if ($r && $elementsToShieldInCvs && in_array($i, $elementsToShieldInCvs)) {
+                    $row[$i] = $elem = "'$elem";
+                }
+
                 if ($forceQuotes || strpbrk($elem, "$quote$delim")) {
                     $row[$i] = $quote . str_replace($quote, $quote.$quote, $elem) . $quote;
                 }
@@ -2458,6 +2473,24 @@ EOT;
             if (!$line) { continue; }
             $line = str_replace("\\n", "\n", $line);
             $array[] = str_getcsv($line, $delim, $enclos);
+        }
+
+        // handle option elementsToShieldInCvs => remove leading ' of shielded elements:
+        if ($this->elementsToShieldInCvs) {
+            $elementsToShieldInCvs = [];
+            foreach ($array[0] as $i => $header) {
+                if (strpos($this->elementsToShieldInCvs, $header) !== false) {
+                    $elementsToShieldInCvs[] = $i;
+                }
+            }
+            for ($i=1; $i<sizeof($array); $i++) {
+                foreach ($elementsToShieldInCvs as $c) {
+                    $val = $array[$i][$c];
+                    if (@$val[0] === "'") {
+                        $array[$i][$c] = ltrim($val, "'");
+                    }
+                }
+            }
         }
         return $array;
     } // parseCsv
