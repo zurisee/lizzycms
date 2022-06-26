@@ -1134,6 +1134,10 @@ lzy-table-download-excel:
 lzy-table-download-ods:
     _: 'OpenOffice (.ods)'
 
+lzy-table-download-csv:
+    de: 'CSV-Datei (.csv)'
+    _: 'CSV-File (.csv)'
+
 lzy-table-download-prefix:
     de: 'als '
     _:  'as '

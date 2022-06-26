@@ -60,6 +60,7 @@ class HtmlTable
         $this->editFormRendered = false;
 
         $this->dataSource               = $this->getOption('dataSource', '(optional if nCols is set) Name of file containing data. Format may be .cvs or .yaml and is expected be local to page folder.');
+        $this->useNormalizedDb          = $this->getOption('useNormalizedDb', 'If true, data is written to dataSource in normalized format.');
         $this->preselectData            = $this->getOption('preselectData', 'If set, pre-selects data from dataSource before rendering (only makes sense for higher dimensional data).');
         $this->inMemoryData             = $this->getOption('data', 'Alternative to "dataSource": provide data directly as array. E.g. data: &#36;array,');
         $this->id                       = $this->getOption('id', '(optional) Id applied to the table tag (resp. wrapping div tag if renderAsDiv is set)');
@@ -123,6 +124,8 @@ class HtmlTable
         $this->suppressError            = $this->getOption('suppressError', '(optional) Suppresses the error message in case dataSource is not available.');
         $this->enableTooltips           = $this->getOption('enableTooltips', '(optional) Enables tooltips, e.g. for cells containing too much text. To use, apply a class-name containing "tooltip" to the targeted cell, e.g. "tooltip1".');
         $this->export                   = $this->getOption('export', '(optional) .');
+        $this->elementsToShieldInCvs    = $this->getOption('elementsToShieldInCvs', '[list of columns to '.
+            'be shielded] If set, data elements in specified columns are prepended by "\'" to avoid import problmes in Excel.');
         $this->exportMetaElements       = $this->getOption('exportMetaElements', '(optional) .');
         $this->prefill                  = $this->getOption('prefill', '(optional) .');
         $this->cellTooltips             = $this->getOption('cellTooltips','[true,min-chars] If set, cells with large content (>min-chars) will get a tooltip showing the content. Default min-chars: 30.');
@@ -520,7 +523,7 @@ EOT;
 
 
 
-    private function exportToOfficeFormats( $data, $file)
+    private function exportToOfficeFormats($data, $file)
     {
         $upToDate = true;
         $ts0 = filemtime($this->dataSource);
@@ -531,6 +534,11 @@ EOT;
         }
         $fileOds = "$file.ods";
         $ts = @filemtime($fileOds);
+        if ($ts0 > $ts) {
+            $upToDate = false;
+        }
+        $fileCsv = "$file.csv";
+        $ts = @filemtime($fileCsv);
         if ($ts0 > $ts) {
             $upToDate = false;
         }
@@ -552,6 +560,11 @@ EOT;
                     $c2 = chr(65 + $c % 26);
                     $cellId = "$c1$c2$r";
                     $c++;
+                    if (!$this->exportMetaElements) {
+                        if (($c === $this->recKeyCol) || ($c === $this->timestampKeyCol)) {
+                            continue;
+                        }
+                    }
                     if (is_array($cell)) {
                         $cell = @$cell[0];
                     }
@@ -568,6 +581,13 @@ EOT;
         // export to OpenOffice:
         $writer = new Ods($spreadsheet);
         $writer->save($fileOds);
+
+        // export to CSV:
+        $ds = new DataStorage2([
+            'dataFile' => $fileCsv,
+            'elementsToShieldInCvs' => $this->elementsToShieldInCvs
+        ]);
+        $ds->write($this->data0);
     } // exportToOfficeFormats
 
 
@@ -2399,6 +2419,8 @@ $('.lzy-table-download-btn').click(function() {
         +'<a href="$appRoot{$this->exportedTo}.xlsx" download target="_blank">{{ lzy-table-download-excel }}</a>'
         +'{{^ lzy-table-download-postfix }}</li><li>{{^ lzy-table-download-prefix }}'
         +'<a href="$appRoot{$this->exportedTo}.ods" download target="_blank">{{ lzy-table-download-ods }}</a>'
+        +'{{^ lzy-table-download-postfix }}</li><li>{{^ lzy-table-download-prefix }}'
+        +'<a href="$appRoot{$this->exportedTo}.csv" download target="_blank">{{ lzy-table-download-csv }}</a>'
         +'{{^ lzy-table-download-postfix }}</li></ul>';
     lzyPopup({
         text: popup,
@@ -2515,27 +2537,25 @@ EOT;
         $db = new DataStorage2([
             'dataFile' => $tmpPath,
             'useRecycleBin' => true,
+            'elementsToShieldInCvs' => $this->elementsToShieldInCvs
         ]);
         $data = $db->read();
         $db->close();
-        if ($data) {
-            foreach ($data as $key => $rec) {
-                if (!$rec[TIMESTAMP_KEY_ID]) {
-                    $data[$key][TIMESTAMP_KEY_ID] = time();
-                }
-            }
-            $this->ds->close();
-            $db = new DataStorage2([
-                'dataFile' => $this->dataSource,
-                'useNormalizedDb' => true,
-                'exportInternalFields' => true,
-                'useRecycleBin' => true,
-            ]);
-            $db->write($data);
-            $db->close();
-            unlink($tmpPath);
-            reloadAgent(false, 'Data successfully imported');
+        if (!$data) {
+            return;
         }
+
+        $this->ds->close();
+        $db = new DataStorage2([
+            'dataFile' => $this->dataSource,
+            'useNormalizedDb' => true,
+            'exportInternalFields' => true,
+            'useRecycleBin' => true,
+        ]);
+        $db->write($data);
+        $db->close();
+        unlink($tmpPath);
+        reloadAgent(false, 'Data successfully imported');
     } // getUploadedData
 
 } // HtmlTable
