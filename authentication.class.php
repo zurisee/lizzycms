@@ -449,8 +449,11 @@ class Authentication
     public function getUserRec( $username = false )
     {
         if (!$username) {
+            if (!$this->userRec) {
+                return [];
+            }
             $rec = $this->userRec;
-        } elseif (isset($this->knownUsers[$username])) {
+        } elseif (is_string($username) && isset($this->knownUsers[$username])) {
             $rec = $this->knownUsers[$username];
         } else {
             return [];

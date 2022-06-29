@@ -1193,6 +1193,7 @@ function generateNewVersionCode()
     do {
         $randCode = rand(0, 9) . rand(0, 9);
     } while ($prevRandCode && ($prevRandCode === $randCode));
+    preparePath(VERSION_CODE_FILE);
     file_put_contents(VERSION_CODE_FILE, $randCode);
     return $randCode;
 } // generateNewVersionCode
