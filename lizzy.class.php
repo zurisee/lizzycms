@@ -1675,7 +1675,7 @@ EOT;
             return;
         }
         $requestedCmd = false;
-        $cmds = ',help,unused,reset-unused,remove-unused,log,info,list,mobile,touch,notouch,auto,config,localhost,';
+        $cmds = ',help,unused,reset-unused,remove-unused,log,info,list,mobile,touch,notouch,auto,config,';
         foreach ($_GET as $cmd => $value) {
             if (stripos($cmds, ",$cmd,") !== false) {
                 $requestedCmd = $cmd;
